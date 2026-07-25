@@ -197,6 +197,16 @@ header{display:flex;justify-content:space-between;align-items:center;border-bott
 .chain-box span{color:var(--text-secondary);font-size:10.5px;font-family:'Roboto Mono',monospace;}
 .chain-arrow{color:var(--accent);font-size:18px;}
 
+/* ---- RELATIONSHIP DIAGRAM (Star vs Snowflake) ---- */
+.rel-wrap{position:relative;padding:14px 6px;overflow-x:auto;}
+.rel-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.rel-node{position:relative;z-index:1;background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:8px;padding:9px 13px;text-align:center;font-size:11.5px;font-weight:700;color:var(--text-secondary);white-space:nowrap;}
+.rel-node.fact{background:rgba(196,154,255,.14);border-color:var(--accent-purple);color:var(--accent-purple);font-size:12.5px;}
+.rel-node.leaf{font-weight:600;font-size:10.5px;padding:7px 11px;color:var(--text-secondary);}
+.rel-star-row{display:flex;align-items:center;gap:46px;position:relative;z-index:1;justify-content:center;}
+.rel-star-col{display:flex;flex-direction:column;gap:12px;}
+.snow-grid{display:grid;grid-template-columns:auto 1fr;grid-template-rows:repeat(4,auto);gap:12px 36px;align-items:center;position:relative;z-index:1;}
+
 /* ---- MATRIX CHECK ---- */
 .mx-yes{color:var(--accent-green);font-weight:800;}
 .mx-no{color:var(--text-disabled);}
@@ -624,22 +634,42 @@ footer a:hover{color:var(--accent);}
 
     <div class="grid-2">
       <div class="card">
-        <div class="card-title">⭐ Star — Dim Brinquedo desnormalizada</div>
-        <div class="chain-row" style="justify-content:center;">
-          <div class="chain-box" style="min-width:220px;"><b>dim_brinquedo</b><span>sk_brinquedo, nome, categoria, subcategoria, departamento</span></div>
+        <div class="card-title">⭐ Star — todas as dimensões a 1 passo do fato</div>
+        <div class="rel-wrap" id="relStarWrap">
+          <svg class="rel-svg" id="relStarSvg"></svg>
+          <div class="rel-star-row">
+            <div class="rel-node fact" data-n="fact">🧾 Fato Vendas</div>
+            <div class="rel-star-col">
+              <div class="rel-node" data-n="tempo">📅 Dim Tempo</div>
+              <div class="rel-node" data-n="brinquedo">🧸 Dim Brinquedo</div>
+              <div class="rel-node" data-n="loja">🏪 Dim Loja</div>
+              <div class="rel-node" data-n="cliente">🧒 Dim Cliente</div>
+            </div>
+          </div>
         </div>
-        <div class="card-text" style="margin-top:12px;">Uma tabela só. Consulta simples: <code>1 JOIN</code>. Um pouco de redundância (a palavra "Pelúcias" se repete em cada brinquedo daquela categoria) — mas isso é barato em disco e rápido de ler.</div>
+        <div class="card-text" style="margin-top:12px;"><code>categoria</code>, <code>subcategoria</code> e <code>departamento</code> ficam achatados dentro da própria <code>dim_brinquedo</code>. Uma linha reta liga o fato a cada dimensão — <strong>1 JOIN</strong> para qualquer atributo. Um pouco de redundância (a palavra "Pelúcias" se repete em cada brinquedo daquela categoria), mas isso é barato em disco.</div>
       </div>
       <div class="card">
-        <div class="card-title">❄️ Snowflake — hierarquia normalizada</div>
-        <div class="chain-row" style="justify-content:center;">
-          <div class="chain-box"><b>dim_brinquedo</b><span>sk_brinquedo, nome, sk_subcategoria</span></div>
-          <span class="chain-arrow">→</span>
-          <div class="chain-box"><b>dim_subcategoria</b><span>sk_subcategoria, nome, sk_categoria</span></div>
-          <span class="chain-arrow">→</span>
-          <div class="chain-box"><b>dim_categoria</b><span>sk_categoria, nome, sk_departamento</span></div>
+        <div class="card-title">❄️ Snowflake — um braço da estrela vira uma corrente</div>
+        <div class="rel-wrap" id="relSnowWrap">
+          <svg class="rel-svg" id="relSnowSvg"></svg>
+          <div class="snow-grid">
+            <div class="rel-node fact" data-n="fact" style="grid-column:1;grid-row:1 / span 4;">🧾 Fato Vendas</div>
+            <div class="rel-node" data-n="tempo" style="grid-column:2;grid-row:1;">📅 Dim Tempo</div>
+            <div class="rel-node" data-n="loja" style="grid-column:2;grid-row:2;">🏪 Dim Loja</div>
+            <div class="rel-node" data-n="cliente" style="grid-column:2;grid-row:3;">🧒 Dim Cliente</div>
+            <div class="chain-row" style="grid-column:2;grid-row:4;">
+              <div class="rel-node" data-n="brinquedo">🧸 Dim Brinquedo</div>
+              <span class="chain-arrow">→</span>
+              <div class="rel-node leaf">Dim Subcategoria</div>
+              <span class="chain-arrow">→</span>
+              <div class="rel-node leaf">Dim Categoria</div>
+              <span class="chain-arrow">→</span>
+              <div class="rel-node leaf">Dim Departamento</div>
+            </div>
+          </div>
         </div>
-        <div class="card-text" style="margin-top:12px;">Zero redundância. Mas para descobrir o departamento de um brinquedo, a consulta precisa de <strong>3 JOINs</strong> em vez de 1 — mais lento e mais difícil para ferramentas de BI e usuários de negócio entenderem.</div>
+        <div class="card-text" style="margin-top:12px;">Tempo, Loja e Cliente continuam a 1 passo — mas Brinquedo agora <strong>normaliza</strong> sua hierarquia em 3 tabelas extras. Descobrir o departamento de um brinquedo passa a exigir <strong>4 JOINs</strong> em vez de 1 — mais lento e mais difícil de explicar para quem não é técnico.</div>
       </div>
     </div>
 
@@ -923,6 +953,41 @@ function pickStar(id){
 }
 drawStarLines(null);
 window.addEventListener('resize', () => { const active = document.querySelector('.dim-box.active'); drawStarLines(active ? active.dataset.id : null); });
+
+/* ===================== STAR vs SNOWFLAKE RELATIONSHIP DIAGRAMS ===================== */
+function drawHubLines(svgId, wrapId, hubSelector, spokeSelectors){
+  const svg = document.getElementById(svgId);
+  const wrap = document.getElementById(wrapId);
+  if(!svg || !wrap) return;
+  svg.innerHTML = '';
+  if(window.innerWidth <= 960) return;
+  const hub = wrap.querySelector(hubSelector);
+  if(!hub) return;
+  const rh = rectRel(hub, wrap);
+  const hc = centerOf(rh);
+  spokeSelectors.forEach(sel => {
+    const el = wrap.querySelector(sel);
+    if(!el) return;
+    const re = rectRel(el, wrap);
+    const ec = centerOf(re);
+    const dx = ec.x - hc.x, dy = ec.y - hc.y;
+    const p1 = edgePoint(rh, dx, dy);
+    const p2 = edgePoint(re, -dx, -dy);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    line.setAttribute('stroke', '#535966');
+    line.setAttribute('stroke-width', '1.75');
+    line.setAttribute('opacity', '0.65');
+    svg.appendChild(line);
+  });
+}
+function drawRelDiagrams(){
+  drawHubLines('relStarSvg', 'relStarWrap', '[data-n="fact"]', ['[data-n="tempo"]','[data-n="brinquedo"]','[data-n="loja"]','[data-n="cliente"]']);
+  drawHubLines('relSnowSvg', 'relSnowWrap', '[data-n="fact"]', ['[data-n="tempo"]','[data-n="loja"]','[data-n="cliente"]','[data-n="brinquedo"]']);
+}
+drawRelDiagrams();
+window.addEventListener('resize', drawRelDiagrams);
 
 /* ===================== GRAIN DEMO ===================== */
 const grainData = {
