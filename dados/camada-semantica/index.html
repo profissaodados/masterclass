@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Camada Semântica. Métricas como código, headless BI, dbt Semantic Layer, Cube, LookML, o Medallion Semântico (grafos RDF sobre o Gold) e como ela vira a fonte única de verdade para BI, notebooks e agentes de IA.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Camada Semântica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:210px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- CLICKABLE DIAGRAM ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- SCATTERED DEFINITIONS VISUAL ---- */
+.cacheline{display:flex;gap:4px;flex-wrap:wrap;}
+.cl-cell{min-width:64px;height:52px;border-radius:5px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8.5px;font-family:'Roboto Mono',monospace;font-weight:700;border:1.5px solid var(--border-color);background:var(--bg-elevated);color:var(--text-disabled);line-height:1.25;padding:4px;flex:1;}
+.cl-cell.used{background:rgba(6,182,212,.22);border-color:var(--accent);color:var(--accent);}
+.cl-cell.wasted{background:rgba(248,107,99,.08);border-color:var(--accent-red);color:var(--accent-red);opacity:.85;}
+
+/* ---- KNOWLEDGE GRAPH (RDF TRIPLES) DIAGRAM ---- */
+.kg-diagram{position:relative;min-width:1020px;}
+.kg-diagram svg.kg-svg{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;}
+.kg-node{position:absolute;border-radius:8px;padding:9px 12px;border:1.5px solid;background:var(--bg-elevated);text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.kg-node.entity{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.kg-node.entity.alt{border-color:var(--accent-blue);background:rgba(54,162,239,.10);}
+.kg-node.warn{border-color:var(--accent-red);background:rgba(248,107,99,.08);}
+.kg-node-title{font-size:12px;font-weight:800;color:var(--text-primary);margin-bottom:5px;}
+.kg-node.entity .kg-node-title{color:var(--accent);}
+.kg-node.entity.alt .kg-node-title{color:var(--accent-blue);}
+.kg-node.warn .kg-node-title{color:var(--accent-red);}
+.kg-node-attr{font-size:9.5px;font-weight:600;color:var(--text-secondary);font-family:'Roboto Mono',monospace;line-height:1.6;white-space:nowrap;}
+.kg-node-attr.warn{color:var(--accent-red);}
+.kg-edge-label{position:absolute;transform:translate(-50%,-50%);font-size:9px;font-family:'Roboto Mono',monospace;color:var(--text-secondary);background:var(--bg-panel);padding:2px 7px;border-radius:10px;border:1px solid var(--border-color);white-space:nowrap;}
+.kg-caption{font-size:11px;color:var(--text-disabled);text-align:center;margin-top:8px;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Camada Semântica</h1><span>A fonte única de verdade entre o dado bruto e quem consome</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">1990</div><div class="hstat-label">Origem</div></div>
+      <div class="hstat"><div class="hstat-num">8</div><div class="hstat-label">Demos</div></div>
+      <div class="hstat"><div class="hstat-num">Headless BI</div><div class="hstat-label">Arquitetura</div></div>
+      <div class="hstat"><div class="hstat-num">~45min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>A camada que garante que <em>"receita"</em> signifique a mesma coisa em todo lugar</h2>
+      <p>Uma <strong>camada semântica</strong> (semantic layer) é uma camada de abstração entre o dado bruto — tabelas em um data warehouse ou lakehouse — e as ferramentas que o consomem. Ela traduz colunas e joins em conceitos de negócio (<em>métricas</em>, <em>dimensões</em>, <em>entidades</em>), definidos <strong>uma única vez</strong>, como código, e reaproveitados por qualquer ferramenta de BI, notebook, planilha ou agente de IA que precise consultá-los. O objetivo não é armazenar dado novo — é garantir que "receita", "churn" ou "usuários ativos" tenham exatamente a mesma fórmula não importa quem pergunte, ou de onde a pergunta venha.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Métricas como Código</span>
+        <span class="badge badge-green">Fonte Única de Verdade</span>
+        <span class="badge badge-blue">Headless BI</span>
+        <span class="badge badge-purple">Governança</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🧩 CAMADA SEMÂNTICA</div>
+        <div class="fc-body">
+          <div class="fc-row">Data Warehouse / Lakehouse<br><span style="font-size:9.5px;opacity:.7;">Snowflake · BigQuery · DuckDB · Databricks</span></div>
+          <div class="fc-row">Métricas, dimensões e joins<br><span style="font-size:9.5px;opacity:.7;">definidos uma vez, versionados em Git</span></div>
+        </div>
+        <div class="fc-foot">Serve: BI · Python · Excel · Slack · Agentes de IA</div>
+      </div>
+      <div class="file-chip-caption">Uma pergunta, uma resposta — em qualquer ferramenta</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧩 O que é uma Camada Semântica?</div>
+    <p class="section-desc">
+      Pense nela como um <strong>dicionário de negócio traduzido em código</strong>: em vez de cada dashboard, notebook ou planilha escrever seu próprio <code>SUM(amount) - SUM(refund)</code> para chegar em "receita líquida", a definição existe em <em>um único lugar</em> — a camada semântica — e todo o resto apenas <em>pergunta</em> por ela pelo nome. A camada não guarda os dados: ela guarda a <strong>lógica</strong> de como calculá-los a partir das tabelas que já existem no warehouse, e traduz essa lógica em SQL na hora da consulta.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📖 Dicionário de negócio</div>
+        <div class="card-text">Mapeia termos como "receita", "cliente ativo" ou "taxa de churn" para colunas, agregações e joins concretos nas tabelas do warehouse — uma tradução entre a linguagem do negócio e o SQL físico.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧮 Métricas como código</div>
+        <div class="card-text">A lógica vive em arquivos versionados (YAML, LookML, Malloy...), revisáveis em Pull Request, testáveis em CI — não escondida dentro de um dashboard que só uma pessoa sabe editar.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔌 Independente da ferramenta</div>
+        <div class="card-text">A mesma métrica é consultada via SQL, API REST, GraphQL ou driver JDBC/ODBC — o que ganhou o apelido de <strong>"headless BI"</strong>: a lógica sem uma interface própria fixa, servida a qualquer front-end.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Dimensão</th><th>Sem Camada Semântica</th><th>Com Camada Semântica</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Onde a lógica mora</strong></td><td>Espalhada: dentro de cada dashboard, notebook ou planilha</td><td>Centralizada: um repositório de definições versionado</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Consistência entre ferramentas</strong></td><td>Não garantida — cada uma calcula à sua moeda</td><td>Garantida — todas consultam a mesma definição</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Mudar uma regra de negócio</strong></td><td>Precisa achar e editar cada cópia manualmente</td><td>Muda em um lugar, propaga para todos os consumidores</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Onde a camada semântica entra</strong></td><td>—</td><td>✅ É exatamente esse o problema que ela resolve</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Origem</div>
+      <p>O termo remonta às "universes" (universos semânticos) da Business Objects, criada em 1990 — uma das primeiras ferramentas a separar explicitamente "o que o usuário de negócio pergunta" de "o SQL que roda no banco". Cubos OLAP dos anos 90-2000 (Microsoft Analysis Services, Oracle Essbase) seguiram lógica parecida, porém pré-processada e rígida. A onda atual — <strong>headless BI</strong> — nasce por volta de 2020 com Cube e o LookML do Looker (2012), ganhando força com o lançamento do dbt Semantic Layer em 2022, puxada por stacks modernos onde múltiplas ferramentas (BI, Python, IA) precisam falar a mesma língua de métricas.</p>
+    </div>
+  </section>
+
+  <!-- ============ O PROBLEMA ============ -->
+  <section class="section" id="s-problema">
+    <div class="section-eyebrow">Por que ela existe</div>
+    <div class="section-title">🔥 Metric Sprawl: quando "receita" tem 5 respostas diferentes</div>
+    <p class="section-desc">
+      Todo time de dados já viveu essa reunião: o time de marketing diz que a receita de junho foi R$ 1,31 milhão, o financeiro diz R$ 1,25 milhão, e o notebook do cientista de dados calcula R$ 1,20 milhão — todos consultando "a mesma" tabela de pedidos. Ninguém está errado tecnicamente: cada um escreveu um <code>SUM()</code> ligeiramente diferente — um inclui reembolsos, outro não; um converte moeda na data do pedido, outro na data do pagamento; um filtra pedidos cancelados, outro esqueceu. Esse fenômeno tem nome: <strong>metric sprawl</strong> — a mesma métrica de negócio, redefinida de forma independente (e ligeiramente divergente) em cada ferramenta que a usa.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🧨 Sem Camada Semântica — cada ferramenta define à sua moeda</div>
+        <div class="cacheline" id="clWithout"></div>
+        <div class="card-text" style="margin-top:10px;">Quatro consumidores, quatro fórmulas de "receita" escritas de forma independente — pequenas diferenças de filtro e escopo temporal que ninguém nota até um número não bater numa reunião.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Com Camada Semântica — uma definição, muitos consumidores</div>
+        <div class="cacheline" id="clWith"></div>
+        <div class="card-text" style="margin-top:10px;">A mesma métrica <code>revenue</code>, definida uma vez na camada semântica, é a que todos os quatro consultam — não existe uma segunda fórmula para divergir.</div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Calculadora: quantas definições divergentes de uma métrica seu stack pode gerar?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Ferramentas de consumo (BI, notebooks, planilhas...)</span><span class="ctrl-v" id="fragToolsVal">5</span></div>
+          <input type="range" id="fragTools" min="1" max="12" step="1" value="5" oninput="updateFragCalc()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Times/squads que escrevem consultas</span><span class="ctrl-v" id="fragTeamsVal">4</span></div>
+          <input type="range" id="fragTeams" min="1" max="15" step="1" value="4" oninput="updateFragCalc()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="fragCanvas" height="90"></canvas></div>
+      <div class="highlight-box" id="fragMsg" style="margin-top:14px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ ARQUITETURA ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Onde ela Vive no Stack</div>
+    <div class="section-title">🏗️ Arquitetura: entre o Warehouse e quem consome</div>
+    <p class="section-desc">
+      Sem camada semântica, cada ferramenta de consumo conversa <strong>diretamente</strong> com as tabelas brutas do warehouse, escrevendo sua própria lógica de agregação. Com uma camada semântica, essa lógica sai das ferramentas e passa a viver numa camada intermediária: as ferramentas param de perguntar "some a coluna <code>amount</code> onde <code>status != 'cancelled'</code>" e passam a perguntar, de forma declarativa, por "a métrica <code>revenue</code>, agrupada por mês". Clique nos blocos para comparar os dois caminhos.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🔀 Sem Camada Semântica (direto no Warehouse)</div>
+          <div class="pq-clickable" data-id="raw-warehouse" onclick="pickSemArch('raw-warehouse')">Data Warehouse / Lakehouse (tabelas brutas)</div>
+          <div class="pq-clickable" data-id="raw-bi" onclick="pickSemArch('raw-bi')">Ferramenta de BI (lógica própria em SQL)</div>
+          <div class="pq-clickable" data-id="raw-script" onclick="pickSemArch('raw-script')">Notebook / script Python (lógica própria)</div>
+          <div class="pq-clickable" data-id="raw-inconsist" onclick="pickSemArch('raw-inconsist')">Números que não batem entre relatórios</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🧩 Com Camada Semântica (headless BI)</div>
+          <div class="pq-clickable" data-id="sem-warehouse" onclick="pickSemArch('sem-warehouse')">Data Warehouse / Lakehouse (tabelas brutas)</div>
+          <div class="pq-clickable" data-id="sem-layer" onclick="pickSemArch('sem-layer')">Camada Semântica (métricas, dimensões, joins)</div>
+          <div class="pq-clickable" data-id="sem-consumers" onclick="pickSemArch('sem-consumers')">BI, Python, Excel, Slack, agentes de IA</div>
+          <div class="pq-clickable" data-id="sem-consist" onclick="pickSemArch('sem-consist')">Mesmo número, em qualquer lugar</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="semArchDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Compare como uma pergunta de negócio percorre cada arquitetura, do consumidor até o dado bruto.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Na prática, a camada semântica atua como um <strong>compilador</strong>: recebe uma pergunta declarativa ("<code>revenue</code> por mês, filtrado por <code>region = 'BR'</code>") e a traduz para SQL otimizado, aplicando os joins corretos entre as tabelas de fatos e dimensões automaticamente. Algumas implementações (Cube) ainda adicionam uma camada de <strong>cache/pré-agregação</strong> por cima, para consultas repetidas não precisarem recomputar tudo no warehouse a cada clique de um dashboard.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMPONENTES ============ -->
+  <section class="section" id="s-componentes">
+    <div class="section-eyebrow">Blocos de Construção</div>
+    <div class="section-title">📐 Componentes de um Modelo Semântico</div>
+    <p class="section-desc">Independente da ferramenta escolhida, quase toda camada semântica é construída a partir do mesmo punhado de conceitos — os nomes variam (LookML chama de "views" e "explores", MetricFlow chama de "semantic models"), mas a ideia por trás é a mesma.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📏 Medida / Measure</div>
+        <div class="card-text">Uma coluna agregável de uma tabela — <code>SUM(amount)</code>, <code>COUNT(order_id)</code>, <code>AVG(session_duration)</code>. É o ingrediente bruto a partir do qual métricas são construídas.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏷️ Dimensão</div>
+        <div class="card-text">Um atributo para agrupar ou filtrar — categórico (<code>status</code>, <code>country</code>) ou temporal (<code>order_date</code> com granularidade dia/semana/mês).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔑 Entidade / Chave</div>
+        <div class="card-text">Identifica um registro e conecta modelos entre si — <code>order_id</code>, <code>customer_id</code> — a base para o motor resolver <strong>joins automaticamente</strong> sem que cada consulta precise escrevê-los.</div>
+      </div>
+    </div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:4px;">Exemplo: um modelo semântico completo (sintaxe estilo dbt MetricFlow)</div>
+    <div class="code-block">
+<span class="code-lang">yaml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">semantic_models:</span>
+  <span class="kw">-</span> <span class="kw">name:</span> orders
+    <span class="kw">model:</span> <span class="fn">ref</span>(<span class="st">'fct_orders'</span>)
+    <span class="kw">entities:</span>
+      <span class="kw">-</span> <span class="kw">name:</span> order_id
+        <span class="kw">type:</span> primary
+      <span class="kw">-</span> <span class="kw">name:</span> customer_id
+        <span class="kw">type:</span> foreign
+    <span class="kw">dimensions:</span>
+      <span class="kw">-</span> <span class="kw">name:</span> order_date
+        <span class="kw">type:</span> time
+        <span class="kw">type_params:</span>
+          <span class="kw">time_granularity:</span> day
+      <span class="kw">-</span> <span class="kw">name:</span> status
+        <span class="kw">type:</span> categorical
+    <span class="kw">measures:</span>
+      <span class="kw">-</span> <span class="kw">name:</span> order_total
+        <span class="kw">agg:</span> sum
+        <span class="kw">expr:</span> amount
+      <span class="kw">-</span> <span class="kw">name:</span> order_count
+        <span class="kw">agg:</span> count
+        <span class="kw">expr:</span> order_id</div>
+  </section>
+
+  <!-- ============ TIPOS DE MÉTRICAS ============ -->
+  <section class="section" id="s-tipos-metricas">
+    <div class="section-eyebrow">Do Simples ao Composto</div>
+    <div class="section-title">📊 Tipos de Métricas</div>
+    <p class="section-desc">Uma métrica final quase sempre é mais que "somar uma coluna" — pode ser uma razão entre duas medidas, um acumulado numa janela de tempo, ou uma combinação de outras métricas já existentes. As camadas semânticas modernas (seguindo o vocabulário do dbt Semantic Layer/MetricFlow) tipicamente reconhecem 5 formas. Clique em cada uma.</p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="metricTypeButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="metricTypeDetail">
+        <div class="ad-title">👆 Clique em um tipo de métrica</div>
+        <div class="ad-text">Veja a definição declarativa e um exemplo de uso de negócio.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODELAGEM DECLARATIVA ============ -->
+  <section class="section" id="s-modelagem">
+    <div class="section-eyebrow">Métricas como Código</div>
+    <div class="section-title">📝 Modelagem Declarativa</div>
+    <p class="section-desc">A diferença mais prática de trabalhar com camada semântica: em vez de copiar e colar um <code>CTE</code> de SQL em cada novo dashboard, você referencia uma métrica <strong>pelo nome</strong>. A definição vive em um arquivo versionado — revisável em Pull Request, testável, com histórico de mudanças no Git — não escondida dentro de um dashboard.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Sem camada semântica — o mesmo CTE, copiado em cada dashboard</div>
+        <div class="code-block">
+<span class="code-lang">sql (dashboard A)</span><span class="cm">-- dashboard de marketing</span>
+<span class="kw">SELECT</span>
+  <span class="fn">DATE_TRUNC</span>(<span class="st">'month'</span>, order_date) <span class="kw">AS</span> mes,
+  <span class="fn">SUM</span>(amount) <span class="kw">-</span> <span class="fn">SUM</span>(refund_amount) <span class="kw">AS</span> receita
+<span class="kw">FROM</span> fct_orders
+<span class="kw">WHERE</span> status <span class="kw">!=</span> <span class="st">'cancelled'</span>
+<span class="kw">GROUP BY</span> <span class="num">1</span>;
+<span class="cm">-- o dashboard B, do financeiro, reescreve</span>
+<span class="cm">-- essa mesma lógica de um jeito ligeiramente diferente</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Com camada semântica — uma definição, referenciada pelo nome</div>
+        <div class="code-block">
+<span class="code-lang">yaml (definido uma vez)</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">metrics:</span>
+  <span class="kw">-</span> <span class="kw">name:</span> revenue
+    <span class="kw">type:</span> simple
+    <span class="kw">type_params:</span>
+      <span class="kw">measure:</span> order_total_net
+    <span class="kw">filter:</span> <span class="st">"{{ Dimension('order__status') }} != 'cancelled'"</span>
+
+<span class="cm"># qualquer consumidor pede só isto:</span>
+<span class="cm"># metrics=["revenue"], group_by=["metric_time__month"]</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FERRAMENTAS ============ -->
+  <section class="section" id="s-ferramentas">
+    <div class="section-eyebrow">Ecossistema</div>
+    <div class="section-title">🔌 Principais Ferramentas</div>
+    <p class="section-desc">Não existe um único padrão — cada ferramenta tem sua própria linguagem de modelagem e forma de servir consultas. Clique em cada uma para ver como ela define uma métrica e a expõe.</p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="toolButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="toolDetail">
+        <div class="ad-title">👆 Clique em uma ferramenta</div>
+        <div class="ad-text">Veja como ela modela métricas e como uma consulta chega até elas.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">⚖️ Camada Semântica vs. Dashboards Soltos vs. Cubos OLAP</div>
+    <p class="section-desc">Cada abordagem resolve o problema de consistência em algum grau — a diferença está em <strong>onde a lógica mora</strong> e o quanto custa mudá-la depois.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Abordagem</th><th>Lógica mora em</th><th>Reuso entre ferramentas</th><th>Cache / Performance</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Dashboards soltos</strong></td><td>Dentro de cada dashboard individual</td><td>Nenhum — copiar e colar</td><td>Depende de cada ferramenta</td><td>Protótipos rápidos, times pequenos</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Cubo OLAP tradicional</strong> (SSAS/Essbase)</td><td>Cubo pré-processado no servidor</td><td>Alto, porém rígido e caro de alterar</td><td>Excelente (pré-agregado)</td><td>Empresas grandes com métricas estáveis</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Métricas hardcoded no BI</strong> (ex: LookML no Looker)</td><td>Dentro da própria ferramenta de BI</td><td>Médio — só ferramentas compatíveis</td><td>Bom dentro do ecossistema</td><td>Times 100% comprometidos com um único BI</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Camada semântica moderna</strong> (headless BI)</td><td>Código versionado, fora de qualquer BI</td><td>Alto e flexível — qualquer SQL/API/agente</td><td>Bom, com cache configurável ou push-down</td><td>Stacks modernos multi-ferramenta, incl. IA</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="canvas-wrap"><canvas id="compareCanvas" height="150"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Ilustrativo: número de lugares que precisam ser atualizados quando uma regra de negócio muda (ex: "receita líquida passa a excluir impostos") — quanto mais lugares, maior o risco de um ficar desatualizado.</div>
+  </section>
+
+  <!-- ============ CONSISTÊNCIA ============ -->
+  <section class="section" id="s-consistencia">
+    <div class="section-eyebrow">O Resultado Prático</div>
+    <div class="section-title">🔗 Uma Métrica, Múltiplos Consumidores</div>
+    <p class="section-desc">Volte à pergunta do início da aula — "qual foi a receita de junho?" — feita por quatro consumidores diferentes. Alterne entre os dois cenários.</p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnConsistWithout" onclick="setConsistencyMode('without')">🧨 Sem camada semântica</button>
+        <button class="btn-toggle" id="btnConsistWith" onclick="setConsistencyMode('with')">✅ Com camada semântica</button>
+      </div>
+      <div class="stat-cards" id="consistStats" style="grid-template-columns:repeat(4,1fr);"></div>
+      <div class="highlight-box" id="consistMsg" style="margin-top:14px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ MEDALLION SEMÂNTICO (GRAFO DE CONHECIMENTO) ============ -->
+  <section class="section" id="s-medallion-semantico">
+    <div class="section-eyebrow">Uma Segunda Interpretação</div>
+    <div class="section-title">🕸️ Medallion Semântico: Camada Semântica como Grafo de Conhecimento</div>
+    <p class="section-desc">
+      Até aqui, "camada semântica" significou <strong>metrics layer</strong>: garantir que uma métrica como <code>revenue</code> tenha a mesma fórmula em qualquer ferramenta. Mas o termo tem uma segunda vida na indústria, vinda da tradição de <em>semantic web</em>: uma camada que garante que as <strong>relações entre entidades</strong> — não os números — sejam um fato explícito e navegável, em vez de lógica de <code>JOIN</code> que existe só enquanto a consulta roda. É essa leitura que dá nome ao <strong>Medallion Semântico</strong>: estender a arquitetura Bronze/Silver/Gold com uma quarta camada, focada em significado.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📏 Camada Semântica como Metrics Layer</div>
+        <div class="card-text">O que vimos até aqui (dbt Semantic Layer, Cube, LookML). Resolve: <em>"receita" calculada diferente em cada ferramenta</em>. Unidade de consistência: a <strong>fórmula de uma métrica</strong>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🕸️ Camada Semântica como Grafo de Conhecimento</div>
+        <div class="card-text">O que vemos nesta seção (RDF, triplas, SPARQL). Resolve: <em>relação entre entidades some depois que a consulta termina</em>. Unidade de consistência: a <strong>relação entre duas entidades</strong>.</div>
+      </div>
+    </div>
+
+    <p class="section-desc">O Medallion tradicional organiza o dado por <strong>qualidade</strong>: Bronze (cru) → Silver (limpo, tipado) → Gold (pronto para análise). O Medallion Semântico acrescenta uma quarta etapa, focada em <strong>significado</strong>:</p>
+
+    <div class="code-block" style="white-space:pre;">
+<span class="code-lang">pipeline</span>Bronze   → dado cru
+Silver   → dado limpo
+Gold     → dado pronto para análise
+<span class="kw">Semantic → dado conectado por significado</span></div>
+
+    <div class="info-box">
+      <p>💡 A camada Semantic não substitui o Gold — ela <strong>nasce a partir dele</strong>. O Gold continua sendo o dado curado e confiável; a camada semântica pega esse dado e transforma relações hoje implícitas (escondidas dentro de um <code>JOIN</code>) em fatos explícitos, gravados como parte do próprio dado.</p>
+    </div>
+
+    <p class="section-desc"><strong>O problema que motiva isso:</strong> tabelas Gold podem estar corretas, bem tipadas e com métricas batendo — e um agente de IA ainda assim tropeçar numa pergunta simples como <em>"quem é esse profissional?"</em>, porque responder de verdade exige conectar profissional, vínculo empregatício, estabelecimento e município. Essa conexão existe hoje só dentro do SQL de um <code>JOIN</code>: nasce quando a consulta roda, e desaparece logo depois. Para um analista experiente que já conhece o domínio, tudo bem. Para uma máquina, cada coluna pode parecer uma ilha isolada.</p>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">A decisão central da modelagem: o vínculo precisa virar entidade (reificação)</div>
+    <p class="section-desc" style="margin-top:-4px;">É tentador ligar profissional direto ao estabelecimento. Mas um profissional pode ter <em>múltiplos</em> vínculos (CLT 40h num lugar, PJ 12h em outro) — se CBO, tipo de contrato e carga horária ficarem pendurados direto no profissional, os atributos de vínculos diferentes se misturam, e a carga horária de um contrato pode se combinar com o tipo de outro. <strong>Reificação</strong> é tratar essa relação como uma entidade própria, com identidade e atributos dela mesma.</p>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">🧨 Sem reificação — os dois vínculos se misturam dentro do Profissional</div>
+    <div style="overflow-x:auto;">
+      <div class="kg-diagram" id="kgReifBad" style="height:230px;">
+        <svg class="kg-svg" id="kgReifBadSvg"></svg>
+        <div class="kg-node warn" id="kgReifBad-prof" style="left:0px;top:75px;width:230px;">
+          <div class="kg-node-title">Profissional 10001</div>
+          <div class="kg-node-attr warn">▸ exerceCBO: "225125" e "322205"</div>
+          <div class="kg-node-attr warn">▸ tipoVinculo: "CLT" e "PJ"</div>
+          <div class="kg-node-attr warn">▸ cargaHoraria: 40 e 12 ⚠️ misturado</div>
+        </div>
+        <div class="kg-node entity" id="kgReifBad-estabA" style="left:620px;top:10px;width:190px;">
+          <div class="kg-node-title">Estabelecimento A</div>
+          <div class="kg-node-attr">▸ rdfs:label: "UBS Asa Norte"</div>
+        </div>
+        <div class="kg-node entity alt" id="kgReifBad-estabB" style="left:620px;top:165px;width:190px;">
+          <div class="kg-node-title">Estabelecimento B</div>
+          <div class="kg-node-attr">▸ rdfs:label: "Hospital de Base"</div>
+        </div>
+      </div>
+    </div>
+    <p class="kg-caption">Com dois vínculos ligados direto ao mesmo Profissional, não dá para saber, só olhando o nó, qual CBO/tipo/carga pertence a qual estabelecimento — os atributos viram uma lista ambígua.</p>
+
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:16px;">✅ Com reificação — cada vínculo carrega seus próprios atributos</div>
+    <div style="overflow-x:auto;">
+      <div class="kg-diagram" id="kgReifGood" style="height:260px;">
+        <svg class="kg-svg" id="kgReifGoodSvg"></svg>
+        <div class="kg-node entity" id="kgReifGood-prof" style="left:0px;top:95px;width:150px;">
+          <div class="kg-node-title">Profissional 10001</div>
+        </div>
+        <div class="kg-node entity" id="kgReifGood-vincA" style="left:260px;top:10px;width:210px;">
+          <div class="kg-node-title">Vínculo A</div>
+          <div class="kg-node-attr">▸ exerceCBO: "225125"</div>
+          <div class="kg-node-attr">▸ tipoVinculo: "CLT"</div>
+          <div class="kg-node-attr">▸ cargaHoraria: 40</div>
+        </div>
+        <div class="kg-node entity alt" id="kgReifGood-vincB" style="left:260px;top:170px;width:210px;">
+          <div class="kg-node-title">Vínculo B</div>
+          <div class="kg-node-attr">▸ exerceCBO: "322205"</div>
+          <div class="kg-node-attr">▸ tipoVinculo: "PJ"</div>
+          <div class="kg-node-attr">▸ cargaHoraria: 12</div>
+        </div>
+        <div class="kg-node entity" id="kgReifGood-estabA" style="left:640px;top:10px;width:190px;">
+          <div class="kg-node-title">Estabelecimento A</div>
+          <div class="kg-node-attr">▸ rdfs:label: "UBS Asa Norte"</div>
+        </div>
+        <div class="kg-node entity alt" id="kgReifGood-estabB" style="left:640px;top:170px;width:190px;">
+          <div class="kg-node-title">Estabelecimento B</div>
+          <div class="kg-node-attr">▸ rdfs:label: "Hospital de Base"</div>
+        </div>
+      </div>
+    </div>
+    <p class="kg-caption">O mesmo Profissional agora se conecta a dois nós <strong>Vínculo</strong> distintos — cada um com seus próprios atributos e seu próprio Estabelecimento. Somar a carga horária do CBO 225125 não puxa mais os 12h do vínculo PJ por engano.</p>
+
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:16px;">Clique para o detalhe de cada bloco</div>
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">⚠️ Ligação direta (sem reificação)</div>
+          <div class="pq-clickable" data-id="reif-direct" onclick="pickReification('reif-direct')">Profissional → trabalha em → Estabelecimento</div>
+          <div class="pq-clickable" data-id="reif-direct-risk" onclick="pickReification('reif-direct-risk')">CBO, tipo e carga horária pendurados no Profissional</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">✅ Vínculo como entidade (reificação)</div>
+          <div class="pq-clickable" data-id="reif-entity" onclick="pickReification('reif-entity')">Profissional → temVínculo → Vínculo → comEstabelecimento → Estabelecimento</div>
+          <div class="pq-clickable" data-id="reif-entity-attrs" onclick="pickReification('reif-entity-attrs')">CBO, tipo e carga horária pendurados no Vínculo</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="reificationDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Veja por que "pendurar" atributos de contrato direto no profissional quebra quando ele tem mais de um vínculo.</div>
+      </div>
+    </div>
+
+    <p class="section-desc">Com o vínculo reificado, a modelagem em Turtle (a sintaxe textual mais comum para RDF) fica assim para um profissional com um único vínculo:</p>
+    <div class="code-block">
+<span class="code-lang">turtle</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">@prefix</span> sus: <span class="kw">&lt;</span>https://saude.gov/ontologia/<span class="kw">&gt;</span> .
+
+<span class="kw">&lt;</span>https://saude.gov/profissional/10001<span class="kw">&gt;</span> <span class="kw">a</span> sus:Profissional ;
+    sus:temVinculo <span class="kw">&lt;</span>https://saude.gov/vinculo/10001_2077469<span class="kw">&gt;</span> .
+
+<span class="kw">&lt;</span>https://saude.gov/vinculo/10001_2077469<span class="kw">&gt;</span> <span class="kw">a</span> sus:Vinculo ;
+    sus:comEstabelecimento <span class="kw">&lt;</span>https://saude.gov/cnes/2077469<span class="kw">&gt;</span> ;
+    sus:exerceCBO <span class="st">"225125"</span> ;
+    sus:tipoVinculo <span class="st">"CLT"</span> ;
+    sus:cargaHoraria <span class="num">40</span> .</div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">👆 O mesmo grafo, desenhado como nós e arestas</div>
+    <div style="overflow-x:auto;">
+      <div class="kg-diagram" id="kgMain" style="height:150px;">
+        <svg class="kg-svg" id="kgMainSvg"></svg>
+        <div class="kg-node entity" id="kgMain-prof" style="left:0px;top:45px;width:150px;">
+          <div class="kg-node-title">Profissional 10001</div>
+        </div>
+        <div class="kg-node entity" id="kgMain-vinc" style="left:250px;top:10px;width:210px;">
+          <div class="kg-node-title">Vínculo 10001_2077469</div>
+          <div class="kg-node-attr">▸ exerceCBO: "225125"</div>
+          <div class="kg-node-attr">▸ tipoVinculo: "CLT"</div>
+          <div class="kg-node-attr">▸ cargaHoraria: 40</div>
+        </div>
+        <div class="kg-node entity" id="kgMain-estab" style="left:570px;top:20px;width:190px;">
+          <div class="kg-node-title">Estabelecimento 2077469</div>
+          <div class="kg-node-attr">▸ rdfs:label: "UBS Asa Norte"</div>
+        </div>
+        <div class="kg-node entity" id="kgMain-mun" style="left:840px;top:50px;width:140px;">
+          <div class="kg-node-title">Município 530010</div>
+        </div>
+      </div>
+    </div>
+    <p class="kg-caption">Cada seta é uma tripla — <code>sujeito → predicado → objeto</code>. As linhas pontuadas dentro do bloco Vínculo (<code>▸</code>) também são triplas: o objeto ali é um <em>literal</em> (texto/número), não outra entidade — por isso não viram uma nova caixa no grafo.</p>
+
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:4px;">Vocabulário: os termos por trás de um grafo de conhecimento</div>
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="rdfTermButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="rdfTermDetail">
+        <div class="ad-title">👆 Clique em um termo</div>
+        <div class="ad-text">RDF, IRI, tripla, SPARQL e reificação — os cinco conceitos que sustentam essa abordagem.</div>
+      </div>
+    </div>
+
+    <p class="section-desc">Na prática, um laboratório simples reaproveita o que a aula já cobriu: o Gold continua em <strong>Parquet</strong>, lido com <strong>DuckDB</strong>; a diferença é uma etapa de projeção que transforma as linhas em triplas RDF e as consulta com <strong>SPARQL</strong> em vez de SQL.</p>
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> duckdb
+<span class="kw">from</span> rdflib <span class="kw">import</span> Graph, Namespace, Literal
+<span class="kw">from</span> rdflib.namespace <span class="kw">import</span> RDF
+
+SUS = Namespace(<span class="st">"https://saude.gov/ontologia/"</span>)
+con = duckdb.<span class="fn">connect</span>()
+vinculos = con.<span class="fn">sql</span>(<span class="st">"SELECT * FROM read_parquet('gold_vinculos.parquet')"</span>).<span class="fn">fetchall</span>()
+
+g = Graph()
+<span class="kw">for</span> prof, cnes, cbo, tipo, carga <span class="kw">in</span> vinculos:
+    vinc = SUS[<span class="fn">f</span><span class="st">"vinculo/{prof}_{cnes}"</span>]
+    g.<span class="fn">add</span>((SUS[<span class="fn">f</span><span class="st">"profissional/{prof}"</span>], SUS.temVinculo, vinc))
+    g.<span class="fn">add</span>((vinc, SUS.comEstabelecimento, SUS[<span class="fn">f</span><span class="st">"cnes/{cnes}"</span>]))
+    g.<span class="fn">add</span>((vinc, SUS.cargaHoraria, Literal(<span class="fn">int</span>(carga))))
+
+g.<span class="fn">serialize</span>(<span class="st">"sus.ttl"</span>, format=<span class="st">"turtle"</span>)
+
+<span class="cm"># consulta: carga horária total do profissional 10001</span>
+<span class="fn">print</span>(g.<span class="fn">query</span>(<span class="st">"""
+    PREFIX sus: &lt;https://saude.gov/ontologia/&gt;
+    SELECT (SUM(?carga) AS ?total) WHERE {
+        &lt;https://saude.gov/ontologia/profissional/10001&gt; sus:temVinculo ?v .
+        ?v sus:cargaHoraria ?carga .
+    }
+"""</span>))</div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🏗️ Em produção: Iceberg/Delta como origem</div><div class="card-text">O padrão continua o mesmo — <code>Gold confiável → projeção semântica → grafo consultável</code> — só que o job de projeção lê de Iceberg/Delta em vez de Parquet local, e materializa incrementalmente, não do zero a cada execução.</div></div>
+      <div class="card"><div class="card-title">📉 Nem tudo vira tripla</div><div class="card-text">O grafo não deve replicar o lakehouse inteiro — o dado denso e volumoso continua lá. Só as relações relevantes para navegação, explicabilidade e raciocínio de agentes valem a materialização.</div></div>
+      <div class="card"><div class="card-title">🔄 Sincronização é trabalho contínuo</div><div class="card-text">Se o Gold muda, o grafo precisa acompanhar — versionamento da ontologia, validação de IRIs e linhagem entre Gold e Semantic viram responsabilidades novas, não só uma migração única.</div></div>
+    </div>
+
+    <div class="warn-box"><p>⚠️ O Medallion Semântico não é mágica: exige modelagem de domínio (decidir o que é entidade, relação ou atributo — nenhuma ferramenta faz isso sozinha), tem custo de escala (materializar grafo a partir de bilhões de linhas é caro) e risco de governança (uma ontologia malfeita produz um grafo bonito e errado — pior que uma tabela confusa, porque passa uma falsa sensação de organização).</p></div>
+  </section>
+
+  <!-- ============ CAMADA SEMÂNTICA + IA ============ -->
+  <section class="section" id="s-ia">
+    <div class="section-eyebrow">A Fronteira Atual</div>
+    <div class="section-title">🤖 Camada Semântica + Agentes de IA</div>
+    <p class="section-desc">
+      Um agente de IA que gera SQL diretamente sobre centenas de tabelas brutas tende a <strong>alucinar</strong> joins, escolher a coluna errada entre várias parecidas, ou simplesmente reinventar sua própria fórmula de "receita" — exatamente o mesmo problema de metric sprawl, só que automatizado. Apontar o agente para a camada semântica em vez do schema bruto resolve boa parte disso: em vez de "escreva um SELECT sobre 200 tabelas", o agente recebe um <strong>menu curado</strong> de métricas e dimensões já nomeadas, descritas e testadas — e só precisa escolher entre elas. É o mesmo racional do <a href="#s-medallion-semantico" style="color:var(--accent);">Medallion Semântico</a> visto na seção anterior, só que resolvendo relações em vez de métricas: um agente que percorre <code>Profissional → temVínculo → Estabelecimento</code> como fatos explícitos erra muito menos do que um que precisa adivinhar qual coluna faz o join.
+    </p>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🎯 Menos alucinação</div><div class="card-text">Um punhado de métricas com nome e descrição de negócio é muito mais fácil de escolher corretamente do que centenas de colunas e tabelas ambíguas.</div></div>
+      <div class="card"><div class="card-title">🔒 Governança preservada</div><div class="card-text">O agente fica sujeito às mesmas regras (filtros, permissões, definições) que um analista humano — a resposta do bot no Slack bate com o dashboard oficial.</div></div>
+      <div class="card"><div class="card-title">🗣️ Linguagem natural, consulta estruturada</div><div class="card-text">O agente traduz a pergunta em linguagem natural para uma chamada estruturada à camada semântica (via API/MCP), não para SQL livre contra o warehouse.</div></div>
+    </div>
+    <div class="info-box">
+      <p>💡 Esse é o racional por trás de servidores <strong>MCP (Model Context Protocol)</strong> para camada semântica, como o do dbt e o de Cube: eles expõem as métricas já definidas como ferramentas que um agente de IA pode chamar diretamente, em vez do agente precisar reconstruir a lógica de negócio do zero a cada pergunta. Mas atenção: o agente só é tão preciso quanto a documentação da camada semântica — métrica sem descrição clara de negócio continua sendo escolhida errado, só que agora com mais confiança.</p>
+    </div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casos-uso">
+    <div class="section-eyebrow">Onde ela Brilha</div>
+    <div class="section-title">🎯 Casos de Uso</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📊 BI multiplataforma consistente</div><div class="card-text">Tableau, Power BI e Looker Studio consultando as mesmas métricas oficiais, em vez de reimplementar a lógica em cada ferramenta.</div></div>
+      <div class="card"><div class="card-title">🐍 Notebooks reaproveitando métricas oficiais</div><div class="card-text">Cientistas de dados puxam <code>revenue</code> e <code>churn_rate</code> já prontos via API/SDK, sem reescrever SQL de negócio a cada análise exploratória.</div></div>
+      <div class="card"><div class="card-title">🤖 Chatbots e agentes respondendo perguntas de negócio</div><div class="card-text">"Qual foi o churn do último trimestre?" no Slack retorna o mesmo número que está no dashboard executivo.</div></div>
+      <div class="card"><div class="card-title">📈 Métricas financeiras auditáveis</div><div class="card-text">Definições versionadas em Git dão rastreabilidade — útil sob exigências de governança e auditoria regulatória.</div></div>
+      <div class="card"><div class="card-title">🔁 Migração de warehouse sem quebrar dashboards</div><div class="card-text">Troca-se o banco por trás (ex: Redshift → BigQuery); a camada semântica recompila as mesmas definições para o novo dialeto de SQL.</div></div>
+      <div class="card"><div class="card-title">🧪 Testes automatizados de métricas</div><div class="card-text">CI valida que uma mudança em um modelo upstream não alterou silenciosamente o valor de uma métrica já publicada.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ NA PRÁTICA ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🐍 Camada Semântica na Prática</div>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">dbt Semantic Layer (MetricFlow) — consultando pela CLI</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># metrics.yml já definido no projeto dbt</span>
+mf query <span class="kw">--metrics</span> revenue,order_count <span class="kw">--group-by</span> metric_time__month
+
+<span class="cm"># mesma pergunta, via API GraphQL do dbt Cloud</span>
+<span class="cm"># (usado por BI, Python ou um agente de IA)</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Cube — schema + consulta via REST API</div>
+        <div class="code-block">
+<span class="code-lang">javascript</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">cube</span>(<span class="st">'Orders'</span>, {
+  measures: {
+    revenue: { sql: <span class="st">`amount`</span>, type: <span class="st">`sum`</span> }
+  },
+  dimensions: {
+    status: { sql: <span class="st">`status`</span>, type: <span class="st">`string`</span> }
+  }
+});
+
+<span class="cm">// GET /cubejs-api/v1/load?query={"measures":["Orders.revenue"]}</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python — consultando a camada em vez do warehouse direto</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">from</span> dbtsl <span class="kw">import</span> SemanticLayerClient
+
+client = SemanticLayerClient(<span class="kw">environment_id</span>=<span class="num">12345</span>)
+df = client.<span class="fn">query</span>(
+    metrics=[<span class="st">"revenue"</span>],
+    group_by=[<span class="st">"metric_time__month"</span>, <span class="st">"customer__region"</span>]
+)</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">LookML — definindo uma medida dentro de uma view</div>
+        <div class="code-block">
+<span class="code-lang">lookml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">view:</span> orders {
+  <span class="kw">measure:</span> revenue {
+    <span class="kw">type:</span> sum
+    <span class="kw">sql:</span> ${TABLE}.amount ;;
+    <span class="kw">filters:</span> [status: <span class="st">"-cancelled"</span>]
+  }
+}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">📚 Documente cada métrica</div><div class="card-text">Descrição de negócio, dono, e a fórmula em português claro — é isso que faz humanos e agentes de IA escolherem a métrica certa.</div></div>
+      <div class="card"><div class="card-title">🧪 Teste métricas como código</div><div class="card-text">Valide em CI que uma mudança no modelo upstream não alterou silenciosamente o resultado de uma métrica já publicada.</div></div>
+      <div class="card"><div class="card-title">🔁 Uma métrica, uma definição</div><div class="card-text">Resista à tentação de criar uma "revenue_v2" paralela — corrija ou versione a definição original em vez de duplicá-la.</div></div>
+      <div class="card"><div class="card-title">🕒 Cuidado com granularidade temporal</div><div class="card-text">Combinar métricas com <em>time grains</em> diferentes (diário vs. mensal) sem ajuste explícito produz números sutilmente errados.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Camada semântica não substitui uma boa modelagem de dados. Ela consome modelos já limpos e bem estruturados (star schema, tabelas de fatos e dimensões bem definidas) — se o dado de origem está sujo ou mal modelado, a camada semântica só vai formalizar e distribuir esse problema mais rápido, não corrigi-lo.</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Camada Semântica</span>
+    <span>
+      Fontes: <a href="https://docs.getdbt.com/docs/use-dbt-semantic-layer/dbt-sl" target="_blank" rel="noopener">dbt Semantic Layer Docs</a> ·
+      <a href="https://cube.dev/docs" target="_blank" rel="noopener">Cube Docs</a> ·
+      <a href="https://cloud.google.com/looker/docs/what-is-lookml" target="_blank" rel="noopener">LookML Docs</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🧩', label:'O que é'},
+  {id:'s-problema', icon:'🔥', label:'O Problema'},
+  {id:'s-arquitetura', icon:'🏗️', label:'Arquitetura'},
+  {id:'s-componentes', icon:'📐', label:'Componentes'},
+  {id:'s-tipos-metricas', icon:'📊', label:'Tipos de Métricas'},
+  {id:'s-modelagem', icon:'📝', label:'Modelagem'},
+  {id:'s-ferramentas', icon:'🔌', label:'Ferramentas'},
+  {id:'s-comparacao', icon:'⚖️', label:'Comparação'},
+  {id:'s-consistencia', icon:'🔗', label:'Consistência'},
+  {id:'s-medallion-semantico', icon:'🕸️', label:'Grafo Semântico'},
+  {id:'s-ia', icon:'🤖', label:'Camada + IA'},
+  {id:'s-casos-uso', icon:'🎯', label:'Casos de Uso'},
+  {id:'s-codigo', icon:'🐍', label:'Na Prática'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== SCATTERED DEFINITIONS GRIDS ===================== */
+function buildFragmentGrids(){
+  const without = [
+    {l:'Tableau<br>SUM(amount)', c:'wasted'},
+    {l:'Python<br>SUM(net_amount)', c:'wasted'},
+    {l:'Excel<br>pivot manual', c:'wasted'},
+    {l:'Slack bot<br>SUM(amount)-refund', c:'wasted'},
+  ];
+  const withLayer = [
+    {l:'Tableau<br>metric: revenue', c:'used'},
+    {l:'Python<br>metric: revenue', c:'used'},
+    {l:'Excel<br>metric: revenue', c:'used'},
+    {l:'Slack bot<br>metric: revenue', c:'used'},
+  ];
+  document.getElementById('clWithout').innerHTML = without.map(d => `<div class="cl-cell ${d.c}">${d.l}</div>`).join('');
+  document.getElementById('clWith').innerHTML = withLayer.map(d => `<div class="cl-cell ${d.c}">${d.l}</div>`).join('');
+}
+buildFragmentGrids();
+
+/* ===================== FRAGMENTATION CALCULATOR ===================== */
+function updateFragCalc(){
+  const tools = +document.getElementById('fragTools').value;
+  const teams = +document.getElementById('fragTeams').value;
+  document.getElementById('fragToolsVal').textContent = tools;
+  document.getElementById('fragTeamsVal').textContent = teams;
+  const potential = tools * teams;
+  drawFragCanvas(potential);
+  const msg = document.getElementById('fragMsg');
+  if(potential <= 6){
+    msg.className = 'ok-box';
+    msg.innerHTML = `<div class="highlight-title">✅ Risco ainda gerenciável</div><p>Com ${tools} ferramentas e ${teams} times, existem até <strong>${potential}</strong> combinações que poderiam definir "receita" de um jeito próprio — dá para acompanhar manualmente, mas já vale formalizar a definição.</p>`;
+  } else if(potential <= 30){
+    msg.className = 'highlight-box';
+    msg.innerHTML = `<div class="highlight-title">🔶 Zona de metric sprawl</div><p>Até <strong>${potential}</strong> combinações possíveis de ferramenta × time podem, cada uma, reescrever "receita" à sua moeda. É nessa faixa que os números começam a divergir entre reuniões sem ninguém perceber.</p>`;
+  } else {
+    msg.className = 'warn-box';
+    msg.innerHTML = `<div class="highlight-title">⚠️ Alto risco de metric sprawl</div><p>Até <strong>${potential}</strong> definições divergentes possíveis de uma mesma métrica. Sem uma camada semântica centralizando a lógica, é questão de tempo até "receita" significar coisas diferentes em duas reuniões no mesmo dia.</p>`;
+  }
+}
+function drawFragCanvas(potential){
+  const cv = document.getElementById('fragCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 90;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const maxVal = Math.max(potential, 10) * 1.15;
+  const padL = 190, padR = 20, barH = 24, gap = 18;
+  const rows = [ ['Sem camada semântica (definições possíveis)', potential, potential>30?'#f86b63':(potential>6?'#c49aff':'#36a2ef')], ['Com camada semântica (definições)', 1, '#7dded8'] ];
+  rows.forEach(([label,val,color],i) => {
+    const y = 8 + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(label, 0, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,5); ctx.fill();
+    const barW = Math.max(4, trackW*(val/maxVal));
+    ctx.fillStyle = color; roundRect(ctx,padL,y,barW,barH,5); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText(val.toLocaleString('pt-BR'), padL+8, y+barH*0.65);
+  });
+}
+updateFragCalc();
+window.addEventListener('resize', updateFragCalc);
+
+/* ===================== ARCHITECTURE DIAGRAM ===================== */
+const semArchitectureInfo = {
+  'raw-warehouse': {t:'Data Warehouse / Lakehouse (tabelas brutas)', d:'Fatos e dimensões armazenados fisicamente — sem opinião nenhuma sobre o que é "receita" ou "cliente ativo". Isso fica a cargo de quem consulta.'},
+  'raw-bi': {t:'Ferramenta de BI (lógica própria em SQL)', d:'Cada dashboard escreve seu próprio SQL de agregação. Funciona isoladamente, mas nada garante que outro dashboard use os mesmos filtros e joins.'},
+  'raw-script': {t:'Notebook / script Python (lógica própria)', d:'Um cientista de dados reescreve a mesma lógica de negócio em pandas/SQL, geralmente sem saber exatamente como o BI a calculou.'},
+  'raw-inconsist': {t:'Números que não batem entre relatórios', d:'O resultado inevitável: pequenas divergências de filtro, escopo temporal ou câmbio produzem números diferentes para a "mesma" métrica — e ninguém sabe qual está certo.'},
+  'sem-warehouse': {t:'Data Warehouse / Lakehouse (tabelas brutas)', d:'A mesma fonte de dados de antes — a camada semântica não duplica dado, ela só adiciona uma camada de tradução por cima.'},
+  'sem-layer': {t:'Camada Semântica (métricas, dimensões, joins)', d:'Recebe a pergunta declarativa ("revenue por mês") e a compila para SQL otimizado contra o warehouse, aplicando os joins e filtros corretos automaticamente.'},
+  'sem-consumers': {t:'BI, Python, Excel, Slack, agentes de IA', d:'Todos os consumidores param de escrever lógica de negócio — eles só pedem a métrica pelo nome, via SQL, API REST, GraphQL ou driver JDBC/ODBC.'},
+  'sem-consist': {t:'Mesmo número, em qualquer lugar', d:'Porque a lógica existe em um único lugar, o valor de "revenue" é idêntico não importa qual consumidor perguntou — a origem do metric sprawl deixa de existir.'},
+};
+function pickSemArch(id){
+  document.querySelectorAll('#s-arquitetura .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = semArchitectureInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-arquitetura [data-id="${id}"]`).classList.add('active');
+  document.getElementById('semArchDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== METRIC TYPES PICKER ===================== */
+const metricTypesInfo = {
+  simple: {t:'Simple', code:`type: simple\ntype_params:\n  measure: order_total`, d:'A forma mais direta: uma agregação de uma única medida, sem transformação adicional. Exemplo: <code>revenue = SUM(amount)</code>.'},
+  ratio: {t:'Ratio', code:`type: ratio\ntype_params:\n  numerator: profit\n  denominator: revenue`, d:'A divisão entre duas outras métricas já definidas. Exemplo: <code>profit_margin = profit / revenue</code> — nunca soma direta de coluna.'},
+  cumulative: {t:'Cumulative', code:`type: cumulative\ntype_params:\n  measure: order_total\n  window: 7 days`, d:'Acumula uma medida numa janela de tempo (rolling) ou desde o início do período (grain-to-date). Exemplo: <code>revenue_7d</code> ou receita "mês até a data" (MTD).'},
+  derived: {t:'Derived', code:`type: derived\ntype_params:\n  expr: (revenue - revenue_prior_month) / revenue_prior_month`, d:'Combina métricas já existentes numa expressão. Exemplo: <code>revenue_growth</code> — crescimento percentual mês a mês, sem recalcular receita do zero.'},
+  conversion: {t:'Conversion', code:`type: conversion\ntype_params:\n  base_measure: signups\n  conversion_measure: purchases\n  window: 7 days`, d:'Taxa de conversão entre dois eventos dentro de uma janela de tempo, para a mesma entidade. Exemplo: <code>signup_to_purchase_rate</code> em até 7 dias.'},
+};
+function buildMetricTypeButtons(){
+  document.getElementById('metricTypeButtons').innerHTML = Object.keys(metricTypesInfo).map(k =>
+    `<button class="btn-toggle" data-mt="${k}" onclick="pickMetricType('${k}')">${metricTypesInfo[k].t}</button>`
+  ).join('');
+}
+function pickMetricType(key){
+  document.querySelectorAll('#metricTypeButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.mt === key));
+  const info = metricTypesInfo[key];
+  document.getElementById('metricTypeDetail').innerHTML = `
+    <div class="ad-title">${info.t}</div>
+    <div class="ad-text">${info.d}</div>
+    <div class="code-block" style="margin-top:10px;"><span class="code-lang">yaml</span>${info.code.split('\n').map(l => l.replace(/^(\s*)([a-z_]+):/, '$1<span class="kw">$2:</span>')).join('\n')}</div>
+  `;
+}
+buildMetricTypeButtons();
+
+/* ===================== TOOLS PICKER ===================== */
+const toolsInfo = {
+  dbt: {t:'dbt Semantic Layer (MetricFlow)', code:`# metrics.yml, versionado no projeto dbt\nmf query --metrics revenue --group-by metric_time__month`, d:'Métricas definidas como YAML dentro do próprio projeto dbt, compiladas pelo MetricFlow. Consultadas via CLI, driver JDBC/ODBC, ou GraphQL do dbt Cloud — sem sair do fluxo de transformação já existente.'},
+  cube: {t:'Cube', code:`cube('Orders', {\n  measures: { revenue: { sql: 'amount', type: 'sum' } }\n});\n// GET /cubejs-api/v1/load?query=...`, d:'Open-source, schema em JS/YAML, arquitetura headless BI pioneira. Expõe REST, GraphQL e um endpoint SQL, com cache/pré-agregação embutidos para acelerar consultas repetidas.'},
+  lookml: {t:'LookML (Looker)', code:`view: orders {\n  measure: revenue {\n    type: sum\n    sql: \${TABLE}.amount ;;\n  }\n}`, d:'Linguagem de modelagem pioneira (2012), fortemente acoplada à ferramenta Looker — views e explores geram o SQL por trás dos dashboards e exploradores do próprio Looker.'},
+  atscale: {t:'AtScale', code:`# camada de cubo virtual\n# Excel/Tableau/Power BI conectam via SQL/MDX/XMLA\n# como se fosse um cubo OLAP, sem mover os dados`, d:'Camada semântica corporativa que expõe cubos virtuais sobre o warehouse — Excel, Tableau e Power BI conectam via SQL, MDX ou XMLA como se fosse um cubo OLAP tradicional, sem duplicar dados.'},
+  malloy: {t:'Malloy', code:`query: orders -> {\n  group_by: order_month is order_date.month\n  aggregate: revenue is amount.sum()\n}`, d:'Linguagem de modelagem e consulta open-source, criada pelo autor original do LookML (hoje no Google). Consultas compõem e aninham naturalmente, pensada para substituir SQL bruto no dia a dia analítico.'},
+  powerbi: {t:'Power BI / Analysis Services', code:`Revenue = SUM(Orders[Amount]) - SUM(Orders[Refund])\n// medida DAX dentro do modelo semântico do Power BI`, d:'Modelo tabular nativo da Microsoft (Analysis Services), com medidas escritas em DAX — a camada semântica mais implantada no mundo corporativo já rodando sobre Microsoft 365/Fabric.'},
+};
+function buildToolButtons(){
+  document.getElementById('toolButtons').innerHTML = Object.keys(toolsInfo).map(k =>
+    `<button class="btn-toggle" data-tool="${k}" onclick="pickTool('${k}')">${toolsInfo[k].t}</button>`
+  ).join('');
+}
+function pickTool(key){
+  document.querySelectorAll('#toolButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.tool === key));
+  const info = toolsInfo[key];
+  document.getElementById('toolDetail').innerHTML = `
+    <div class="ad-title">${info.t}</div>
+    <div class="ad-text">${info.d}</div>
+    <div class="code-block" style="margin-top:10px;"><span class="code-lang">code</span>${info.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+  `;
+}
+buildToolButtons();
+
+/* ===================== COMPARISON CANVAS ===================== */
+function drawCompareCanvas(){
+  const cv = document.getElementById('compareCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Camada semântica moderna', val:1, color:'#06b6d4'},
+    {name:'Cubo OLAP tradicional', val:3, color:'#c49aff'},
+    {name:'Métricas hardcoded no BI', val:5, color:'#36a2ef'},
+    {name:'Dashboards soltos', val:12, color:'#f86b63'},
+  ];
+  const padB = 26, padTop=14, barGap=18;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = 13;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, barH, 5); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='11px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText(d.val + ' lugar' + (d.val>1?'es':''), x+barW/2, y-6);
+    ctx.fillStyle = '#98a2b3'; ctx.font='9.5px Inter, sans-serif';
+    const words = d.name.split(' ');
+    ctx.fillText(words.slice(0, Math.ceil(words.length/2)).join(' '), x+barW/2, h-18);
+    ctx.fillText(words.slice(Math.ceil(words.length/2)).join(' '), x+barW/2, h-8);
+    ctx.textAlign='left';
+  });
+}
+drawCompareCanvas();
+window.addEventListener('resize', drawCompareCanvas);
+
+/* ===================== CONSISTENCY DEMO ===================== */
+const consistencyData = {
+  without: [
+    {l:'Tableau', v:'R$ 1.310.200', c:'c-red'},
+    {l:'Python (pandas)', v:'R$ 1.198.500', c:'c-red'},
+    {l:'Excel', v:'R$ 1.276.900', c:'c-red'},
+    {l:'Slack Bot (IA)', v:'R$ 1.245.000', c:'c-blue'},
+  ],
+  with: [
+    {l:'Tableau', v:'R$ 1.245.000', c:'c-green'},
+    {l:'Python (pandas)', v:'R$ 1.245.000', c:'c-green'},
+    {l:'Excel', v:'R$ 1.245.000', c:'c-green'},
+    {l:'Slack Bot (IA)', v:'R$ 1.245.000', c:'c-green'},
+  ],
+};
+function setConsistencyMode(mode){
+  document.getElementById('btnConsistWithout').classList.toggle('active', mode==='without');
+  document.getElementById('btnConsistWith').classList.toggle('active', mode==='with');
+  document.getElementById('consistStats').innerHTML = consistencyData[mode].map(d =>
+    `<div class="stat-card ${d.c}"><div class="stat-card-label">${d.l}</div><div class="stat-card-value" style="font-size:15px;">${d.v}</div></div>`
+  ).join('');
+  const msg = document.getElementById('consistMsg');
+  if(mode==='without'){
+    msg.innerHTML = `<div class="highlight-title">Mesma pergunta, quatro respostas</div><p>"Qual foi a receita de junho?" — cada ferramenta escreveu sua própria fórmula (com ou sem reembolso, com ou sem pedidos cancelados). Nenhuma está "errada" isoladamente, mas juntas elas quebram a confiança no dado.</p>`;
+  } else {
+    msg.innerHTML = `<div class="highlight-title">Mesma pergunta, uma resposta</div><p>Todas as quatro ferramentas consultam a métrica <code>revenue</code> definida na camada semântica — a mesma fórmula, o mesmo filtro, o mesmo resultado, não importa de onde a pergunta veio.</p>`;
+  }
+}
+setConsistencyMode('without');
+
+/* ===================== REIFICATION COMPARISON ===================== */
+const reificationInfo = {
+  'reif-direct': {t:'Profissional → trabalha em → Estabelecimento', d:'Parece simples, mas assume que cada profissional tem um único vínculo. É a primeira coisa que quebra numa modelagem de grafo real.'},
+  'reif-direct-risk': {t:'CBO, tipo e carga horária pendurados no Profissional', d:'Se o profissional tem dois vínculos (ex: CLT 40h num lugar, PJ 12h em outro), esses atributos se misturam entre os contratos — gera produto cartesiano e respostas erradas, como somar a carga errada para o CBO errado.'},
+  'reif-entity': {t:'Profissional → temVínculo → Vínculo → comEstabelecimento → Estabelecimento', d:'O vínculo vira uma entidade própria, com identidade — isso é reificação. Agora um profissional pode ter N vínculos, cada um com seus próprios atributos, sem se misturar.'},
+  'reif-entity-attrs': {t:'CBO, tipo e carga horária pendurados no Vínculo', d:'Cada vínculo carrega seus próprios atributos. A carga horária de um contrato CLT não se mistura com a de um contrato PJ do mesmo profissional — a soma por CBO/vínculo fica correta.'},
+};
+function pickReification(id){
+  document.querySelectorAll('#s-medallion-semantico .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = reificationInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-medallion-semantico [data-id="${id}"]`).classList.add('active');
+  document.getElementById('reificationDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== KNOWLEDGE GRAPH DIAGRAMS (nodes + edges) ===================== */
+function drawKgEdges(containerId, svgId, edges){
+  const container = document.getElementById(containerId);
+  const svg = document.getElementById(svgId);
+  if(!container || !svg) return;
+  const cRect = container.getBoundingClientRect();
+  svg.innerHTML = `<defs><marker id="${svgId}-arrow" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#535966"/></marker></defs>`;
+  container.querySelectorAll('.kg-edge-label').forEach(e => e.remove());
+  edges.forEach(e => {
+    const fromEl = document.getElementById(e.from);
+    const toEl = document.getElementById(e.to);
+    if(!fromEl || !toEl) return;
+    const fr = fromEl.getBoundingClientRect(), tr = toEl.getBoundingClientRect();
+    const x1 = fr.right - cRect.left, y1 = fr.top + fr.height/2 - cRect.top;
+    const x2 = tr.left - cRect.left, y2 = tr.top + tr.height/2 - cRect.top;
+    const midX = (x1+x2)/2, midY = (y1+y2)/2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}`);
+    path.setAttribute('stroke', '#535966');
+    path.setAttribute('stroke-width', '1.5');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('marker-end', `url(#${svgId}-arrow)`);
+    svg.appendChild(path);
+    const label = document.createElement('div');
+    label.className = 'kg-edge-label';
+    label.textContent = e.label;
+    label.style.left = midX + 'px';
+    label.style.top = midY + 'px';
+    container.appendChild(label);
+  });
+}
+function drawAllKgDiagrams(){
+  drawKgEdges('kgMain', 'kgMainSvg', [
+    {from:'kgMain-prof', to:'kgMain-vinc', label:'temVinculo'},
+    {from:'kgMain-vinc', to:'kgMain-estab', label:'comEstabelecimento'},
+    {from:'kgMain-estab', to:'kgMain-mun', label:'localizadoEm'},
+  ]);
+  drawKgEdges('kgReifBad', 'kgReifBadSvg', [
+    {from:'kgReifBad-prof', to:'kgReifBad-estabA', label:'trabalhaEm'},
+    {from:'kgReifBad-prof', to:'kgReifBad-estabB', label:'trabalhaEm'},
+  ]);
+  drawKgEdges('kgReifGood', 'kgReifGoodSvg', [
+    {from:'kgReifGood-prof', to:'kgReifGood-vincA', label:'temVinculo'},
+    {from:'kgReifGood-prof', to:'kgReifGood-vincB', label:'temVinculo'},
+    {from:'kgReifGood-vincA', to:'kgReifGood-estabA', label:'comEstabelecimento'},
+    {from:'kgReifGood-vincB', to:'kgReifGood-estabB', label:'comEstabelecimento'},
+  ]);
+}
+drawAllKgDiagrams();
+window.addEventListener('resize', drawAllKgDiagrams);
+
+/* ===================== RDF TERMINOLOGY PICKER ===================== */
+const rdfTermsInfo = {
+  tripla: {t:'Tripla', d:'A unidade mínima de um grafo de conhecimento: <code>sujeito → predicado → objeto</code>. Ex: <code>Profissional 10001 → temVínculo → Vínculo V1</code>. Quando o objeto de uma tripla também é sujeito de outra, a máquina consegue percorrer o grafo.'},
+  rdf: {t:'RDF (Resource Description Framework)', d:'O padrão para representar fatos em forma de triplas. É a base sobre a qual grafos de conhecimento são construídos e trocados entre sistemas diferentes.'},
+  iri: {t:'IRI', d:'Um identificador único e estável para cada entidade, com a cara de uma URL — ex: <code>https://saude.gov/profissional/10001</code>. Sempre que esse IRI aparece, é a mesma entidade sendo referenciada.'},
+  sparql: {t:'SPARQL', d:'A linguagem de consulta para grafos RDF — o equivalente ao SQL para tabelas. Percorre relações ("caminhe de Profissional para Vínculo, de Vínculo para Estabelecimento") em vez de escrever joins explícitos.'},
+  reificacao: {t:'Reificação', d:'Tratar uma relação como uma entidade com identidade própria — transformar "profissional trabalha em estabelecimento" em "profissional temVínculo Vínculo comEstabelecimento estabelecimento", para que o vínculo carregue seus próprios atributos sem se misturar com outros.'},
+};
+function buildRdfTermButtons(){
+  document.getElementById('rdfTermButtons').innerHTML = Object.keys(rdfTermsInfo).map(k =>
+    `<button class="btn-toggle" data-rdf="${k}" onclick="pickRdfTerm('${k}')">${rdfTermsInfo[k].t}</button>`
+  ).join('');
+}
+function pickRdfTerm(key){
+  document.querySelectorAll('#rdfTermButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.rdf === key));
+  const info = rdfTermsInfo[key];
+  document.getElementById('rdfTermDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+buildRdfTermButtons();
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Uma camada semântica serve principalmente para armazenar os dados brutos com mais eficiência.', a:false, e:'Falso. Ela não armazena dado novo — define e governa a lógica de métricas, dimensões e joins sobre dados que já existem no warehouse.'},
+  {q:'O objetivo central de uma camada semântica é garantir que uma métrica como "receita" tenha a mesma definição em qualquer ferramenta que a consulte.', a:true, e:'Verdadeiro. É exatamente o problema de "metric sprawl" que ela resolve — uma definição, muitos consumidores.'},
+  {q:'"Headless BI" significa que a lógica de métricas fica dentro da ferramenta de BI, e não em uma camada separada.', a:false, e:'Falso. Headless BI é o oposto: a lógica de métricas fica numa camada separada, sem uma interface própria fixa, servida via SQL/API a qualquer ferramenta de consumo.'},
+  {q:'dbt Semantic Layer (MetricFlow), Cube e LookML são exemplos de implementações de camada semântica.', a:true, e:'Verdadeiro. Cada uma com sua própria linguagem de modelagem, mas resolvendo o mesmo problema de centralizar a lógica de métricas.'},
+  {q:'Uma métrica do tipo "ratio" é sempre calculada como soma direta de uma coluna.', a:false, e:'Falso. "Ratio" é a divisão entre duas métricas já definidas (ex: profit/revenue); soma direta de uma coluna é o tipo "simple".'},
+  {q:'Camadas semânticas modernas também são usadas para dar contexto confiável a agentes de IA que geram consultas em linguagem natural.', a:true, e:'Verdadeiro. Expor um menu curado de métricas (em vez do schema bruto inteiro) reduz a chance do agente alucinar joins ou reinventar fórmulas de negócio.'},
+  {q:'Cubos OLAP tradicionais (como SSAS/Essbase) resolvem o mesmo problema de consistência que uma camada semântica moderna, mas tendem a ser mais caros e rígidos de alterar.', a:true, e:'Verdadeiro. A ideia de centralizar a lógica não é nova — o que mudou foi o custo de manter e a flexibilidade de servir múltiplas ferramentas modernas.'},
+  {q:'Se os dados no data warehouse já estão sujos ou mal modelados, a camada semântica corrige isso automaticamente antes de servir as métricas.', a:false, e:'Falso. A camada semântica não substitui uma boa modelagem/ELT — ela consome modelos já bem construídos; dado sujo na origem continua sujo na métrica.'},
+  {q:'No Medallion Semântico, a camada "Semantic" substitui o Gold, eliminando a necessidade de mantê-lo.', a:false, e:'Falso. A camada Semantic nasce a partir do Gold e depende dele — o Gold continua sendo o dado curado; a camada semântica só materializa relações que hoje ficam escondidas em JOINs.'},
+  {q:'Reificar uma relação significa transformá-la em uma entidade com identidade própria, em vez de ligar duas entidades diretamente.', a:true, e:'Verdadeiro. É o que permite, por exemplo, um profissional ter múltiplos vínculos empregatícios sem misturar os atributos (CBO, carga horária) de um contrato com os de outro.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

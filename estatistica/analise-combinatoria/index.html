@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Análise Combinatória explicada do zero, com árvores de possibilidades, fatorial, permutação, arranjo, combinação, Triângulo de Pascal e muitas demos visuais interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Análise Combinatória do Jeito Fácil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-scoop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);padding:16px;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.hero-scoop{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;text-align:center;font-size:20px;padding:8px 0;}
+.hero-eq{grid-column:1/-1;text-align:center;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--accent);font-weight:700;padding-top:6px;border-top:1px dashed var(--border-color);margin-top:2px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+
+/* ---- KV LIST (frequency tables) ---- */
+.kv-list{display:flex;flex-wrap:wrap;gap:8px;}
+.kv-pair{display:flex;align-items:center;gap:8px;}
+.kv-key{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--accent-blue);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:13px;min-width:36px;text-align:center;flex-shrink:0;}
+.kv-arrow{color:var(--text-disabled);font-size:14px;flex-shrink:0;}
+.kv-value{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-primary);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:12.5px;flex-shrink:0;}
+
+/* ---- INDEXED / CHIP LISTS ---- */
+.indexed-list{display:flex;gap:8px;flex-wrap:wrap;}
+.indexed-item .idx-box{min-width:44px;padding:8px 12px;border-radius:6px;background:var(--bg-elevated);border:1.5px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-primary);font-family:'Roboto Mono',monospace;transition:.2s;}
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.anagram-tile{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:6px;padding:8px 12px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:13px;color:var(--accent-green);letter-spacing:1px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- TREE (Princípio Fundamental da Contagem) ---- */
+.tree-wrap{position:relative;padding:10px 0;}
+#pfcSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.tree-cols{display:flex;justify-content:space-between;position:relative;z-index:1;gap:40px;}
+.tree-col{display:flex;flex-direction:column;gap:10px;min-width:150px;}
+.tree-node{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:6px;padding:9px 12px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.tree-node-swatch{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+
+/* ---- FACTORIAL (friends lineup) ---- */
+.friend-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.friend-chip{width:44px;height:44px;border-radius:50%;background:var(--bg-elevated);border:1.5px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.fact-narrative{list-style:none;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--text-secondary);margin-top:10px;}
+.fact-narrative li{padding-left:16px;position:relative;}
+.fact-narrative li::before{content:'→';position:absolute;left:0;color:var(--accent);}
+.fact-narrative strong{color:var(--accent);}
+
+/* ---- CIRCULAR TABLE (permutação circular) ---- */
+.circ-table-wrap{position:relative;width:240px;height:240px;margin:0 auto;border:2px dashed var(--border-color);border-radius:50%;}
+.circ-seat{position:absolute;width:38px;height:38px;border-radius:50%;background:var(--bg-elevated);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:19px;transform:translate(-50%,-50%);transition:.4s;}
+.circ-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;}
+
+/* ---- PODIUM (arranjo) ---- */
+.runner-row{display:flex;gap:8px;flex-wrap:wrap;}
+.runner-chip{width:52px;height:52px;border-radius:8px;background:var(--bg-elevated);border:1.5px solid var(--border-color);font-size:24px;cursor:pointer;transition:.15s;}
+.runner-chip:hover{border-color:var(--accent-blue);}
+.runner-chip.used{opacity:.3;cursor:not-allowed;border-color:var(--border-color);}
+.podium-row{display:flex;align-items:flex-end;justify-content:center;gap:10px;margin-top:18px;height:110px;}
+.podium-block{width:90px;background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:6px 6px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:8px;gap:4px;}
+.podium-emoji{font-size:24px;}
+.podium-medal{font-size:16px;}
+
+/* ---- PIZZA (combinação) ---- */
+.topping-row{display:flex;gap:8px;flex-wrap:wrap;}
+.topping-chip{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-secondary);padding:8px 14px;border-radius:20px;font-size:12.5px;cursor:pointer;transition:.15s;}
+.topping-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.12);}
+.pizza-preview{text-align:center;font-size:16px;margin-top:14px;padding:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;}
+
+/* ---- ARRANJO VS COMBINAÇÃO ---- */
+.cvc-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.cvc-chip{border:2px solid var(--border-color);border-radius:6px;padding:6px 10px;font-size:16px;background:var(--bg-elevated);}
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.arranjo{border-color:var(--accent-blue);}
+.decision-branch.combinacao{border-color:var(--accent-green);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+/* ---- PASCAL TRIANGLE ---- */
+.pascal-grid{display:flex;flex-direction:column;align-items:center;gap:4px;overflow-x:auto;padding:6px;}
+.pascal-row{display:flex;gap:4px;}
+.pascal-cell{min-width:34px;height:30px;border-radius:5px;background:var(--bg-elevated);border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-family:'Roboto Mono',monospace;color:var(--text-primary);cursor:pointer;transition:.15s;}
+.pascal-cell:hover{border-color:var(--accent);background:rgba(6,182,212,.16);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:56px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+  .tree-cols{gap:16px;}
+  #pfcSvg{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Análise Combinatória</h1><span>Contando possibilidades sem contar uma por uma</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">7</div><div class="hstat-label">Técnicas</div></div>
+      <div class="hstat"><div class="hstat-num">n!</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">10</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~45min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do primeiro sorvete ao Triângulo de Pascal</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>A matemática de contar <em>sem precisar contar</em> um por um</h2>
+      <p>Análise Combinatória é a parte da matemática que responde a uma pergunta muito simples: <strong>"de quantas formas diferentes isso pode acontecer?"</strong> — sem precisar escrever cada possibilidade à mão. Ela está por trás de coisas do dia a dia: quantas roupas dá pra montar, quantas senhas existem, quantos times diferentes um professor pode formar, quantos números a Mega-Sena sorteia. Nesta aula vamos construir cada ideia com exemplos visuais — sorvetes, bichinhos de corrida, pizza, mesa redonda — até chegar nas fórmulas de verdade.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Contagem</span>
+        <span class="badge badge-green">A ordem importa?</span>
+        <span class="badge badge-blue">Pode repetir?</span>
+        <span class="badge badge-purple">Base da Probabilidade</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-scoop-grid">
+        <div class="hero-scoop">🍦🍫</div><div class="hero-scoop">🍦🍒</div><div class="hero-scoop">🍦🥜</div>
+        <div class="hero-scoop">🍨🍫</div><div class="hero-scoop">🍨🍒</div><div class="hero-scoop">🍨🥜</div>
+        <div class="hero-eq">2 sabores × 3 coberturas = 6 sorvetes</div>
+      </div>
+      <div class="hero-visual-caption">É só isso que "combinatória" quer dizer — role a página e monte o seu!</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🍦 O que é Análise Combinatória?</div>
+    <p class="section-desc">
+      Imagine uma sorveteria com alguns sabores e algumas coberturas. Se você quiser saber quantos sorvetes diferentes dá pra montar, dá pra fazer de dois jeitos: <strong>desenhar cada um</strong> (funciona, mas demora) ou <strong>multiplicar as escolhas</strong> (rápido, e funciona sempre). A Análise Combinatória é exatamente essa segunda forma — um conjunto de "atalhos" matemáticos para contar possibilidades sem precisar listar tudo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Monte sua sorveteria e veja o total de combinações</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Sabores</span><span class="ctrl-v" id="sorvSaboresVal">3</span></div>
+          <input type="range" id="sorvSabores" min="1" max="5" step="1" value="3" oninput="renderSorvete()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Coberturas</span><span class="ctrl-v" id="sorvCoberturasVal">2</span></div>
+          <input type="range" id="sorvCoberturas" min="1" max="4" step="1" value="2" oninput="renderSorvete()">
+        </div>
+      </div>
+      <div id="sorvGrid" style="display:grid;gap:8px;"></div>
+      <div class="result-display">
+        <div><span class="rl">Sabores × Coberturas</span><span class="rv" id="sorvFormula">3 × 2</span></div>
+        <div><span class="rl">Total de sorvetes possíveis</span><span class="rv" id="sorvTotal">6</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Repare que você não precisou desenhar os 6 sorvetes pra saber que são 6 — bastou multiplicar <code>3 × 2</code>. Esse truque tem um nome oficial: <strong>Princípio Fundamental da Contagem</strong>, o assunto da próxima seção, e é a base de tudo que vem depois nesta aula.</p>
+    </div>
+  </section>
+
+  <!-- ============ PRINCÍPIO FUNDAMENTAL DA CONTAGEM ============ -->
+  <section class="section" id="s-pfc">
+    <div class="section-eyebrow">A Regra de Ouro</div>
+    <div class="section-title">🌳 Princípio Fundamental da Contagem (PFC)</div>
+    <p class="section-desc">
+      Se uma decisão acontece em <strong>etapas</strong>, e cada etapa tem um número de opções que não depende das outras, o total de resultados possíveis é a <strong>multiplicação</strong> do número de opções de cada etapa. Um jeito visual de enxergar isso é uma <strong>árvore de possibilidades</strong>: cada galho representa uma escolha, e cada "folha" no final é um resultado completo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Monte um look e veja a árvore de roupas possíveis</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Camisetas</span><span class="ctrl-v" id="pfcShirtsVal">3</span></div>
+          <input type="range" id="pfcShirts" min="2" max="4" step="1" value="3" oninput="renderPfcTree()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Calças</span><span class="ctrl-v" id="pfcPantsVal">2</span></div>
+          <input type="range" id="pfcPants" min="2" max="3" step="1" value="2" oninput="renderPfcTree()">
+        </div>
+      </div>
+      <div class="tree-wrap" id="pfcTreeWrap">
+        <svg id="pfcSvg"></svg>
+        <div class="tree-cols">
+          <div class="tree-col" id="pfcShirtCol"></div>
+          <div class="tree-col" id="pfcPantCol"></div>
+        </div>
+      </div>
+      <div class="panel-label" style="margin-top:16px;">Todos os looks possíveis (cada linha ligada vira um resultado)</div>
+      <div class="indexed-list" id="pfcOutfits"></div>
+      <div class="result-display">
+        <div><span class="rl">Camisetas × Calças</span><span class="rv" id="pfcFormula">3 × 2</span></div>
+        <div><span class="rl">Total de looks</span><span class="rv" id="pfcTotal">6</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 O princípio não para em duas etapas: se você ainda escolhesse entre <strong>2 pares de tênis</strong>, o total viraria camisetas × calças × tênis. Com 3 camisetas, 2 calças e 2 tênis, seriam <code style="color:var(--accent);">3 × 2 × 2 = 12</code> looks diferentes — cada etapa nova só multiplica o total, não importa quantas etapas existam.</p>
+    </div>
+  </section>
+
+  <!-- ============ FATORIAL ============ -->
+  <section class="section" id="s-fatorial">
+    <div class="section-eyebrow">A Peça Que Mais Aparece</div>
+    <div class="section-title">✖️ Fatorial: quantas formas de organizar tudo em fila</div>
+    <p class="section-desc">
+      Imagine que <strong>n</strong> amigos vão tirar uma foto em fila. Para a 1ª posição, qualquer um dos n pode ir. Para a 2ª posição, sobraram n−1 opções (um já foi escolhido). Para a 3ª, sobraram n−2. E assim por diante, até sobrar só 1. Multiplicando tudo isso — <code>n × (n−1) × (n−2) × ... × 1</code> — chegamos no <strong>fatorial de n</strong>, escrito <code style="color:var(--accent);">n!</code>. É a peça de Lego que aparece dentro de quase toda fórmula desta aula.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Quantas filas diferentes dá pra montar com estes amigos?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Número de amigos (n)</span><span class="ctrl-v" id="factNVal">4</span></div>
+          <input type="range" id="factN" min="1" max="8" step="1" value="4" oninput="renderFactorial()">
+        </div>
+      </div>
+      <div class="friend-row" id="factFriends"></div>
+      <div class="card-formula" id="factSteps" style="margin-top:14px;"></div>
+      <ol class="fact-narrative" id="factNarrative"></ol>
+      <div class="canvas-wrap" style="margin-top:14px;"><canvas id="factCanvas" height="150"></canvas></div>
+      <div class="section-desc" style="font-size:12px;text-align:center;margin-top:4px;">Cada barra é n! (escala logarítmica) — repare como o fatorial "explode" muito rápido.</div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">O fatorial cresce absurdamente rápido</div>
+      <p>Com apenas <strong>10 amigos</strong>, já existem <code style="color:var(--accent-red);">10! = 3.628.800</code> filas diferentes — mais que a população de várias cidades grandes! Com 20 amigos, o número passa de <strong>2 quintilhões</strong>. É por isso que embaralhar um baralho de 52 cartas praticamente nunca repete uma ordem já vista na história: 52! tem 68 dígitos.</p>
+    </div>
+
+    <div class="info-box">
+      <p>🤔 E o que é <code style="color:var(--accent);">0!</code>? Por convenção matemática, <code style="color:var(--accent);">0! = 1</code> — pense assim: só existe <strong>1 jeito</strong> de organizar "nenhum amigo" em fila (não organizar nada). Essa convenção é o que faz as fórmulas de arranjo e combinação funcionarem direitinho quando usamos todos os elementos disponíveis.</p>
+    </div>
+  </section>
+
+  <!-- ============ PERMUTAÇÃO SIMPLES ============ -->
+  <section class="section" id="s-permutacao">
+    <div class="section-eyebrow">Organizando Tudo</div>
+    <div class="section-title">🔀 Permutação Simples: embaralhando todas as letras</div>
+    <p class="section-desc">
+      <strong>Permutação simples</strong> é exatamente o que vimos na fila de amigos, só que aplicado a qualquer conjunto de elementos <strong>distintos</strong> — inclusive letras de uma palavra! Um anagrama nada mais é do que uma permutação das letras. Se a palavra tem <strong>n</strong> letras diferentes, o total de anagramas é <code style="color:var(--accent);">P(n) = n!</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Máquina de anagramas — digite uma palavra (até 6 letras, sem repetir)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l">Palavra</div>
+          <input type="text" id="anagramInput" value="SOL" oninput="renderAnagram()">
+        </div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Número de letras</span><span class="rv" id="anagramCount">3</span></div>
+        <div><span class="rl">P(n) = n!</span><span class="rv" id="anagramFactorial">3! = 6</span></div>
+      </div>
+      <div class="panel-label" style="margin-top:16px;">Todos os anagramas</div>
+      <div class="indexed-list" id="anagramList"></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Permutação é só um caso especial</div>
+      <p>Permutação simples é sempre <code>n!</code> porque usamos <strong>todas</strong> as letras disponíveis, em <strong>todas</strong> as ordens possíveis. Mais adiante veremos o Arranjo, que é parecido, mas usa só <strong>parte</strong> dos elementos.</p>
+    </div>
+  </section>
+
+  <!-- ============ PERMUTAÇÃO COM REPETIÇÃO ============ -->
+  <section class="section" id="s-permutacao-repeticao">
+    <div class="section-eyebrow">Quando Tem Letra Repetida</div>
+    <div class="section-title">🔁 Permutação com Repetição</div>
+    <p class="section-desc">
+      E se a palavra tiver <strong>letras repetidas</strong>, como "ARARA"? Se tratássemos as duas letras A como "diferentes" (imagine um A₁ e um A₂), teríamos n! ordens — mas trocar A₁ por A₂ de lugar gera a <strong>mesma palavra</strong> escrita! Por isso, precisamos <strong>dividir</strong> o fatorial total pelo fatorial da quantidade de repetições de cada letra: <code style="color:var(--accent);">n! / (n₁! × n₂! × ...)</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Digite uma palavra com letras repetidas</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l">Palavra</div>
+          <input type="text" id="repInput" value="ARARA" oninput="renderRepeatPerm()">
+        </div>
+      </div>
+      <div class="panel-label" style="margin-top:4px;">Quantas vezes cada letra aparece</div>
+      <div class="kv-list" id="repFreqTable"></div>
+      <div class="card-formula" id="repFormula" style="margin-top:14px;"></div>
+      <div class="result-display">
+        <div><span class="rl">Se todas fossem distintas (n!)</span><span class="rv" id="repBefore">120</span></div>
+        <div><span class="rl">Anagramas realmente distintos</span><span class="rv" id="repAfter">10</span></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Sempre que uma palavra tiver letra repetida, pergunte: "quantas vezes cada letra aparece?" — e divida o fatorial total pelo fatorial de cada repetição. Sem isso, você estaria contando a mesma palavra várias vezes.</p>
+    </div>
+  </section>
+
+  <!-- ============ PERMUTAÇÃO CIRCULAR ============ -->
+  <section class="section" id="s-permutacao-circular">
+    <div class="section-eyebrow">Sentando em Roda</div>
+    <div class="section-title">⭕ Permutação Circular: a mesa redonda</div>
+    <p class="section-desc">
+      Quando <strong>n</strong> pessoas se sentam ao redor de uma <strong>mesa redonda</strong>, girar todo mundo uma cadeira para o lado não muda quem fica ao lado de quem — então essa "nova" disposição não deve ser contada de novo. Para corrigir isso, fixamos uma pessoa como referência e organizamos só as outras <strong>n−1</strong>: <code style="color:var(--accent);">PC(n) = (n−1)!</code>
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Gire a mesa e veja que ninguém troca de vizinho</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Número de amigos</span><span class="ctrl-v" id="circNVal">5</span></div>
+          <input type="range" id="circN" min="3" max="8" step="1" value="5" oninput="renderCircular()">
+        </div>
+      </div>
+      <div class="circ-table-wrap" id="circTable"><span class="circ-center">🍽️</span></div>
+      <div style="display:flex;justify-content:center;margin-top:14px;">
+        <button class="player-btn primary" onclick="rotateTable()">🔄 Girar a mesa</button>
+      </div>
+      <div class="section-desc" id="circNote" style="text-align:center;margin-top:8px;font-size:12px;"></div>
+      <div class="result-display">
+        <div><span class="rl">Fórmula</span><span class="rv" id="circFormula">(5-1)! = 24</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ARRANJO SIMPLES ============ -->
+  <section class="section" id="s-arranjo">
+    <div class="section-eyebrow">Só uma Parte, mas a Ordem Importa</div>
+    <div class="section-title">🏆 Arranjo Simples: o pódio da corrida</div>
+    <p class="section-desc">
+      E se, em vez de organizar <strong>todo mundo</strong> em fila, a gente escolhesse só <strong>parte</strong> deles — e a ordem ainda importasse? É o caso do <strong>pódio</strong>: de vários corredores, só 3 sobem ao pódio, e trocar quem é 1º, 2º e 3º muda completamente o resultado. Isso é um <strong>Arranjo</strong>: <code style="color:var(--accent);">A(n,p) = n! / (n−p)!</code>
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Corrida dos bichinhos — clique para escolher o pódio (1º, 2º, 3º)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Número de corredores</span><span class="ctrl-v" id="arrNVal">6</span></div>
+          <input type="range" id="arrN" min="4" max="8" step="1" value="6" oninput="renderRunners()">
+        </div>
+      </div>
+      <div class="runner-row" id="runnerList"></div>
+      <div class="podium-row" id="podiumWrap"></div>
+      <div style="display:flex;justify-content:center;margin-top:12px;">
+        <button class="player-btn" onclick="resetPodium()">⏹ Resetar pódio</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Fórmula A(n,3)</span><span class="rv" id="arrFormula">A(6,3) = 120</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMBINAÇÃO SIMPLES ============ -->
+  <section class="section" id="s-combinacao">
+    <div class="section-eyebrow">Só uma Parte, e a Ordem Não Importa</div>
+    <div class="section-title">🍕 Combinação Simples: montando a pizza</div>
+    <p class="section-desc">
+      Agora imagine escolher coberturas para uma pizza. Escolher "queijo e bacon" é <strong>exatamente a mesma pizza</strong> que escolher "bacon e queijo" — a ordem do clique não importa, só importa <strong>qual conjunto</strong> foi escolhido. Isso é uma <strong>Combinação</strong>: <code style="color:var(--accent);">C(n,p) = n! / (p! × (n−p)!)</code>
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Monte sua pizza (clique nas coberturas)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Quantas coberturas escolher (p)</span><span class="ctrl-v" id="comboKVal">2</span></div>
+          <input type="range" id="comboK" min="1" max="4" step="1" value="2" oninput="renderToppings()">
+        </div>
+      </div>
+      <div class="topping-row" id="toppingList"></div>
+      <div class="pizza-preview" id="pizzaPreview">🍕 (sem coberturas escolhidas)</div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Clique nas coberturas em ordens diferentes — a pizza final é sempre a mesma!</div>
+      <div class="result-display">
+        <div><span class="rl">Fórmula</span><span class="rv" id="comboFormula">C(6,2) = 15</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ARRANJO VS COMBINAÇÃO ============ -->
+  <section class="section" id="s-arranjo-vs-combinacao">
+    <div class="section-eyebrow">A Dúvida Mais Comum</div>
+    <div class="section-title">⚖️ Arranjo vs. Combinação: qual usar?</div>
+    <p class="section-desc">
+      A pergunta que resolve 90% da confusão entre arranjo e combinação é uma só: <strong>"trocar a ordem dos elementos escolhidos cria um resultado diferente?"</strong> Se sim, é arranjo (ou permutação, se usar todos). Se não, é combinação.
+    </p>
+
+    <div class="decision-flow">
+      <div class="decision-q">A ordem dos elementos escolhidos importa para o resultado?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">✅ Sim, a ordem importa</div>
+          <div class="decision-result">➡️ É um <strong>Arranjo</strong> (ou Permutação, se usar todos os elementos disponíveis)</div>
+          <div class="decision-example">Ex.: pódio (1º/2º/3º), senha numérica, placar de um jogo</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">❌ Não, a ordem não importa</div>
+          <div class="decision-result">➡️ É uma <strong>Combinação</strong></div>
+          <div class="decision-example">Ex.: escalação de time, coberturas de pizza, números da loteria</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="interactive-panel" style="margin-top:16px;">
+      <div class="panel-label">Veja lado a lado: escolher 2 frutas dentre 4 (🍎🍌🍇🍊)</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Arranjo A(4,2) — a ordem importa</div>
+          <div class="cvc-grid" id="cvcArr"></div>
+          <div class="card-text" style="margin-top:10px;">Total: <strong id="cvcArrCount">12</strong> pares ordenados. 🍎🍌 e 🍌🍎 contam como <strong>diferentes</strong> (pares com a mesma cor de borda).</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Combinação C(4,2) — a ordem não importa</div>
+          <div class="cvc-grid" id="cvcComb"></div>
+          <div class="card-text" style="margin-top:10px;">Total: <strong id="cvcCombCount">6</strong> pares. Cada cor de borda do arranjo virou <strong>um único</strong> par aqui — dividimos por 2! (as 2 ordens de cada par).</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRIÂNGULO DE PASCAL ============ -->
+  <section class="section" id="s-pascal">
+    <div class="section-eyebrow">Combinações em Forma de Triângulo</div>
+    <div class="section-title">🔺 Triângulo de Pascal</div>
+    <p class="section-desc">
+      Todo número dentro do Triângulo de Pascal é, na verdade, uma <strong>combinação</strong> escondida: a linha <code>n</code>, posição <code>k</code>, vale exatamente <code style="color:var(--accent);">C(n,k)</code>. Clique em qualquer número para ver o cálculo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="pascal-grid" id="pascalGrid"></div>
+      <div class="anatomy-detail" id="pascalDetail">
+        <div class="ad-title">👆 Clique em qualquer número do triângulo</div>
+        <div class="ad-text">Cada linha começa e termina em 1 (só existe 1 jeito de escolher "nenhum" ou "todos" os elementos). A soma de todos os números de uma linha n é sempre 2ⁿ.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela-formulas">
+    <div class="section-eyebrow">A Chuva de Fórmulas, Organizada</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todas as técnicas desta aula reunidas num só lugar, com quando usar cada uma.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">✖️ Fatorial</div>
+        <div class="card-formula">n!</div>
+        <div class="card-text">Quantas formas de organizar <strong>n</strong> itens diferentes em fila. Base de todas as outras fórmulas.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌳 Princípio Fund. da Contagem</div>
+        <div class="card-formula">n₁ × n₂ × n₃ × ...</div>
+        <div class="card-text">Decisões em etapas independentes (com ou sem repetição). Ex.: roupas, senhas com repetição permitida.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔀 Permutação Simples</div>
+        <div class="card-formula">P(n) = n!</div>
+        <div class="card-text">Organiza <strong>todos</strong> os n elementos distintos, em qualquer ordem. Ex.: anagramas de palavra sem letra repetida.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔁 Permutação c/ Repetição</div>
+        <div class="card-formula">n! / (n₁!·n₂!...)</div>
+        <div class="card-text">Igual à anterior, mas descontando elementos repetidos. Ex.: anagramas de "ARARA".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⭕ Permutação Circular</div>
+        <div class="card-formula">PC(n) = (n−1)!</div>
+        <div class="card-text">Organiza n elementos em <strong>roda</strong>, onde girar tudo não conta como novo. Ex.: mesa redonda.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏆 Arranjo Simples</div>
+        <div class="card-formula">A(n,p) = n!/(n−p)!</div>
+        <div class="card-text">Escolhe <strong>p</strong> de n elementos, <strong>e a ordem importa</strong>. Ex.: pódio, senha sem repetir dígito.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🍕 Combinação Simples</div>
+        <div class="card-formula">C(n,p) = n!/(p!(n−p)!)</div>
+        <div class="card-text">Escolhe <strong>p</strong> de n elementos, e a <strong>ordem não importa</strong>. Ex.: time, loteria, coberturas de pizza.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">✅ Boas práticas: como identificar a técnica certa</div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">1️⃣ A ordem importa?</div>
+        <div class="card-text">Se trocar a ordem dos escolhidos gera um resultado <strong>diferente</strong>, pense em Arranjo/Permutação. Se gera o <strong>mesmo</strong> resultado, pense em Combinação.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Pode repetir elementos?</div>
+        <div class="card-text">Se um mesmo item pode ser escolhido mais de uma vez (ex.: senha com dígitos repetidos), normalmente é <strong>Princípio Fundamental da Contagem</strong>, não arranjo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Uso tudo ou só uma parte?</div>
+        <div class="card-text">Se você organiza <strong>todos</strong> os elementos disponíveis, é Permutação. Se organiza só <strong>parte</strong> deles, é Arranjo ou Combinação.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1</div>
+      <p>Confundir Arranjo com Combinação — usar C(n,p) quando a ordem na verdade importava (ou vice-versa). Antes de calcular, sempre pergunte em voz alta: "se eu trocar a ordem dos escolhidos, o resultado muda?"</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2</div>
+      <p>Esquecer de dividir pelas repetições ao calcular anagramas de palavras com letras repetidas — o resultado sai maior do que deveria, contando a mesma palavra várias vezes.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Sempre que possível, teste a fórmula com um exemplo <strong>pequeno</strong> primeiro (n=3 ou 4) e liste as possibilidades à mão. Se a fórmula bater com a lista manual, você pode confiar nela para números grandes.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Análise Combinatória</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function factorial(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function comb(n,k){ if(k<0||k>n) return 0; k=Math.min(k,n-k); let r=1; for(let i=0;i<k;i++) r = r*(n-i)/(i+1); return Math.round(r); }
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🍦', label:'O que é'},
+  {id:'s-pfc', icon:'🌳', label:'Princípio da Contagem'},
+  {id:'s-fatorial', icon:'✖️', label:'Fatorial'},
+  {id:'s-permutacao', icon:'🔀', label:'Permutação'},
+  {id:'s-permutacao-repeticao', icon:'🔁', label:'Perm. c/ Repetição'},
+  {id:'s-permutacao-circular', icon:'⭕', label:'Perm. Circular'},
+  {id:'s-arranjo', icon:'🏆', label:'Arranjo'},
+  {id:'s-combinacao', icon:'🍕', label:'Combinação'},
+  {id:'s-arranjo-vs-combinacao', icon:'⚖️', label:'Arranjo x Combinação'},
+  {id:'s-pascal', icon:'🔺', label:'Pascal'},
+  {id:'s-tabela-formulas', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== SORVETERIA (intro) ===================== */
+const SABORES = [{e:'🍫',n:'Chocolate'},{e:'🍓',n:'Morango'},{e:'🍋',n:'Limão'},{e:'🍇',n:'Uva'},{e:'🌰',n:'Avelã'}];
+const COBERTURAS = [{e:'🍒',n:'Cereja'},{e:'🥜',n:'Amendoim'},{e:'🍬',n:'Bala'},{e:'✨',n:'Granulado'}];
+function renderSorvete(){
+  const ns = +document.getElementById('sorvSabores').value;
+  const nc = +document.getElementById('sorvCoberturas').value;
+  document.getElementById('sorvSaboresVal').textContent = ns;
+  document.getElementById('sorvCoberturasVal').textContent = nc;
+  const grid = document.getElementById('sorvGrid');
+  grid.style.gridTemplateColumns = `repeat(${nc},1fr)`;
+  let html = '';
+  for(let i=0;i<ns;i++){
+    for(let j=0;j<nc;j++){
+      html += `<div class="chip" style="justify-content:center;">🍦 ${SABORES[i].n} + ${COBERTURAS[j].e}</div>`;
+    }
+  }
+  grid.innerHTML = html;
+  document.getElementById('sorvFormula').textContent = `${ns} × ${nc}`;
+  document.getElementById('sorvTotal').textContent = ns*nc;
+}
+
+/* ===================== PFC — árvore de roupas ===================== */
+const SHIRT_COLORS = ['#f86b63','#36a2ef','#7dded8','#c49aff'];
+const PANT_COLORS = ['#25262e','#e8b339','#535966'];
+function renderPfcTree(){
+  const ns = +document.getElementById('pfcShirts').value;
+  const np = +document.getElementById('pfcPants').value;
+  document.getElementById('pfcShirtsVal').textContent = ns;
+  document.getElementById('pfcPantsVal').textContent = np;
+  const shirtCol = document.getElementById('pfcShirtCol');
+  const pantCol = document.getElementById('pfcPantCol');
+  shirtCol.innerHTML = '';
+  pantCol.innerHTML = '';
+  for(let i=0;i<ns;i++){
+    const d = document.createElement('div');
+    d.className='tree-node';
+    d.id = 'shirt'+i;
+    d.innerHTML = `<span class="tree-node-swatch" style="background:${SHIRT_COLORS[i]}"></span>👕 Camiseta ${i+1}`;
+    shirtCol.appendChild(d);
+  }
+  for(let j=0;j<np;j++){
+    const d = document.createElement('div');
+    d.className='tree-node';
+    d.id='pant'+j;
+    d.innerHTML = `<span class="tree-node-swatch" style="background:${PANT_COLORS[j]}"></span>👖 Calça ${j+1}`;
+    pantCol.appendChild(d);
+  }
+  requestAnimationFrame(drawPfcLines);
+  const outfitsWrap = document.getElementById('pfcOutfits');
+  let outfits = [];
+  for(let i=0;i<ns;i++) for(let j=0;j<np;j++) outfits.push(`<div class="indexed-item"><div class="idx-box" style="border-color:${SHIRT_COLORS[i]}">👕${i+1}+👖${j+1}</div></div>`);
+  outfitsWrap.innerHTML = outfits.join('');
+  document.getElementById('pfcFormula').textContent = `${ns} × ${np}`;
+  document.getElementById('pfcTotal').textContent = ns*np;
+}
+function drawPfcLines(){
+  const svg = document.getElementById('pfcSvg');
+  const wrap = document.getElementById('pfcTreeWrap');
+  if(!svg || !wrap) return;
+  const wrapRect = wrap.getBoundingClientRect();
+  if(wrapRect.width === 0) return;
+  svg.setAttribute('width', wrapRect.width);
+  svg.setAttribute('height', wrapRect.height);
+  let lines = '';
+  const ns = +document.getElementById('pfcShirts').value;
+  const np = +document.getElementById('pfcPants').value;
+  for(let i=0;i<ns;i++){
+    const sEl = document.getElementById('shirt'+i);
+    if(!sEl) continue;
+    const s = sEl.getBoundingClientRect();
+    for(let j=0;j<np;j++){
+      const pEl = document.getElementById('pant'+j);
+      if(!pEl) continue;
+      const p = pEl.getBoundingClientRect();
+      const x1 = s.right - wrapRect.left, y1 = s.top + s.height/2 - wrapRect.top;
+      const x2 = p.left - wrapRect.left, y2 = p.top + p.height/2 - wrapRect.top;
+      lines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(6,182,212,.35)" stroke-width="1.5"/>`;
+    }
+  }
+  svg.innerHTML = lines;
+}
+window.addEventListener('resize', drawPfcLines);
+
+/* ===================== FATORIAL ===================== */
+const FRIEND_EMOJIS = ['🧒','👧','👦','🧑','👩','👨','🧓','👶'];
+function renderFactorial(){
+  const n = +document.getElementById('factN').value;
+  document.getElementById('factNVal').textContent = n;
+  document.getElementById('factFriends').innerHTML = FRIEND_EMOJIS.slice(0,n).map(e=>`<div class="friend-chip">${e}</div>`).join('');
+  let steps = [];
+  for(let i=n;i>=1;i--) steps.push(i);
+  document.getElementById('factSteps').textContent = (steps.length ? steps.join(' × ') : '0') + ' = ' + fmt(factorial(n));
+  let narrative = [];
+  for(let i=0;i<Math.min(n,5);i++){
+    narrative.push(`Posição ${i+1} da fila: <strong>${n-i}</strong> ${i===0?'amigos podem ser escolhidos':'ainda sobram'}`);
+  }
+  if(n>5) narrative.push('... e assim por diante, até sobrar só 1 opção.');
+  document.getElementById('factNarrative').innerHTML = narrative.map(t=>`<li>${t}</li>`).join('');
+  drawFactorialChart(n);
+}
+function drawFactorialChart(highlightN){
+  const canvas = document.getElementById('factCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const maxN=8;
+  const values = []; for(let i=1;i<=maxN;i++) values.push(factorial(i));
+  const maxV = Math.log(values[values.length-1]);
+  const barW = w/maxN;
+  values.forEach((v,idx)=>{
+    const n = idx+1;
+    const logv = Math.log(v);
+    const barH = Math.max(4,(logv/maxV) * (h-30));
+    const x = idx*barW + barW*0.22;
+    const bw = barW*0.56;
+    const y = h - barH - 20;
+    ctx.fillStyle = n===highlightN ? '#06b6d4' : 'rgba(6,182,212,.28)';
+    roundRectPath(ctx, x, y, bw, barH, 4);
+    ctx.fill();
+    ctx.fillStyle = n===highlightN ? '#dfe5ef' : '#98a2b3';
+    ctx.font = '10px Inter';
+    ctx.textAlign='center';
+    ctx.fillText(n+'!', x+bw/2, h-6);
+  });
+}
+
+/* ===================== PERMUTAÇÃO SIMPLES (anagramas) ===================== */
+function permute(arr){
+  if(arr.length<=1) return [arr];
+  let result=[];
+  arr.forEach((item,i)=>{
+    const rest = [...arr.slice(0,i), ...arr.slice(i+1)];
+    permute(rest).forEach(p=>result.push([item,...p]));
+  });
+  return result;
+}
+function renderAnagram(){
+  const input = document.getElementById('anagramInput').value.toUpperCase().replace(/[^A-ZÀ-Ú]/g,'');
+  const letters = input.split('');
+  const n = letters.length;
+  document.getElementById('anagramCount').textContent = n;
+  document.getElementById('anagramFactorial').textContent = n+'! = ' + fmt(factorial(n));
+  const wrap = document.getElementById('anagramList');
+  if(n===0){ wrap.innerHTML=''; return; }
+  if(n>6){
+    wrap.innerHTML = `<div class="section-desc">São <strong>${fmt(factorial(n))}</strong> palavras diferentes — muitas para listar! Tente uma palavra de até 6 letras.</div>`;
+    return;
+  }
+  const perms = permute(letters).map(p=>p.join(''));
+  const unique = [...new Set(perms)];
+  wrap.innerHTML = unique.map(w=>`<div class="anagram-tile">${w}</div>`).join('');
+  if(unique.length !== perms.length){
+    wrap.innerHTML += `<div class="section-desc" style="width:100%;margin-top:8px;">Repare: existem ${fmt(perms.length)} ordens possíveis, mas só ${unique.length} palavras <em>visualmente diferentes</em> — sua palavra tem letra repetida! Isso é o assunto da próxima seção.</div>`;
+  }
+}
+
+/* ===================== PERMUTAÇÃO COM REPETIÇÃO ===================== */
+function renderRepeatPerm(){
+  const input = document.getElementById('repInput').value.toUpperCase().replace(/[^A-ZÀ-Ú]/g,'');
+  const n = input.length;
+  const freq = {};
+  for(const ch of input) freq[ch] = (freq[ch]||0)+1;
+  const freqList = Object.entries(freq);
+  document.getElementById('repFreqTable').innerHTML = freqList.map(([ch,c])=>
+    `<div class="kv-pair"><div class="kv-key">${ch}</div><span class="kv-arrow">×</span><div class="kv-value">${c} vez${c>1?'es':''}</div></div>`).join('');
+  const denomParts = freqList.map(([ch,c])=>c+'!');
+  const denomProduct = freqList.reduce((acc,[ch,c])=>acc*factorial(c),1);
+  const total = factorial(n);
+  const distinct = denomProduct ? total/denomProduct : total;
+  document.getElementById('repFormula').innerHTML = `${n}! / (${denomParts.join(' × ')}) = ${fmt(total)} / ${denomProduct} = ${fmt(distinct)}`;
+  document.getElementById('repBefore').textContent = fmt(total);
+  document.getElementById('repAfter').textContent = fmt(distinct);
+}
+
+/* ===================== PERMUTAÇÃO CIRCULAR ===================== */
+const TABLE_EMOJIS = ['🧒','👧','👦','🧑‍🦱','👩‍🦰','👨‍🦳','🧕','👴'];
+let circRotation = 0;
+function renderCircular(){
+  const n = +document.getElementById('circN').value;
+  document.getElementById('circNVal').textContent = n;
+  const wrap = document.getElementById('circTable');
+  wrap.querySelectorAll('.circ-seat').forEach(s=>s.remove());
+  const R = 96, cx=120, cy=120;
+  for(let i=0;i<n;i++){
+    const angle = (2*Math.PI*i/n) - Math.PI/2 + circRotation;
+    const x = cx + R*Math.cos(angle);
+    const y = cy + R*Math.sin(angle);
+    const seat = document.createElement('div');
+    seat.className='circ-seat';
+    seat.style.left = x+'px'; seat.style.top = y+'px';
+    seat.textContent = TABLE_EMOJIS[i%TABLE_EMOJIS.length];
+    wrap.appendChild(seat);
+  }
+  document.getElementById('circFormula').textContent = `(${n}-1)! = ${n-1}! = ${fmt(factorial(n-1))}`;
+}
+function rotateTable(){
+  circRotation += Math.PI/4;
+  renderCircular();
+  document.getElementById('circNote').textContent = 'A mesa girou, mas ninguém trocou de vizinho — por isso essa "nova" posição não conta de novo.';
+}
+
+/* ===================== ARRANJO (pódio) ===================== */
+const RACERS = ['🐰','🐢','🦊','🐸','🐱','🐶','🐼','🦁'];
+let podium = [null,null,null];
+function renderRunners(){
+  const n = +document.getElementById('arrN').value;
+  document.getElementById('arrNVal').textContent = n;
+  podium = [null,null,null];
+  document.getElementById('runnerList').innerHTML = RACERS.slice(0,n).map((e,i)=>`<button class="runner-chip" id="runner${i}" onclick="pickRunner(${i})">${e}</button>`).join('');
+  updatePodium();
+  updateArrFormula(n);
+}
+function pickRunner(i){
+  if(podium.includes(i)) return;
+  const emptySlot = podium.indexOf(null);
+  if(emptySlot===-1) return;
+  podium[emptySlot]=i;
+  const btn = document.getElementById('runner'+i);
+  btn.disabled = true;
+  btn.classList.add('used');
+  updatePodium();
+}
+function resetPodium(){
+  podium=[null,null,null];
+  document.querySelectorAll('.runner-chip').forEach(b=>{b.disabled=false;b.classList.remove('used');});
+  updatePodium();
+}
+function updatePodium(){
+  const medals=['🥇','🥈','🥉'];
+  const heights=[95,75,58];
+  const order=[1,0,2];
+  document.getElementById('podiumWrap').innerHTML = order.map(idx=>{
+    const runnerIdx = podium[idx];
+    return `<div class="podium-block" style="height:${heights[idx]}px;">
+      <div class="podium-emoji">${runnerIdx!==null?RACERS[runnerIdx]:'❔'}</div>
+      <div class="podium-medal">${medals[idx]}</div>
+    </div>`;
+  }).join('');
+}
+function updateArrFormula(n){
+  const p=3;
+  const val = n>=p ? factorial(n)/factorial(n-p) : 0;
+  document.getElementById('arrFormula').textContent = `A(${n},${p}) = ${n}×${n-1}×${n-2} = ${fmt(val)}`;
+}
+
+/* ===================== COMBINAÇÃO (pizza) ===================== */
+const TOPPINGS = [{e:'🧀',n:'Queijo'},{e:'🍄',n:'Cogumelo'},{e:'🫑',n:'Pimentão'},{e:'🍍',n:'Abacaxi'},{e:'🥓',n:'Bacon'},{e:'🫒',n:'Azeitona'}];
+let selectedToppings = [];
+function renderToppings(){
+  const k = +document.getElementById('comboK').value;
+  document.getElementById('comboKVal').textContent = k;
+  selectedToppings = selectedToppings.slice(0,k);
+  document.getElementById('toppingList').innerHTML = TOPPINGS.map((t,i)=>`<button class="topping-chip ${selectedToppings.includes(i)?'active':''}" id="top${i}" onclick="toggleTopping(${i})">${t.e} ${t.n}</button>`).join('');
+  updatePizzaPreview();
+  updateComboFormula();
+}
+function toggleTopping(i){
+  const k = +document.getElementById('comboK').value;
+  const idx = selectedToppings.indexOf(i);
+  if(idx>-1){ selectedToppings.splice(idx,1); }
+  else { if(selectedToppings.length>=k) selectedToppings.shift(); selectedToppings.push(i); }
+  document.querySelectorAll('.topping-chip').forEach((b,i2)=>b.classList.toggle('active', selectedToppings.includes(i2)));
+  updatePizzaPreview();
+}
+function updatePizzaPreview(){
+  document.getElementById('pizzaPreview').textContent = selectedToppings.length? '🍕 ' + selectedToppings.slice().sort((a,b)=>a-b).map(i=>TOPPINGS[i].e).join(' + ') : '🍕 (sem coberturas escolhidas)';
+}
+function updateComboFormula(){
+  const n = TOPPINGS.length;
+  const k = +document.getElementById('comboK').value;
+  document.getElementById('comboFormula').textContent = `C(${n},${k}) = ${n}! / (${k}!×${n-k}!) = ${comb(n,k)}`;
+}
+
+/* ===================== ARRANJO VS COMBINAÇÃO ===================== */
+const CVC_FRUITS = ['🍎','🍌','🍇','🍊'];
+const CVC_COLORS = ['#06b6d4','#7dded8','#36a2ef','#c49aff','#f86b63','#e8b339'];
+function renderCvc(){
+  const n=4;
+  let arrangements=[];
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) if(i!==j) arrangements.push([i,j]);
+  let combos=[];
+  for(let i=0;i<n;i++) for(let j=i+1;j<n;j++) combos.push([i,j]);
+  function comboIndexOf(pair){
+    const sorted = [...pair].sort((a,b)=>a-b);
+    return combos.findIndex(c=>c[0]===sorted[0]&&c[1]===sorted[1]);
+  }
+  document.getElementById('cvcArr').innerHTML = arrangements.map(pair=>{
+    const ci = comboIndexOf(pair);
+    return `<div class="cvc-chip" style="border-color:${CVC_COLORS[ci]}">${CVC_FRUITS[pair[0]]}${CVC_FRUITS[pair[1]]}</div>`;
+  }).join('');
+  document.getElementById('cvcComb').innerHTML = combos.map((pair,ci)=>
+    `<div class="cvc-chip" style="border-color:${CVC_COLORS[ci]};background:${CVC_COLORS[ci]}22;">${CVC_FRUITS[pair[0]]}${CVC_FRUITS[pair[1]]}</div>`).join('');
+  document.getElementById('cvcArrCount').textContent = arrangements.length;
+  document.getElementById('cvcCombCount').textContent = combos.length;
+}
+
+/* ===================== TRIÂNGULO DE PASCAL ===================== */
+function buildPascal(){
+  const rows = 9;
+  let html = '';
+  for(let n=0;n<=rows;n++){
+    html += `<div class="pascal-row">`;
+    for(let k=0;k<=n;k++){
+      html += `<div class="pascal-cell" onclick="showPascalDetail(${n},${k})">${comb(n,k)}</div>`;
+    }
+    html += `</div>`;
+  }
+  document.getElementById('pascalGrid').innerHTML = html;
+}
+function showPascalDetail(n,k){
+  const val = comb(n,k);
+  document.getElementById('pascalDetail').innerHTML = `<div class="ad-title">C(${n},${k}) = ${val}</div><div class="ad-text">De <strong>${n}</strong> itens, existem <strong>${val}</strong> formas de escolher <strong>${k}</strong> sem se importar com a ordem. A soma de toda a linha ${n} é 2<sup>${n}</sup> = ${fmt(Math.pow(2,n))} — o total de subconjuntos possíveis de ${n} itens (incluindo não escolher nada e escolher tudo).</div>`;
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Um banco pede uma senha numérica de 4 dígitos (0 a 9), sem repetir nenhum dígito. Quantas senhas diferentes existem?',
+   a:'A ordem importa (1234 ≠ 4321) e não pode repetir dígito, então é <strong>Arranjo</strong>: A(10,4) = 10×9×8×7 = <strong>5.040</strong> senhas possíveis.'},
+  {q:'8 bichinhos correm 100 metros. De quantas formas diferentes o pódio (ouro, prata, bronze) pode ser formado?',
+   a:'A ordem importa (quem é ouro é diferente de quem é bronze) e usamos só 3 dos 8 corredores: <strong>Arranjo</strong> A(8,3) = 8×7×6 = <strong>336</strong> pódios possíveis.'},
+  {q:'Um professor precisa escolher 3 alunos dentre 12 para representar a turma numa feira (sem hierarquia entre eles). De quantas formas isso pode ser feito?',
+   a:'Não existe 1º/2º/3º aqui, é só um grupo — a ordem não importa: <strong>Combinação</strong> C(12,3) = 12!/(3!×9!) = <strong>220</strong> grupos possíveis.'},
+  {q:'Quantos anagramas existem da palavra AMOR?',
+   a:'4 letras, todas distintas, usando todas elas: <strong>Permutação Simples</strong> P(4) = 4! = <strong>24</strong> anagramas.'},
+  {q:'Quantos anagramas existem da palavra ARARA?',
+   a:'5 letras, mas o A aparece 3 vezes e o R aparece 2 vezes: <strong>Permutação com Repetição</strong> 5!/(3!×2!) = 120/12 = <strong>10</strong> anagramas distintos.'},
+  {q:'Na Mega-Sena, um jogador escolhe 6 números dentre 60. Quantos jogos diferentes são possíveis?',
+   a:'A ordem em que os números saem não muda o jogo — a ordem não importa: <strong>Combinação</strong> C(60,6) = <strong>50.063.860</strong> jogos possíveis (é por isso que ganhar é tão difícil!).'},
+  {q:'5 amigos vão se sentar numa mesa redonda. De quantas formas diferentes eles podem se sentar, considerando só quem fica ao lado de quem?',
+   a:'É uma roda, então giros não contam como arranjo novo: <strong>Permutação Circular</strong> (5−1)! = 4! = <strong>24</strong> formas.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Se a ordem dos elementos importa, o problema é sempre uma permutação.', a:false,
+   explain:'Só é permutação se você usar TODOS os elementos disponíveis. Se usar apenas uma parte (e a ordem importar), é um Arranjo — ex.: escolher o pódio (1º, 2º, 3º) dentre 8 corredores é arranjo, não permutação.'},
+  {q:'0! (zero fatorial) é igual a 1.', a:true,
+   explain:'Por convenção matemática, existe exatamente 1 jeito de organizar "nenhum elemento": não organizar nada. Essa convenção mantém as fórmulas de arranjo e combinação funcionando quando p = n.'},
+  {q:'Na Mega-Sena, a ordem em que os números saem no sorteio não muda o resultado do jogo — por isso usamos combinação.', a:true,
+   explain:'Sortear 5, 10, 15 é o mesmo jogo que sortear 15, 5, 10. Como a ordem não importa, a contagem correta é C(60,6), não um arranjo.'},
+  {q:'A palavra "BANANA" tem 720 anagramas diferentes, o mesmo que uma palavra de 6 letras todas distintas.', a:false,
+   explain:'BANANA tem letras repetidas (A aparece 3 vezes, N aparece 2 vezes), então o cálculo correto é 6!/(3!×2!) = 720/12 = 60 anagramas distintos — bem menos que 720.'},
+  {q:'Numa mesa redonda, girar todo mundo uma posição gera um arranjo diferente.', a:false,
+   explain:'É considerado o mesmo arranjo, porque ninguém trocou de vizinho. Por isso usamos (n−1)! em vez de n! na permutação circular.'},
+  {q:'Quando p = n (usamos todos os elementos disponíveis), arranjo e combinação sempre dão o mesmo resultado.', a:false,
+   explain:'O arranjo vira A(n,n) = n! (uma permutação completa), mas a combinação vira C(n,n) = 1 (só existe 1 jeito de "escolher" todo mundo, já que a ordem não importa). São bem diferentes!'},
+  {q:'O fatorial cresce mais rápido que uma função exponencial simples (como 2ⁿ).', a:true,
+   explain:'A partir de um certo n, n! ultrapassa qualquer exponencial de base fixa — é por isso que só 20 amigos já geram mais de 2 quintilhões de filas possíveis.'},
+  {q:'Se uma senha de 4 dígitos permite repetir números (0 a 9), o total de senhas é calculado pelo Princípio Fundamental da Contagem, não por arranjo.', a:true,
+   explain:'Com repetição permitida, cada posição tem sempre 10 opções: 10×10×10×10 = 10.000. O Arranjo A(n,p) só se aplica quando NÃO pode repetir.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+renderSorvete();
+renderPfcTree();
+renderFactorial();
+renderAnagram();
+renderRepeatPerm();
+renderCircular();
+renderRunners();
+renderToppings();
+renderCvc();
+buildPascal();
+buildProblems();
+buildQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Distribuição Binomial explicada do zero, como se fosse para uma criança, com moedas, cestas de basquete, fábricas e muitos gráficos e simulações interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Distribuição Binomial Explicada com Desenhos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+.hero-map-grid{display:flex;flex-direction:column;gap:10px;width:300px;}
+.hero-map-card{display:flex;align-items:center;gap:10px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.hero-map-exp{flex:1;font-size:20px;text-align:center;line-height:1.35;}
+.hero-map-exp span{display:block;font-size:10px;color:var(--text-secondary);font-family:'Inter',sans-serif;margin-top:2px;}
+.hero-map-arrow{font-size:15px;color:var(--text-disabled);flex-shrink:0;}
+.hero-map-x{font-family:'Roboto Mono',monospace;font-weight:800;color:var(--accent);font-size:12.5px;min-width:96px;text-align:center;flex-shrink:0;line-height:1.3;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn:disabled{opacity:.35;cursor:not-allowed;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- DECISION FLOW ---- */
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.arranjo{border-color:var(--accent-blue);}
+.decision-branch.combinacao{border-color:var(--accent-purple);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- TRIAL CHIPS ---- */
+.trial-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:14px 0;}
+.trial-chip{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:'Roboto Mono',monospace;flex-shrink:0;}
+.trial-chip.pending{background:var(--bg-elevated);border:2px dashed var(--border-strong);color:var(--text-disabled);}
+.trial-chip.success{background:rgba(125,222,216,.9);color:#0b3b32;}
+.trial-chip.fail{background:rgba(248,107,99,.9);color:#4a0f0a;}
+
+/* ---- CLASSIFY EXERCISE ---- */
+.classify-card{cursor:pointer;transition:.15s;}
+.classify-card:hover{border-color:var(--border-strong);}
+.classify-answer{display:none;}
+.classify-card.revealed .classify-answer{display:block;}
+.classify-card.revealed{border-color:var(--accent);}
+
+/* ---- PASCAL TRIANGLE ---- */
+.pascal-tri{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 0;overflow-x:auto;}
+.pascal-row{display:flex;gap:6px;justify-content:center;}
+.pascal-cell{min-width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Roboto Mono',monospace;font-size:11px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);flex-shrink:0;}
+.pascal-cell.hl{background:rgba(6,182,212,.20);border-color:var(--accent);color:var(--accent);font-weight:800;}
+
+/* ---- SEQUENCE CHIPS ---- */
+.seq-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:10px 0;}
+.seq-chip{display:flex;gap:2px;padding:6px 10px;border-radius:6px;background:var(--bg-elevated);border:1px solid var(--border-color);font-family:'Roboto Mono',monospace;font-size:12px;}
+.seq-chip span.s{color:var(--accent-green);font-weight:800;}
+.seq-chip span.f{color:var(--text-disabled);}
+
+/* ---- BINS GRID ---- */
+.bins-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.bins-letter{font-size:32px;font-weight:800;color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;margin-bottom:6px;}
+
+/* ---- MINI CHART GRID (forma) ---- */
+.mini-chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.mini-chart-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:10px;}
+.mini-chart-title{font-size:11px;text-align:center;color:var(--text-secondary);margin-bottom:6px;font-weight:700;}
+.mini-chart-title strong{color:var(--text-primary);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.bins-grid,.mini-chart-grid{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Distribuição Binomial</h1><span>Vários "sim ou não" juntos: contando quantos sucessos acontecem</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">17</div><div class="hstat-label">Conceitos</div></div>
+      <div class="hstat"><div class="hstat-num">np</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">13</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~60min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: de vários "sim ou não" até contar quantos sucessos</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Repita um "sim ou não" <em>n vezes</em> e conte os sucessos — isso é a Distribuição Binomial</h2>
+      <p>Você já sabe o que é um Ensaio de Bernoulli: uma única pergunta de sim ou não, com chance de sucesso <code>p</code>. Agora imagine repetir essa mesma pergunta <strong>n vezes</strong>, sempre nas mesmas condições e sem que uma tentativa influencie a outra, e contar <strong>quantos sucessos</strong> aconteceram no total. Esse número — que pode ser 0, 1, 2, ... até n — é uma <strong>variável aleatória Binomial</strong>. Quantos acertos em 10 arremessos? Quantas caras em 8 lançamentos de moeda? Quantas peças com defeito em um lote de 50? Todas essas perguntas escondem uma Binomial. Nesta aula vamos construir essa ideia do zero, com muitos desenhos, simulações e gráficos.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">n tentativas</span>
+        <span class="badge badge-blue">p chance de sucesso</span>
+        <span class="badge badge-purple">X = nº de sucessos</span>
+        <span class="badge badge-green">E(X) = n×p</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-map-grid">
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🏀<span>5 lances livres, quantos entram?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Binomial(n=5, p=0,7)</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">📝<span>10 perguntas, quantos chutes certos?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Binomial(n=10, p=0,25)</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">💉<span>20 vacinados, quantos ficam imunes?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Binomial(n=20, p=0,9)</div>
+        </div>
+      </div>
+      <div class="hero-visual-caption">Cada situação é "várias Bernoullis" — só muda o n, o p, e o que estamos contando.</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🎲 O que é a Distribuição Binomial?</div>
+    <p class="section-desc">
+      Pegue um Ensaio de Bernoulli (sucesso com chance <code style="color:var(--accent);">p</code>, fracasso com chance <code>1−p</code>) e repita-o <code style="color:var(--accent-blue);">n</code> vezes, sempre nas mesmas condições e sem que um resultado influencie o outro. Some quantos sucessos aconteceram: <code style="color:var(--accent);">X = X₁ + X₂ + ... + Xₙ</code>. Esse total <strong>X</strong> é a nossa <strong>variável Binomial</strong>, e escrevemos <code>X ~ Binomial(n, p)</code>. Ajuste n e p abaixo e sorteie os n ensaios para ver a soma nascer na sua frente.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n e p, depois sorteie os n ensaios de Bernoulli</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 Número de tentativas (n)</span><span class="ctrl-v" id="oqueNVal">8</span></div>
+          <input type="range" id="oqueN" min="1" max="15" step="1" value="8" oninput="oqueParamsChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 Chance de sucesso (p)</span><span class="ctrl-v" id="oquePVal">50%</span></div>
+          <input type="range" id="oqueP" min="1" max="99" step="1" value="50" oninput="renderOque()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;">
+        <button class="player-btn primary" onclick="oqueRunTrials()">🎲 Sortear os n ensaios</button>
+      </div>
+      <div class="trial-row" id="oqueTrialsRow"></div>
+      <div class="result-display">
+        <div><span class="rl">X = X₁+X₂+...+Xₙ</span><span class="rv" id="oqueSumResult">Clique em sortear</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>A Binomial não é uma fórmula nova e assustadora — é só a <strong>soma de várias Bernoullis idênticas e independentes</strong>. Se você entende bem uma única moeda, entender muitas moedas jogadas juntas é só um passo a mais.</p>
+    </div>
+  </section>
+
+  <!-- ============ CONDIÇÕES BINS ============ -->
+  <section class="section" id="s-condicoes">
+    <div class="section-eyebrow">O Teste Antes de Usar a Fórmula</div>
+    <div class="section-title">✅ As 4 condições: use o truque BINS</div>
+    <p class="section-desc">
+      Nem toda situação com números é uma Binomial! Para garantir que você pode usar a fórmula da Binomial, confira as <strong>4 condições</strong> — um jeito fácil de lembrar é a palavra <code style="color:var(--accent);">BINS</code>.
+    </p>
+
+    <div class="bins-grid">
+      <div class="card">
+        <div class="bins-letter">B</div>
+        <div class="card-title" style="justify-content:center;">Binário</div>
+        <div class="card-text" style="text-align:center;">Cada tentativa só tem <strong>2 resultados</strong> possíveis: sucesso ou fracasso. Nada de 3ª opção.</div>
+      </div>
+      <div class="card">
+        <div class="bins-letter">I</div>
+        <div class="card-title" style="justify-content:center;">Independente</div>
+        <div class="card-text" style="text-align:center;">O resultado de uma tentativa <strong>não muda</strong> a chance das próximas. Uma moeda não "lembra" da anterior.</div>
+      </div>
+      <div class="card">
+        <div class="bins-letter">N</div>
+        <div class="card-title" style="justify-content:center;">Número fixo</div>
+        <div class="card-text" style="text-align:center;">O total de tentativas <code>n</code> é <strong>combinado antes</strong> de começar — não é aleatório.</div>
+      </div>
+      <div class="card">
+        <div class="bins-letter">S</div>
+        <div class="card-title" style="justify-content:center;">mesma (Same) p</div>
+        <div class="card-text" style="text-align:center;">A chance de sucesso <code>p</code> é <strong>igual em todas</strong> as tentativas, do início ao fim.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Se alguma dessas 4 letras falhar, não é uma Binomial "pura" — pode ser Hipergeométrica (sem I, ao tirar cartas sem devolver), Poisson (sem N, sem um número fixo de tentativas) ou Geométrica (contando tentativas até o 1º sucesso). Vamos ver esses casos mais à frente, na seção "É ou não é Binomial?".</p>
+    </div>
+  </section>
+
+  <!-- ============ PARÂMETROS N E P ============ -->
+  <section class="section" id="s-parametros">
+    <div class="section-eyebrow">Os Dois Números Que Definem Tudo</div>
+    <div class="section-title">🎚️ Os parâmetros n e p</div>
+    <p class="section-desc">
+      A Binomial precisa de exatamente <strong>dois números</strong> para ser completamente definida: <code style="color:var(--accent-blue);">n</code> (quantas tentativas) e <code style="color:var(--accent);">p</code> (a chance de sucesso em cada uma). O <code>n</code> decide o <strong>alcance</strong> de X — ele pode ir de 0 até n. Já o <code>p</code> decide <strong>onde a probabilidade se concentra</strong> dentro desse alcance. Arraste os dois controles e veja o "esqueleto" da distribuição mudar de forma.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste n e p e veja como eles moldam a distribuição</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — número de tentativas</span><span class="ctrl-v" id="paramNVal">10</span></div>
+          <input type="range" id="paramN" min="1" max="40" step="1" value="10" oninput="renderParametros()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 p — chance de sucesso</span><span class="ctrl-v" id="paramPVal">50%</span></div>
+          <input type="range" id="paramP" min="1" max="99" step="1" value="50" oninput="renderParametros()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="paramPreviewCanvas" height="150"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Menor valor possível</div><div class="stat-card-value">0</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Maior valor possível</div><div class="stat-card-value" id="paramMaxVal">10</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Onde se concentra ≈ n×p</div><div class="stat-card-value" id="paramCenterVal">5.00</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Aumentar <code>n</code> alarga o "leque" de valores possíveis (mais barrinhas). Mudar <code>p</code> desloca o centro de massa para a esquerda (p pequeno) ou para a direita (p grande), sem mudar quantas barrinhas existem.</p>
+    </div>
+  </section>
+
+  <!-- ============ COEFICIENTE BINOMIAL ============ -->
+  <section class="section" id="s-coeficiente">
+    <div class="section-eyebrow">De Quantos Jeitos Isso Pode Acontecer?</div>
+    <div class="section-title">🔺 O coeficiente binomial C(n,k)</div>
+    <p class="section-desc">
+      Antes da fórmula completa, precisamos responder uma pergunta: se eu fizer <code style="color:var(--accent-blue);">n</code> tentativas e quiser <strong>exatamente</strong> <code style="color:var(--accent);">k</code> sucessos, de quantas <strong>ordens diferentes</strong> isso pode acontecer? Por exemplo, com n=3 tentativas e k=2 sucessos, os sucessos podem vir nas posições 1ª+2ª, 1ª+3ª ou 2ª+3ª — <strong>3 jeitos diferentes</strong>. Esse número de jeitos é o <strong>coeficiente binomial</strong>, escrito <code style="color:var(--accent);">C(n,k)</code> (ou "n escolhe k"), e aparece exatamente no <strong>Triângulo de Pascal</strong>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n e k e veja C(n,k) destacado no Triângulo de Pascal</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — tentativas</span><span class="ctrl-v" id="coefNVal">6</span></div>
+          <input type="range" id="coefN" min="0" max="10" step="1" value="6" oninput="coefNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✅ k — sucessos desejados</span><span class="ctrl-v" id="coefKVal">3</span></div>
+          <input type="range" id="coefK" min="0" max="6" step="1" value="3" oninput="renderCoef()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><div class="pascal-tri" id="pascalTri"></div></div>
+      <div class="card-formula" id="coefResult">C(6,3) = 20</div>
+      <div class="panel-label" style="margin-top:16px;">Veja todas as ordens possíveis (só quando n é pequeno)</div>
+      <div id="seqWrap"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 A fórmula por trás do triângulo é <code>C(n,k) = n! / (k! × (n−k)!)</code>. "!" é o fatorial (ex.: 4! = 4×3×2×1 = 24). Não precisa decorar a conta — o importante é entender que C(n,k) conta <strong>combinações</strong> (a ordem não importa, só quais posições tiveram sucesso).</p>
+    </div>
+  </section>
+
+  <!-- ============ PMF ============ -->
+  <section class="section" id="s-pmf">
+    <div class="section-eyebrow">O Retrato Completo da Binomial</div>
+    <div class="section-title">📊 Distribuição de Probabilidade (PMF)</div>
+    <p class="section-desc">
+      Juntando o coeficiente binomial com as probabilidades de sucesso e fracasso, chegamos na fórmula completa: <code style="color:var(--accent);">P(X=k) = C(n,k) × pᵏ × (1−p)ⁿ⁻ᵏ</code>. Em palavras: <strong>(quantos jeitos)</strong> × <strong>(chance de k sucessos)</strong> × <strong>(chance de n−k fracassos)</strong>. Arraste os controles e veja cada barrinha do gráfico — e sua fórmula por trás — mudar ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n, p e destaque um valor de k para ver a fórmula em ação</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — tentativas</span><span class="ctrl-v" id="pmfNVal">12</span></div>
+          <input type="range" id="pmfN" min="1" max="40" step="1" value="12" oninput="pmfKMaxUpdate()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 p — chance de sucesso</span><span class="ctrl-v" id="pmfPVal">40%</span></div>
+          <input type="range" id="pmfP" min="1" max="99" step="1" value="40" oninput="renderPmfMain()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✅ k — destacar</span><span class="ctrl-v" id="pmfKVal">4</span></div>
+          <input type="range" id="pmfK" min="0" max="12" step="1" value="4" oninput="renderPmfMain()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="pmfMainCanvas" height="220"></canvas></div>
+      <div class="card-formula" id="pmfFormulaBreak">C(12,4)=495 × p⁴=0.0256 × (1−p)⁸=0.0168 = 0.2128</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">P(X=k)</div><div class="stat-card-value" id="pmfKResult">0.2128</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Valor mais provável (moda)</div><div class="stat-card-value" id="pmfModeResult">5</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A regra de ouro da PMF</div>
+      <p>Some <strong>todas</strong> as barrinhas, de k=0 até k=n, e o resultado é <strong>sempre exatamente 1</strong> — não importa o n ou o p escolhido. Alguma quantidade de sucessos, entre 0 e n, tem que acontecer!</p>
+    </div>
+  </section>
+
+  <!-- ============ CDF ============ -->
+  <section class="section" id="s-cdf">
+    <div class="section-eyebrow">Somando a Probabilidade Aos Poucos</div>
+    <div class="section-title">📶 Função Acumulada (CDF)</div>
+    <p class="section-desc">
+      A <strong>função acumulada</strong> <code style="color:var(--accent);">F(k) = P(X ≤ k)</code> responde "qual a chance de X ser <em>até</em> esse valor?". Basta somar todas as barrinhas da PMF de 0 até k. As barras cianas fortes abaixo são a região somada; as barras apagadas ficam de fora.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n, p e k para ver F(k) = P(X ≤ k)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — tentativas</span><span class="ctrl-v" id="cdfNVal">12</span></div>
+          <input type="range" id="cdfN" min="1" max="40" step="1" value="12" oninput="cdfNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 p — chance de sucesso</span><span class="ctrl-v" id="cdfPVal">40%</span></div>
+          <input type="range" id="cdfP" min="1" max="99" step="1" value="40" oninput="renderCdf()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>k — até quantos sucessos</span><span class="ctrl-v" id="cdfKVal">5</span></div>
+          <input type="range" id="cdfK" min="0" max="12" step="1" value="5" oninput="renderCdf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="cdfCanvas" height="220"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-green"><div class="stat-card-label">F(k) = P(X≤k)</div><div class="stat-card-value" id="cdfLeResult">0.6892</div></div>
+        <div class="stat-card c-red"><div class="stat-card-label">P(X&gt;k) = 1−F(k)</div><div class="stat-card-value" id="cdfGtResult">0.3108</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">P(X=k)</div><div class="stat-card-value" id="cdfEqResult">0.2270</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>A função acumulada <strong>nunca diminui</strong>. Em k=n ela já vale exatamente 1, porque somamos toda a probabilidade possível — X não pode passar de n.</p>
+    </div>
+  </section>
+
+  <!-- ============ VALOR ESPERADO ============ -->
+  <section class="section" id="s-esperanca">
+    <div class="section-eyebrow">O "Centro de Gravidade" da Binomial</div>
+    <div class="section-title">⚖️ Valor Esperado E(X) = n×p</div>
+    <p class="section-desc">
+      Como X é a soma de n Bernoullis, e cada uma tem valor esperado p, a esperança da soma é só a soma das esperanças: <code style="color:var(--accent);">E(X) = n×p</code>. É a fórmula mais usada de toda a aula — se você joga uma moeda honesta 10 vezes, espera <code>10×0,5=5</code> caras, em média.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n e p e veja a linha tracejada marcar E(X) = n×p sobre a distribuição</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — tentativas</span><span class="ctrl-v" id="expNVal">15</span></div>
+          <input type="range" id="expN" min="1" max="40" step="1" value="15" oninput="renderEsperanca()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 p — chance de sucesso</span><span class="ctrl-v" id="expPVal">35%</span></div>
+          <input type="range" id="expP" min="1" max="99" step="1" value="35" oninput="renderEsperanca()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="expCanvas" height="200"></canvas></div>
+      <div class="card-formula" id="expFormula"></div>
+      <div class="result-display">
+        <div><span class="rl">E(X) = n×p</span><span class="rv" id="expResult">5.25</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Cuidado: E(X) não precisa ser um valor possível!</div>
+      <p>Se <code>n=15</code> e <code>p=0,35</code>, então <code>E(X)=5,25</code> — mas X só pode assumir números <strong>inteiros</strong> (0,1,2,...,15), nunca 5,25! O valor esperado é uma média de longo prazo (repetindo o experimento inteiro muitas vezes), não uma previsão de uma rodada específica.</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIÂNCIA ============ -->
+  <section class="section" id="s-variancia">
+    <div class="section-eyebrow">O Quão Imprevisível é o Total de Sucessos</div>
+    <div class="section-title">📏 Variância Var(X) = n×p×(1−p)</div>
+    <p class="section-desc">
+      Como cada Bernoulli tem variância <code>p(1−p)</code> e as tentativas são <strong>independentes</strong>, as variâncias também se somam: <code style="color:var(--accent);">Var(X) = n×p×(1−p)</code>. O desvio padrão é <code>σ = √(n×p×(1−p))</code>. Assim como na Bernoulli, a variância é <strong>máxima em p=0,5</strong> — só que agora escalada por n.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n e p e veja o marcador se mover sobre a curva da variância</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — tentativas</span><span class="ctrl-v" id="varNVal">15</span></div>
+          <input type="range" id="varN" min="1" max="40" step="1" value="15" oninput="renderVariancia()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 p — chance de sucesso</span><span class="ctrl-v" id="varPVal">50%</span></div>
+          <input type="range" id="varP" min="0" max="100" step="1" value="50" oninput="renderVariancia()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="varCanvas" height="220"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Var(X) = n×p×(1−p)</div><div class="stat-card-value" id="varResult">3.750</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Desvio padrão σ</div><div class="stat-card-value" id="varSdResult">1.936</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Variância máxima (n/4)</div><div class="stat-card-value" id="varMaxResult">3.75</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa?</div>
+      <p>Quanto maior o <code>n</code>, maior fica a variância <em>absoluta</em> — mas, relativamente ao tamanho de n, o resultado fica <strong>mais previsível</strong> (o desvio padrão relativo diminui). É por isso que pesquisas com mais entrevistados têm margens de erro menores.</p>
+    </div>
+  </section>
+
+  <!-- ============ FORMA / ASSIMETRIA ============ -->
+  <section class="section" id="s-forma">
+    <div class="section-eyebrow">Nem Toda Binomial é Simétrica</div>
+    <div class="section-title">📐 A forma muda: assimetria à esquerda, direita ou nenhuma</div>
+    <p class="section-desc">
+      Quando <code>p=0,5</code>, a distribuição é <strong>perfeitamente simétrica</strong> — sucesso e fracasso têm a mesma chance. Mas quando <code>p</code> se afasta de 0,5, a distribuição fica "puxada" para um lado. Com <code>p</code> pequeno, a maioria dos resultados fica perto de 0 (poucos sucessos) e a cauda longa aponta para a direita. Com <code>p</code> grande, é o oposto. Ajuste n e compare os três casos lado a lado.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n (mesmo n nos três gráficos) e compare p pequeno, médio e grande</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — tentativas</span><span class="ctrl-v" id="formaNVal">16</span></div>
+          <input type="range" id="formaN" min="5" max="40" step="1" value="16" oninput="renderForma()">
+        </div>
+      </div>
+      <div class="mini-chart-grid">
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">p=0,15 — <strong>assimetria à direita</strong></div>
+          <canvas id="formaCanvasLow" height="130"></canvas>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">p=0,50 — <strong>simétrica</strong></div>
+          <canvas id="formaCanvasMid" height="130"></canvas>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">p=0,85 — <strong>assimetria à esquerda</strong></div>
+          <canvas id="formaCanvasHigh" height="130"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Truque para lembrar o nome da assimetria: olhe para a <strong>cauda comprida</strong> (a parte fina que se estica). Se a cauda aponta para a direita, chamamos de "assimetria à direita" (mesmo com o pico do lado esquerdo!).</p>
+    </div>
+  </section>
+
+  <!-- ============ SIMULAÇÃO ============ -->
+  <section class="section" id="s-simulacao">
+    <div class="section-eyebrow">Vendo a Teoria Encontrar a Prática</div>
+    <div class="section-title">🔁 Simulação: do sorteio ao histograma</div>
+    <p class="section-desc">
+      Cada vez que você roda o experimento inteiro (todas as n tentativas de uma vez) e conta os sucessos, obtém <strong>um único número</strong> — uma amostra de X. Se você repetir esse experimento completo muitas vezes e desenhar um histograma dos resultados, ele vai se parecer cada vez mais com a PMF teórica. Vamos ver isso ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n e p, rode vários experimentos e observe o histograma se aproximar da curva teórica</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — tentativas por experimento</span><span class="ctrl-v" id="simNVal">10</span></div>
+          <input type="range" id="simN" min="1" max="30" step="1" value="10" oninput="simReset()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 p — chance de sucesso</span><span class="ctrl-v" id="simPVal">40%</span></div>
+          <input type="range" id="simP" min="1" max="99" step="1" value="40" oninput="simReset()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="player-btn primary" onclick="simRun(1)">🎲 Rodar 1 experimento</button>
+        <button class="player-btn" onclick="simRun(100)">🎲 Rodar 100 experimentos</button>
+        <button class="player-btn" onclick="simRun(1000)">🎲 Rodar 1.000 experimentos</button>
+        <button class="player-btn" onclick="simReset()">⏹ Reiniciar</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="simCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">🟢 Barras verdes = frequência observada nos experimentos simulados. 🟡 Linha amarela = PMF teórica exata.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Experimentos rodados</div><div class="stat-card-value" id="simRunsVal">0</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Média observada</div><div class="stat-card-value" id="simEmpMean">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Média teórica n×p</div><div class="stat-card-value" id="simTheoMean">4.00</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Com poucos experimentos, o histograma verde fica "esburacado" e irregular. Conforme os experimentos se acumulam, ele vai grudando na curva amarela teórica — a Lei dos Grandes Números em ação, agora para a distribuição inteira, não só para a média.</p>
+    </div>
+  </section>
+
+  <!-- ============ APROXIMAÇÃO NORMAL ============ -->
+  <section class="section" id="s-normal">
+    <div class="section-eyebrow">Quando n Fica Grande</div>
+    <div class="section-title">🔔 Quando a Binomial vira um Sino (Aproximação Normal)</div>
+    <p class="section-desc">
+      Conforme <code style="color:var(--accent-blue);">n</code> cresce, a "escadinha" de barrinhas da Binomial começa a lembrar cada vez mais uma <strong>curva em forma de sino</strong> — a famosa Distribuição Normal, com média <code>μ=n×p</code> e desvio padrão <code>σ=√(n×p×(1−p))</code>. Essa aproximação só funciona bem quando <code>n×p ≥ 5</code> <strong>e</strong> <code>n×(1−p) ≥ 5</code> — ou seja, quando não há poucos sucessos nem poucos fracassos esperados.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n e p e veja a curva Normal (linha amarela) se ajustar às barras da Binomial</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 n — tentativas</span><span class="ctrl-v" id="normNVal">40</span></div>
+          <input type="range" id="normN" min="5" max="300" step="1" value="40" oninput="renderNormal()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 p — chance de sucesso</span><span class="ctrl-v" id="normPVal">50%</span></div>
+          <input type="range" id="normP" min="1" max="99" step="1" value="50" oninput="renderNormal()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="normCanvas" height="220"></canvas></div>
+      <div style="display:flex;justify-content:center;margin-top:12px;"><span class="badge badge-green" id="normBadge">✅ Aproximação boa</span></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">μ = n×p</div><div class="stat-card-value" id="normMeanVal">20.00</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">σ = √(n×p×(1−p))</div><div class="stat-card-value" id="normSdVal">3.16</div></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Diminua n ou leve p perto de 0 ou de 1 — repare como o sino amarelo deixa de encaixar bem nas barras cianas quando np ou n(1−p) ficam menores que 5. Nesses casos, é melhor usar a fórmula exata da Binomial (ou, para eventos bem raros, a Distribuição de Poisson).</p>
+    </div>
+  </section>
+
+  <!-- ============ É OU NÃO É BINOMIAL ============ -->
+  <section class="section" id="s-exemplos">
+    <div class="section-eyebrow">Praticando o Olho Clínico</div>
+    <div class="section-title">🔍 É ou não é Binomial?</div>
+    <p class="section-desc">Clique em cada situação para descobrir se ela é (ou não) uma Distribuição Binomial — e, se não for, qual seria o modelo certo.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada exemplo para revelar a resposta</div>
+      <div class="grid-4" id="binomialCheckGrid"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Truque rápido: confira o BINS. Se faltar o <strong>I</strong> (independência), geralmente é Hipergeométrica. Se faltar o <strong>N</strong> (número fixo), pode ser Poisson ou Geométrica. Se faltar o <strong>B</strong> (só 2 resultados), talvez precise de um modelo Multinomial.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela">
+    <div class="section-eyebrow">Tudo Que Você Precisa, num Só Lugar</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todos os conceitos desta aula reunidos, prontos para consulta.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">✅ Condições (BINS)</div>
+        <div class="card-formula">Binário · Independente · N fixo · Same p</div>
+        <div class="card-text">As 4 condições que uma situação precisa cumprir para valer a fórmula da Binomial.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎚️ Parâmetros</div>
+        <div class="card-formula">n (tentativas), p (chance de sucesso)</div>
+        <div class="card-text">Esses dois números definem completamente a distribuição. X varia de 0 até n.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔺 Coeficiente binomial</div>
+        <div class="card-formula">C(n,k) = n! / (k!(n−k)!)</div>
+        <div class="card-text">Conta de quantos jeitos diferentes é possível ter exatamente k sucessos em n tentativas.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 PMF</div>
+        <div class="card-formula">P(X=k) = C(n,k) pᵏ (1−p)ⁿ⁻ᵏ</div>
+        <div class="card-text">A chance de obter exatamente k sucessos em n tentativas independentes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📶 CDF</div>
+        <div class="card-formula">F(k) = P(X≤k) = Σ P(X=i), i=0..k</div>
+        <div class="card-text">Soma acumulada da PMF até k. Nunca diminui; vale 1 em k=n.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚖️ Valor Esperado</div>
+        <div class="card-formula">E(X) = n×p</div>
+        <div class="card-text">O número médio de sucessos esperado, repetindo o experimento inteiro muitas vezes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Variância e Desvio Padrão</div>
+        <div class="card-formula">Var(X)=n×p(1−p), σ=√Var(X)</div>
+        <div class="card-text">Máxima em p=0,5. Mede o quanto o total de sucessos costuma se espalhar ao redor de np.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 Aproximação Normal</div>
+        <div class="card-formula">n×p ≥ 5 e n×(1−p) ≥ 5</div>
+        <div class="card-text">Quando n é grande e p não é extremo, a Binomial ~ Normal(μ=np, σ=√(np(1−p))).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Caso especial: n=1</div>
+        <div class="card-formula">Binomial(1,p) = Bernoulli(p)</div>
+        <div class="card-text">Uma Binomial com uma única tentativa é, por definição, exatamente uma Bernoulli.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">✅ Boas práticas: como não se confundir</div>
+
+    <div class="decision-flow">
+      <div class="decision-q">Antes de aplicar a fórmula da Binomial: a situação passa no teste BINS (Binário, Independente, N fixo, Same p)?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">✅ Sim, passa nas 4 letras</div>
+          <div class="decision-result">➡️ É uma <strong>Binomial(n,p)</strong></div>
+          <div class="decision-example">Ex.: número de caras em 10 lançamentos de moeda; número de peças defeituosas em 50 unidades independentes.</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">❌ Não, alguma letra falha</div>
+          <div class="decision-result">➡️ Precisa de outro modelo</div>
+          <div class="decision-example">Sem reposição (falha o I) → Hipergeométrica. Sem n fixo (falha o N) → Poisson ou Geométrica.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">1️⃣ C(n,k) não é n×k nem nⁿ</div>
+        <div class="card-text">É comum confundir o coeficiente binomial com uma simples multiplicação ou potência. C(n,k) é sempre calculado com fatoriais: n!/(k!(n−k)!).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Reposição importa</div>
+        <div class="card-text">Tirar cartas ou bolas <strong>sem devolver</strong> muda a chance a cada tentativa — isso quebra a independência e vira uma Hipergeométrica, não uma Binomial.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Normal só serve quando n é grande o bastante</div>
+        <div class="card-text">Usar a aproximação Normal com np&lt;5 ou n(1−p)&lt;5 dá resultados ruins — nesses casos, calcule com a fórmula exata da Binomial.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1: confundir "pelo menos k" com "exatamente k"</div>
+      <p>P(X≥k) não é o mesmo que P(X=k)! "Pelo menos k sucessos" exige somar P(X=k)+P(X=k+1)+...+P(X=n), ou usar <code>1−F(k−1)</code>.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2: esquecer de checar a independência</div>
+      <p>Se tirar uma amostra pequena de uma população pequena <strong>sem reposição</strong>, cada retirada muda a proporção restante — a Binomial deixa de valer exatamente (embora, para populações bem grandes, ainda seja uma boa aproximação).</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Sempre que vir "quantos de n tentativas..." com a mesma chance e independência, pare e escreva <code>X ~ Binomial(n,p)</code> antes de calcular qualquer coisa. Identificar o modelo certo já resolve metade do problema.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer style="display:flex;justify-content:space-between;color:var(--text-disabled);font-size:11px;padding-top:10px;border-top:1px solid var(--border-color);">
+    <span>Profissão Dados — Distribuição Binomial</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function comb(n,k){ if(k<0||k>n) return 0; k=Math.min(k,n-k); let r=1; for(let i=0;i<k;i++) r = r*(n-i)/(i+1); return Math.round(r); }
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function pct(x,d=1){ return (x*100).toFixed(d).replace('.',',')+'%'; }
+function binomialPmf(n,k,p){ return comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k); }
+function gaussianPdf(x,mean,sd){ return Math.exp(-0.5*Math.pow((x-mean)/sd,2))/(sd*Math.sqrt(2*Math.PI)); }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* ===================== generic bar chart (PMF-shaped) ===================== */
+function drawPmfBars(canvasId, values, highlightIndex, afterDraw){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = Math.max(...values, 1e-9);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const barW = plotW/n;
+  values.forEach((v,k)=>{
+    const barH = (v/maxV)*plotH;
+    const x = PL + k*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - barH;
+    ctx.fillStyle = k===highlightIndex ? '#06b6d4' : 'rgba(6,182,212,.38)';
+    roundRectPath(ctx, x, y, Math.max(bw,1), barH, 2);
+    ctx.fill();
+    if(n<=40){
+      ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+      ctx.fillText(k, x+bw/2, PT+plotH+14);
+    }
+  });
+  const layout = {
+    toX:(k)=> PL + k*barW + barW/2,
+    toY:(v)=> PT + plotH - (v/maxV)*plotH,
+    PL, PT, plotW, plotH, barW, maxV
+  };
+  if(afterDraw) afterDraw(ctx, layout);
+  return layout;
+}
+function drawCdfBars(canvasId, values, k){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = Math.max(...values, 1e-9);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const barW = plotW/n;
+  values.forEach((v,kk)=>{
+    const barH = (v/maxV)*plotH;
+    const x = PL + kk*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - barH;
+    ctx.fillStyle = kk<=k ? '#06b6d4' : 'rgba(6,182,212,.18)';
+    roundRectPath(ctx, x, y, Math.max(bw,1), barH, 2);
+    ctx.fill();
+    if(n<=40){
+      ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+      ctx.fillText(kk, x+bw/2, PT+plotH+14);
+    }
+  });
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🎲', label:'O que é'},
+  {id:'s-condicoes', icon:'✅', label:'Condições BINS'},
+  {id:'s-parametros', icon:'🎚️', label:'Parâmetros n,p'},
+  {id:'s-coeficiente', icon:'🔺', label:'Coeficiente C(n,k)'},
+  {id:'s-pmf', icon:'📊', label:'Distribuição (PMF)'},
+  {id:'s-cdf', icon:'📶', label:'Acumulada (CDF)'},
+  {id:'s-esperanca', icon:'⚖️', label:'E(X) = np'},
+  {id:'s-variancia', icon:'📏', label:'Var(X)'},
+  {id:'s-forma', icon:'📐', label:'Forma/Assimetria'},
+  {id:'s-simulacao', icon:'🔁', label:'Simulação'},
+  {id:'s-normal', icon:'🔔', label:'Aprox. Normal'},
+  {id:'s-exemplos', icon:'🔍', label:'É Binomial?'},
+  {id:'s-tabela', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== O QUE É (builder) ===================== */
+let oqueResults = [];
+function oqueParamsChanged(){ oqueResults=[]; renderOque(); }
+function oqueRunTrials(){
+  const n = +document.getElementById('oqueN').value;
+  const p = +document.getElementById('oqueP').value/100;
+  oqueResults = Array.from({length:n}, ()=> Math.random()<p ? 1 : 0);
+  renderOque();
+}
+function renderOque(){
+  const n = +document.getElementById('oqueN').value;
+  const p = +document.getElementById('oqueP').value/100;
+  document.getElementById('oqueNVal').textContent = n;
+  document.getElementById('oquePVal').textContent = pct(p,0);
+  if(oqueResults.length !== n) oqueResults = new Array(n).fill(null);
+  document.getElementById('oqueTrialsRow').innerHTML = oqueResults.map(r =>
+    r===null ? `<div class="trial-chip pending">?</div>` : `<div class="trial-chip ${r?'success':'fail'}">${r}</div>`
+  ).join('');
+  const has = oqueResults.every(r=>r!==null);
+  const k = oqueResults.filter(r=>r===1).length;
+  document.getElementById('oqueSumResult').textContent = has ? `X = ${k} sucesso(s) em ${n} tentativas` : 'Clique em sortear';
+}
+
+/* ===================== PARÂMETROS n, p ===================== */
+function renderParametros(){
+  const n = +document.getElementById('paramN').value;
+  const p = +document.getElementById('paramP').value/100;
+  document.getElementById('paramNVal').textContent = n;
+  document.getElementById('paramPVal').textContent = pct(p,0);
+  document.getElementById('paramMaxVal').textContent = n;
+  document.getElementById('paramCenterVal').textContent = (n*p).toFixed(2);
+  const values=[]; for(let k=0;k<=n;k++) values.push(binomialPmf(n,k,p));
+  drawPmfBars('paramPreviewCanvas', values, -1);
+}
+
+/* ===================== COEFICIENTE BINOMIAL / PASCAL ===================== */
+function combos(n,k){
+  const result=[];
+  function rec(start, chosen){
+    if(chosen.length===k){ result.push(chosen.slice()); return; }
+    for(let i=start;i<n;i++){ chosen.push(i); rec(i+1,chosen); chosen.pop(); }
+  }
+  rec(0,[]);
+  return result;
+}
+function buildSeqChips(n,k){
+  if(n>6) return null;
+  const idxCombos = combos(n,k);
+  return idxCombos.map(idxSet=>{
+    let chip='';
+    for(let i=0;i<n;i++) chip += idxSet.includes(i) ? '<span class="s">S</span>' : '<span class="f">F</span>';
+    return `<div class="seq-chip">${chip}</div>`;
+  }).join('');
+}
+function renderPascal(n,k){
+  const rows=[];
+  for(let r=0;r<=n;r++){
+    let row='<div class="pascal-row">';
+    for(let c=0;c<=r;c++){
+      const isHL = (r===n && c===k);
+      row += `<div class="pascal-cell ${isHL?'hl':''}">${comb(r,c)}</div>`;
+    }
+    row+='</div>';
+    rows.push(row);
+  }
+  document.getElementById('pascalTri').innerHTML = rows.join('');
+}
+function coefNChanged(){
+  const n = +document.getElementById('coefN').value;
+  const kSlider = document.getElementById('coefK');
+  kSlider.max = n;
+  if(+kSlider.value>n) kSlider.value = Math.floor(n/2);
+  renderCoef();
+}
+function renderCoef(){
+  const n = +document.getElementById('coefN').value;
+  const k = +document.getElementById('coefK').value;
+  document.getElementById('coefNVal').textContent = n;
+  document.getElementById('coefKVal').textContent = k;
+  const c = comb(n,k);
+  document.getElementById('coefResult').textContent = `C(${n},${k}) = ${fmt(c)}`;
+  renderPascal(n,k);
+  const seqHtml = buildSeqChips(n,k);
+  const seqWrap = document.getElementById('seqWrap');
+  if(seqHtml===null){
+    seqWrap.innerHTML = '<div class="info-box"><p>Para n&gt;6 já existem sequências demais para listar uma a uma (mas a fórmula continua funcionando perfeitamente!). Reduza n para ver a lista completa.</p></div>';
+  } else if(seqHtml===''){
+    seqWrap.innerHTML = '<div class="info-box"><p>Com k=0, existe só 1 jeito: nenhuma tentativa dá sucesso.</p></div>';
+  } else {
+    seqWrap.innerHTML = `<div class="canvas-wrap"><div class="seq-grid">${seqHtml}</div></div>`;
+  }
+}
+
+/* ===================== PMF PRINCIPAL ===================== */
+function pmfKMaxUpdate(){
+  const n = +document.getElementById('pmfN').value;
+  const kSlider = document.getElementById('pmfK');
+  kSlider.max = n;
+  if(+kSlider.value>n) kSlider.value = Math.round(n/2);
+  renderPmfMain();
+}
+function renderPmfMain(){
+  const n = +document.getElementById('pmfN').value;
+  const p = +document.getElementById('pmfP').value/100;
+  const k = +document.getElementById('pmfK').value;
+  document.getElementById('pmfNVal').textContent = n;
+  document.getElementById('pmfPVal').textContent = pct(p,0);
+  document.getElementById('pmfKVal').textContent = k;
+  const c = comb(n,k);
+  const pk = Math.pow(p,k);
+  const qnk = Math.pow(1-p,n-k);
+  const prob = c*pk*qnk;
+  document.getElementById('pmfFormulaBreak').innerHTML =
+    `C(${n},${k})=${fmt(c)} &nbsp;×&nbsp; p<sup>${k}</sup>=${pk.toFixed(4)} &nbsp;×&nbsp; (1−p)<sup>${n-k}</sup>=${qnk.toFixed(4)} &nbsp;=&nbsp; <strong style="color:var(--accent)">${prob.toFixed(4)}</strong>`;
+  document.getElementById('pmfKResult').textContent = prob.toFixed(4)+' ('+pct(prob,2)+')';
+  let maxP=-1, mode=0; const values=[];
+  for(let kk=0;kk<=n;kk++){ const v=binomialPmf(n,kk,p); values.push(v); if(v>maxP){maxP=v; mode=kk;} }
+  document.getElementById('pmfModeResult').textContent = mode;
+  drawPmfBars('pmfMainCanvas', values, k);
+}
+
+/* ===================== CDF ===================== */
+function cdfNChanged(){
+  const n = +document.getElementById('cdfN').value;
+  const kSlider = document.getElementById('cdfK');
+  kSlider.max = n;
+  if(+kSlider.value>n) kSlider.value = Math.round(n/2);
+  renderCdf();
+}
+function renderCdf(){
+  const n = +document.getElementById('cdfN').value;
+  const p = +document.getElementById('cdfP').value/100;
+  const k = +document.getElementById('cdfK').value;
+  document.getElementById('cdfNVal').textContent = n;
+  document.getElementById('cdfPVal').textContent = pct(p,0);
+  document.getElementById('cdfKVal').textContent = k;
+  const values=[]; for(let kk=0;kk<=n;kk++) values.push(binomialPmf(n,kk,p));
+  const Fk = values.slice(0,k+1).reduce((a,b)=>a+b,0);
+  document.getElementById('cdfLeResult').textContent = Fk.toFixed(4);
+  document.getElementById('cdfGtResult').textContent = (1-Fk).toFixed(4);
+  document.getElementById('cdfEqResult').textContent = values[k].toFixed(4);
+  drawCdfBars('cdfCanvas', values, k);
+}
+
+/* ===================== VALOR ESPERADO ===================== */
+function renderEsperanca(){
+  const n = +document.getElementById('expN').value;
+  const p = +document.getElementById('expP').value/100;
+  document.getElementById('expNVal').textContent = n;
+  document.getElementById('expPVal').textContent = pct(p,0);
+  const mean = n*p;
+  document.getElementById('expFormula').innerHTML = `E(X) = n×p = ${n}×${p.toFixed(2)} = <strong style="color:var(--accent)">${mean.toFixed(2)}</strong>`;
+  document.getElementById('expResult').textContent = mean.toFixed(2);
+  const values=[]; for(let k=0;k<=n;k++) values.push(binomialPmf(n,k,p));
+  drawPmfBars('expCanvas', values, -1, (ctx,L)=>{
+    const mx = L.toX(mean);
+    ctx.setLineDash([4,3]); ctx.strokeStyle='#e8b339'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(mx, L.PT); ctx.lineTo(mx, L.PT+L.plotH); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#e8b339'; ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center';
+    ctx.fillText('E(X)='+mean.toFixed(1), mx, L.PT-4);
+  });
+}
+
+/* ===================== VARIÂNCIA ===================== */
+function renderVariancia(){
+  const n = +document.getElementById('varN').value;
+  const p = +document.getElementById('varP').value/100;
+  document.getElementById('varNVal').textContent = n;
+  document.getElementById('varPVal').textContent = pct(p,0);
+  const v = n*p*(1-p);
+  const sd = Math.sqrt(v);
+  document.getElementById('varResult').textContent = v.toFixed(3);
+  document.getElementById('varSdResult').textContent = sd.toFixed(3);
+  document.getElementById('varMaxResult').textContent = (n/4).toFixed(2);
+  drawVarParabola(n,p,v);
+}
+function drawVarParabola(n,p,v){
+  const canvas = document.getElementById('varCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=44, PR=20, PT=20, PB=32;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  const maxV = n/4;
+  function toX(pp){ return PL + plotW*pp; }
+  function toY(vv){ return PT + plotH*(1-vv/maxV); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  for(let i=0;i<=4;i++){ const vv=maxV*i/4; const y=toY(vv); ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke(); ctx.fillText(vv.toFixed(2),PL-6,y+3); }
+  ctx.textAlign='center';
+  for(let pp=0; pp<=1.001; pp+=0.25){ ctx.fillStyle='#98a2b3'; ctx.fillText(pp.toFixed(2), toX(pp), h-PB+16); }
+  ctx.beginPath();
+  for(let i=0;i<=100;i++){ const pp=i/100; const vv=n*pp*(1-pp); const px=toX(pp), py=toY(vv); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  ctx.strokeStyle='#36a2ef'; ctx.lineWidth=2.4; ctx.stroke();
+  ctx.setLineDash([4,3]); ctx.strokeStyle='#e8b339'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(toX(p),toY(0)); ctx.lineTo(toX(p),toY(v)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PL,toY(v)); ctx.lineTo(toX(p),toY(v)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(toX(p),toY(v),5,0,Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+/* ===================== FORMA / ASSIMETRIA ===================== */
+function renderForma(){
+  const n = +document.getElementById('formaN').value;
+  document.getElementById('formaNVal').textContent = n;
+  [{id:'formaCanvasLow',p:0.15},{id:'formaCanvasMid',p:0.5},{id:'formaCanvasHigh',p:0.85}].forEach(cfg=>{
+    const values=[]; for(let k=0;k<=n;k++) values.push(binomialPmf(n,k,cfg.p));
+    drawPmfBars(cfg.id, values, -1);
+  });
+}
+
+/* ===================== SIMULAÇÃO ===================== */
+let simCounts = []; let simRuns = 0;
+function simReset(){
+  const n = +document.getElementById('simN').value;
+  simCounts = new Array(n+1).fill(0);
+  simRuns = 0;
+  renderSim();
+}
+function simRun(times){
+  const n = +document.getElementById('simN').value;
+  const p = +document.getElementById('simP').value/100;
+  if(simCounts.length !== n+1) simCounts = new Array(n+1).fill(0);
+  for(let t=0;t<times;t++){
+    let k=0;
+    for(let i=0;i<n;i++) if(Math.random()<p) k++;
+    simCounts[k]++;
+    simRuns++;
+  }
+  renderSim();
+}
+function renderSim(){
+  const n = +document.getElementById('simN').value;
+  const p = +document.getElementById('simP').value/100;
+  document.getElementById('simNVal').textContent = n;
+  document.getElementById('simPVal').textContent = pct(p,0);
+  document.getElementById('simRunsVal').textContent = fmt(simRuns);
+  const empMean = simRuns>0 ? simCounts.reduce((s,c,k)=>s+c*k,0)/simRuns : 0;
+  document.getElementById('simEmpMean').textContent = simRuns>0 ? empMean.toFixed(2) : '—';
+  document.getElementById('simTheoMean').textContent = (n*p).toFixed(2);
+  const empProbs = simCounts.map(c => simRuns>0 ? c/simRuns : 0);
+  const theoProbs=[]; for(let k=0;k<=n;k++) theoProbs.push(binomialPmf(n,k,p));
+  drawSimChart(empProbs, theoProbs);
+}
+function drawSimChart(emp, theo){
+  const canvas = document.getElementById('simCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = emp.length;
+  const maxV = Math.max(...emp, ...theo, 0.01);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  const barW = plotW/n;
+  for(let k=0;k<n;k++){
+    const bh = (emp[k]/maxV)*plotH;
+    const x = PL + k*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - bh;
+    ctx.fillStyle='rgba(125,222,216,.75)';
+    roundRectPath(ctx,x,y,Math.max(bw,1),bh,2); ctx.fill();
+  }
+  ctx.beginPath();
+  for(let k=0;k<n;k++){
+    const cx = PL + k*barW + barW/2;
+    const cy = PT + plotH - (theo[k]/maxV)*plotH;
+    if(k===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy);
+  }
+  ctx.strokeStyle='#e8b339'; ctx.lineWidth=2; ctx.stroke();
+  if(n<=40){
+    ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+    for(let k=0;k<n;k++) ctx.fillText(k, PL+k*barW+barW/2, PT+plotH+14);
+  }
+}
+
+/* ===================== APROXIMAÇÃO NORMAL ===================== */
+function renderNormal(){
+  const n = +document.getElementById('normN').value;
+  const p = +document.getElementById('normP').value/100;
+  document.getElementById('normNVal').textContent = n;
+  document.getElementById('normPVal').textContent = pct(p,0);
+  const mean = n*p, sd = Math.sqrt(n*p*(1-p));
+  document.getElementById('normMeanVal').textContent = mean.toFixed(2);
+  document.getElementById('normSdVal').textContent = sd.toFixed(2);
+  const npOk = n*p>=5, nqOk = n*(1-p)>=5;
+  const badge = document.getElementById('normBadge');
+  if(npOk && nqOk){ badge.className='badge badge-green'; badge.textContent='✅ Aproximação boa (np≥5 e n(1−p)≥5)'; }
+  else { badge.className='badge badge-purple'; badge.textContent='⚠️ Aproximação fraca (np<5 ou n(1−p)<5) — use a fórmula exata'; }
+  const values=[]; for(let k=0;k<=n;k++) values.push(binomialPmf(n,k,p));
+  drawPmfBars('normCanvas', values, -1, (ctx,L)=>{
+    ctx.beginPath();
+    const step = Math.max(n/200, 0.25);
+    for(let x=0;x<=n;x+=step){
+      const gy = gaussianPdf(x,mean,sd);
+      const px = L.toX(x);
+      const py = L.PT + L.plotH - (gy/L.maxV)*L.plotH;
+      if(x===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle='#e8b339'; ctx.lineWidth=2.2; ctx.stroke();
+  });
+}
+
+/* ===================== É OU NÃO É BINOMIAL ===================== */
+const binomialCheckItems = [
+  {emoji:'🏀', label:'Número de cestas em 10 arremessos livres, mesma pontaria em todos', isB:true, note:'n=10 fixo, cada arremesso independente, mesma p sempre, só 2 saídas (acerta/erra). É Binomial!'},
+  {emoji:'🎴', label:'Tirar 5 cartas de um baralho sem devolver e contar quantos ases saíram', isB:false, note:'Sem reposição, a chance muda a cada carta retirada — isso é a Distribuição Hipergeométrica, não Binomial.'},
+  {emoji:'📧', label:'Quantos e-mails chegam numa caixa de entrada em 1 hora', isB:false, note:'Não existe um "n" fixo de tentativas nem um limite máximo — isso é modelado pela Distribuição de Poisson.'},
+  {emoji:'💊', label:'De 20 pacientes, quantos apresentam efeito colateral do remédio (mesma chance para todos, independentes)', isB:true, note:'n=20 fixo, p igual e independente para cada paciente. É Binomial!'},
+  {emoji:'🎯', label:'Número de tentativas até acertar o alvo pela 1ª vez', isB:false, note:'Aqui o que conta é "quantas tentativas até o 1º sucesso" — isso é a Distribuição Geométrica, não Binomial.'},
+  {emoji:'🔧', label:'Em um lote de 50 peças, quantas saem defeituosas (produção em massa, chance igual e independente)', isB:true, note:'n=50 fixo, p igual para cada peça, produção independente. É Binomial!'},
+  {emoji:'🪙', label:'Jogar uma moeda até sair 3 caras, contando quantos lançamentos foram necessários', isB:false, note:'O número de tentativas aqui é aleatório, não fixo — isso é a Distribuição Binomial Negativa.'},
+  {emoji:'📝', label:'Prova de 15 perguntas de sim/não, aluno responde chutando tudo (mesma chance em cada)', isB:true, note:'n=15 fixo, p=0,5 igual e independente em cada pergunta. É Binomial!'},
+];
+function buildBinomialCheck(){
+  document.getElementById('binomialCheckGrid').innerHTML = binomialCheckItems.map(it => `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div style="font-size:26px;text-align:center;">${it.emoji}</div>
+      <div class="card-text" style="text-align:center;margin-top:6px;">${it.label}</div>
+      <div class="classify-answer" style="text-align:center;margin-top:10px;">
+        <span class="badge ${it.isB?'badge-green':'badge-purple'}">${it.isB?'✅ É Binomial':'❌ Não é Binomial'}</span>
+        <div class="card-text" style="margin-top:8px;">${it.note}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Uma fábrica produz peças com 10% de chance de defeito, cada peça independente. Em um lote de 20 peças, qual a chance de exatamente 2 saírem defeituosas?',
+   a:'X ~ Binomial(n=20, p=0,10). <strong>P(X=2) = C(20,2)×0,10²×0,90¹⁸ = 190×0,01×0,1501 ≈ 0,2852 (28,5%)</strong>.'},
+  {q:'Um vendedor tem 30% de chance de fechar venda em cada ligação e faz 8 ligações independentes. Qual o número esperado de vendas e o desvio padrão?',
+   a:'<strong>E(X) = n×p = 8×0,3 = 2,4</strong> vendas esperadas. <strong>Var(X) = 8×0,3×0,7 = 1,68</strong>, logo σ ≈ 1,296.'},
+  {q:'Numa prova de 10 questões verdadeiro/falso, um aluno chuta todas as respostas. Qual a chance de acertar pelo menos 8?',
+   a:'X ~ Binomial(n=10, p=0,5). P(X≥8) = P(8)+P(9)+P(10) = C(10,8)×0,5¹⁰ + C(10,9)×0,5¹⁰ + C(10,10)×0,5¹⁰ = (45+10+1)×0,000977 ≈ <strong>0,0547 (5,47%)</strong>. Chutar tudo raramente garante uma boa nota!'},
+  {q:'Uma moeda honesta é lançada 6 vezes. Qual a chance de sair exatamente 3 caras?',
+   a:'X ~ Binomial(n=6, p=0,5). <strong>P(X=3) = C(6,3)×0,5³×0,5³ = 20×0,015625 = 0,3125 (31,25%)</strong> — a maior barrinha do gráfico, já que 3 é bem o meio de 0 a 6.'},
+  {q:'Se X ~ Binomial(n=50, p=0,04), a aproximação Normal é uma boa ideia aqui? Calcule n×p e n×(1−p).',
+   a:'n×p = 50×0,04 = <strong>2</strong> e n×(1−p) = 50×0,96 = 48. Como n×p &lt; 5, a aproximação Normal <strong>não</strong> é recomendada — melhor usar a fórmula exata da Binomial (ou, para eventos raros como este, a Distribuição de Poisson).'},
+  {q:'Numa campanha de vacinação, 90% dos vacinados ficam imunes, de forma independente. Para 15 pessoas vacinadas, qual o número esperado de imunizados e a variância?',
+   a:'X ~ Binomial(n=15, p=0,9). <strong>E(X) = 15×0,9 = 13,5</strong> imunizados esperados. <strong>Var(X) = 15×0,9×0,1 = 1,35</strong>.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Na Distribuição Binomial, o número de tentativas n é sempre fixo antes de o experimento começar.', a:true,
+   explain:'Sim — n é decidido com antecedência. Se o número de tentativas fosse aleatório, não seria mais uma Binomial (poderia virar Geométrica ou Binomial Negativa).'},
+  {q:'As tentativas de uma Binomial podem ter probabilidades de sucesso diferentes entre si.', a:false,
+   explain:'Não! Uma das 4 condições (o "S" de BINS) exige que p seja exatamente o mesmo em todas as tentativas.'},
+  {q:'C(n,k) conta de quantas ordens diferentes podemos obter k sucessos em n tentativas.', a:true,
+   explain:'Exatamente — é o coeficiente binomial, calculado por n!/(k!(n−k)!) e visível no Triângulo de Pascal.'},
+  {q:'E(X)=n×p é sempre um valor que X pode realmente assumir.', a:false,
+   explain:'Nem sempre! Se n=15 e p=0,35, E(X)=5,25 — mas X só pode ser um número inteiro entre 0 e 15. E(X) é uma média de longo prazo, não um valor possível garantido.'},
+  {q:'Quando n é grande e p não está muito perto de 0 ou 1, a Binomial se parece com uma curva Normal.', a:true,
+   explain:'Sim, essa é a aproximação Normal — funciona bem quando n×p≥5 e n×(1−p)≥5.'},
+  {q:'Tirar cartas de um baralho sem reposição segue uma Distribuição Binomial.', a:false,
+   explain:'Não — sem reposição, a chance muda a cada carta retirada, quebrando a independência. Isso é a Distribuição Hipergeométrica.'},
+  {q:'A variância da Binomial, n×p×(1−p), nunca é negativa.', a:true,
+   explain:'Correto — p×(1−p) está sempre entre 0 e 0,25, e n é sempre positivo, então o produto nunca é negativo.'},
+  {q:'Se n=1, a Distribuição Binomial se torna exatamente uma Distribuição de Bernoulli.', a:true,
+   explain:'Sim! Binomial(1,p) é, por definição, o mesmo que Bernoulli(p) — uma única tentativa.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+renderOque();
+renderParametros();
+renderPascal(6,3);
+renderCoef();
+renderPmfMain();
+renderCdf();
+renderEsperanca();
+renderVariancia();
+renderForma();
+simReset();
+renderNormal();
+buildBinomialCheck();
+buildProblems();
+buildQuiz();
+window.addEventListener('resize', ()=>{
+  renderParametros();
+  renderPmfMain();
+  renderCdf();
+  renderEsperanca();
+  renderVariancia();
+  renderForma();
+  renderSim();
+  renderNormal();
+});
+</script>
+</body>
+</html>

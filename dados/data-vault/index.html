@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Data Vault 2.0 e 2.1 por dentro. Hubs, Links, Satellites, hash keys, hash diff, arquitetura em camadas, PIT/Bridge tables e mais, com demos interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Data Vault 2.0 &amp; 2.1 por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:220px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-new td{background:rgba(125,222,216,.14);color:var(--text-primary);}
+.data-table td.cell-hit{background:rgba(6,182,212,.22);color:var(--accent);font-weight:700;border-radius:4px;}
+
+/* ---- ANATOMY / CLICKABLE DIAGRAM (shared) ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.anatomy-grid.cols-3{grid-template-columns:1fr 1fr 1fr;gap:24px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.pq-nested{margin-left:14px;border-left:2px solid var(--border-color);padding-left:12px;margin-top:7px;margin-bottom:7px;}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- ENSEMBLE DIAGRAM (Hub-Link-Sat visual) ---- */
+.ensemble-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:26px;align-items:start;position:relative;}
+.ens-col{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.ens-node{width:100%;border-radius:8px;padding:14px 16px;text-align:center;font-family:'Roboto Mono',monospace;font-weight:700;font-size:12.5px;border:2px solid;position:relative;cursor:pointer;transition:.2s;}
+.ens-node:hover{transform:translateY(-2px);}
+.ens-hub{background:rgba(54,162,239,.12);border-color:var(--accent-blue);color:var(--accent-blue);}
+.ens-link{background:rgba(196,154,255,.12);border-color:var(--accent-purple);color:var(--accent-purple);}
+.ens-sat{background:rgba(6,182,212,.12);border-color:var(--accent);color:var(--accent);}
+.ens-sub{display:block;font-size:9.5px;font-weight:500;color:var(--text-secondary);margin-top:3px;text-transform:none;letter-spacing:0;font-family:'Inter',sans-serif;}
+.ens-arrow-h{text-align:center;color:var(--text-disabled);font-size:18px;align-self:center;}
+
+/* ---- STAR SCHEMA vs DATA VAULT DIAGRAM ---- */
+.diagram-compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.diagram-panel{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:20px;}
+.diagram-panel-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;text-align:center;margin-bottom:4px;}
+.diagram-panel-title.star{color:var(--accent-purple);}
+.diagram-panel-title.vault{color:var(--accent);}
+.diagram-panel-caption{font-size:10.5px;color:var(--text-disabled);text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color);}
+.diagram-svg-wrap{position:relative;}
+.diagram-svg-wrap svg{position:absolute;inset:0;width:100%;height:100%;z-index:0;overflow:visible;}
+.dnode-grid{display:grid;gap:12px;position:relative;z-index:1;}
+.star-grid{grid-template-columns:1fr 1fr 1fr;grid-template-areas:". dt ." "dc fv dp";}
+.star-grid .n-dt{grid-area:dt;} .star-grid .n-dc{grid-area:dc;} .star-grid .n-fv{grid-area:fv;} .star-grid .n-dp{grid-area:dp;}
+.vault-grid{grid-template-columns:1fr 1fr 1fr;grid-template-areas:"hc . hp" "sc lk sp" ". sv .";}
+.vault-grid .n-hc{grid-area:hc;} .vault-grid .n-hp{grid-area:hp;} .vault-grid .n-lk{grid-area:lk;}
+.vault-grid .n-sc{grid-area:sc;} .vault-grid .n-sp{grid-area:sp;} .vault-grid .n-sv{grid-area:sv;}
+.dnode{border-radius:8px;padding:10px 10px;text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;border:2px solid;background:var(--bg-panel);cursor:pointer;transition:.15s;}
+.dnode:hover{transform:translateY(-2px);}
+.dnode.active{box-shadow:0 0 0 2px currentColor;}
+.dnode-sub{display:block;font-size:9px;font-weight:500;color:var(--text-secondary);margin-top:4px;font-family:'Inter',sans-serif;text-transform:none;letter-spacing:0;line-height:1.4;}
+.dnode.fact{border-color:var(--accent-purple);background:rgba(196,154,255,.14);color:var(--accent-purple);}
+.dnode.dim{border-color:var(--accent-blue);background:rgba(54,162,239,.10);color:var(--accent-blue);}
+.dnode.hub{border-color:var(--accent-blue);background:rgba(54,162,239,.10);color:var(--accent-blue);}
+.dnode.link{border-color:var(--accent-purple);background:rgba(196,154,255,.14);color:var(--accent-purple);}
+.dnode.sat{border-color:var(--accent);background:rgba(6,182,212,.10);color:var(--accent);}
+
+/* ---- KV LIST ---- */
+.kv-list{display:flex;flex-direction:column;gap:8px;}
+.kv-pair{display:flex;align-items:center;gap:12px;transition:.2s;flex-wrap:wrap;}
+.kv-key{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--accent-blue);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:12.5px;min-width:140px;text-align:center;flex-shrink:0;}
+.kv-arrow{color:var(--text-disabled);font-size:16px;flex-shrink:0;}
+.kv-value{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-primary);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:12.5px;flex:1;transition:.2s;}
+.kv-pair.highlight .kv-key{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.kv-pair.highlight .kv-value{border-color:var(--accent);background:rgba(6,182,212,.10);color:var(--accent);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- LAYERED ARCHITECTURE ---- */
+.layer-stack{display:flex;flex-direction:column;gap:10px;}
+.layer-row{border:1.5px solid var(--border-color);border-radius:8px;padding:14px 18px;background:var(--bg-elevated);cursor:pointer;transition:.2s;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;}
+.layer-row:hover{border-color:var(--border-strong);}
+.layer-row.active{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.layer-title{font-weight:700;font-size:13px;color:var(--text-primary);display:flex;align-items:center;gap:10px;}
+.layer-row.active .layer-title{color:var(--accent);}
+.layer-sub{font-size:11px;color:var(--text-secondary);}
+.layer-tag{font-size:9.5px;padding:3px 9px;border-radius:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border:1px solid var(--border-strong);color:var(--text-secondary);flex-shrink:0;}
+
+/* ---- TIMELINE (satellite history) ---- */
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-row{display:grid;grid-template-columns:110px 1fr 90px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border-color);}
+.tl-row:last-child{border-bottom:none;}
+.tl-date{font-family:'Roboto Mono',monospace;font-size:11.5px;color:var(--text-secondary);}
+.tl-bar{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--text-primary);}
+.tl-row.tl-changed .tl-bar{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.tl-flag{font-size:10px;font-weight:700;text-align:right;color:var(--text-disabled);letter-spacing:.4px;text-transform:uppercase;}
+.tl-row.tl-changed .tl-flag{color:var(--accent);}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid,.anatomy-grid.cols-3{grid-template-columns:1fr;gap:20px;}
+  .ensemble-wrap{grid-template-columns:1fr;}
+  .ens-arrow-h{transform:rotate(90deg);}
+  .diagram-compare{grid-template-columns:1fr;}
+  .tl-row{grid-template-columns:90px 1fr;}
+  .tl-flag{grid-column:2;text-align:left;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Data Vault 2.0 &amp; 2.1</h1><span>Modelagem para o data warehouse que nunca esquece</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2000</div><div class="hstat-label">Origem</div></div>
+      <div class="hstat"><div class="hstat-num">3</div><div class="hstat-label">Peças (Hub·Link·Sat)</div></div>
+      <div class="hstat"><div class="hstat-num">Insert-Only</div><div class="hstat-label">Padrão de carga</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito ao modelo completo</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>O modelo que separa <em>o que você sabe</em> de <em>quando você soube</em></h2>
+      <p>Data Vault é uma metodologia de modelagem para a camada de <strong>integração</strong> do data warehouse, criada por Dan Linstedt no fim dos anos 1990 e formalizada como <strong>Data Vault 2.0</strong> em 2013 (metodologia, arquitetura e padrões de implementação, incluindo hash keys). A ideia central: separar três coisas que a maioria dos modelos mistura sem perceber — <em>chaves de negócio</em> (quem é a entidade), <em>relacionamentos</em> (como as entidades se conectam) e <em>atributos descritivos</em> (como cada entidade mudou ao longo do tempo). Nesta aula vamos montar esse modelo peça por peça: Hub, Link, Satellite, hash keys, hash diff, arquitetura em camadas — e o que a revisão <strong>2.1</strong> adiciona por cima disso.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Insert-Only</span>
+        <span class="badge badge-green">100% Auditável</span>
+        <span class="badge badge-blue">Paralelizável</span>
+        <span class="badge badge-purple">Resiliente a Mudanças</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🔑 HUB → 🔗 LINK → 🛰️ SAT</div>
+        <div class="fc-body">
+          <div class="fc-row">Hub Cliente<br><span style="font-size:9.5px;opacity:.7;">business key + hash key</span></div>
+          <div class="fc-row">Link Cliente_Pedido<br><span style="font-size:9.5px;opacity:.7;">associação N:N</span></div>
+          <div class="fc-row">Sat Cliente_Detalhe<br><span style="font-size:9.5px;opacity:.7;">histórico de atributos</span></div>
+        </div>
+        <div class="fc-foot">Ensemble Modeling</div>
+      </div>
+      <div class="file-chip-caption">As três peças que compõem qualquer modelo Data Vault</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É / POR QUE ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🗄️ O que é Data Vault e que problema ele resolve?</div>
+    <p class="section-desc">
+      Data warehouses tradicionais frequentemente misturam duas responsabilidades num único modelo: <strong>integrar</strong> dados de várias origens e <strong>apresentar</strong> esses dados de forma amigável para consumo (dashboards, relatórios). Isso funciona até o negócio mudar — uma nova origem de dados aparece, uma regra de relacionamento muda de 1:N para N:N, um atributo passa a existir em dois sistemas com valores divergentes — e o modelo inteiro precisa ser remodelado, muitas vezes com <em>downtime</em> e retrabalho em tudo que já foi construído em cima dele. Data Vault ataca isso separando a camada de <strong>integração</strong> (onde tudo é armazenado de forma bruta, histórica e rastreável) da camada de <strong>apresentação</strong> (onde modelos dimensionais, como o de Kimball, entregam os dados já mastigados para consumo).
+    </p>
+    <div class="grid-4">
+      <div class="card"><div class="card-title">🧩 Flexibilidade</div><div class="card-text">Novas origens ou entidades se conectam <strong>adicionando</strong> tabelas novas, nunca alterando as existentes. O modelo cresce, não se reformula.</div></div>
+      <div class="card"><div class="card-title">📈 Escalabilidade</div><div class="card-text">Estrutura pensada para grandes volumes e alta paralelização de carga — sem depender de ordem sequencial entre tabelas.</div></div>
+      <div class="card"><div class="card-title">🛡️ Resiliência</div><div class="card-text">Mudanças na origem (schema, regra de negócio, cardinalidade) têm impacto contido — normalmente numa tabela nova, não numa reforma geral.</div></div>
+      <div class="card"><div class="card-title">🔍 Rastreabilidade</div><div class="card-text">Todo registro carrega metadados de origem e tempo — é possível provar de onde veio cada dado e quando chegou, ponto chave para auditoria.</div></div>
+    </div>
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia em uma frase</div>
+      <p>Data Vault não tenta responder "qual é a pergunta de negócio de hoje" — ele tenta garantir que <strong>toda pergunta que alguém possa vir a fazer no futuro</strong> ainda seja respondível, porque nenhum dado histórico foi perdido, sobrescrito ou remodelado para caber numa necessidade específica de agora.</p>
+    </div>
+  </section>
+
+  <!-- ============ ENSEMBLE MODELING ============ -->
+  <section class="section" id="s-ensemble">
+    <div class="section-eyebrow">A Anatomia do Modelo</div>
+    <div class="section-title">🧬 Ensemble Modeling: as três peças (e só três)</div>
+    <p class="section-desc">Todo modelo Data Vault — não importa o quão grande o negócio seja — é construído combinando apenas três tipos de tabela. Essa previsibilidade é proposital: torna o modelo fácil de automatizar e de entender, mesmo com centenas de entidades. Clique em cada peça para ver sua função.</p>
+
+    <div class="interactive-panel">
+      <div class="ensemble-wrap" id="ensembleWrap">
+        <div class="ens-col">
+          <div class="ens-node ens-hub" data-id="hub" onclick="pickEnsemble('hub')">🔑 HUB<span class="ens-sub">chave de negócio</span></div>
+        </div>
+        <div class="ens-col">
+          <div class="ens-node ens-link" data-id="link" onclick="pickEnsemble('link')">🔗 LINK<span class="ens-sub">relacionamento N:N</span></div>
+        </div>
+        <div class="ens-col">
+          <div class="ens-node ens-sat" data-id="sat" onclick="pickEnsemble('sat')">🛰️ SATELLITE<span class="ens-sub">histórico de atributos</span></div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="ensembleDetail">
+        <div class="ad-title">👆 Clique em Hub, Link ou Satellite</div>
+        <div class="ad-text">Cada peça tem uma única responsabilidade — nunca misturam identidade, relacionamento e descrição na mesma tabela.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🔑 Hub</div>
+        <div class="card-text">Guarda <strong>apenas</strong> a chave de negócio (<code>business key</code>) de uma entidade — o identificador que faz sentido para o negócio (ex: CPF, número do pedido, SKU) — mais o mínimo de metadados necessário. Nunca guarda atributos descritivos. Existe um Hub por conceito de negócio (Cliente, Produto, Pedido...), e ele é o ponto de <strong>deduplicação</strong>: não importa quantos sistemas de origem mandem "Cliente 123", ele existe uma única vez no Hub.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔗 Link</div>
+        <div class="card-text">Representa uma <strong>associação</strong> entre dois ou mais Hubs. É sempre modelado como relação <strong>muitos-para-muitos</strong>, mesmo que a regra de negócio de hoje seja 1:N — porque essa regra pode mudar, e o Link já está pronto para absorver a mudança sem migração de schema.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🛰️ Satellite</div>
+        <div class="card-text">Guarda os <strong>atributos descritivos</strong> e toda a sua evolução no tempo — nome, endereço, status, preço. Carregado em modo <strong>insert-only</strong>: nunca há <code>UPDATE</code>, nunca há <code>DELETE</code>, só inserção de uma nova versão da linha quando algo muda.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Repare no padrão: <strong>identidade</strong> (Hub), <strong>relacionamento</strong> (Link) e <strong>descrição no tempo</strong> (Satellite) nunca se misturam na mesma tabela. É essa separação estrita — chamada de <strong>Ensemble Modeling</strong> — que torna o modelo previsível o bastante para ser gerado por automação, e resiliente o bastante para absorver mudanças sem reforma geral.</p>
+    </div>
+  </section>
+
+  <!-- ============ HUBS ============ -->
+  <section class="section" id="s-hub">
+    <div class="section-eyebrow">A Primeira Peça</div>
+    <div class="section-title">🔑 Hubs em detalhe</div>
+    <p class="section-desc">Um Hub é a tabela mais simples e mais estável do modelo — e por isso a primeira que se desenha. Sua única missão é garantir que cada chave de negócio exista <strong>uma única vez</strong>, não importa quantos sistemas de origem a enviem.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📋 Colunas de um Hub</div>
+        <table class="data-table">
+          <thead><tr><th>Coluna</th><th>Papel</th></tr></thead>
+          <tbody>
+            <tr><td><code>hub_cliente_hk</code></td><td>Hash key — chave surrogate calculada</td></tr>
+            <tr><td><code>cliente_bk</code></td><td>Business key — a chave que o negócio reconhece</td></tr>
+            <tr><td><code>load_date</code></td><td>Quando esse business key foi visto pela 1ª vez</td></tr>
+            <tr><td><code>record_source</code></td><td>Sistema de origem que trouxe essa chave</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Regras de ouro do Hub</div>
+        <div class="card-text">
+          <ul style="padding-left:16px;line-height:2;">
+            <li>Um <strong>business key</strong> por linha — nunca duplicado.</li>
+            <li><strong>Nenhum atributo descritivo</strong> mora aqui — isso é trabalho do Satellite.</li>
+            <li>É <strong>insert-only</strong>: uma vez que a chave existe, a linha nunca muda.</li>
+            <li>O nome da tabela representa um <strong>conceito de negócio único e estável</strong> — não um sistema de origem específico.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: o Hub deduplica business keys vindas de sistemas diferentes</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Eventos chegando de múltiplos sistemas de origem (formato: sistema:chave)</div>
+          <input type="text" id="hubInput" value="CRM:C-001,ERP:C-001,CRM:C-002,Ecommerce:C-001,ERP:C-003,CRM:C-002" oninput="renderHub()">
+        </div>
+      </div>
+      <div class="ctrl-l" style="margin-top:4px;">Eventos recebidos (ordem de chegada)</div>
+      <div class="indexed-list" id="hubRaw" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"></div>
+      <div class="ctrl-l">Hub Cliente resultante (uma linha por business key, na 1ª vez que apareceu)</div>
+      <table class="data-table" id="hubTable" style="margin-top:6px;"></table>
+      <div class="result-display">
+        <div><span class="rl">Eventos recebidos</span><span class="rv" id="hubBefore">—</span></div>
+        <div><span class="rl">Linhas no Hub</span><span class="rv" id="hubAfter">—</span></div>
+        <div><span class="rl">Deduplicação</span><span class="rv" id="hubSaving">—</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HASH KEYS ============ -->
+  <section class="section" id="s-hashkeys">
+    <div class="section-eyebrow">A Virada do 2.0</div>
+    <div class="section-title">#️⃣ Hash Keys: sequencial vs. determinístico</div>
+    <p class="section-desc">Na primeira geração do Data Vault (o que hoje se chama informalmente <strong>Data Vault 1.0</strong>), a chave surrogate de cada Hub era um número sequencial gerado pelo banco. Funcionava, mas criava uma <strong>dependência de ordem de carga</strong>: um Link só podia ser carregado depois que os Hubs relacionados já tivessem seus IDs sequenciais gerados. Data Vault 2.0 resolve isso trocando o ID sequencial por uma <strong>hash key</strong>: o resultado de aplicar uma função de hash (tipicamente MD5 ou SHA-1) diretamente sobre o business key.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: calcule a hash key de um business key</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Business key (ex: <code>cliente_bk</code>)</div>
+          <input type="text" id="hashInput" value="C-001" oninput="renderHashDemo()">
+        </div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Business key</span><span class="rv" id="hashBkOut" style="font-size:16px;">—</span></div>
+        <div><span class="rl">Hash key (simulada, ilustrativa)</span><span class="rv" id="hashKeyOut">—</span></div>
+      </div>
+      <div class="section-desc" style="font-size:12px;margin-top:10px;">💡 Rode a mesma chave duas vezes: o resultado é <strong>sempre idêntico</strong>. É essa característica — <em>determinismo</em> — que permite calcular a hash key de forma independente em qualquer processo, sem consultar o banco antes.</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔢 Sequential Surrogate Key (DV 1.0)</div>
+        <div class="card-text">
+          <ul style="padding-left:16px;line-height:1.9;">
+            <li>Gerada pelo banco (<code>IDENTITY</code>/<code>SEQUENCE</code>)</li>
+            <li>Precisa consultar o Hub <strong>antes</strong> de carregar o Link ou o Satellite</li>
+            <li>Cargas de Hub → Link → Satellite viram <strong>sequenciais</strong>, difíceis de paralelizar entre sistemas distribuídos</li>
+            <li>Compacta (um inteiro), mas acoplada à instância do banco</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">#️⃣ Hash Key (DV 2.0)</div>
+        <div class="card-text">
+          <ul style="padding-left:16px;line-height:1.9;">
+            <li>Calculada localmente a partir do business key, <strong>sem</strong> tocar o banco</li>
+            <li>Hub, Link e Satellite podem ser carregados <strong>em paralelo</strong>, inclusive por motores distintos (Spark, dbt, etc.)</li>
+            <li>Mesma chave em qualquer ambiente (dev, staging, produção) sempre produz o mesmo hash</li>
+            <li>Trade-off: ocupa mais espaço (16-32 bytes) e não é ordenável por data de criação</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa na prática</div>
+      <p>Com hash keys, um pipeline de ingestão pode calcular <code>hub_cliente_hk = HASH(cliente_bk)</code> e <code>link_cliente_pedido_hk = HASH(cliente_bk || pedido_bk)</code> ao mesmo tempo, no mesmo lote, sem esperar um pelo outro. É o que torna o Data Vault 2.0 genuinamente compatível com processamento paralelo em massa — a peça que faltava para escalar em ambientes de big data.</p>
+    </div>
+  </section>
+
+  <!-- ============ LINKS ============ -->
+  <section class="section" id="s-link">
+    <div class="section-eyebrow">A Segunda Peça</div>
+    <div class="section-title">🔗 Links em detalhe</div>
+    <p class="section-desc">Um Link registra que uma associação <strong>aconteceu</strong> entre duas ou mais chaves de negócio — nunca guarda descrição sobre essa associação (isso, de novo, é trabalho do Satellite, agora "pendurado" no Link). Cada linha de um Link é, na prática, um evento de relacionamento.</p>
+
+    <div class="interactive-panel anatomy-wrap">
+      <div class="panel-label">Como um Link conecta dois Hubs</div>
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🔑 Hub Cliente</div>
+          <div class="pq-clickable" data-id="hub-cliente" onclick="pickLinkDiagram('hub-cliente')">cliente_bk = "C-001"</div>
+          <div class="pq-clickable" data-id="hub-cliente-hk" onclick="pickLinkDiagram('hub-cliente-hk')">hub_cliente_hk</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🔑 Hub Pedido</div>
+          <div class="pq-clickable" data-id="hub-pedido" onclick="pickLinkDiagram('hub-pedido')">pedido_bk = "PED-9001"</div>
+          <div class="pq-clickable" data-id="hub-pedido-hk" onclick="pickLinkDiagram('hub-pedido-hk')">hub_pedido_hk</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin:14px 0;">
+        <span class="chip" style="font-size:12.5px;">⬇ ambos alimentam ⬇</span>
+      </div>
+      <div class="pq-box" style="max-width:420px;margin:0 auto;">
+        <div class="pq-box-label">🔗 Link Cliente_Pedido</div>
+        <div class="pq-clickable" data-id="link-hk" onclick="pickLinkDiagram('link-hk')">link_cliente_pedido_hk = HASH(cliente_bk || pedido_bk)</div>
+        <div class="pq-nested">
+          <div class="pq-clickable" data-id="link-fk1" onclick="pickLinkDiagram('link-fk1')">hub_cliente_hk (FK)</div>
+          <div class="pq-clickable" data-id="link-fk2" onclick="pickLinkDiagram('link-fk2')">hub_pedido_hk (FK)</div>
+          <div class="pq-clickable" data-id="link-meta" onclick="pickLinkDiagram('link-meta')">load_date · record_source</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="linkDiagramDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">O Link não guarda "cliente_bk" nem "pedido_bk" diretamente — guarda as hash keys dos dois Hubs, calculadas de forma independente e combinadas para formar sua própria hash key.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🌐 Link padrão (transacional)</div><div class="card-text">Conecta 2+ Hubs registrando que um evento de negócio ligou essas chaves — ex: Cliente fez Pedido. É sempre N:N por padrão, e cada nova combinação vira uma nova linha.</div></div>
+      <div class="card"><div class="card-title">🌳 Hierarchical Link</div><div class="card-text">Conecta um Hub a <strong>ele mesmo</strong>, modelando hierarquias como organograma ou árvore de categorias de produto — ex: Funcionário → Gestor.</div></div>
+      <div class="card"><div class="card-title">🪞 Same-As Link (SAL)</div><div class="card-text">Registra que duas chaves de negócio diferentes, vindas de sistemas distintos, representam a <strong>mesma entidade real</strong> — o mecanismo padrão para resolução de duplicidade (match/merge) sem apagar nenhuma das chaves originais.</div></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Um Link <strong>não muda</strong> depois de criado — se a associação em si tiver atributos que mudam ao longo do tempo (ex: o "papel" de um cliente num pedido, que pode mudar de "comprador" para "aprovador"), esses atributos vão para um <strong>Satellite pendurado no Link</strong>, exatamente como um Satellite pendurado num Hub.</p>
+    </div>
+  </section>
+
+  <!-- ============ SATELLITES ============ -->
+  <section class="section" id="s-satellite">
+    <div class="section-eyebrow">A Terceira Peça</div>
+    <div class="section-title">🛰️ Satellites em detalhe</div>
+    <p class="section-desc">O Satellite é onde a história realmente vive. Cada mudança num atributo gera uma <strong>nova linha</strong> — a antiga nunca é sobrescrita ou apagada. O resultado é uma linha do tempo completa de como aquela entidade evoluiu.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: como o Satellite decide quando inserir uma nova versão</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Cidade do cliente na próxima carga</span><span class="ctrl-v" id="satCidadeVal">São Paulo</span></div>
+          <div class="btn-toggle-row">
+            <button class="btn-toggle active" onclick="setSatCidade('São Paulo', this)">São Paulo</button>
+            <button class="btn-toggle" onclick="setSatCidade('Curitiba', this)">Curitiba</button>
+            <button class="btn-toggle" onclick="setSatCidade('Lisboa', this)">Lisboa</button>
+          </div>
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Status do cliente na próxima carga</span><span class="ctrl-v" id="satStatusVal">Ativo</span></div>
+          <div class="btn-toggle-row">
+            <button class="btn-toggle active" onclick="setSatStatus('Ativo', this)">Ativo</button>
+            <button class="btn-toggle" onclick="setSatStatus('Inativo', this)">Inativo</button>
+          </div>
+        </div>
+      </div>
+      <button class="player-btn primary" onclick="loadSatRow()">▶ Simular nova carga</button>
+      <button class="player-btn" onclick="resetSat()">⏹ Resetar histórico</button>
+      <div class="ctrl-l" style="margin-top:16px;">Sat_Cliente_Detalhe — histórico acumulado (insert-only)</div>
+      <table class="data-table" id="satTable" style="margin-top:6px;"></table>
+      <div class="result-display">
+        <div><span class="rl">Hash diff da última versão</span><span class="rv" id="satHashDiff" style="font-size:14px;">—</span></div>
+        <div><span class="rl">Resultado da última carga</span><span class="rv" id="satResult" style="font-size:14px;">—</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📋 Colunas de um Satellite</div>
+        <table class="data-table">
+          <thead><tr><th>Coluna</th><th>Papel</th></tr></thead>
+          <tbody>
+            <tr><td><code>hub_cliente_hk</code></td><td>FK para o Hub (ou Link) pai</td></tr>
+            <tr><td><code>load_date</code></td><td>Início da vigência desta versão da linha</td></tr>
+            <tr><td><code>hash_diff</code></td><td>Hash de todos os atributos — detecta mudança sem comparar campo a campo</td></tr>
+            <tr><td><code>record_source</code></td><td>Sistema de origem desta versão</td></tr>
+            <tr><td><code>nome, cidade, status...</code></td><td>Os atributos descritivos de fato</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">✂️ Por que dividir em vários Satellites</div>
+        <div class="card-text">Atributos que mudam em <strong>ritmos diferentes</strong> ou vêm de <strong>origens diferentes</strong> normalmente ganham Satellites separados — ex: <code>Sat_Cliente_Cadastro</code> (muda raramente) vs. <code>Sat_Cliente_Score_Credito</code> (recalculado toda noite). Isso evita que uma mudança de baixo valor em um atributo obrigue a reescrever um Satellite inteiro cheio de atributos estáveis, e isola o impacto de cada origem.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔁 Multi-Active Satellite</div><div class="card-text">Quando uma entidade pode ter <strong>múltiplos valores ativos simultâneos</strong> do mesmo atributo — ex: um cliente com vários telefones ao mesmo tempo — o Satellite ganha uma chave adicional (<em>dependent-child key</em>) para diferenciar as linhas ativas na mesma data de carga.</div></div>
+      <div class="card"><div class="card-title">⏱️ Effectivity Satellite</div><div class="card-text">Satellite especial pendurado em Links, usado para marcar quando uma associação começou e terminou de valer (ex: vigência de um contrato) — sem precisar apagar a linha do Link.</div></div>
+      <div class="card"><div class="card-title">🧮 Status Tracking Satellite</div><div class="card-text">Compara o snapshot completo de uma origem a cada carga contra o que já existe, para detectar registros que <strong>sumiram</strong> da origem (deleção lógica) sem nunca fazer DELETE físico no Vault.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ METADADOS ============ -->
+  <section class="section" id="s-metadados">
+    <div class="section-eyebrow">O Contrato Comum</div>
+    <div class="section-title">🏷️ Os metadados que toda tabela carrega</div>
+    <p class="section-desc">Hub, Link e Satellite têm formatos diferentes, mas todos compartilham o mesmo pequeno conjunto de metadados obrigatórios — é esse contrato comum que torna o modelo previsível e automatizável.</p>
+    <table class="data-table">
+      <thead><tr><th>Metadado</th><th>Presente em</th><th>Para que serve</th></tr></thead>
+      <tbody>
+        <tr><td><code>hash_key</code></td><td>Hub, Link</td><td>Chave surrogate determinística, calculada a partir do(s) business key(s)</td></tr>
+        <tr><td><code>load_date</code></td><td>Hub, Link, Satellite</td><td>Timestamp de quando a linha entrou no Vault — nunca a data de negócio do evento</td></tr>
+        <tr><td><code>record_source</code></td><td>Hub, Link, Satellite</td><td>Identificador do sistema de origem — essencial para auditoria e resolução de conflito entre fontes</td></tr>
+        <tr><td><code>hash_diff</code></td><td>Satellite</td><td>Hash de todos os atributos descritivos — permite detectar "mudou ou não mudou" em uma única comparação</td></tr>
+      </tbody>
+    </table>
+    <div class="warn-box">
+      <p>⚠️ Um erro comum: confundir <code>load_date</code> (quando o Vault recebeu o dado) com a data de negócio do evento (ex: data em que o pedido foi de fato criado no sistema de origem). São conceitos diferentes — a data de negócio é só mais um atributo, normalmente guardado dentro do próprio Satellite.</p>
+    </div>
+  </section>
+
+  <!-- ============ CARGA INSERT-ONLY ============ -->
+  <section class="section" id="s-carga">
+    <div class="section-eyebrow">Como os Dados Entram</div>
+    <div class="section-title">➕ Carga Insert-Only e Paralelismo</div>
+    <p class="section-desc">Toda carga em Data Vault segue a mesma regra: <strong>só insere</strong>. Nunca há <code>UPDATE</code>, nunca há <code>DELETE</code> físico. Essa restrição, que à primeira vista parece uma limitação, é na verdade o que garante três propriedades valiosas ao mesmo tempo.</p>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔁 Idempotência</div><div class="card-text">Rodar a mesma carga duas vezes não duplica histórico incorretamente — o pipeline só insere quando o hash (de chave ou de atributos) ainda não existe.</div></div>
+      <div class="card"><div class="card-title">🔍 Auditabilidade</div><div class="card-text">Nenhum dado é perdido ou sobrescrito — é sempre possível reconstruir exatamente o que o Vault "sabia" em qualquer instante do passado.</div></div>
+      <div class="card"><div class="card-title">⚡ Paralelismo</div><div class="card-text">Como hash keys eliminam dependência sequencial e cada tabela só recebe INSERT, Hubs, Links e Satellites de entidades diferentes podem ser carregados <strong>ao mesmo tempo</strong>, por processos distintos.</div></div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">pseudo-sql</span><span class="cm">-- carregar um Hub: insere só business keys ainda não vistas</span>
+<span class="kw">INSERT INTO</span> hub_cliente (hub_cliente_hk, cliente_bk, load_date, record_source)
+<span class="kw">SELECT</span> stg.cliente_hk, stg.cliente_bk, <span class="fn">CURRENT_TIMESTAMP</span>, stg.origem
+<span class="kw">FROM</span> stg_cliente stg
+<span class="kw">LEFT JOIN</span> hub_cliente h <span class="kw">ON</span> h.hub_cliente_hk <span class="kw">=</span> stg.cliente_hk
+<span class="kw">WHERE</span> h.hub_cliente_hk <span class="kw">IS NULL</span>;
+
+<span class="cm">-- carregar um Satellite: insere só quando o hash_diff mudou</span>
+<span class="kw">INSERT INTO</span> sat_cliente_detalhe (hub_cliente_hk, load_date, hash_diff, nome, cidade, status, record_source)
+<span class="kw">SELECT</span> stg.cliente_hk, <span class="fn">CURRENT_TIMESTAMP</span>, stg.hash_diff, stg.nome, stg.cidade, stg.status, stg.origem
+<span class="kw">FROM</span> stg_cliente stg
+<span class="kw">LEFT JOIN</span> <span class="fn">ultima_versao</span> s <span class="kw">ON</span> s.hub_cliente_hk <span class="kw">=</span> stg.cliente_hk
+<span class="kw">WHERE</span> s.hub_cliente_hk <span class="kw">IS NULL</span> <span class="kw">OR</span> s.hash_diff <span class="kw">!=</span> stg.hash_diff;</div>
+  </section>
+
+  <!-- ============ ARQUITETURA EM CAMADAS ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Onde o Vault Vive</div>
+    <div class="section-title">🏗️ Arquitetura em Camadas</div>
+    <p class="section-desc">Data Vault não substitui a modelagem dimensional — ele fica <strong>abaixo</strong> dela. Clique em cada camada para entender o papel de cada uma na jornada do dado, da origem ao dashboard.</p>
+
+    <div class="interactive-panel">
+      <div class="layer-stack" id="layerStack"></div>
+      <div class="anatomy-detail" id="layerDetail">
+        <div class="ad-title">👆 Clique em uma camada</div>
+        <div class="ad-text">Veja o que cada camada recebe, o que ela faz, e o que ela entrega para a próxima.</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Data Vault e modelagem dimensional não competem</div>
+      <p>Kimball (star schema) e Inmon continuam sendo as referências certas para a camada de <strong>consumo</strong> — é lá que o usuário de negócio precisa de algo simples, rápido e fácil de entender num BI. Data Vault resolve o problema de <strong>como chegar até ali de forma auditável, histórica e resiliente</strong> a partir de múltiplas origens. Um projeto maduro normalmente tem os dois: Data Vault na integração, star schema na apresentação.</p>
+    </div>
+  </section>
+
+  <!-- ============ PIT E BRIDGE ============ -->
+  <section class="section" id="s-pit-bridge">
+    <div class="section-eyebrow">Performance de Consulta</div>
+    <div class="section-title">⏳ PIT Tables e Bridge Tables</div>
+    <p class="section-desc">O Raw Vault, sozinho, é ótimo para carga e auditoria — mas péssimo para consulta direta: reconstruir o estado de um cliente em uma data específica exige juntar vários Satellites e escolher, em cada um, a versão vigente naquele instante. PIT e Bridge tables existem para tirar esse trabalho pesado da hora da consulta.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📸 PIT (Point-In-Time) Table</div>
+        <div class="card-text">Pré-calcula, para um conjunto de datas de referência (ex: todo dia às 00:00), qual era a <code>load_date</code> vigente em <strong>cada Satellite</strong> conectado a um Hub. Consultar "como estava o cliente X em 15/03" vira um único <code>JOIN</code> direto pela PIT, em vez de recalcular a versão vigente de cada Satellite toda vez.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌉 Bridge Table</div>
+        <div class="card-text">Faz o mesmo tipo de pré-cálculo, mas para <strong>caminhos de relacionamento</strong> através de vários Links — útil quando uma pergunta de negócio recorrente exige atravessar 3, 4, 5 Links para conectar duas entidades. A Bridge grava esse caminho já resolvido.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <p>💡 PIT e Bridge tables são consideradas <strong>Business Vault</strong> (ou ficam logo na fronteira entre Raw Vault e camada de apresentação): não chegam do jeito que o negócio manda, são <strong>derivadas</strong> do Raw Vault para acelerar consultas específicas e conhecidas de antemão. Diferente do Raw Vault, elas podem ser recalculadas do zero a qualquer momento — não guardam nenhuma informação que não exista, de forma mais bruta, em outro lugar do Vault.</p>
+    </div>
+  </section>
+
+  <!-- ============ CONSULTANDO O VAULT ============ -->
+  <section class="section" id="s-consulta">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🔎 Reconstruindo uma pergunta de negócio</div>
+    <p class="section-desc">Uma pergunta simples — "qual o nome e a cidade do cliente que fez o pedido PED-9001, e qual o valor desse pedido?" — exige atravessar a cadeia completa: Hub → Link → Hub, mais os Satellites pendurados em cada ponta.</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span>
+    sc.nome,
+    sc.cidade,
+    sp.valor_total
+<span class="kw">FROM</span> hub_pedido hp
+<span class="kw">JOIN</span> link_cliente_pedido lcp <span class="kw">ON</span> lcp.hub_pedido_hk <span class="kw">=</span> hp.hub_pedido_hk
+<span class="kw">JOIN</span> hub_cliente hc          <span class="kw">ON</span> hc.hub_cliente_hk <span class="kw">=</span> lcp.hub_cliente_hk
+<span class="kw">JOIN</span> sat_cliente_detalhe sc  <span class="kw">ON</span> sc.hub_cliente_hk <span class="kw">=</span> hc.hub_cliente_hk
+<span class="kw">JOIN</span> sat_pedido_detalhe sp   <span class="kw">ON</span> sp.hub_pedido_hk <span class="kw">=</span> hp.hub_pedido_hk
+<span class="kw">WHERE</span> hp.pedido_bk <span class="kw">=</span> <span class="st">'PED-9001'</span>
+  <span class="kw">AND</span> sc.load_date <span class="kw">=</span> (<span class="kw">SELECT MAX</span>(load_date) <span class="kw">FROM</span> sat_cliente_detalhe <span class="kw">WHERE</span> hub_cliente_hk <span class="kw">=</span> hc.hub_cliente_hk)
+  <span class="kw">AND</span> sp.load_date <span class="kw">=</span> (<span class="kw">SELECT MAX</span>(load_date) <span class="kw">FROM</span> sat_pedido_detalhe <span class="kw">WHERE</span> hub_pedido_hk <span class="kw">=</span> hp.hub_pedido_hk);</div>
+    <div class="warn-box">
+      <p>⚠️ Cinco tabelas e duas subconsultas para uma pergunta razoavelmente simples — é exatamente esse custo de consulta no modelo <strong>raw</strong> que justifica ter uma camada de apresentação (star schema) ou uma PIT table por cima do Vault para consumo direto de usuários de negócio.</p>
+    </div>
+  </section>
+
+  <!-- ============ DATA VAULT 2.1 ============ -->
+  <section class="section" id="s-21">
+    <div class="section-eyebrow">A Revisão Mais Recente</div>
+    <div class="section-title">🆕 O que muda no Data Vault 2.1</div>
+    <p class="section-desc">Data Vault 2.0 (2013) definiu modelo, metodologia e arquitetura de referência. A revisão <strong>2.1</strong> não troca as peças fundamentais — Hub, Link e Satellite continuam exatamente os mesmos — mas refina padrões, cobre lacunas identificadas em implementações reais e aproxima ainda mais a metodologia de entrega ágil.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🏃 Metodologia ágil formalizada (ADE)</div>
+        <div class="card-text">Reforça o <strong>Agile Data Engineering</strong>: ciclos curtos de entrega (sprints de 2-3 semanas) sobre um pedaço pequeno e completo do modelo, em vez de projetos monolíticos de meses. Como o modelo já é aditivo por natureza, cada sprint pode entregar Hubs/Links/Satellites novos sem retrabalhar o que já está em produção.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Padrões de modelagem estendidos</div>
+        <div class="card-text">Formaliza com mais precisão variações que já apareciam na prática — como o uso correto de Same-As Links para resolução de duplicidade, Non-Historized Links para eventos imutáveis que não precisam de Satellite, e diretrizes mais claras sobre quando dividir Satellites por taxa de mudança.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧾 Governança e gestão de metadados</div>
+        <div class="card-text">Maior ênfase em <strong>metadados de negócio e técnicos</strong> como parte formal da entrega — não apenas os campos <code>load_date</code>/<code>record_source</code>, mas também catalogação, linhagem e definições de negócio versionadas junto com o modelo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">☁️ Compatibilidade com plataformas modernas</div>
+        <div class="card-text">Orientações mais explícitas para rodar Data Vault sobre data warehouses colunares em nuvem (Snowflake, BigQuery, Databricks) e ferramentas de transformação como <strong>dbt</strong>, que se encaixam naturalmente no padrão de automação que o Ensemble Modeling sempre buscou viabilizar.</div>
+      </div>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">O que NÃO muda</div>
+      <p>A estrutura de três peças (Hub, Link, Satellite), o uso de hash keys, o padrão insert-only e os metadados obrigatórios (<code>load_date</code>, <code>record_source</code>, <code>hash_diff</code>) permanecem idênticos entre 2.0 e 2.1. Se você aprendeu a modelar em 2.0, já sabe modelar em 2.1 — o que muda é o refinamento de como aplicar o modelo em times e plataformas modernas.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 Data Vault vs. Kimball vs. Inmon (3NF)</div>
+    <p class="section-desc">As três abordagens respondem perguntas diferentes — a pergunta certa não é "qual é a melhor", e sim "em qual camada do warehouse cada uma se encaixa".</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Mesmo cenário de negócio, dois modelos: "um cliente compra um produto". Clique em qualquer caixa.</div>
+      <div class="diagram-compare">
+        <div class="diagram-panel">
+          <div class="diagram-panel-title star">⭐ Star Schema (Kimball)</div>
+          <div class="diagram-panel-caption">1 fato central + dimensões achatadas ao redor</div>
+          <div class="diagram-svg-wrap" id="starWrap">
+            <svg id="starSvg"></svg>
+            <div class="dnode-grid star-grid">
+              <div class="dnode dim n-dt" id="star-dt" onclick="pickDiagramNode('star-dt')">DIM_TEMPO<span class="dnode-sub">data · mês · ano</span></div>
+              <div class="dnode dim n-dc" id="star-dc" onclick="pickDiagramNode('star-dc')">DIM_CLIENTE<span class="dnode-sub">nome · cidade · segmento</span></div>
+              <div class="dnode fact n-fv" id="star-fv" onclick="pickDiagramNode('star-fv')">FATO_VENDAS<span class="dnode-sub">cliente_sk · produto_sk · tempo_sk · qtd · valor</span></div>
+              <div class="dnode dim n-dp" id="star-dp" onclick="pickDiagramNode('star-dp')">DIM_PRODUTO<span class="dnode-sub">nome · categoria · marca</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="diagram-panel">
+          <div class="diagram-panel-title vault">🗄️ Data Vault</div>
+          <div class="diagram-panel-caption">identidade, relacionamento e histórico em tabelas separadas</div>
+          <div class="diagram-svg-wrap" id="vaultWrap">
+            <svg id="vaultSvg"></svg>
+            <div class="dnode-grid vault-grid">
+              <div class="dnode hub n-hc" id="vault-hc" onclick="pickDiagramNode('vault-hc')">HUB_CLIENTE<span class="dnode-sub">cliente_bk</span></div>
+              <div class="dnode hub n-hp" id="vault-hp" onclick="pickDiagramNode('vault-hp')">HUB_PRODUTO<span class="dnode-sub">produto_bk</span></div>
+              <div class="dnode sat n-sc" id="vault-sc" onclick="pickDiagramNode('vault-sc')">SAT_CLIENTE_DETALHE<span class="dnode-sub">nome · cidade · segmento</span></div>
+              <div class="dnode link n-lk" id="vault-lk" onclick="pickDiagramNode('vault-lk')">LINK_VENDA<span class="dnode-sub">hub_cliente_hk + hub_produto_hk</span></div>
+              <div class="dnode sat n-sp" id="vault-sp" onclick="pickDiagramNode('vault-sp')">SAT_PRODUTO_DETALHE<span class="dnode-sub">nome · categoria · marca</span></div>
+              <div class="dnode sat n-sv" id="vault-sv" onclick="pickDiagramNode('vault-sv')">SAT_VENDA_DETALHE<span class="dnode-sub">data_venda · quantidade · valor</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="diagramCompareDetail">
+        <div class="ad-title">👆 Clique em qualquer caixa dos dois diagramas</div>
+        <div class="ad-text">Compare como o mesmo evento de negócio — um cliente comprando um produto — é representado em cada modelo.</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A diferença estrutural, em uma olhada</div>
+      <p>No <strong>Star Schema</strong>, tudo converge para <em>uma</em> tabela central: o fato guarda as chaves substitutas de cada dimensão e as métricas do evento, e as dimensões já chegam "achatadas" — histórico é opcional, via SCD. No <strong>Data Vault</strong>, identidade (Hub), relacionamento (Link) e descrição no tempo (Satellite) nunca se misturam — o mesmo cenário vira 6 tabelas insert-only em vez de 4, mas o histórico completo é o padrão, não uma escolha de projeto.</p>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Abordagem</th><th>Camada típica</th><th>Foco</th><th>Histórico</th><th>Facilidade de consumo direto</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Inmon (3NF)</strong></td><td>Integração</td><td>Normalização, integridade referencial forte</td><td>Depende do desenho manual</td><td>Baixa — muitos joins</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Data Vault</strong></td><td>Integração</td><td>Rastreabilidade, flexibilidade a mudanças, carga paralela</td><td>Nativo e automático (insert-only)</td><td>Baixa — precisa de camada acima</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Kimball (Star Schema)</strong></td><td>Apresentação / consumo</td><td>Simplicidade para BI, performance de leitura</td><td>Via SCD (Slowly Changing Dimensions)</td><td>Alta — feito para isso</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box">
+      <p>💡 Um desenho comum e maduro: <strong>Staging → Raw Vault (Data Vault) → Business Vault → Star Schema (Kimball)</strong>. O Vault resolve integração e histórico bruto; o star schema resolve consumo. Nenhuma das duas abordagens precisa "vencer" a outra.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUANDO USAR ============ -->
+  <section class="section" id="s-quando-usar">
+    <div class="section-eyebrow">Trade-offs</div>
+    <div class="section-title">⚖️ Quando usar (e quando não usar) Data Vault</div>
+    <div class="grid-2">
+      <div class="ok-box">
+        <div class="highlight-title">✅ Bons cenários</div>
+        <p>Muitas origens heterogêneas que mudam com frequência; exigência forte de auditoria e governança (setores regulados: financeiro, saúde, governo); necessidade de histórico completo e imutável; times grandes trabalhando em paralelo em partes diferentes do modelo.</p>
+      </div>
+      <div class="warn-box">
+        <p style="margin-bottom:6px;"><strong style="color:var(--accent-red);text-transform:uppercase;letter-spacing:.5px;font-size:13px;">⚠️ Maus cenários</strong></p>
+        <p>Data warehouse pequeno, com poucas origens estáveis e baixa exigência de histórico/auditoria; equipe pequena sem capacidade de manter a camada de apresentação por cima do Vault; necessidade de entregar valor muito rápido, sem tempo para estruturar Raw Vault + Business Vault + consumo.</p>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:4px;">
+      <div class="card"><div class="card-title">📈 Explosão de tabelas</div><div class="card-text">Um modelo dimensional com 10 tabelas facilmente vira 40-60 tabelas em Data Vault (Hubs + Links + Satellites). Mais objetos para orquestrar, documentar e monitorar.</div></div>
+      <div class="card"><div class="card-title">🧵 Orquestração mais complexa</div><div class="card-text">Mesmo sem dependência sequencial rígida, o volume de tabelas exige uma ferramenta de orquestração madura (Airflow, dbt) para não virar caos operacional.</div></div>
+      <div class="card"><div class="card-title">🐌 Consulta raw é pesada</div><div class="card-text">Como vimos na seção de consulta, o Raw Vault não foi desenhado para consumo direto — sem uma camada de apresentação, cada pergunta de negócio vira uma consulta com muitos joins.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🧩 Um Hub por conceito de negócio, não por sistema</div><div class="card-text">Nomeie Hubs pelo conceito ("Cliente"), não pela origem ("Cliente_CRM"). Múltiplas origens do mesmo conceito convergem para o mesmo Hub.</div></div>
+      <div class="card"><div class="card-title">✂️ Separe Satellites por taxa de mudança e origem</div><div class="card-text">Atributos que mudam todo dia não devem morar no mesmo Satellite que atributos que mudam uma vez por ano.</div></div>
+      <div class="card"><div class="card-title">🔒 Raw Vault é imutável por definição</div><div class="card-text">Nunca "corrija" um dado direto no Raw Vault — correções e regras de negócio vivem no Business Vault ou na camada de apresentação, preservando o dado bruto como prova de auditoria.</div></div>
+      <div class="card"><div class="card-title">📸 Construa PIT/Bridge cedo para consultas recorrentes</div><div class="card-text">Se uma pergunta de negócio é feita toda semana, não recalcule o join complexo toda vez — pré-calcule numa PIT ou Bridge table.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Data Vault não é "modelagem dimensional com nomes diferentes" — tentar usá-lo diretamente como camada de consumo final (sem star schema ou PIT/Bridge por cima) é a causa mais comum de projetos que "parecem lentos" e frustram o time de BI.</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Data Vault 2.0 &amp; 2.1</span>
+    <span>
+      Fontes: <a href="https://danlinstedt.com/" target="_blank" rel="noopener">Dan Linstedt</a> ·
+      <a href="https://medium.com/@habbema/modelando-segundo-o-data-vault-2-0-dee602686ac8" target="_blank" rel="noopener">Modelando segundo o Data Vault 2.0</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🗄️', label:'O que é'},
+  {id:'s-ensemble', icon:'🧬', label:'Ensemble Modeling'},
+  {id:'s-hub', icon:'🔑', label:'Hubs'},
+  {id:'s-hashkeys', icon:'#️⃣', label:'Hash Keys'},
+  {id:'s-link', icon:'🔗', label:'Links'},
+  {id:'s-satellite', icon:'🛰️', label:'Satellites'},
+  {id:'s-metadados', icon:'🏷️', label:'Metadados'},
+  {id:'s-carga', icon:'➕', label:'Carga Insert-Only'},
+  {id:'s-arquitetura', icon:'🏗️', label:'Arquitetura'},
+  {id:'s-pit-bridge', icon:'⏳', label:'PIT & Bridge'},
+  {id:'s-consulta', icon:'🔎', label:'Consultando'},
+  {id:'s-21', icon:'🆕', label:'Data Vault 2.1'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-quando-usar', icon:'⚖️', label:'Quando Usar'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== simple illustrative hash (NOT real MD5) ===================== */
+function simpleHash(str){
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for(let i=0;i<str.length;i++){
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+  const combined = (h1>>>0).toString(16).padStart(8,'0') + (h2>>>0).toString(16).padStart(8,'0');
+  return combined;
+}
+
+/* ===================== ENSEMBLE MODELING DIAGRAM ===================== */
+const ensembleInfo = {
+  hub: {t:'🔑 Hub — chave de negócio', d:'Guarda só o business key (ex: cliente_bk = "C-001") e o mínimo de metadados. Uma linha por chave única, insert-only, sem nenhum atributo descritivo. É o ponto de deduplicação entre múltiplas origens.'},
+  link: {t:'🔗 Link — relacionamento', d:'Conecta dois ou mais Hubs registrando que uma associação aconteceu (ex: Cliente fez Pedido). Sempre modelado N:N, mesmo que a regra atual seja 1:N — absorve mudança de cardinalidade sem migração.'},
+  sat: {t:'🛰️ Satellite — histórico', d:'Guarda os atributos descritivos e sua evolução completa no tempo, pendurado num Hub ou num Link. Cada mudança gera uma nova linha via INSERT — nunca UPDATE, nunca DELETE.'},
+};
+function pickEnsemble(id){
+  document.querySelectorAll('#ensembleWrap .ens-node').forEach(el => el.classList.remove('active'));
+  const info = ensembleInfo[id];
+  if(!info) return;
+  document.querySelector(`#ensembleWrap [data-id="${id}"]`).style.outline = '2px solid var(--accent)';
+  document.querySelectorAll('#ensembleWrap .ens-node').forEach(el => { if(el.dataset.id !== id) el.style.outline = 'none'; });
+  document.getElementById('ensembleDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== HUB DEDUPLICATION DEMO ===================== */
+function renderHub(){
+  const raw = document.getElementById('hubInput').value.split(',').map(s => s.trim()).filter(Boolean);
+  document.getElementById('hubRaw').innerHTML = raw.map(ev => `<span class="chip">${ev}</span>`).join('');
+  const seen = new Map();
+  raw.forEach(ev => {
+    const [sistema, chave] = ev.split(':');
+    if(!chave) return;
+    if(!seen.has(chave)) seen.set(chave, {sistema, chave, hk: simpleHash(chave).slice(0,12)});
+  });
+  const rows = [...seen.values()];
+  document.getElementById('hubTable').innerHTML = `
+    <thead><tr><th>hub_cliente_hk</th><th>cliente_bk</th><th>record_source (1ª origem)</th></tr></thead>
+    <tbody>${rows.map(r => `<tr class="row-scan"><td>${r.hk}</td><td>${r.chave}</td><td>${r.sistema}</td></tr>`).join('')}</tbody>`;
+  document.getElementById('hubBefore').textContent = raw.length;
+  document.getElementById('hubAfter').textContent = rows.length;
+  document.getElementById('hubSaving').textContent = raw.length > 0 ? Math.round((1 - rows.length/raw.length)*100) + '%' : '—';
+}
+renderHub();
+
+/* ===================== HASH KEY DEMO ===================== */
+function renderHashDemo(){
+  const bk = document.getElementById('hashInput').value;
+  document.getElementById('hashBkOut').textContent = bk || '—';
+  document.getElementById('hashKeyOut').textContent = bk ? simpleHash(bk) : '—';
+}
+renderHashDemo();
+
+/* ===================== LINK DIAGRAM ===================== */
+const linkDiagramInfo = {
+  'hub-cliente': {t:'cliente_bk = "C-001"', d:'O business key do cliente, do jeito que o sistema de origem o reconhece.'},
+  'hub-cliente-hk': {t:'hub_cliente_hk', d:'Hash key calculada de forma independente: HASH("C-001"). Não depende de nenhuma outra tabela ter sido carregada antes.'},
+  'hub-pedido': {t:'pedido_bk = "PED-9001"', d:'O business key do pedido, também reconhecido diretamente pela origem.'},
+  'hub-pedido-hk': {t:'hub_pedido_hk', d:'Hash key do pedido: HASH("PED-9001"). Calculada em paralelo à hash key do cliente — nenhuma depende da outra.'},
+  'link-hk': {t:'link_cliente_pedido_hk', d:'A hash key do próprio Link é calculada combinando os dois business keys (não as hash keys dos Hubs) — normalmente HASH(cliente_bk || pedido_bk) — garantindo que a mesma combinação sempre produza a mesma linha.'},
+  'link-fk1': {t:'hub_cliente_hk (FK)', d:'Referencia a hash key do Hub Cliente. Como já foi calculada de forma independente, o Link pode ser montado sem esperar o Hub terminar de ser fisicamente gravado.'},
+  'link-fk2': {t:'hub_pedido_hk (FK)', d:'Referencia a hash key do Hub Pedido — mesma lógica, calculada em paralelo.'},
+  'link-meta': {t:'load_date · record_source', d:'Os mesmos metadados obrigatórios de qualquer tabela do Vault: quando esta associação foi vista pela primeira vez, e de qual sistema ela veio.'},
+};
+function pickLinkDiagram(id){
+  document.querySelectorAll('#s-link .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = linkDiagramInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-link [data-id="${id}"]`).classList.add('active');
+  document.getElementById('linkDiagramDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== SATELLITE HASH DIFF DEMO ===================== */
+let satState = { cidade: 'São Paulo', status: 'Ativo' };
+let satHistory = [];
+function seedSatHistory(){
+  satHistory = [];
+  const seedDate = new Date('2026-01-05T09:00:00');
+  addSatVersion(seedDate, 'Ana Ribeiro', 'São Paulo', 'Ativo', 'CRM');
+}
+function addSatVersion(date, nome, cidade, status, origem){
+  const payload = `${nome}|${cidade}|${status}`;
+  const hd = simpleHash(payload).slice(0,10);
+  const last = satHistory[satHistory.length-1];
+  const changed = !last || last.hash_diff !== hd;
+  satHistory.push({date, nome, cidade, status, origem, hash_diff: hd, changed});
+  return changed;
+}
+function setSatCidade(v, btn){
+  satState.cidade = v;
+  document.getElementById('satCidadeVal').textContent = v;
+  btn.parentElement.querySelectorAll('.btn-toggle').forEach(b => b.classList.toggle('active', b===btn));
+}
+function setSatStatus(v, btn){
+  satState.status = v;
+  document.getElementById('satStatusVal').textContent = v;
+  btn.parentElement.querySelectorAll('.btn-toggle').forEach(b => b.classList.toggle('active', b===btn));
+}
+function loadSatRow(){
+  const nextDate = new Date((satHistory[satHistory.length-1]?.date || new Date('2026-01-05')).getTime() + 86400000*30);
+  const changed = addSatVersion(nextDate, 'Ana Ribeiro', satState.cidade, satState.status, 'CRM');
+  renderSatTable();
+  document.getElementById('satResult').textContent = changed ? '✅ Nova linha inserida' : '⏭ Ignorado (hash_diff igual)';
+}
+function resetSat(){ seedSatHistory(); renderSatTable(); document.getElementById('satResult').textContent = '—'; }
+function renderSatTable(){
+  document.getElementById('satTable').innerHTML = `
+    <thead><tr><th>load_date</th><th>nome</th><th>cidade</th><th>status</th><th>hash_diff</th></tr></thead>
+    <tbody>${satHistory.map(r => `<tr class="${r.changed ? 'row-new':''}"><td>${r.date.toISOString().slice(0,10)}</td><td>${r.nome}</td><td>${r.cidade}</td><td>${r.status}</td><td>${r.hash_diff}</td></tr>`).join('')}</tbody>`;
+  document.getElementById('satHashDiff').textContent = satHistory[satHistory.length-1]?.hash_diff || '—';
+}
+seedSatHistory();
+renderSatTable();
+
+/* ===================== STAR SCHEMA vs DATA VAULT DIAGRAM ===================== */
+function drawDiagramLines(wrapId, svgId, pairs){
+  const wrap = document.getElementById(wrapId);
+  const svg = document.getElementById(svgId);
+  if(!wrap || !svg) return;
+  const wrapRect = wrap.getBoundingClientRect();
+  svg.setAttribute('width', wrapRect.width);
+  svg.setAttribute('height', wrapRect.height);
+  svg.setAttribute('viewBox', `0 0 ${wrapRect.width} ${wrapRect.height}`);
+  svg.innerHTML = pairs.map(([a,b]) => {
+    const elA = document.getElementById(a), elB = document.getElementById(b);
+    if(!elA || !elB) return '';
+    const ra = elA.getBoundingClientRect(), rb = elB.getBoundingClientRect();
+    const x1 = ra.left + ra.width/2 - wrapRect.left, y1 = ra.top + ra.height/2 - wrapRect.top;
+    const x2 = rb.left + rb.width/2 - wrapRect.left, y2 = rb.top + rb.height/2 - wrapRect.top;
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" style="stroke:var(--border-strong);stroke-width:1.5;" />`;
+  }).join('');
+}
+function drawAllDiagramLines(){
+  drawDiagramLines('starWrap', 'starSvg', [['star-fv','star-dt'],['star-fv','star-dc'],['star-fv','star-dp']]);
+  drawDiagramLines('vaultWrap', 'vaultSvg', [['vault-hc','vault-lk'],['vault-hp','vault-lk'],['vault-hc','vault-sc'],['vault-hp','vault-sp'],['vault-lk','vault-sv']]);
+}
+window.addEventListener('resize', drawAllDiagramLines);
+window.addEventListener('load', drawAllDiagramLines);
+requestAnimationFrame(drawAllDiagramLines);
+setTimeout(drawAllDiagramLines, 300); // fonts/layout settle
+
+const diagramNodeInfo = {
+  'star-dt': {t:'DIM_TEMPO', d:'Dimensão de calendário — uma linha por data, com granularidade de dia, mês e ano. Carregada uma única vez (ou com anos de antecedência) e praticamente nunca muda.'},
+  'star-dc': {t:'DIM_CLIENTE', d:'Snapshot atual dos atributos do cliente (ou histórico via SCD Tipo 2, se configurado). Nome, cidade e segmento já vêm achatados numa única linha por cliente — ou por versão do cliente.'},
+  'star-fv': {t:'FATO_VENDAS', d:'Uma linha por evento de venda. Guarda as chaves substitutas (surrogate keys) de cada dimensão envolvida mais as métricas numéricas (quantidade, valor). É aqui que fica a granularidade do negócio — o centro do star schema.'},
+  'star-dp': {t:'DIM_PRODUTO', d:'Snapshot atual dos atributos do produto: nome, categoria, marca.'},
+  'vault-hc': {t:'HUB_CLIENTE', d:'Só o business key do cliente — nenhum atributo descritivo aqui. Existe para deduplicar a chave entre sistemas de origem.'},
+  'vault-hp': {t:'HUB_PRODUTO', d:'Só o business key do produto, pela mesma lógica do Hub_Cliente.'},
+  'vault-lk': {t:'LINK_VENDA', d:'Registra que um cliente comprou um produto — guarda as hash keys dos dois Hubs, não os business keys diretamente. Cada nova combinação (ou novo evento de compra) vira uma linha nova.'},
+  'vault-sc': {t:'SAT_CLIENTE_DETALHE', d:'Histórico completo dos atributos do cliente (nome, cidade, segmento) — uma linha por versão, pendurada no Hub_Cliente.'},
+  'vault-sp': {t:'SAT_PRODUTO_DETALHE', d:'Histórico completo dos atributos do produto (nome, categoria, marca), pendurado no Hub_Produto.'},
+  'vault-sv': {t:'SAT_VENDA_DETALHE', d:'Os atributos da própria venda: data, quantidade, valor. Pendurado no Link — porque descreve a associação entre cliente e produto, não uma das duas entidades sozinha.'},
+};
+function pickDiagramNode(id){
+  document.querySelectorAll('.dnode').forEach(el => el.classList.remove('active'));
+  const info = diagramNodeInfo[id];
+  if(!info) return;
+  document.getElementById(id).classList.add('active');
+  document.getElementById('diagramCompareDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== LAYERED ARCHITECTURE ===================== */
+const layers = [
+  {id:'staging', icon:'📥', title:'Staging Area', tag:'Efêmera', sub:'Cópia bruta e temporária dos sistemas de origem', d:'Recebe os dados exatamente como chegam da origem — sem transformação de negócio, só o cálculo de hash keys e hash diffs para acelerar a carga seguinte. Normalmente truncada e recarregada a cada execução; não guarda histórico próprio.'},
+  {id:'rawvault', icon:'🗄️', title:'Raw Vault', tag:'Insert-Only', sub:'Hubs, Links e Satellites — o histórico bruto e imutável', d:'O coração do Data Vault. Recebe tudo que a Staging trouxe, sem aplicar regra de negócio nenhuma — nem uma validação, nem uma correção. É a fonte da verdade auditável: o que está aqui é exatamente o que a origem disse, quando disse.'},
+  {id:'businessvault', icon:'🧮', title:'Business Vault', tag:'Derivada', sub:'Regras de negócio, PIT, Bridge, Same-As resolvidos', d:'Aplica regras de negócio (deduplicação, cálculos, resolução de conflito entre origens) e pré-calcula estruturas de performance como PIT e Bridge tables. Tudo aqui pode ser recalculado do zero a partir do Raw Vault — nada é fonte primária.'},
+  {id:'marts', icon:'📊', title:'Information Marts / Star Schema', tag:'Consumo', sub:'Modelos dimensionais (Kimball) prontos para BI', d:'Camada final, otimizada para consumo: dimensões, fatos, agregações — o que ferramentas de BI e usuários de negócio realmente enxergam. Construída a partir do Business Vault (ou direto do Raw Vault, quando simples o suficiente).'},
+];
+function buildLayers(){
+  document.getElementById('layerStack').innerHTML = layers.map(l => `
+    <div class="layer-row" data-lid="${l.id}" onclick="pickLayer('${l.id}')">
+      <div><div class="layer-title">${l.icon} ${l.title}</div><div class="layer-sub">${l.sub}</div></div>
+      <span class="layer-tag">${l.tag}</span>
+    </div>`).join('');
+}
+function pickLayer(id){
+  document.querySelectorAll('.layer-row').forEach(el => el.classList.toggle('active', el.dataset.lid === id));
+  const l = layers.find(x => x.id === id);
+  document.getElementById('layerDetail').innerHTML = `<div class="ad-title">${l.icon} ${l.title}</div><div class="ad-text">${l.d}</div>`;
+}
+buildLayers();
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Um Hub pode guardar atributos descritivos, desde que sejam poucos.', a:false, e:'Falso. Um Hub guarda apenas o business key e o mínimo de metadados (hash key, load_date, record_source) — qualquer atributo descritivo pertence a um Satellite.'},
+  {q:'Satellites são carregados em modo insert-only: nunca há UPDATE nem DELETE.', a:true, e:'Verdadeiro. Cada mudança de atributo gera uma nova linha; o histórico completo fica preservado, nunca sobrescrito.'},
+  {q:'A hash key do Data Vault 2.0 elimina a dependência de ordem de carga entre Hub, Link e Satellite.', a:true, e:'Verdadeiro. Como é calculada de forma determinística a partir do business key, sem consultar o banco, permite carregar as três peças em paralelo.'},
+  {q:'Um Link só pode conectar exatamente dois Hubs, nunca mais que isso.', a:false, e:'Falso. Um Link pode conectar dois ou mais Hubs — é comum haver Links com 3+ pontas quando o evento de negócio naturalmente envolve mais entidades.'},
+  {q:'O hash_diff existe para detectar se algum atributo de um Satellite mudou, sem comparar campo a campo.', a:true, e:'Verdadeiro. É um hash calculado sobre todos os atributos; comparar dois hash_diff é mais barato do que comparar cada coluna individualmente.'},
+  {q:'Data Vault substitui a modelagem dimensional (Kimball) como camada final de consumo para BI.', a:false, e:'Falso. Data Vault resolve a camada de integração; Kimball/star schema continuam sendo a referência para a camada de apresentação e consumo direto.'},
+  {q:'PIT e Bridge tables armazenam dados que não existem em nenhum outro lugar do Vault.', a:false, e:'Falso. São estruturas derivadas do Raw Vault, pré-calculadas para performance de consulta — podem ser recriadas do zero a qualquer momento.'},
+  {q:'Data Vault 2.1 substitui Hub, Link e Satellite por novas estruturas.', a:false, e:'Falso. As três peças fundamentais continuam as mesmas; 2.1 refina metodologia ágil, padrões estendidos, governança de metadados e compatibilidade com plataformas modernas.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

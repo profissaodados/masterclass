@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Índice de aulas interativas sobre Engenharia de Dados e Estatística. Iceberg, Parquet, DuckDB, S3, dbt, Data Vault, CDC e mais de uma dezena de distribuições estatísticas explicadas com demos visuais.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Índice de Aulas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:flex;flex-direction:column;gap:16px;}
+.hero h2{font-size:34px;font-weight:800;line-height:1.15;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;max-width:820px;}
+.hero-badges{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:20px;display:flex;flex-direction:column;gap:14px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;padding-left:17px;}
+
+/* ---- LESSON CARDS ---- */
+.grid-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.lesson-card{display:flex;flex-direction:column;gap:10px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:20px 22px;text-decoration:none;transition:.15s;}
+.lesson-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(6,182,212,.10);}
+.lesson-card-top{display:flex;align-items:center;gap:10px;}
+.lesson-icon{font-size:20px;line-height:1;}
+.lesson-title{font-size:14.5px;font-weight:700;color:var(--text-primary);}
+.lesson-card:hover .lesson-title{color:var(--accent);}
+.lesson-desc{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.lesson-go{margin-top:auto;font-size:10.5px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:4px;}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+@media (max-width:900px){
+  .page{padding:22px 18px 40px;}
+  .hero{padding:28px 24px;}
+  .hero h2{font-size:26px;}
+  .grid-cards{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:600px){
+  .header-stats{display:none;}
+  .grid-cards{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Índice de Aulas</h1><span>Engenharia de Dados &amp; Estatística</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">28</div><div class="hstat-label">Aulas</div></div>
+      <div class="hstat"><div class="hstat-num">12</div><div class="hstat-label">Eng. de Dados</div></div>
+      <div class="hstat"><div class="hstat-num">16</div><div class="hstat-label">Estatística</div></div>
+    </div>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <h2>Aulas interativas para quem quer <em>entender de verdade</em>, não só decorar</h2>
+    <p>Cada aula abaixo é uma página única, com demos visuais e interativas, pensada para ensinar os conceitos por dentro — de arquivos Parquet a distribuições de probabilidade. Escolha um tema e comece.</p>
+    <div class="hero-badges">
+      <span class="badge badge-cyan">Demos Interativas</span>
+      <span class="badge badge-green">Engenharia de Dados</span>
+      <span class="badge badge-blue">Estatística</span>
+      <span class="badge badge-purple">Sem Cadastro</span>
+    </div>
+  </section>
+
+  <!-- ============ ENGENHARIA DE DADOS ============ -->
+  <section class="section" id="s-dados">
+    <div class="section-eyebrow">12 aulas</div>
+    <div class="section-title">🗃️ Engenharia de Dados</div>
+    <p class="section-desc">Formatos de arquivo, modelagem, arquitetura de lakehouse e as ferramentas por trás do pipeline moderno de dados.</p>
+
+    <div class="grid-cards">
+      <a class="lesson-card" href="dados/iceberg/">
+        <div class="lesson-card-top"><span class="lesson-icon">🧊</span><span class="lesson-title">Apache Iceberg por Dentro</span></div>
+        <p class="lesson-desc">Metadata.json, manifests, snapshots, time travel e schema/partition evolution.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/parquet/">
+        <div class="lesson-card-top"><span class="lesson-icon">📦</span><span class="lesson-title">Formato Parquet por Dentro</span></div>
+        <p class="lesson-desc">Row groups, encodings, compressão e predicate pushdown.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/duckdb/">
+        <div class="lesson-card-top"><span class="lesson-icon">🦆</span><span class="lesson-title">DuckDB por Dentro</span></div>
+        <p class="lesson-desc">Arquitetura in-process, execução vetorizada e SQL direto em arquivos.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/s3/">
+        <div class="lesson-card-top"><span class="lesson-icon">☁️</span><span class="lesson-title">Amazon S3 Descomplicado</span></div>
+        <p class="lesson-desc">Buckets, regiões, durabilidade, storage classes e lifecycle.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/dbt/">
+        <div class="lesson-card-top"><span class="lesson-icon">🔧</span><span class="lesson-title">dbt por Dentro</span></div>
+        <p class="lesson-desc">ELT, models, ref() e o DAG, materializations e testes.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/aws-glue/">
+        <div class="lesson-card-top"><span class="lesson-icon">🕸️</span><span class="lesson-title">AWS Glue por Dentro</span></div>
+        <p class="lesson-desc">Data Catalog, Crawlers, DynamicFrames, Jobs e DPUs.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/cdc/">
+        <div class="lesson-card-top"><span class="lesson-icon">🔄</span><span class="lesson-title">Change Data Capture (CDC)</span></div>
+        <p class="lesson-desc">Polling, trigger-based e log-based (WAL/binlog) na prática.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/data-vault/">
+        <div class="lesson-card-top"><span class="lesson-icon">🗄️</span><span class="lesson-title">Data Vault 2.0 &amp; 2.1</span></div>
+        <p class="lesson-desc">Hubs, Links, Satellites, hash keys e arquitetura em camadas.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/uss/">
+        <div class="lesson-card-top"><span class="lesson-icon">⭐</span><span class="lesson-title">Unified Star Schema</span></div>
+        <p class="lesson-desc">Puppini Bridge, fan trap, chasm trap e convenção _KEY_.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/camada-semantica/">
+        <div class="lesson-card-top"><span class="lesson-icon">🧠</span><span class="lesson-title">Camada Semântica</span></div>
+        <p class="lesson-desc">Métricas como código, headless BI e a fonte única de verdade.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/scd/">
+        <div class="lesson-card-top"><span class="lesson-icon">🕰️</span><span class="lesson-title">Slowly Changing Dimensions</span></div>
+        <p class="lesson-desc">Tipos 0 a 6 com linha do tempo interativa e SQL na prática.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="dados/formas-normais/">
+        <div class="lesson-card-top"><span class="lesson-icon">📐</span><span class="lesson-title">Formas Normais Explicadas</span></div>
+        <p class="lesson-desc">1FN a 5FN com caixinhas, setas mágicas e exemplos visuais.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ ESTATÍSTICA ============ -->
+  <section class="section" id="s-estatistica">
+    <div class="section-eyebrow">16 aulas</div>
+    <div class="section-title">📊 Estatística &amp; Probabilidade</div>
+    <p class="section-desc">Do básico de porcentagem às distribuições de probabilidade e regressão, explicados do zero com desenhos e simulações.</p>
+
+    <div class="grid-cards">
+      <a class="lesson-card" href="estatistica/probabilidade/">
+        <div class="lesson-card-top"><span class="lesson-icon">🎰</span><span class="lesson-title">Probabilidade do Jeito Fácil</span></div>
+        <p class="lesson-desc">Dados, urnas, diagramas de Venn e Teorema de Bayes.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/porcentagem/">
+        <div class="lesson-card-top"><span class="lesson-icon">💯</span><span class="lesson-title">Porcentagem do Jeito Fácil</span></div>
+        <p class="lesson-desc">Grades de 100 quadrados, etiquetas de preço e termômetros.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/analise-combinatoria/">
+        <div class="lesson-card-top"><span class="lesson-icon">🌳</span><span class="lesson-title">Análise Combinatória</span></div>
+        <p class="lesson-desc">Árvores de possibilidades, fatorial, permutação e combinação.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/variaveis-aleatorias/">
+        <div class="lesson-card-top"><span class="lesson-icon">🎲</span><span class="lesson-title">Variáveis Aleatórias</span></div>
+        <p class="lesson-desc">Dados, moedas, rifas e balanças de equilíbrio.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-probabilidade-discreta/">
+        <div class="lesson-card-top"><span class="lesson-icon">🎲</span><span class="lesson-title">Distribuição de Probabilidade Discreta</span></div>
+        <p class="lesson-desc">Introdução com dados, urnas e muitos gráficos interativos.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-bernoulli/">
+        <div class="lesson-card-top"><span class="lesson-icon">🪙</span><span class="lesson-title">Distribuição de Bernoulli</span></div>
+        <p class="lesson-desc">Moedas, roletas e balanças em simulações interativas.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-binomial/">
+        <div class="lesson-card-top"><span class="lesson-icon">🏀</span><span class="lesson-title">Distribuição Binomial</span></div>
+        <p class="lesson-desc">Moedas, cestas de basquete e fábricas.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-binomial-negativa/">
+        <div class="lesson-card-top"><span class="lesson-icon">🎯</span><span class="lesson-title">Distribuição Binomial Negativa</span></div>
+        <p class="lesson-desc">Vendedores, pescadores e moedas.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-geometrica/">
+        <div class="lesson-card-top"><span class="lesson-icon">🎣</span><span class="lesson-title">Distribuição Geométrica</span></div>
+        <p class="lesson-desc">Pescarias, ligações telefônicas e arremessos.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-hipergeometrica/">
+        <div class="lesson-card-top"><span class="lesson-icon">🐟</span><span class="lesson-title">Distribuição Hipergeométrica</span></div>
+        <p class="lesson-desc">Caixas de bolinhas, baralhos e peixes marcados.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-uniforme-discreta/">
+        <div class="lesson-card-top"><span class="lesson-icon">🎯</span><span class="lesson-title">Distribuição Uniforme Discreta</span></div>
+        <p class="lesson-desc">Dados, roletas e sorteios.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-poisson/">
+        <div class="lesson-card-top"><span class="lesson-icon">☎️</span><span class="lesson-title">Distribuição de Poisson</span></div>
+        <p class="lesson-desc">Linhas do tempo, call centers e padarias.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/distribuicao-normal/">
+        <div class="lesson-card-top"><span class="lesson-icon">🔔</span><span class="lesson-title">Distribuição Normal</span></div>
+        <p class="lesson-desc">Galton Board, curva ajustável, regra 68-95-99.7 e z-score.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/cadeia-markov/">
+        <div class="lesson-card-top"><span class="lesson-icon">🤖</span><span class="lesson-title">Cadeias de Markov</span></div>
+        <p class="lesson-desc">Um robozinho pulando entre estados, com simulações interativas.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/regressao-linear/">
+        <div class="lesson-card-top"><span class="lesson-icon">📉</span><span class="lesson-title">Regressão Linear</span></div>
+        <p class="lesson-desc">Retas arrastáveis, mínimos quadrados, resíduos e R².</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+      <a class="lesson-card" href="estatistica/regressao-logistica/">
+        <div class="lesson-card-top"><span class="lesson-icon">📈</span><span class="lesson-title">Regressão Logística</span></div>
+        <p class="lesson-desc">Curva sigmoide, odds, log-loss e curva ROC.</p>
+        <span class="lesson-go">Abrir aula →</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Índice de Aulas</span>
+    <span>Engenharia de Dados &amp; Estatística, com demos interativas</span>
+    <span id="footerYear"></span>
+  </footer>
+
+</div>
+<script>
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

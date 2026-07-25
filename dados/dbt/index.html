@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: dbt por dentro. ELT, models, ref() e o DAG, materializations, testes, documentação e mais, com demos interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — dbt por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:210px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);} .jn{color:var(--accent-purple);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- CLICKABLE DIAGRAM (arquitetura / DAG) ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.dag-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- FOLDER / DAG TREE ---- */
+.tree{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:2;color:var(--text-secondary);}
+.tree .t0{color:var(--text-primary);font-weight:700;}
+.tree .t1{padding-left:22px;color:var(--accent-blue);}
+.tree .t2{padding-left:44px;color:var(--accent-purple);}
+.tree .t3{padding-left:66px;color:var(--text-secondary);}
+.tree .t3 .fname{color:var(--accent-green);}
+.tree .cmt{color:var(--text-disabled);font-style:italic;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid,.dag-grid{grid-template-columns:1fr;gap:20px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>dbt</h1><span>O "T" do ELT: transformação como engenharia de software, dentro do warehouse</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2016</div><div class="hstat-label">Origem</div></div>
+      <div class="hstat"><div class="hstat-num">9</div><div class="hstat-label">Demos</div></div>
+      <div class="hstat"><div class="hstat-num">SQL + Jinja</div><div class="hstat-label">Linguagem</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Transformação de dados <em>como engenharia de software</em></h2>
+      <p>dbt (<strong>data build tool</strong>) é uma ferramenta de transformação que permite times de dados escreverem lógica em <strong>SQL</strong> (com um toque de <strong>Jinja</strong>) e transformá-la em tabelas e views versionadas, testadas e documentadas — direto dentro do data warehouse. Criado em 2016 por Tristan Handy na Fishtown Analytics (hoje <strong>dbt Labs</strong>), o dbt não extrai nem carrega dado nenhum: ele assume que os dados brutos <em>já estão</em> no warehouse (o trabalho de ferramentas como Fivetran, Airbyte ou Stitch) e cuida exclusivamente do <strong>T</strong> de ELT — aplicando ao SQL analítico práticas que a engenharia de software já usava há décadas: controle de versão, testes automatizados, modularidade e documentação gerada a partir do próprio código.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">SQL-first</span>
+        <span class="badge badge-green">Analytics Engineering</span>
+        <span class="badge badge-blue">DAG-driven</span>
+        <span class="badge badge-purple">Git-native</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🔧 SÓ O "T" DO ELT</div>
+        <div class="fc-body">
+          <div class="fc-row">models/*.sql<br><span style="font-size:9.5px;opacity:.7;">SELECT + Jinja, versionado em Git</span></div>
+          <div class="fc-row">dbt compila e executa<br><span style="font-size:9.5px;opacity:.7;">gera SQL puro do dialeto do warehouse</span></div>
+        </div>
+        <div class="fc-foot">Roda em Snowflake · BigQuery · Databricks · Postgres · DuckDB...</div>
+      </div>
+      <div class="file-chip-caption">O dbt nunca move dado entre sistemas — só manda SQL para o warehouse executar</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🛠️ O que é o dbt e que problema ele resolve?</div>
+    <p class="section-desc">
+      Antes de ferramentas como o dbt, transformar dados brutos em tabelas prontas para análise costumava significar um emaranhado de <strong>stored procedures</strong> gigantes, scripts Python soltos ou planilhas de ETL visual — sem versionamento claro, sem testes automáticos e sem documentação confiável de onde cada número vinha. O dbt ataca esse problema tratando <strong>SQL como código de verdade</strong>: cada transformação é um arquivo <code>.sql</code> guardado em um repositório Git, com dependências explícitas entre si, testável e documentável como qualquer módulo de software.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📝 SQL-first</div>
+        <div class="card-text">Um <em>model</em> dbt é, no fundo, um <code>SELECT</code>. Não é preciso aprender uma linguagem de pipeline nova — só SQL, mais um pouco de Jinja para reaproveitar lógica.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧪 Testável por padrão</div>
+        <div class="card-text">Regras como "essa coluna nunca é nula" ou "esse ID é único" viram testes declarativos em YAML, rodados automaticamente antes de confiar no dado.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📖 Documentado a partir do código</div>
+        <div class="card-text"><code>dbt docs generate</code> lê o próprio projeto e produz um site navegável com o grafo de dependências entre todas as tabelas.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Dimensão</th><th>Abordagem tradicional (stored procs / scripts soltos)</th><th>Com dbt</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Versionamento</strong></td><td>Frequentemente manual, fora de um repositório Git</td><td>Todo o projeto vive em Git, com pull requests e histórico</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Testes</strong></td><td>Ad hoc, muitas vezes inexistentes</td><td>Testes declarados em YAML, rodados a cada execução</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Dependências entre tabelas</strong></td><td>Implícitas, na cabeça de quem escreveu</td><td>Explícitas via <code>ref()</code> — o dbt monta o grafo (DAG) sozinho</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Documentação</strong></td><td>Desatualiza rápido, vive em wiki separada</td><td>Gerada do próprio projeto, sempre em sincronia com o código</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Onde o dbt entra</strong></td><td>—</td><td>✅ Camada de transformação, entre o dado bruto carregado e as tabelas analíticas</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Origem</div>
+      <p>Criado em 2016 por Tristan Handy dentro da consultoria Fishtown Analytics — que em 2022 se renomeou para <strong>dbt Labs</strong> após o produto se tornar o foco principal da empresa. É também o dbt que popularizou o termo <strong>"analytics engineer"</strong>: o profissional que aplica boas práticas de engenharia de software (versionamento, testes, CI/CD, modularidade) ao trabalho tradicionalmente feito por analistas de dados em SQL.</p>
+    </div>
+  </section>
+
+  <!-- ============ ELT E O T ============ -->
+  <section class="section" id="s-pipeline">
+    <div class="section-eyebrow">Onde ele entra</div>
+    <div class="section-title">🔄 ETL Tradicional vs. ELT Moderno</div>
+    <p class="section-desc">
+      No modelo <strong>ETL</strong> (Extract, Transform, Load), a transformação acontecia <em>fora</em> do banco de destino — em um servidor de ETL dedicado — antes dos dados serem carregados já prontos. No modelo <strong>ELT</strong> (Extract, Load, Transform), que se tornou dominante com a chegada de warehouses colunares baratos e elásticos (BigQuery, Snowflake, Redshift...), os dados brutos são carregados <em>primeiro</em>, sem transformação, e só depois transformados <em>dentro</em> do próprio warehouse — usando o poder de processamento que ele já tem. O dbt é a ferramenta que assumiu essa última etapa. Clique nos blocos para comparar o caminho do dado em cada modelo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🏭 ETL Tradicional</div>
+          <div class="pq-clickable" data-id="etl-extract" onclick="pickEtl('etl-extract')">Extract — conecta nas fontes</div>
+          <div class="pq-clickable" data-id="etl-transform" onclick="pickEtl('etl-transform')">Transform — servidor de ETL dedicado</div>
+          <div class="pq-clickable" data-id="etl-load" onclick="pickEtl('etl-load')">Load — carrega já pronto no destino</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🚀 ELT Moderno (dbt entra aqui)</div>
+          <div class="pq-clickable" data-id="elt-extract" onclick="pickEtl('elt-extract')">Extract &amp; Load — Fivetran / Airbyte / Stitch</div>
+          <div class="pq-clickable" data-id="elt-raw" onclick="pickEtl('elt-raw')">Dado bruto pousa no warehouse</div>
+          <div class="pq-clickable" data-id="elt-transform" onclick="pickEtl('elt-transform')">Transform — dbt roda SQL dentro do warehouse</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="etlDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Compare onde a transformação acontece em cada modelo, e por que isso importa para o dbt.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Essa inversão de ordem (carregar bruto, transformar depois) só ficou prática quando warehouses colunares passaram a oferecer processamento elástico e barato o bastante para rodar transformações pesadas <em>dentro</em> deles, sem precisar de um cluster de ETL separado. O dbt não compete com Fivetran/Airbyte (o "EL") nem com orquestradores como Airflow (que podem <em>disparar</em> o dbt) — ele é especificamente a camada de <strong>T</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ============ ARQUITETURA ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">As Formas de Rodar</div>
+    <div class="section-title">🏗️ dbt Core, dbt Cloud e dbt Fusion</div>
+    <p class="section-desc">
+      "dbt" não é uma coisa só — é uma linguagem de projeto (arquivos <code>.sql</code> + <code>.yml</code>) que pode ser executada por diferentes motores. Entender a diferença entre eles evita confusão comum entre quem está começando.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">💻 dbt Core</div>
+        <div class="card-text">CLI open source (licença Apache 2.0), instalado via <code>pip install dbt-core</code> + o adapter do seu warehouse. Roda local, em CI ou orquestrado por Airflow/Dagster — sem custo de licença.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">☁️ dbt Cloud</div>
+        <div class="card-text">Plataforma SaaS gerenciada pela dbt Labs: IDE no navegador, agendador de jobs, hospedagem da documentação, CI integrado e um catálogo de metadados — sobre a mesma base do dbt Core.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ dbt Fusion</div>
+        <div class="card-text">Novo motor de execução (em Rust) lançado pela dbt Labs, com parsing e compilação nativos muito mais rápidos que o Core em Python, além de checagem de erros de SQL antes de rodar no warehouse.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Aspecto</th><th>dbt Core</th><th>dbt Cloud</th><th>dbt Fusion</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Modelo</strong></td><td>Open source, self-hosted</td><td>SaaS gerenciado</td><td>Motor de execução, integrável ao Core/Cloud</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Custo</strong></td><td>Gratuito</td><td>Plano pago (com camada free)</td><td>Gratuito para uso local; parte da oferta comercial em produção</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Agendamento de jobs</strong></td><td>Você mesmo orquestra (cron, Airflow...)</td><td>Scheduler embutido</td><td>Depende de onde é integrado (Core ou Cloud)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Linguagem de implementação</strong></td><td>Python</td><td>Python (por baixo)</td><td>Rust</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Ponto forte</strong></td><td>Controle total, zero custo de licença</td><td>Produtividade out-of-the-box para o time todo</td><td>Velocidade de compilação e validação antecipada de erros</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ ESTRUTURA DO PROJETO ============ -->
+  <section class="section" id="s-estrutura">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">📁 Anatomia de um Projeto dbt</div>
+    <p class="section-desc">Um projeto dbt é, literalmente, uma pasta versionada em Git. A raiz sempre tem um <code>dbt_project.yml</code> — o arquivo que declara o projeto e configura como cada pasta de <code>models/</code> deve ser materializada.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="tree">
+          <div class="t0">meu_projeto_dbt/</div>
+          <div class="t1">dbt_project.yml <span class="cmt">← configuração do projeto</span></div>
+          <div class="t1">models/</div>
+          <div class="t2">staging/</div>
+          <div class="t3"><span class="fname">stg_orders.sql</span></div>
+          <div class="t3"><span class="fname">_staging.yml</span> <span class="cmt">← docs + tests</span></div>
+          <div class="t2">marts/</div>
+          <div class="t3"><span class="fname">fct_orders.sql</span></div>
+          <div class="t1">tests/ <span class="cmt">← testes singulares</span></div>
+          <div class="t1">macros/ <span class="cmt">← Jinja reutilizável</span></div>
+          <div class="t1">seeds/ <span class="cmt">← CSVs versionados</span></div>
+          <div class="t1">snapshots/ <span class="cmt">← histórico tipo SCD2</span></div>
+          <div class="t1">packages.yml <span class="cmt">← dependências (dbt_utils...)</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">dbt_project.yml — o essencial</div>
+        <div class="code-block">
+<span class="code-lang">yaml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="jn">name</span>: <span class="st">'meu_projeto_dbt'</span>
+<span class="jn">version</span>: <span class="st">'1.0.0'</span>
+<span class="jn">profile</span>: <span class="st">'meu_projeto_dbt'</span>
+
+<span class="cm"># onde os models compilados/rodados vivem</span>
+<span class="jn">model-paths</span>: [<span class="st">"models"</span>]
+<span class="jn">seed-paths</span>: [<span class="st">"seeds"</span>]
+
+<span class="cm"># materialização padrão por pasta</span>
+<span class="jn">models</span>:
+  <span class="jn">meu_projeto_dbt</span>:
+    <span class="jn">staging</span>:
+      <span class="jn">+materialized</span>: <span class="st">view</span>
+    <span class="jn">marts</span>:
+      <span class="jn">+materialized</span>: <span class="st">table</span></div>
+        <div class="info-box" style="margin-top:14px;"><p>💡 Configurações com prefixo <code>+</code> (como <code>+materialized</code>) se aplicam a <em>todos</em> os models daquela pasta e subpastas — evitando repetir a mesma configuração em cada arquivo <code>.sql</code> individualmente.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODELS ============ -->
+  <section class="section" id="s-models">
+    <div class="section-eyebrow">A Unidade Básica</div>
+    <div class="section-title">🧱 Models: um SELECT vira uma tabela</div>
+    <p class="section-desc">
+      Um <strong>model</strong> dbt é simplesmente um arquivo <code>.sql</code> dentro de <code>models/</code> contendo um único <code>SELECT</code> — <strong>sem</strong> <code>CREATE TABLE</code>, <strong>sem</strong> <code>INSERT</code>. O dbt é quem decide, na hora de rodar, como transformar esse <code>SELECT</code> em objeto real no warehouse (view, tabela...). O nome do arquivo vira o nome da tabela/view.
+    </p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">models/staging/stg_orders.sql</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span>
+    id <span class="kw">AS</span> order_id,
+    customer_id,
+    order_date,
+    status,
+    <span class="fn">CAST</span>(amount <span class="kw">AS</span> <span class="jn">DECIMAL</span>(<span class="num">10</span>,<span class="num">2</span>)) <span class="kw">AS</span> amount_usd
+<span class="kw">FROM</span> {{ <span class="fn">source</span>(<span class="st">'raw_shop'</span>, <span class="st">'orders'</span>) }}</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">O que o dbt executa de fato (após compilar + materializar como view)</div>
+        <div class="code-block">
+<span class="code-lang">sql compilado</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE OR REPLACE VIEW</span> analytics.staging.stg_orders <span class="kw">AS</span> (
+    <span class="kw">SELECT</span>
+        id <span class="kw">AS</span> order_id,
+        customer_id,
+        order_date,
+        status,
+        <span class="fn">CAST</span>(amount <span class="kw">AS</span> <span class="jn">DECIMAL</span>(<span class="num">10</span>,<span class="num">2</span>)) <span class="kw">AS</span> amount_usd
+    <span class="kw">FROM</span> raw_shop.orders
+);</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📄 Um arquivo = um model</div><div class="card-text">Cada <code>.sql</code> em <code>models/</code> vira um único objeto no warehouse — o nome do arquivo (sem extensão) é o nome da tabela/view.</div></div>
+      <div class="card"><div class="card-title">🗣️ Só SELECT, nada de DDL</div><div class="card-text">Você nunca escreve <code>CREATE TABLE</code> ou <code>INSERT</code> à mão — o dbt gera o DDL/DML certo com base na materialização configurada.</div></div>
+      <div class="card"><div class="card-title">🌍 Ciente do ambiente</div><div class="card-text">O mesmo código roda em dev (schema pessoal) ou produção — o dbt resolve o schema de destino a partir do profile ativo, sem editar o SQL.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ REF() E O DAG ============ -->
+  <section class="section" id="s-dag">
+    <div class="section-eyebrow">O Coração do dbt</div>
+    <div class="section-title">🕸️ ref(), source() e o Grafo de Dependências (DAG)</div>
+    <p class="section-desc">
+      Em vez de escrever o nome físico de uma tabela (<code>analytics.staging.stg_orders</code>), um model dbt referencia outro model com a função Jinja <code>{{ ref('stg_orders') }}</code>, e uma tabela bruta declarada como fonte com <code>{{ source('raw_shop', 'orders') }}</code>. É a partir de todo <code>ref()</code>/<code>source()</code> usado no projeto que o dbt monta automaticamente um <strong>DAG</strong> (grafo acíclico dirigido): ele sabe exatamente qual model depende de qual, e roda todos na ordem certa — em paralelo sempre que possível. Clique nas camadas abaixo para ver como um pedido de venda percorre o grafo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="dag-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🗄️ Sources</div>
+          <div class="pq-clickable" data-id="dag-src-orders" onclick="pickDag('dag-src-orders')">raw_shop.orders</div>
+          <div class="pq-clickable" data-id="dag-src-customers" onclick="pickDag('dag-src-customers')">raw_shop.customers</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🧹 Staging</div>
+          <div class="pq-clickable" data-id="dag-stg-orders" onclick="pickDag('dag-stg-orders')">stg_orders</div>
+          <div class="pq-clickable" data-id="dag-stg-customers" onclick="pickDag('dag-stg-customers')">stg_customers</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">⚙️ Intermediate</div>
+          <div class="pq-clickable" data-id="dag-int-orders" onclick="pickDag('dag-int-orders')">int_orders_joined</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🎯 Marts</div>
+          <div class="pq-clickable" data-id="dag-fct-orders" onclick="pickDag('dag-fct-orders')">fct_orders</div>
+          <div class="pq-clickable" data-id="dag-dim-customers" onclick="pickDag('dag-dim-customers')">dim_customers</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="dagDetail">
+        <div class="ad-title">👆 Clique em qualquer nó do grafo</div>
+        <div class="ad-text">Veja o SQL/config daquele model e quem ele referencia via ref()/source().</div>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px;">
+      <div class="card">
+        <div class="card-title">🔀 Ordem de execução automática</div>
+        <div class="card-text">Rodar <code>dbt run</code> executa os models na ordem topológica do DAG — nunca antes de suas dependências terem sido materializadas.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Execução seletiva</div>
+        <div class="card-text"><code>dbt run --select fct_orders+</code> roda só um model e tudo que depende dele (<em>downstream</em>) — útil para não reprocessar o projeto inteiro.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Usar <code>ref()</code> em vez do nome físico da tabela também é o que permite ao dbt trocar o schema de destino conforme o ambiente (dev/prod) sem tocar em uma linha de SQL — e é a base de recursos como testes de <em>freshness</em> em sources e execução incremental do CI (seção "Build &amp; CI" mais à frente).</p>
+    </div>
+  </section>
+
+  <!-- ============ MATERIALIZATIONS ============ -->
+  <section class="section" id="s-materializations">
+    <div class="section-eyebrow">Como o SELECT Vira Objeto</div>
+    <div class="section-title">🏭 Materializations</div>
+    <p class="section-desc">
+      A <strong>materialization</strong> decide como o dbt transforma o <code>SELECT</code> de um model num objeto físico no warehouse. É configurável por model, pasta ou projeto inteiro (<code>{{ config(materialized='table') }}</code> no topo do arquivo, ou no <code>dbt_project.yml</code>). Escolha uma abaixo para ver o SQL gerado e as implicações.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btnMatView" onclick="setMat('view')">view</button>
+        <button class="btn-toggle" id="btnMatTable" onclick="setMat('table')">table</button>
+        <button class="btn-toggle" id="btnMatIncr" onclick="setMat('incremental')">incremental</button>
+        <button class="btn-toggle" id="btnMatEph" onclick="setMat('ephemeral')">ephemeral</button>
+      </div>
+      <div class="code-block" id="matCode" style="margin-bottom:14px;"></div>
+      <div class="stat-cards" id="matStats"></div>
+    </div>
+  </section>
+
+  <!-- ============ INCREMENTAL ============ -->
+  <section class="section" id="s-incremental">
+    <div class="section-eyebrow">Rodando Só o Necessário</div>
+    <div class="section-title">⏭️ Incremental Models na Prática</div>
+    <p class="section-desc">
+      Recalcular uma tabela de bilhões de linhas do zero a cada execução desperdiça tempo e crédito de computação. Um model <strong>incremental</strong> usa a macro <code>{{ is_incremental() }}</code> para, nas execuções seguintes à primeira, processar <em>apenas</em> as linhas novas ou alteradas — inserindo (ou fazendo merge) delas na tabela já existente, em vez de reconstruir tudo.
+    </p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">models/marts/fct_orders.sql</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>{{ <span class="fn">config</span>(
+    materialized=<span class="st">'incremental'</span>,
+    unique_key=<span class="st">'order_id'</span>,
+    incremental_strategy=<span class="st">'merge'</span>
+) }}
+
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> {{ <span class="fn">ref</span>(<span class="st">'stg_orders'</span>) }}
+
+{% <span class="kw">if</span> <span class="fn">is_incremental</span>() %}
+  <span class="cm">-- só roda a partir da 2ª execução:</span>
+  <span class="kw">WHERE</span> updated_at <span class="kw">></span> (<span class="kw">SELECT</span> <span class="fn">MAX</span>(updated_at) <span class="kw">FROM</span> {{ this }})
+{% <span class="kw">endif</span> %}</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔁 Estratégias de incremental</div>
+        <table class="data-table" style="margin-top:4px;">
+          <tbody>
+            <tr><td><strong style="color:var(--accent);">append</strong></td><td>Só insere as linhas novas — sem checar duplicatas.</td></tr>
+            <tr><td><strong style="color:var(--accent);">merge</strong></td><td>Upsert por <code>unique_key</code>: atualiza se existe, insere se não.</td></tr>
+            <tr><td><strong style="color:var(--accent);">delete+insert</strong></td><td>Apaga as partições/chaves afetadas e reinsere.</td></tr>
+            <tr><td><strong style="color:var(--accent);">insert_overwrite</strong></td><td>Substitui partições inteiras (comum em BigQuery/Spark).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: quantas linhas precisam ser processadas em cada execução?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Total de linhas na tabela</span><span class="ctrl-v" id="incrTotalVal">50.000.000</span></div>
+          <input type="range" id="incrTotal" min="1000000" max="200000000" step="1000000" value="50000000" oninput="updateIncr()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Linhas novas/alteradas desde a última execução</span><span class="ctrl-v" id="incrNewVal">80.000</span></div>
+          <input type="range" id="incrNew" min="1000" max="5000000" step="1000" value="80000" oninput="updateIncr()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="incrCanvas" height="130"></canvas></div>
+      <div class="stat-cards" id="incrStats"></div>
+    </div>
+  </section>
+
+  <!-- ============ JINJA & MACROS ============ -->
+  <section class="section" id="s-jinja">
+    <div class="section-eyebrow">O que Torna SQL Reutilizável</div>
+    <div class="section-title">✨ Jinja &amp; Macros</div>
+    <p class="section-desc">
+      Puro SQL não tem variáveis, laços ou funções reutilizáveis — cada consulta é um texto isolado. O dbt compila cada model através do motor de templates <strong>Jinja2</strong> antes de rodar, o que adiciona a esse SQL: variáveis, condicionais, laços e <strong>macros</strong> (funções reutilizáveis que retornam SQL).
+    </p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">macros/cents_to_dollars.sql — uma macro reutilizável</div>
+        <div class="code-block">
+<span class="code-lang">sql + jinja</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>{% <span class="kw">macro</span> <span class="fn">cents_to_dollars</span>(coluna) %}
+    ({{ coluna }} <span class="kw">/</span> <span class="num">100</span>)::<span class="jn">numeric</span>(<span class="num">16</span>,<span class="num">2</span>)
+{% <span class="kw">endmacro</span> %}</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Usando a macro dentro de um model</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span>
+    order_id,
+    {{ <span class="fn">cents_to_dollars</span>(<span class="st">'amount_cents'</span>) }} <span class="kw">AS</span> amount_usd
+<span class="kw">FROM</span> {{ <span class="fn">ref</span>(<span class="st">'stg_orders'</span>) }}</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:8px;">
+      <div class="card"><div class="card-title">🔁 {% for %} — gera SQL repetitivo</div><div class="card-text">Um laço Jinja pode gerar um <code>SUM(CASE WHEN ...)</code> por categoria a partir de uma lista, evitando copiar/colar a mesma linha dezenas de vezes.</div></div>
+      <div class="card"><div class="card-title">🔀 {% if %} — SQL condicional</div><div class="card-text">Compila um trecho de SQL diferente dependendo de uma variável — como no exemplo do <code>is_incremental()</code> da seção anterior.</div></div>
+      <div class="card"><div class="card-title">📦 Macros de pacotes</div><div class="card-text">Pacotes como o <code>dbt_utils</code> distribuem macros prontas (ex: <code>dbt_utils.date_spine()</code>, <code>dbt_utils.star()</code>) que qualquer projeto pode instalar e usar.</div></div>
+    </div>
+
+    <div class="info-box"><p>💡 Tudo entre <code>{{ }}</code> e <code>{% %}</code> é resolvido em <strong>tempo de compilação</strong>, antes de qualquer SQL chegar ao warehouse — rode <code>dbt compile</code> para ver exatamente o SQL puro que será enviado, sem nenhum Jinja restante.</p></div>
+  </section>
+
+  <!-- ============ TESTS ============ -->
+  <section class="section" id="s-tests">
+    <div class="section-eyebrow">Confiança no Dado</div>
+    <div class="section-title">🧪 Tests: Genéricos e Singulares</div>
+    <p class="section-desc">
+      Testes no dbt não testam código — testam <strong>dados</strong>. Um teste é uma consulta que deve retornar <strong>zero linhas</strong>; se retornar alguma, o teste falha. Existem dois tipos: <strong>genéricos</strong> (reutilizáveis, declarados em YAML sobre uma coluna) e <strong>singulares</strong> (um arquivo <code>.sql</code> customizado em <code>tests/</code> para uma regra de negócio específica). Clique em cada teste genérico embutido.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="testButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="testDetail">
+        <div class="ad-title">👆 Clique em um teste</div>
+        <div class="ad-text">Veja como declará-lo em YAML e o que ele verifica.</div>
+      </div>
+    </div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:4px;">Teste singular — tests/order_amount_nao_negativo.sql</div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- falha se ESTA consulta retornar qualquer linha</span>
+<span class="kw">SELECT</span> order_id, amount_usd
+<span class="kw">FROM</span> {{ <span class="fn">ref</span>(<span class="st">'fct_orders'</span>) }}
+<span class="kw">WHERE</span> amount_usd <span class="kw">&lt;</span> <span class="num">0</span></div>
+
+    <div class="info-box"><p>💡 <code>dbt build</code> roda models e testes juntos, respeitando o DAG: se <code>stg_orders</code> falhar num teste, o dbt pula (em vez de rodar) tudo que depende dele — evitando propagar dado ruim rio abaixo no grafo.</p></div>
+  </section>
+
+  <!-- ============ SEEDS & SNAPSHOTS ============ -->
+  <section class="section" id="s-seeds-snapshots">
+    <div class="section-eyebrow">Dados que Não Vêm de um Source</div>
+    <div class="section-title">🌱 Seeds &amp; 📸 Snapshots</div>
+    <p class="section-desc">Dois recursos para situações que <code>ref()</code>/<code>source()</code> sozinhos não cobrem: dados de referência pequenos e mantidos à mão, e o histórico de como uma linha mutável mudava ao longo do tempo.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="card-title" style="margin-bottom:8px;">🌱 Seeds — CSVs pequenos versionados em Git</div>
+        <div class="card-text" style="margin-bottom:10px;">Tabelas de referência que raramente mudam (mapeamento de código de país, lista de feriados, faixas de CEP) vivem como <code>.csv</code> em <code>seeds/</code> e viram tabela com <code>dbt seed</code> — sem depender de um sistema de origem externo.</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>$ dbt seed
+<span class="cm"># lê seeds/paises.csv e cria/atualiza analytics.paises</span></div>
+      </div>
+      <div>
+        <div class="card-title" style="margin-bottom:8px;">📸 Snapshots — histórico tipo SCD Tipo 2</div>
+        <div class="card-text" style="margin-bottom:10px;">Tabelas de origem costumam guardar só o <strong>estado atual</strong> (ex: status de um pedido). Um snapshot dbt tira "fotos" periódicas e grava colunas <code>dbt_valid_from</code>/<code>dbt_valid_to</code>, preservando o histórico completo de mudanças — o mesmo conceito de SCD Tipo 2.</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>{% <span class="kw">snapshot</span> orders_snapshot %}
+{{ <span class="fn">config</span>(
+    strategy=<span class="st">'timestamp'</span>,
+    unique_key=<span class="st">'order_id'</span>,
+    updated_at=<span class="st">'updated_at'</span>
+) }}
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> {{ <span class="fn">source</span>(<span class="st">'raw_shop'</span>,<span class="st">'orders'</span>) }}
+{% <span class="kw">endsnapshot</span> %}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SOURCES ============ -->
+  <section class="section" id="s-sources">
+    <div class="section-eyebrow">A Ponte com o Dado Bruto</div>
+    <div class="section-title">📡 Sources &amp; Freshness</div>
+    <p class="section-desc">Um <strong>source</strong> declara, em YAML, onde vivem as tabelas brutas que o EL (Fivetran, Airbyte...) já carregou — dando um nome lógico a elas para uso em <code>{{ source(...) }}</code>, em vez de espalhar o schema físico por todo o projeto.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">models/staging/_sources.yml</div>
+        <div class="code-block">
+<span class="code-lang">yaml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="jn">sources</span>:
+  - <span class="jn">name</span>: raw_shop
+    <span class="jn">database</span>: raw
+    <span class="jn">schema</span>: shop
+    <span class="jn">tables</span>:
+      - <span class="jn">name</span>: orders
+        <span class="jn">loaded_at_field</span>: _loaded_at
+        <span class="jn">freshness</span>:
+          <span class="jn">warn_after</span>: {<span class="jn">count</span>: <span class="num">12</span>, <span class="jn">period</span>: hour}
+          <span class="jn">error_after</span>: {<span class="jn">count</span>: <span class="num">24</span>, <span class="jn">period</span>: hour}</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⏱️ dbt source freshness</div>
+        <div class="card-text" style="margin-bottom:10px;"><code>dbt source freshness</code> checa se a linha mais recente daquela tabela chegou dentro do prazo esperado — sinalizando <strong>warn</strong> ou <strong>error</strong> quando o pipeline de carga está atrasado, <em>antes</em> mesmo do dbt rodar qualquer transformação sobre dado velho.</div>
+        <div class="card-text">Combinado com <code>source()</code> em vez do nome físico da tabela, isso também permite rastrear no grafo <em>de onde</em> cada model puxa dado bruto — visível no gráfico de linhagem gerado pela documentação.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CAMADAS ============ -->
+  <section class="section" id="s-camadas">
+    <div class="section-eyebrow">Convenção de Projeto</div>
+    <div class="section-title">🏛️ Camadas: Staging → Intermediate → Marts</div>
+    <p class="section-desc">A comunidade dbt convergiu para um padrão de três camadas dentro de <code>models/</code> — não é obrigatório, mas é a convenção mais usada em projetos de médio/grande porte.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🧹 Staging (stg_)</div>
+        <div class="card-text">Um model por tabela de origem. Só limpeza leve: renomear colunas, converter tipos, padronizar nomes — sem juntar tabelas. Materializado como <strong>view</strong> (barato, sempre atual).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ Intermediate (int_)</div>
+        <div class="card-text">Blocos de construção: joins e lógica de negócio intermediária que serão reaproveitados por mais de um mart. Não é exposto diretamente para ferramentas de BI.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Marts (fct_ / dim_)</div>
+        <div class="card-text">Tabelas finais, voltadas ao negócio — fatos (<code>fct_orders</code>) e dimensões (<code>dim_customers</code>), no vocabulário de modelagem dimensional (Kimball). Materializado como <strong>table</strong> ou <strong>incremental</strong>.</div>
+      </div>
+    </div>
+
+    <div class="info-box"><p>💡 A regra prática mais citada: <strong>staging</strong> nunca faz join, <strong>marts</strong> nunca referenciam um <code>source()</code> diretamente (sempre passam por staging) — isso mantém o DAG legível e evita que a mesma lógica de limpeza seja duplicada em vários lugares do projeto.</p></div>
+  </section>
+
+  <!-- ============ BUILD & CI ============ -->
+  <section class="section" id="s-cicd">
+    <div class="section-eyebrow">Do Laptop à Produção</div>
+    <div class="section-title">🚀 dbt build, Documentação e CI</div>
+    <p class="section-desc">Um punhado de comandos cobre o ciclo de vida inteiro de um projeto — do desenvolvimento local ao pipeline de CI que protege a branch principal.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Comandos do dia a dia</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>dbt run          <span class="cm"># materializa os models</span>
+dbt test         <span class="cm"># roda os testes</span>
+dbt build        <span class="cm"># run + test + seed + snapshot, em ordem de DAG</span>
+dbt docs generate &amp;&amp; dbt docs serve
+                 <span class="cm"># gera e abre a documentação + linhagem</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Slim CI — testa só o que mudou</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># roda somente models alterados no PR</span>
+<span class="cm"># + tudo que depende deles (downstream)</span>
+dbt build --select state:modified+ \
+  --state ./producao-manifest/</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:8px;">
+      <div class="card"><div class="card-title">📖 dbt docs</div><div class="card-text">Site estático gerado do próprio projeto: descrição de cada coluna (a partir do YAML), SQL compilado e o grafo de linhagem completo, navegável no navegador.</div></div>
+      <div class="card"><div class="card-title">🩺 Slim CI</div><div class="card-text">Compara o projeto atual contra um <code>manifest.json</code> de produção — roda e testa apenas o que de fato mudou, em vez do projeto inteiro a cada pull request.</div></div>
+      <div class="card"><div class="card-title">🪝 Orquestração externa</div><div class="card-text">Airflow, Dagster ou o scheduler do dbt Cloud disparam <code>dbt run</code>/<code>dbt build</code> em produção — o dbt não se agenda sozinho fora do dbt Cloud.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 dbt vs. Stored Procedures vs. Spark/Airflow Puro</div>
+    <p class="section-desc">O dbt não substitui um orquestrador nem um motor de processamento distribuído — ele complementa ambos, focado especificamente na camada SQL de transformação.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Abordagem</th><th>Versionamento</th><th>Testes automatizados</th><th>Documentação/linhagem</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Stored procedures soltas</strong></td><td>Raramente em Git</td><td>Manual/inexistente</td><td>Nenhuma nativa</td><td>Scripts pontuais, legado</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Scripts Python/Airflow ad hoc</strong></td><td>Sim (é código)</td><td>Depende do time escrever</td><td>Nenhuma nativa</td><td>Lógica que não é expressável em SQL</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">dbt</strong></td><td>Sim, nativo do fluxo</td><td>Declarativo, embutido</td><td>Gerada automaticamente</td><td>Transformação SQL dentro do warehouse</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Spark (jobs distribuídos)</strong></td><td>Sim (é código)</td><td>Depende do time escrever</td><td>Nenhuma nativa</td><td>Processamento que não cabe em um warehouse SQL</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="canvas-wrap"><canvas id="compareCanvas" height="150"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Ordem de grandeza <strong>ilustrativa</strong> (não um benchmark) para o esforço de adicionar uma nova transformação testada e documentada a um projeto já existente.</div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🧹 Staging nunca faz join</div><div class="card-text">Mantenha a limpeza de dado bruto isolada de qualquer lógica de negócio — um model por tabela de origem, sem <code>JOIN</code>.</div></div>
+      <div class="card"><div class="card-title">🏷️ Nomeie por convenção</div><div class="card-text"><code>stg_</code>, <code>int_</code>, <code>fct_</code>, <code>dim_</code> deixam o propósito de cada model óbvio só pelo nome, sem abrir o arquivo.</div></div>
+      <div class="card"><div class="card-title">🧪 Teste toda chave primária</div><div class="card-text">No mínimo, <code>unique</code> + <code>not_null</code> na chave de cada mart — é o teste mais barato com o maior retorno de confiança.</div></div>
+      <div class="card"><div class="card-title">📦 Trave versões de pacotes</div><div class="card-text">Fixe a versão de dependências em <code>packages.yml</code> (ex: <code>dbt_utils</code>) — evita quebras silenciosas quando um pacote lança uma versão nova.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ dbt não extrai nem carrega dados de sistemas de origem, e não substitui um orquestrador de pipelines completo — ele assume que o dado bruto já chegou ao warehouse e que algo (Airflow, dbt Cloud, cron) vai chamá-lo. Tentar usar o dbt como ferramenta de EL ou como scheduler geral é forçar a ferramenta para fora do que ela foi desenhada para fazer.</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — dbt</span>
+    <span>
+      Fontes: <a href="https://docs.getdbt.com/" target="_blank" rel="noopener">dbt Docs</a> ·
+      <a href="https://www.getdbt.com/blog" target="_blank" rel="noopener">dbt Labs Blog</a> ·
+      <a href="https://github.com/dbt-labs/dbt-core" target="_blank" rel="noopener">GitHub</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🛠️', label:'O que é'},
+  {id:'s-pipeline', icon:'🔄', label:'ETL vs ELT'},
+  {id:'s-arquitetura', icon:'🏗️', label:'Core/Cloud/Fusion'},
+  {id:'s-estrutura', icon:'📁', label:'Projeto'},
+  {id:'s-models', icon:'🧱', label:'Models'},
+  {id:'s-dag', icon:'🕸️', label:'ref() & DAG'},
+  {id:'s-materializations', icon:'🏭', label:'Materializations'},
+  {id:'s-incremental', icon:'⏭️', label:'Incremental'},
+  {id:'s-jinja', icon:'✨', label:'Jinja & Macros'},
+  {id:'s-tests', icon:'🧪', label:'Tests'},
+  {id:'s-seeds-snapshots', icon:'🌱', label:'Seeds & Snapshots'},
+  {id:'s-sources', icon:'📡', label:'Sources'},
+  {id:'s-camadas', icon:'🏛️', label:'Camadas'},
+  {id:'s-cicd', icon:'🚀', label:'Build & CI'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== ETL vs ELT DIAGRAM ===================== */
+const etlInfo = {
+  'etl-extract': {t:'Extract (ETL)', d:'Conecta-se às fontes (bancos transacionais, APIs, planilhas) para ler os dados brutos, exatamente como no ELT — a diferença aparece na próxima etapa.'},
+  'etl-transform': {t:'Transform — servidor de ETL dedicado', d:'A limpeza, os joins e as agregações acontecem em um servidor/ferramenta de ETL separado (ex: Informatica, SSIS, scripts customizados), fora do banco de destino, antes de qualquer carga.'},
+  'etl-load': {t:'Load — carrega já pronto', d:'Só o resultado final, já transformado, é carregado no destino. O banco de destino nunca vê o dado bruto — o que dificulta reprocessar se a lógica de transformação mudar.'},
+  'elt-extract': {t:'Extract & Load — Fivetran / Airbyte / Stitch', d:'Ferramentas de EL puxam dados das fontes e os carregam no warehouse praticamente sem transformação — o objetivo é só "chegar lá" o mais rápido e fielmente possível.'},
+  'elt-raw': {t:'Dado bruto pousa no warehouse', d:'O warehouse guarda o dado exatamente como veio da origem, num schema "raw"/"landing". Isso preserva a fonte da verdade e permite reprocessar do zero quando a lógica de transformação evolui.'},
+  'elt-transform': {t:'Transform — dbt roda SQL dentro do warehouse', d:'É aqui que o dbt entra: ele envia SELECTs para o próprio warehouse processar, usando o poder de computação que ele já tem — sem mover dado para um servidor de ETL separado.'},
+};
+function pickEtl(id){
+  document.querySelectorAll('#s-pipeline .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = etlInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-pipeline [data-id="${id}"]`).classList.add('active');
+  document.getElementById('etlDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== DAG EXPLORER ===================== */
+const dagInfo = {
+  'dag-src-orders': {t:'raw_shop.orders (source)', d:'Tabela bruta carregada pelo Fivetran/Airbyte. Declarada em YAML como source — nenhum model dbt referencia o nome físico dela diretamente, só {{ source(\'raw_shop\',\'orders\') }}.'},
+  'dag-src-customers': {t:'raw_shop.customers (source)', d:'Outra tabela bruta de origem, referenciada por stg_customers via source(). Sem source() declarado, o dbt não sabe que essa tabela existe no grafo.'},
+  'dag-stg-orders': {t:'stg_orders', d:'SELECT * FROM {{ source(\'raw_shop\',\'orders\') }} com renomeação/cast de colunas. Materializado como view — primeiro nó do DAG que outros models podem referenciar com ref(\'stg_orders\').'},
+  'dag-stg-customers': {t:'stg_customers', d:'Mesma ideia de stg_orders, mas para clientes: limpeza leve, sem join, pronto para ser referenciado por camadas seguintes via ref().'},
+  'dag-int-orders': {t:'int_orders_joined', d:'SELECT ... FROM {{ ref(\'stg_orders\') }} JOIN {{ ref(\'stg_customers\') }}. Um bloco de construção intermediário — não é exposto ao BI, mas reaproveitado por mais de um mart.'},
+  'dag-fct-orders': {t:'fct_orders (mart)', d:'Tabela de fatos final: uma linha por pedido, pronta para ferramentas de BI. Depende de int_orders_joined via ref() — o dbt só a roda depois que tudo acima dela no DAG já terminou.'},
+  'dag-dim-customers': {t:'dim_customers (mart)', d:'Tabela de dimensão final com atributos de cliente. Também depende de stg_customers via ref() — pode rodar em paralelo com fct_orders, já que um não depende do outro.'},
+};
+function pickDag(id){
+  document.querySelectorAll('#s-dag .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = dagInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-dag [data-id="${id}"]`).classList.add('active');
+  document.getElementById('dagDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== MATERIALIZATIONS TOGGLE ===================== */
+const matInfo = {
+  view: {
+    code:`<span class="code-lang">sql gerado</span><span class="kw">CREATE OR REPLACE VIEW</span> analytics.stg_orders <span class="kw">AS</span> (\n  <span class="kw">SELECT</span> ...\n);`,
+    stats:[['Custo de build','Mínimo'],['Frescor do dado','Sempre atual (recalcula a cada leitura)'],['Velocidade de leitura','Depende do SELECT por trás'],['Uso típico','Staging']]
+  },
+  table: {
+    code:`<span class="code-lang">sql gerado</span><span class="kw">CREATE OR REPLACE TABLE</span> analytics.fct_orders <span class="kw">AS</span> (\n  <span class="kw">SELECT</span> ...\n);`,
+    stats:[['Custo de build','Reprocessa tudo a cada run'],['Frescor do dado','Até a última execução do dbt run'],['Velocidade de leitura','Rápida (dado já materializado)'],['Uso típico','Marts']]
+  },
+  incremental: {
+    code:`<span class="code-lang">sql gerado (2ª execução em diante)</span><span class="kw">MERGE INTO</span> analytics.fct_orders <span class="kw">AS</span> destino\n<span class="kw">USING</span> ( <span class="kw">SELECT</span> ... <span class="kw">WHERE</span> updated_at <span class="kw">></span> (<span class="kw">SELECT MAX</span>(updated_at) <span class="kw">FROM</span> analytics.fct_orders) ) <span class="kw">AS</span> novo\n<span class="kw">ON</span> destino.order_id <span class="kw">=</span> novo.order_id\n<span class="kw">WHEN MATCHED THEN UPDATE</span> ... <span class="kw">WHEN NOT MATCHED THEN INSERT</span> ...;`,
+    stats:[['Custo de build','Só as linhas novas/alteradas'],['Frescor do dado','Até a última execução'],['Velocidade de leitura','Rápida (dado já materializado)'],['Uso típico','Marts/fatos muito grandes']]
+  },
+  ephemeral: {
+    code:`<span class="code-lang">sql gerado (inline num model que a referencia)</span><span class="kw">WITH</span> stg_orders_cte <span class="kw">AS</span> (\n  <span class="kw">SELECT</span> ... <span class="cm">-- injetado como CTE, sem virar objeto próprio</span>\n)\n<span class="kw">SELECT</span> * <span class="kw">FROM</span> stg_orders_cte`,
+    stats:[['Custo de build','Nenhum objeto criado (inline)'],['Frescor do dado','N/A — recalculado junto com quem a usa'],['Velocidade de leitura','Não é consultável diretamente'],['Uso típico','Lógica intermediária muito leve/reaproveitada']]
+  }
+};
+function setMat(mode){
+  ['View','Table','Incr','Eph'].forEach(k=>{});
+  document.getElementById('btnMatView').classList.toggle('active', mode==='view');
+  document.getElementById('btnMatTable').classList.toggle('active', mode==='table');
+  document.getElementById('btnMatIncr').classList.toggle('active', mode==='incremental');
+  document.getElementById('btnMatEph').classList.toggle('active', mode==='ephemeral');
+  const m = matInfo[mode];
+  document.getElementById('matCode').innerHTML = m.code;
+  document.getElementById('matStats').innerHTML = m.stats.map(([l,v]) =>
+    `<div class="stat-card"><div class="stat-card-label">${l}</div><div class="stat-card-value" style="font-size:13.5px;">${v}</div></div>`
+  ).join('');
+}
+setMat('view');
+
+/* ===================== INCREMENTAL SIMULATOR ===================== */
+function updateIncr(){
+  const total = +document.getElementById('incrTotal').value;
+  const novo = +document.getElementById('incrNew').value;
+  document.getElementById('incrTotalVal').textContent = total.toLocaleString('pt-BR');
+  document.getElementById('incrNewVal').textContent = novo.toLocaleString('pt-BR');
+  const factor = Math.max(1, Math.round(total/novo));
+  document.getElementById('incrStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Linhas lidas — table (full refresh)</div><div class="stat-card-value">${total.toLocaleString('pt-BR')}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Linhas lidas — incremental</div><div class="stat-card-value">${novo.toLocaleString('pt-BR')}</div></div>
+    <div class="stat-card c-purple" style="grid-column:1/-1;"><div class="stat-card-label">Incremental processa ~${factor.toLocaleString('pt-BR')}x menos linhas nesta execução</div><div class="stat-card-value">${factor.toLocaleString('pt-BR')}x</div></div>
+  `;
+  drawIncrCanvas(total, novo);
+}
+function drawIncrCanvas(total, novo){
+  const cv = document.getElementById('incrCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 130;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'table (full refresh)', val: Math.log10(total+1), raw: total, color:'#f86b63'},
+    {name:'incremental (merge)', val: Math.log10(novo+1), raw: novo, color:'#06b6d4'},
+  ];
+  const padL=190, padR=20, padTop=14, barH=32, gap=22;
+  const maxVal = Math.log10(total+1) || 1;
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(d.raw.toLocaleString('pt-BR') + ' linhas', padL+10, y+barH*0.65);
+  });
+}
+updateIncr();
+window.addEventListener('resize', updateIncr);
+
+/* ===================== TESTS PICKER ===================== */
+const testsInfo = {
+  unique: {t:'unique', code:`- name: order_id\n  tests:\n    - unique`, d:'Falha se algum valor da coluna aparecer mais de uma vez — essencial em qualquer chave primária de mart.'},
+  not_null: {t:'not_null', code:`- name: customer_id\n  tests:\n    - not_null`, d:'Falha se a coluna tiver algum valor NULL — útil em chaves estrangeiras e colunas obrigatórias para o negócio.'},
+  relationships: {t:'relationships', code:`- name: customer_id\n  tests:\n    - relationships:\n        to: ref('dim_customers')\n        field: customer_id`, d:'Testa integridade referencial: todo customer_id em fct_orders precisa existir em dim_customers — o equivalente dbt de uma foreign key.'},
+  accepted_values: {t:'accepted_values', code:`- name: status\n  tests:\n    - accepted_values:\n        values: ['pending','shipped','delivered','cancelled']`, d:'Falha se a coluna tiver qualquer valor fora da lista esperada — pega valores inválidos vindos de bugs na origem ou mudanças não avisadas no sistema de origem.'},
+  singular: {t:'teste singular', code:`-- tests/nome_do_teste.sql\nSELECT * FROM {{ ref('fct_orders') }}\nWHERE amount_usd < 0`, d:'Para regras de negócio que não cabem num teste genérico: um arquivo .sql próprio em tests/ que deve retornar zero linhas para passar.'},
+};
+function buildTestButtons(){
+  document.getElementById('testButtons').innerHTML = Object.keys(testsInfo).map(k =>
+    `<button class="btn-toggle" data-test="${k}" onclick="pickTest('${k}')">${testsInfo[k].t}</button>`
+  ).join('');
+}
+function pickTest(key){
+  document.querySelectorAll('#testButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.test === key));
+  const info = testsInfo[key];
+  document.getElementById('testDetail').innerHTML = `
+    <div class="ad-title">${info.t}</div>
+    <div class="ad-text">${info.d}</div>
+    <div class="code-block" style="margin-top:10px;"><span class="code-lang">yaml/sql</span>${info.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+  `;
+}
+buildTestButtons();
+
+/* ===================== COMPARISON CANVAS ===================== */
+function drawCompareCanvas(){
+  const cv = document.getElementById('compareCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'dbt', val:1, color:'#06b6d4'},
+    {name:'Scripts Python/Airflow ad hoc', val:3, color:'#36a2ef'},
+    {name:'Stored procedures soltas', val:5, color:'#98a2b3'},
+    {name:'Spark job customizado do zero', val:6, color:'#c49aff'},
+  ];
+  const padB = 26, padTop=14, barGap=18;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = 7;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, barH, 5); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='11px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText(d.val + 'x', x+barW/2, y-6);
+    ctx.fillStyle = '#98a2b3'; ctx.font='9.5px Inter, sans-serif';
+    const words = d.name.split(' ');
+    ctx.fillText(words.slice(0, Math.ceil(words.length/2)).join(' '), x+barW/2, h-18);
+    ctx.fillText(words.slice(Math.ceil(words.length/2)).join(' '), x+barW/2, h-8);
+    ctx.textAlign='left';
+  });
+}
+drawCompareCanvas();
+window.addEventListener('resize', drawCompareCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O dbt é responsável por extrair dados de sistemas de origem e carregá-los no data warehouse.', a:false, e:'Falso. O dbt cuida só do "T" (transform) do ELT — assume que o dado bruto já foi carregado por uma ferramenta de EL como Fivetran ou Airbyte.'},
+  {q:'Um model dbt é essencialmente um arquivo .sql contendo um único SELECT, sem CREATE TABLE nem INSERT.', a:true, e:'Verdadeiro. É o dbt quem decide, com base na materialization configurada, como transformar esse SELECT em objeto físico no warehouse.'},
+  {q:'A função ref() serve só para deixar o SQL mais bonito — ela não afeta a ordem de execução dos models.', a:false, e:'Falso. É justamente a partir de todo ref()/source() usado no projeto que o dbt monta o DAG e decide a ordem de execução, respeitando as dependências.'},
+  {q:'Um model configurado como materialized=\'ephemeral\' cria uma tabela física própria no warehouse.', a:false, e:'Falso. Um model ephemeral não cria objeto nenhum — ele é injetado como CTE dentro do SQL de quem o referencia.'},
+  {q:'A macro is_incremental() só retorna verdadeiro a partir da segunda execução de um model incremental, quando a tabela de destino já existe.', a:true, e:'Verdadeiro. Na primeira execução (tabela ainda não existe), o model roda por completo; nas seguintes, o bloco dentro de is_incremental() entra em ação.'},
+  {q:'Testes no dbt (como unique ou not_null) validam a sintaxe do código SQL, não os dados em si.', a:false, e:'Falso. Testes dbt são consultas que devem retornar zero linhas — eles validam o conteúdo dos dados, não a sintaxe do SQL.'},
+  {q:'dbt Cloud e dbt Core compartilham a mesma linguagem de projeto (models, YAML, Jinja) — a diferença está em como são executados e gerenciados.', a:true, e:'Verdadeiro. dbt Cloud é uma plataforma SaaS (IDE, scheduler, docs hospedadas) sobre a mesma base do dbt Core, que é a CLI open source.'},
+  {q:'A convenção de camadas staging → intermediate → marts é uma regra obrigatória imposta pelo dbt Core.', a:false, e:'Falso. É uma convenção popular na comunidade dbt, não uma imposição técnica da ferramenta — projetos pequenos às vezes usam só staging e marts.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

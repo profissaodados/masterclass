@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Distribuição de Bernoulli explicada do zero, como se fosse para uma criança, com moedas, roletas, balanças e muitos gráficos e simulações interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Distribuição de Bernoulli Explicada com Desenhos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+.hero-map-grid{display:flex;flex-direction:column;gap:10px;width:280px;}
+.hero-map-card{display:flex;align-items:center;gap:10px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.hero-map-exp{flex:1;font-size:20px;text-align:center;line-height:1.35;}
+.hero-map-exp span{display:block;font-size:10px;color:var(--text-secondary);font-family:'Inter',sans-serif;margin-top:2px;}
+.hero-map-arrow{font-size:15px;color:var(--text-disabled);flex-shrink:0;}
+.hero-map-x{font-family:'Roboto Mono',monospace;font-weight:800;color:var(--accent);font-size:15px;min-width:64px;text-align:center;flex-shrink:0;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn:disabled{opacity:.35;cursor:not-allowed;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- DECISION FLOW ---- */
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.arranjo{border-color:var(--accent-blue);}
+.decision-branch.combinacao{border-color:var(--accent-purple);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- COIN ---- */
+.coin-wrap{display:flex;justify-content:center;gap:14px;padding:16px 0 6px;perspective:700px;flex-wrap:wrap;}
+.coin{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-weight:800;font-family:'Roboto Mono',monospace;background:radial-gradient(circle at 35% 30%,#ffe38a,#e8b339 60%,#a9791f);color:#3a2a05;border:3px solid #fff3c4;box-shadow:0 8px 22px rgba(232,179,57,.35);transition:background .2s;}
+.coin.sm{width:90px;height:90px;border-width:2px;}
+.coin.sm .coin-face-emoji{font-size:26px;}
+.coin.sm .coin-face-label{font-size:9.5px;}
+.coin-face-emoji{font-size:30px;}
+.coin-face-label{font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+.coin.flipping{animation:coinFlip .7s ease-in-out;}
+@keyframes coinFlip{0%{transform:rotateY(0) scale(1);}45%{transform:rotateY(720deg) scale(1.18);}100%{transform:rotateY(1440deg) scale(1);}}
+
+/* ---- RV HISTORY (intro) ---- */
+.rv-history{display:flex;flex-direction:column;gap:6px;margin-top:14px;max-width:420px;margin-left:auto;margin-right:auto;}
+.rv-history-row{display:flex;justify-content:space-between;align-items:center;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--text-secondary);gap:10px;}
+.rv-history-x{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;flex-shrink:0;}
+.rv-empty{text-align:center;font-size:12px;color:var(--text-disabled);padding:10px;}
+
+/* ---- CLASSIFY EXERCISE ---- */
+.classify-card{cursor:pointer;transition:.15s;}
+.classify-card:hover{border-color:var(--border-strong);}
+.classify-answer{display:none;}
+.classify-card.revealed .classify-answer{display:block;}
+.classify-card.revealed{border-color:var(--accent);}
+
+/* ---- TRIAL CHIPS (Bernoulli -> Binomial builder) ---- */
+.trial-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:14px 0;}
+.trial-chip{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:'Roboto Mono',monospace;flex-shrink:0;}
+.trial-chip.pending{background:var(--bg-elevated);border:2px dashed var(--border-strong);color:var(--text-disabled);}
+.trial-chip.success{background:rgba(125,222,216,.9);color:#0b3b32;}
+.trial-chip.fail{background:rgba(248,107,99,.9);color:#4a0f0a;}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Distribuição de Bernoulli</h1><span>A peça mais simples de toda a estatística: sucesso ou fracasso, sim ou não</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">14</div><div class="hstat-label">Conceitos</div></div>
+      <div class="hstat"><div class="hstat-num">E(X)=p</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">10</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~45min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do "sim ou não" até a Distribuição Binomial</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Toda vez que uma pergunta tem só <em>duas respostas possíveis</em>, existe um Ensaio de Bernoulli</h2>
+      <p>Cara ou coroa? Choveu ou não choveu? O cliente comprou ou não comprou? Sempre que um experimento tem exatamente <strong>dois resultados possíveis</strong> — <em>sucesso</em> ou <em>fracasso</em> — estamos diante de um <strong>Ensaio de Bernoulli</strong>, batizado em homenagem ao matemático suíço Jacob Bernoulli. É a peça <strong>mais simples</strong> de toda a estatística: uma única moeda, um único "sim ou não". Nesta aula vamos construir essa ideia do zero, com muitos desenhos, simulações e gráficos, até ver como vários ensaios de Bernoulli se juntam para formar a famosa <strong>Distribuição Binomial</strong>.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Sucesso ou Fracasso</span>
+        <span class="badge badge-blue">1 Tentativa</span>
+        <span class="badge badge-purple">p = chance de sucesso</span>
+        <span class="badge badge-green">E(X) = p</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-map-grid">
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🪙<span>A moeda deu Cara?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X = 1</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🎯<span>O dardo acertou o alvo?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X = 0</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">💊<span>O paciente teve efeito colateral?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X = 1</div>
+        </div>
+      </div>
+      <div class="hero-visual-caption">Sucesso vira 1, fracasso vira 0 — dois resultados, um único número.</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🎯 O que é um Ensaio de Bernoulli?</div>
+    <p class="section-desc">
+      Um <strong>Ensaio de Bernoulli</strong> é qualquer experimento aleatório com exatamente <strong>dois resultados possíveis</strong>: chamamos um de <em>sucesso</em> (viramos <code style="color:var(--accent);">X=1</code>) e o outro de <em>fracasso</em> (viramos <code style="color:var(--accent);">X=0</code>). A chance de sucesso é sempre a mesma letra: <code style="color:var(--accent);">p</code>. É a versão "de um lançamento só" da moeda — não estamos contando quantas caras saem em várias jogadas, só olhando para <strong>uma única tentativa</strong>. Ajuste a chance de sucesso abaixo e faça seus próprios ensaios.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste a chance de sucesso (p) e faça um ensaio de Bernoulli</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 Chance de sucesso (p)</span><span class="ctrl-v" id="introPVal">50%</span></div>
+          <input type="range" id="introP" min="1" max="99" step="1" value="50" oninput="updateIntroP()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;padding:6px 0;">
+        <div class="coin sm" id="introTrialCoin"><span class="coin-face-emoji">❓</span><span class="coin-face-label">?</span></div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:6px;">
+        <button class="player-btn primary" onclick="introTrial()">🎲 Fazer 1 ensaio de Bernoulli</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Resultado do ensaio</span><span class="rv" id="introTrialResult">X = ?</span></div>
+      </div>
+      <div class="rv-history" id="introTrialHistory"><div class="rv-empty">Faça um ensaio para começar o histórico de resultados</div></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Não importa se o experimento é jogar uma moeda, testar um remédio ou verificar se um cliente comprou algo — <strong>todo</strong> experimento com só duas saídas possíveis pode ser descrito exatamente da mesma forma: um número <code>p</code> entre 0 e 1, que é a chance de sucesso. Esse é o poder da Bernoulli: reduzir qualquer "sim ou não" do mundo real a uma única fórmula.</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIÁVEL INDICADORA ============ -->
+  <section class="section" id="s-indicador">
+    <div class="section-eyebrow">Transformando Sucesso/Fracasso em Número</div>
+    <div class="section-title">0️⃣1️⃣ A Variável Indicadora X</div>
+    <p class="section-desc">
+      A variável de Bernoulli só pode assumir <strong>dois valores</strong>: <code style="color:var(--accent);">X=1</code> se deu sucesso, ou <code style="color:var(--accent);">X=0</code> se deu fracasso. Por isso ela também é chamada de <strong>variável indicadora</strong> — ela só "indica" se o sucesso aconteceu ou não. E atenção: <strong>"sucesso" é só um rótulo</strong>, escolhido por quem está definindo o problema. Às vezes o "sucesso" é uma notícia ruim, como uma peça com defeito! Clique nos exemplos abaixo para ver o que conta como X=1 em cada um.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada exemplo para revelar o que é X=1 (sucesso) e X=0 (fracasso)</div>
+      <div class="grid-2" id="indicatorGrid"></div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Cuidado: sucesso não significa "bom"!</div>
+      <p>Numa fábrica que testa lâmpadas, "sucesso" pode ser definido como <strong>"a lâmpada queimou antes do prazo"</strong> — porque é isso que queremos medir e evitar. O nome "sucesso" é só uma convenção matemática para o evento que estamos contando, não um julgamento se o resultado é bom ou ruim.</p>
+    </div>
+  </section>
+
+  <!-- ============ O PARÂMETRO P ============ -->
+  <section class="section" id="s-parametro">
+    <div class="section-eyebrow">O Único Número Que Você Precisa Saber</div>
+    <div class="section-title">🎚️ O Parâmetro p: a única coisa que define um Bernoulli</div>
+    <p class="section-desc">
+      Diferente de outras distribuições que precisam de vários números, a Bernoulli precisa de <strong>um único parâmetro</strong>: <code style="color:var(--accent);">p</code>, a probabilidade de sucesso — e ele já define tudo. A chance de fracasso é automaticamente <code style="color:var(--accent);">1−p</code> (também chamada de <code>q</code>), porque só existem essas duas saídas. Arraste o controle e veja a "régua de chances" se dividir.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste para escolher p — a chance de sucesso</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎚️ p — chance de sucesso</span><span class="ctrl-v" id="pBarVal">30%</span></div>
+          <input type="range" id="pBarSlider" min="1" max="99" step="1" value="30" oninput="renderPBar()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="pBarCanvas" height="130"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-green"><div class="stat-card-label">p (sucesso)</div><div class="stat-card-value" id="pBarPVal2">0.30</div></div>
+        <div class="stat-card c-red"><div class="stat-card-label">1−p (fracasso)</div><div class="stat-card-value" id="pBarQVal">0.70</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">"1 sucesso a cada..."</div><div class="stat-card-value" id="pBarRatio">≈3,3</div></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 p sempre vive entre 0 e 1 (0% a 100%). Se <code>p=0</code>, sucesso nunca acontece. Se <code>p=1</code>, sucesso acontece sempre. Nos dois extremos não existe mais "acaso" — a incerteza real só aparece quando 0&lt;p&lt;1.</p>
+    </div>
+  </section>
+
+  <!-- ============ PMF ============ -->
+  <section class="section" id="s-pmf">
+    <div class="section-eyebrow">O Retrato Completo da Bernoulli</div>
+    <div class="section-title">🎲 Distribuição de Probabilidade (PMF)</div>
+    <p class="section-desc">
+      A <strong>PMF</strong> da Bernoulli é a coisa mais simples que existe: só duas barrinhas! A altura da barra em <code style="color:var(--accent);">X=0</code> é <code>1−p</code>, e a altura da barra em <code style="color:var(--accent);">X=1</code> é <code>p</code>. A fórmula compacta é <code style="color:var(--accent);">P(X=k) = pᵏ(1−p)¹⁻ᵏ</code>, para <code>k=0</code> ou <code>k=1</code> — repare que é só um jeito elegante de escrever "se k=1, dá p; se k=0, dá 1−p".
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste p e veja as duas barrinhas da PMF mudarem de altura</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎚️ p — chance de sucesso</span><span class="ctrl-v" id="pmfPVal">50%</span></div>
+          <input type="range" id="pmfP" min="1" max="99" step="1" value="50" oninput="renderPmf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="pmfCanvas" height="220"></canvas></div>
+      <div class="card-formula">P(X=k) = pᵏ × (1−p)¹⁻ᵏ</div>
+      <div class="grid-2">
+        <div class="card"><div class="card-title">❌ P(X=0)</div><div class="card-text" id="pmfP0" style="font-size:16px;color:var(--text-primary);">0.500 (50,0%)</div></div>
+        <div class="card"><div class="card-title">✅ P(X=1)</div><div class="card-text" id="pmfP1" style="font-size:16px;color:var(--text-primary);">0.500 (50,0%)</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A regra de ouro da PMF</div>
+      <p>Some as duas barrinhas — <code>P(X=0) + P(X=1)</code> — e o resultado é <strong>sempre exatamente 1</strong>, não importa o valor de p. Faz sentido: alguma das duas coisas (sucesso ou fracasso) tem que acontecer!</p>
+    </div>
+  </section>
+
+  <!-- ============ CDF ============ -->
+  <section class="section" id="s-cdf">
+    <div class="section-eyebrow">Somando a Probabilidade Aos Poucos</div>
+    <div class="section-title">📶 Função de Distribuição Acumulada (CDF)</div>
+    <p class="section-desc">
+      A <strong>função acumulada</strong> <code style="color:var(--accent);">F(x) = P(X ≤ x)</code> responde "qual a chance de X ser até esse valor?". Na Bernoulli ela é uma escadinha com só <strong>dois degraus</strong>: fica em <code>0</code> antes de zero, sobe para <code>1−p</code> em x=0, e sobe de novo para <code>1</code> em x=1. Arraste o controle de x e veja a escada em ação.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste p e arraste x para ver F(x) = P(X ≤ x)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎚️ p — chance de sucesso</span><span class="ctrl-v" id="bcdfPVal">40%</span></div>
+          <input type="range" id="bcdfP" min="1" max="99" step="1" value="40" oninput="renderBCdf()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Valor de x</span><span class="ctrl-v" id="bcdfXVal">0.50</span></div>
+          <input type="range" id="bcdfX" min="-0.5" max="1.5" step="0.05" value="0.5" oninput="renderBCdf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="bcdfCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">A linha ciana em degraus é F(x). As barrinhas roxas embaixo mostram a PMF — cada "salto" da escada tem exatamente a altura da barrinha correspondente!</div>
+      <div class="result-display">
+        <div><span class="rl">F(x) = P(X ≤ x)</span><span class="rv" id="bcdfResult">0.600</span></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>A função acumulada <strong>nunca diminui</strong>. Ela começa em <code>0</code> bem à esquerda e termina em <code>1</code> bem à direita — em algum momento já somamos <strong>toda</strong> a probabilidade possível.</p>
+    </div>
+  </section>
+
+  <!-- ============ VALOR ESPERADO ============ -->
+  <section class="section" id="s-esperanca">
+    <div class="section-eyebrow">O "Centro de Gravidade" da Bernoulli</div>
+    <div class="section-title">⚖️ Valor Esperado E(X) = p: o resultado mais elegante da aula</div>
+    <p class="section-desc">
+      O <strong>Valor Esperado</strong> é a média de X se repetíssemos o ensaio muitas e muitas vezes. Pense numa balança: colocamos um peso <code>1−p</code> em <code>X=0</code> e um peso <code>p</code> em <code>X=1</code>. O ponto de equilíbrio é <code style="color:var(--accent);">E(X) = 0×(1−p) + 1×p = p</code>. Ou seja: <strong>o valor esperado de uma Bernoulli é o próprio p!</strong> Arraste p e observe a balança se inclinar.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste p e veja o ponto de equilíbrio da balança</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎚️ p — chance de sucesso</span><span class="ctrl-v" id="expPVal">30%</span></div>
+          <input type="range" id="expP" min="1" max="99" step="1" value="30" oninput="renderExpectation()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="expCanvas" height="180"></canvas></div>
+      <div class="card-formula" id="expFormula"></div>
+      <div class="result-display">
+        <div><span class="rl">E(X) = p</span><span class="rv" id="expResult">0.30</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Cuidado: E(X) não precisa ser um valor possível!</div>
+      <p>Se <code>p=0,3</code>, então <code>E(X)=0,3</code> — mas X só pode valer <strong>0 ou 1</strong>, nunca 0,3! O valor esperado é uma média de longo prazo, não uma previsão de um único ensaio.</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIÂNCIA ============ -->
+  <section class="section" id="s-variancia">
+    <div class="section-eyebrow">O Quão Imprevisível é o Resultado</div>
+    <div class="section-title">📏 Variância Var(X) = p(1−p): o pico da incerteza</div>
+    <p class="section-desc">
+      A <strong>Variância</strong> mede o quanto X se espalha ao redor da média. Na Bernoulli, a fórmula é surpreendentemente simples: <code style="color:var(--accent);">Var(X) = p×(1−p)</code>. Arraste p e observe: a variância é <strong>zero</strong> quando p=0 ou p=1 (não tem surpresa, o resultado é sempre o mesmo!) e é <strong>máxima</strong> exatamente em <code>p=0,5</code> — a situação mais imprevisível de todas, tipo cara ou coroa numa moeda honesta.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste p e veja o marcador se mover sobre a curva da variância</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎚️ p — chance de sucesso</span><span class="ctrl-v" id="varPSliderVal">50%</span></div>
+          <input type="range" id="varPSlider" min="0" max="100" step="1" value="50" oninput="renderVariance()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="varParabolaCanvas" height="220"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Var(X) = p(1−p)</div><div class="stat-card-value" id="varPResult">0.250</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Desvio padrão σ = √Var(X)</div><div class="stat-card-value" id="varPStd">0.500</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Variância máxima possível</div><div class="stat-card-value">0.250</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa?</div>
+      <p>Quando p está perto de 0 ou de 1, você já sabe quase com certeza o que vai acontecer — pouca informação nova. Quando <code>p=0,5</code>, cada ensaio é uma moeda de verdade: <strong>máxima incerteza, máxima variância</strong>. É por isso que testes A/B e pesquisas eleitorais "apertadas" (perto de 50/50) são as mais difíceis de prever com poucos dados.</p>
+    </div>
+  </section>
+
+  <!-- ============ SIMULAÇÃO / LGN ============ -->
+  <section class="section" id="s-lgn">
+    <div class="section-eyebrow">Vendo a Teoria Encontrar a Prática</div>
+    <div class="section-title">🔁 Simulação e Lei dos Grandes Números</div>
+    <p class="section-desc">
+      Se <code style="color:var(--accent);">E(X)=p</code> é a média de "longo prazo", o que acontece se a gente realmente repetir o ensaio muitas vezes e for calculando a <strong>proporção de sucessos</strong> até aquele momento? A <strong>Lei dos Grandes Números</strong> garante que essa proporção vai se aproximando cada vez mais de p, conforme o número de ensaios cresce. Vamos ver isso acontecer ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste p, sorteie vários ensaios e observe a linha se aproximar de p</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎚️ p — chance de sucesso "verdadeira"</span><span class="ctrl-v" id="lgnPVal">35%</span></div>
+          <input type="range" id="lgnP" min="1" max="99" step="1" value="35" oninput="resetLgn()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="player-btn primary" onclick="runLgn(1)">🎲 Sortear 1 ensaio</button>
+        <button class="player-btn" onclick="runLgn(50)">🎲 Sortear 50 ensaios</button>
+        <button class="player-btn" onclick="runLgn(500)">🎲 Sortear 500 ensaios</button>
+        <button class="player-btn" onclick="resetLgn()">⏹ Reiniciar</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="lgnCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">🟡 Linha amarela tracejada = p verdadeiro. 🔵 Linha ciana = proporção observada de sucessos até cada ensaio.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Ensaios realizados</div><div class="stat-card-value" id="lgnTotalVal">0</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Proporção observada</div><div class="stat-card-value" id="lgnPropVal">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">p teórico</div><div class="stat-card-value" id="lgnPTheoVal">0.35</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Com poucos ensaios, a linha ciana pula bastante — pode até ficar bem longe de p. Mas conforme os ensaios se acumulam, ela vai "grudando" na linha amarela. Isso não significa que resultados individuais deixam de ser aleatórios — significa que a <strong>média</strong> de muitos ensaios se torna previsível, mesmo que cada ensaio isolado não seja.</p>
+    </div>
+  </section>
+
+  <!-- ============ DE BERNOULLI PARA BINOMIAL ============ -->
+  <section class="section" id="s-binomial">
+    <div class="section-eyebrow">Empilhando Vários "Sim ou Não"</div>
+    <div class="section-title">🧱 De Bernoulli para Binomial: somando ensaios</div>
+    <p class="section-desc">
+      E se, em vez de <strong>um</strong> ensaio, fizermos <code style="color:var(--accent-blue);">n</code> ensaios de Bernoulli independentes, todos com a <strong>mesma</strong> chance de sucesso p, e somarmos os resultados? <code style="color:var(--accent);">X = X₁ + X₂ + ... + Xₙ</code> — essa soma é exatamente a <strong>Distribuição Binomial</strong>! Cada bolinha abaixo é um mini-ensaio de Bernoulli; a soma delas forma um novo número.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste n e p, depois sorteie os n ensaios de Bernoulli</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🧱 Número de ensaios (n)</span><span class="ctrl-v" id="binN2Val">10</span></div>
+          <input type="range" id="binN2" min="1" max="24" step="1" value="10" oninput="binNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 Chance de sucesso (p)</span><span class="ctrl-v" id="binP2Val">40%</span></div>
+          <input type="range" id="binP2" min="5" max="95" step="5" value="40" oninput="binPChanged()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;">
+        <button class="player-btn primary" onclick="runBinomialTrials()">🎲 Sortear os n ensaios</button>
+      </div>
+      <div class="trial-row" id="binTrialsRow"></div>
+      <div class="result-display">
+        <div><span class="rl">X = X₁+X₂+...+Xₙ</span><span class="rv" id="binSumResult">Clique em sortear</span></div>
+      </div>
+      <div class="canvas-wrap" style="margin-top:14px;"><canvas id="binBuilderCanvas" height="200"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Cada barra é P(X=k) da Binomial(n,p) — a chance de exatamente k sucessos em n ensaios. A barra destacada mostra onde caiu o seu sorteio.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">E(X) = n×p</div><div class="stat-card-value" id="binBuilderMean">4.00</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Var(X) = n×p×(1−p)</div><div class="stat-card-value" id="binBuilderVar">2.40</div></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Repare que <code>E(X) = n×p</code> é só somar n cópias de <code>E(Xᵢ)=p</code>. É por isso que entender Bernoulli tão bem vale a pena: a Binomial, e várias outras distribuições, são só "várias Bernoullis coladas juntas".</p>
+    </div>
+  </section>
+
+  <!-- ============ É OU NÃO É BERNOULLI ============ -->
+  <section class="section" id="s-exemplos">
+    <div class="section-eyebrow">Praticando o Olho Clínico</div>
+    <div class="section-title">🔍 É ou não é Bernoulli?</div>
+    <p class="section-desc">Clique em cada situação para descobrir se ela é (ou pode ser reduzida a) um Ensaio de Bernoulli.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada exemplo para revelar a resposta</div>
+      <div class="grid-4" id="bernoulliCheckGrid"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Truque rápido: pergunte "dá para responder isso com só SIM ou NÃO, com a mesma chance toda vez que eu repetir?". Se a resposta é sim, é Bernoulli. Se existem 3 ou mais categorias, ou os valores formam uma contagem/medida contínua, não é.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela">
+    <div class="section-eyebrow">Tudo Que Você Precisa, num Só Lugar</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todos os conceitos desta aula reunidos, prontos para consulta.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🎯 Ensaio de Bernoulli</div>
+        <div class="card-formula">2 resultados: sucesso ou fracasso</div>
+        <div class="card-text">Um único experimento com exatamente duas saídas possíveis, cada repetição independente das outras.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">0️⃣1️⃣ Variável indicadora X</div>
+        <div class="card-formula">X ∈ {0, 1}</div>
+        <div class="card-text">X=1 se deu sucesso, X=0 se deu fracasso. "Sucesso" é só um rótulo, não um julgamento de valor.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎚️ Parâmetro p</div>
+        <div class="card-formula">p ∈ [0, 1]</div>
+        <div class="card-text">A chance de sucesso. É o único número necessário — define completamente a distribuição.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎲 PMF</div>
+        <div class="card-formula">P(X=k) = pᵏ(1−p)¹⁻ᵏ</div>
+        <div class="card-text">P(X=1)=p e P(X=0)=1−p. As duas probabilidades sempre somam 1.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📶 CDF</div>
+        <div class="card-formula">F(x) = 0, 1−p ou 1</div>
+        <div class="card-text">Escada com dois degraus: sobe para 1−p em x=0, e para 1 em x=1.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚖️ Valor Esperado</div>
+        <div class="card-formula">E(X) = p</div>
+        <div class="card-text">A média de longo prazo é exatamente igual à probabilidade de sucesso.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Variância</div>
+        <div class="card-formula">Var(X) = p(1−p)</div>
+        <div class="card-text">Máxima em p=0,5 (valor 0,25); mínima (zero) em p=0 ou p=1. σ = √(p(1−p)).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧱 Soma de Bernoullis</div>
+        <div class="card-formula">X₁+X₂+...+Xₙ ~ Binomial(n,p)</div>
+        <div class="card-text">n ensaios de Bernoulli(p) independentes e idênticos, somados, formam uma Binomial.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔁 Lei dos Grandes Números</div>
+        <div class="card-formula">proporção observada → p</div>
+        <div class="card-text">Quanto mais ensaios você repete, mais a proporção de sucessos se aproxima de p.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">✅ Boas práticas: como não se confundir</div>
+
+    <div class="decision-flow">
+      <div class="decision-q">Antes de chamar algo de "Bernoulli": existem exatamente 2 resultados possíveis, com a mesma chance p em cada repetição?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">✅ Sim, só sim/não</div>
+          <div class="decision-result">➡️ É um <strong>Ensaio de Bernoulli</strong></div>
+          <div class="decision-example">Ex.: cara ou coroa, aprovado ou reprovado, clicou ou não clicou.</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">❌ Não, tem 3+ categorias ou é uma contagem/medida</div>
+          <div class="decision-result">➡️ Precisa de outro modelo (Binomial, Poisson, Normal...)</div>
+          <div class="decision-example">Ex.: número de filhos, resultado de um dado, altura, número de ligações por hora.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">1️⃣ "Sucesso" não é opinião</div>
+        <div class="card-text">O rótulo "sucesso" é escolhido por quem modela o problema — pode até representar um evento indesejado, como uma peça com defeito. O que importa é que só existem duas categorias.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ E(X)=p não é o "resultado esperado"</div>
+        <div class="card-text">Num único ensaio, X só pode ser 0 ou 1. E(X)=p é a média de muitas repetições — não uma previsão de um resultado específico.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Dado comum não é Bernoulli</div>
+        <div class="card-text">Um lançamento de dado tem 6 resultados, não 2. Só vira Bernoulli se você reformular a pergunta como sim/não, tipo "saiu 6?".</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1: achar que Var(X) cresce sempre com p</div>
+      <p>Não! Var(X)=p(1−p) sobe até p=0,5 e depois <strong>desce</strong> de novo. p=0,9 e p=0,1 têm exatamente a mesma variância — porque nos dois casos o resultado já é bem previsível, só que para lados opostos.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2: confundir Bernoulli com Binomial</div>
+      <p>Bernoulli é <strong>um único</strong> ensaio (X vale 0 ou 1). Binomial é a <strong>soma de vários</strong> ensaios de Bernoulli (X pode valer de 0 até n). Toda Binomial é feita de Bernoullis, mas nem toda Bernoulli é uma Binomial completa.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Sempre que encontrar uma pergunta do tipo "qual a chance de X acontecer?" com resposta sim/não, pare e pergunte: "isso é um ensaio de Bernoulli com que valor de p?". Boa parte da estatística aplicada começa exatamente com essa pergunta.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer style="display:flex;justify-content:space-between;color:var(--text-disabled);font-size:11px;padding-top:10px;border-top:1px solid var(--border-color);">
+    <span>Profissão Dados — Distribuição de Bernoulli</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function comb(n,k){ if(k<0||k>n) return 0; k=Math.min(k,n-k); let r=1; for(let i=0;i<k;i++) r = r*(n-i)/(i+1); return Math.round(r); }
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function pct(x,d=1){ return (x*100).toFixed(d).replace('.',',')+'%'; }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🎯', label:'O que é'},
+  {id:'s-indicador', icon:'0️⃣1️⃣', label:'Variável X'},
+  {id:'s-parametro', icon:'🎚️', label:'Parâmetro p'},
+  {id:'s-pmf', icon:'🎲', label:'Distribuição (PMF)'},
+  {id:'s-cdf', icon:'📶', label:'Acumulada (CDF)'},
+  {id:'s-esperanca', icon:'⚖️', label:'E(X) = p'},
+  {id:'s-variancia', icon:'📏', label:'Var(X)'},
+  {id:'s-lgn', icon:'🔁', label:'Simulação / LGN'},
+  {id:'s-binomial', icon:'🧱', label:'Vira Binomial'},
+  {id:'s-exemplos', icon:'🔍', label:'É Bernoulli?'},
+  {id:'s-tabela', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== O QUE É (ensaio único) ===================== */
+let introTrialP = 0.5;
+let introTrialHistory = [];
+function updateIntroP(){
+  introTrialP = +document.getElementById('introP').value/100;
+  document.getElementById('introPVal').textContent = pct(introTrialP,0);
+}
+function introTrial(){
+  const success = Math.random() < introTrialP;
+  const el = document.getElementById('introTrialCoin');
+  el.classList.remove('flipping'); void el.offsetWidth; el.classList.add('flipping');
+  el.querySelector('.coin-face-emoji').textContent = success ? '✅' : '❌';
+  el.querySelector('.coin-face-label').textContent = success ? 'SUCESSO' : 'FRACASSO';
+  el.style.background = success
+    ? 'radial-gradient(circle at 35% 30%,#c3f6e6,#7dded8 60%,#2f8f7d)'
+    : 'radial-gradient(circle at 35% 30%,#f9c9c4,#f86b63 60%,#a3312a)';
+  const X = success?1:0;
+  document.getElementById('introTrialResult').textContent = 'X = '+X;
+  introTrialHistory.unshift({X});
+  if(introTrialHistory.length>6) introTrialHistory.pop();
+  document.getElementById('introTrialHistory').innerHTML = introTrialHistory.map(h=>
+    `<div class="rv-history-row"><span>${h.X===1?'✅ Sucesso':'❌ Fracasso'}</span><span class="rv-history-x">X = ${h.X}</span></div>`).join('');
+}
+
+/* ===================== VARIÁVEL INDICADORA ===================== */
+const indicatorItems = [
+  {emoji:'🎓', q:'Aluno passou na prova final?', success:'Passou (nota ≥ 6) → X=1', fail:'Não passou (nota < 6) → X=0'},
+  {emoji:'💡', q:'Lâmpada testada queimou antes de 1000h de uso?', success:'Queimou antes do prazo → X=1', fail:'Aguentou até o prazo → X=0'},
+  {emoji:'🛒', q:'Cliente clicou no anúncio exibido?', success:'Clicou → X=1', fail:'Não clicou → X=0'},
+  {emoji:'🏀', q:'Jogador acertou o lance livre?', success:'Acertou (bola na cesta) → X=1', fail:'Errou → X=0'},
+];
+function buildIndicator(){
+  document.getElementById('indicatorGrid').innerHTML = indicatorItems.map(it => `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div style="font-size:26px;text-align:center;">${it.emoji}</div>
+      <div class="card-text" style="text-align:center;margin-top:6px;font-weight:600;color:var(--text-primary);">${it.q}</div>
+      <div class="classify-answer" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+        <span class="badge badge-green" style="display:block;text-align:center;">${it.success}</span>
+        <span class="badge badge-blue" style="display:block;text-align:center;">${it.fail}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* ===================== PARÂMETRO p (barra dividida) ===================== */
+function renderPBar(){
+  const p = +document.getElementById('pBarSlider').value/100;
+  document.getElementById('pBarVal').textContent = pct(p,0);
+  document.getElementById('pBarPVal2').textContent = p.toFixed(2);
+  document.getElementById('pBarQVal').textContent = (1-p).toFixed(2);
+  document.getElementById('pBarRatio').textContent = p>0 ? '≈'+(1/p).toFixed(1) : '∞';
+  drawPBarChart(p);
+}
+function drawPBarChart(p){
+  const canvas = document.getElementById('pBarCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=14, PR=14, PT=34, barH=Math.min(50,h-PT-24);
+  const barY = PT, barW = w-PL-PR;
+  const pW = barW*p;
+  ctx.save();
+  roundRectPath(ctx, PL, barY, barW, barH, 10); ctx.clip();
+  ctx.fillStyle='rgba(125,222,216,.85)'; ctx.fillRect(PL,barY,pW,barH);
+  ctx.fillStyle='rgba(248,107,99,.85)'; ctx.fillRect(PL+pW,barY,barW-pW,barH);
+  ctx.restore();
+  ctx.strokeStyle='rgba(152,162,179,.3)'; ctx.lineWidth=1;
+  roundRectPath(ctx,PL,barY,barW,barH,10); ctx.stroke();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(PL+pW,barY); ctx.lineTo(PL+pW,barY+barH); ctx.stroke();
+  ctx.font='bold 12px Roboto Mono'; ctx.textAlign='center';
+  if(pW>44){ ctx.fillStyle='#0b3b32'; ctx.fillText('p='+pct(p,0), PL+pW/2, barY+barH/2+4); }
+  if(barW-pW>44){ ctx.fillStyle='#4a0f0a'; ctx.fillText('1−p='+pct(1-p,0), PL+pW+(barW-pW)/2, barY+barH/2+4); }
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Inter'; ctx.textAlign='center';
+  ctx.fillText('✅ Sucesso (X=1)', PL+pW/2, barY-10);
+  ctx.fillText('❌ Fracasso (X=0)', PL+pW+(barW-pW)/2, barY-10);
+}
+
+/* ===================== PMF (2 barras) ===================== */
+function renderPmf(){
+  const p = +document.getElementById('pmfP').value/100;
+  document.getElementById('pmfPVal').textContent = pct(p,0);
+  document.getElementById('pmfP0').textContent = (1-p).toFixed(3)+' ('+pct(1-p,1)+')';
+  document.getElementById('pmfP1').textContent = p.toFixed(3)+' ('+pct(p,1)+')';
+  drawPmfChart(p);
+}
+function drawPmfChart(p){
+  const canvas = document.getElementById('pmfCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=40, PR=40, PT=28, PB=32;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  const values=[1-p,p];
+  const barSlotW = plotW/2;
+  values.forEach((v,i)=>{
+    const barH = v*plotH;
+    const x = PL + i*barSlotW + barSlotW*0.25;
+    const bw = barSlotW*0.5;
+    const y = PT+plotH-barH;
+    ctx.fillStyle = i===0 ? 'rgba(248,107,99,.8)' : 'rgba(125,222,216,.85)';
+    roundRectPath(ctx,x,y,bw,barH,4); ctx.fill();
+    ctx.fillStyle='#dfe5ef'; ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center';
+    ctx.fillText((v*100).toFixed(1)+'%', x+bw/2, y-8);
+    ctx.fillStyle='#98a2b3'; ctx.font='11px Inter';
+    ctx.fillText(i===0?'X = 0 (Fracasso)':'X = 1 (Sucesso)', x+bw/2, PT+plotH+18);
+  });
+  ctx.strokeStyle='rgba(152,162,179,.25)'; ctx.beginPath(); ctx.moveTo(PL,PT+plotH); ctx.lineTo(w-PR,PT+plotH); ctx.stroke();
+}
+
+/* ===================== CDF ===================== */
+function renderBCdf(){
+  const p = +document.getElementById('bcdfP').value/100;
+  const x = +document.getElementById('bcdfX').value;
+  document.getElementById('bcdfPVal').textContent = pct(p,0);
+  document.getElementById('bcdfXVal').textContent = x.toFixed(2);
+  let Fx;
+  if(x<0) Fx=0; else if(x<1) Fx=1-p; else Fx=1;
+  document.getElementById('bcdfResult').textContent = Fx.toFixed(3);
+  drawBCdfChart(p,x,Fx);
+}
+function drawBCdfChart(p,x,Fx){
+  const canvas = document.getElementById('bcdfCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=34, PR=14, PT=14, PB=52;
+  const plotH = h-PT-PB, plotW = w-PL-PR;
+  const xMin=-0.7, xMax=1.7;
+  function toX(v){ return PL + plotW*(v-xMin)/(xMax-xMin); }
+  function toY(y){ return PT + plotH*(1-y); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  [0,0.25,0.5,0.75,1].forEach(v=>{
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke();
+    ctx.fillText(v.toFixed(2), PL-6, y+3);
+  });
+  const segs = [[xMin,0,0],[0,1,1-p],[1,xMax,1]];
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2.4;
+  segs.forEach(([x0,x1,y])=>{
+    ctx.beginPath(); ctx.moveTo(toX(x0),toY(y)); ctx.lineTo(toX(x1),toY(y)); ctx.stroke();
+  });
+  [[0,0,1-p],[1,1-p,1]].forEach(([xj,yBefore,yAfter])=>{
+    ctx.beginPath(); ctx.arc(toX(xj), toY(yBefore), 4, 0, Math.PI*2);
+    ctx.fillStyle='#111216'; ctx.fill(); ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(toX(xj), toY(yAfter), 4, 0, Math.PI*2);
+    ctx.fillStyle='#06b6d4'; ctx.fill();
+  });
+  const rugY = PT+plotH+16, rugMaxH=20;
+  const pmfVals=[1-p,p];
+  const maxPmf = Math.max(...pmfVals);
+  [0,1].forEach(kk=>{
+    const bh = (pmfVals[kk]/maxPmf)*rugMaxH;
+    ctx.fillStyle='rgba(196,154,255,.55)';
+    roundRectPath(ctx, toX(kk)-10, rugY+rugMaxH-bh, 20, bh, 2);
+    ctx.fill();
+    ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+    ctx.fillText('k='+kk, toX(kk), rugY+rugMaxH+14);
+  });
+  const mx = toX(Math.max(xMin,Math.min(xMax,x)));
+  ctx.strokeStyle='#e8b339'; ctx.setLineDash([4,3]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mx, toY(0)); ctx.lineTo(mx, toY(Fx)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PL, toY(Fx)); ctx.lineTo(mx, toY(Fx)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(mx, toY(Fx), 5, 0, Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill();
+}
+
+/* ===================== VALOR ESPERADO (balança) ===================== */
+function renderExpectation(){
+  const p = +document.getElementById('expP').value/100;
+  document.getElementById('expPVal').textContent = pct(p,0);
+  document.getElementById('expResult').textContent = p.toFixed(2);
+  document.getElementById('expFormula').innerHTML = `E(X) = 0×(1−${p.toFixed(2)}) + 1×${p.toFixed(2)} = <strong style="color:var(--accent);">${p.toFixed(2)}</strong>`;
+  drawExpectationBalance(p);
+}
+function drawExpectationBalance(p){
+  const canvas = document.getElementById('expCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=50, PR=50;
+  function toX(v){ return PL + (w-PL-PR)*v; }
+  const beamY = h*0.46;
+  const r0 = 10+Math.sqrt(Math.max(1-p,0.02))*26;
+  const r1 = 10+Math.sqrt(Math.max(p,0.02))*26;
+  ctx.strokeStyle='#535966'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(toX(-0.12), beamY); ctx.lineTo(toX(1.12), beamY); ctx.stroke();
+  ctx.beginPath(); ctx.arc(toX(0), beamY-r0*0.55, r0, 0, Math.PI*2);
+  ctx.fillStyle='rgba(248,107,99,.85)'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(toX(1), beamY-r1*0.55, r1, 0, Math.PI*2);
+  ctx.fillStyle='rgba(125,222,216,.85)'; ctx.fill(); ctx.stroke();
+  ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center'; ctx.lineJoin='round';
+  ctx.lineWidth=4; ctx.strokeStyle='rgba(238,241,245,.95)';
+  ctx.strokeText('X=0', toX(0), beamY-r0*0.55+4);
+  ctx.strokeText('X=1', toX(1), beamY-r1*0.55+4);
+  ctx.fillStyle='#111216';
+  ctx.fillText('X=0', toX(0), beamY-r0*0.55+4);
+  ctx.fillText('X=1', toX(1), beamY-r1*0.55+4);
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Inter';
+  ctx.fillText('peso: '+pct(1-p,0), toX(0), beamY-r0*1.15-8);
+  ctx.fillText('peso: '+pct(p,0), toX(1), beamY-r1*1.15-8);
+  const fy = beamY+12;
+  const fx = toX(p);
+  ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(fx-10,fy+16); ctx.lineTo(fx+10,fy+16); ctx.closePath();
+  ctx.fillStyle='#e8b339'; ctx.fill();
+  ctx.fillStyle='#e8b339'; ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('E(X) = '+p.toFixed(2), fx, fy+32);
+}
+
+/* ===================== VARIÂNCIA (parábola) ===================== */
+function renderVariance(){
+  const p = +document.getElementById('varPSlider').value/100;
+  const v = p*(1-p);
+  const sd = Math.sqrt(v);
+  document.getElementById('varPSliderVal').textContent = pct(p,0);
+  document.getElementById('varPResult').textContent = v.toFixed(3);
+  document.getElementById('varPStd').textContent = sd.toFixed(3);
+  drawVarianceParabola(p,v);
+}
+function drawVarianceParabola(p,v){
+  const canvas = document.getElementById('varParabolaCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=40, PR=20, PT=20, PB=32;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  function toX(pp){ return PL + plotW*pp; }
+  function toY(vv){ return PT + plotH*(1-vv/0.25); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  [0,0.05,0.10,0.15,0.20,0.25].forEach(vv=>{
+    const y = toY(vv);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke();
+    ctx.fillText(vv.toFixed(2), PL-6, y+3);
+  });
+  ctx.strokeStyle='rgba(152,162,179,.3)'; ctx.textAlign='center';
+  for(let pp=0; pp<=1.001; pp+=0.25){
+    ctx.fillText(pp.toFixed(2), toX(pp), h-PB+16);
+  }
+  ctx.beginPath();
+  for(let i=0;i<=100;i++){
+    const pp = i/100;
+    const vv = pp*(1-pp);
+    const px = toX(pp), py = toY(vv);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.strokeStyle='#36a2ef'; ctx.lineWidth=2.4; ctx.stroke();
+  ctx.setLineDash([4,3]); ctx.strokeStyle='rgba(232,179,57,.6)'; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(toX(0.5),toY(0)); ctx.lineTo(toX(0.5),toY(0.25)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('pico em p=0,5', toX(0.5), toY(0.25)-10);
+  ctx.setLineDash([4,3]); ctx.strokeStyle='#e8b339'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(toX(p),toY(0)); ctx.lineTo(toX(p),toY(v)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PL,toY(v)); ctx.lineTo(toX(p),toY(v)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(toX(p),toY(v),5,0,Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+/* ===================== SIMULAÇÃO / LGN ===================== */
+let lgnHistory = [];
+let lgnSuccesses = 0, lgnTotal = 0;
+function runLgn(times){
+  const p = +document.getElementById('lgnP').value/100;
+  for(let i=0;i<times;i++){
+    lgnTotal++;
+    if(Math.random()<p) lgnSuccesses++;
+    lgnHistory.push(lgnSuccesses/lgnTotal);
+  }
+  renderLgn();
+}
+function resetLgn(){
+  lgnSuccesses=0; lgnTotal=0; lgnHistory=[];
+  renderLgn();
+}
+function renderLgn(){
+  const p = +document.getElementById('lgnP').value/100;
+  document.getElementById('lgnPVal').textContent = pct(p,0);
+  document.getElementById('lgnTotalVal').textContent = fmt(lgnTotal);
+  document.getElementById('lgnPropVal').textContent = lgnTotal>0 ? (lgnSuccesses/lgnTotal).toFixed(3) : '—';
+  document.getElementById('lgnPTheoVal').textContent = p.toFixed(2);
+  drawLgnChart(p);
+}
+function drawLgnChart(p){
+  const canvas = document.getElementById('lgnCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=36, PR=14, PT=14, PB=26;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  function toY(v){ return PT + plotH*(1-v); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  [0,0.25,0.5,0.75,1].forEach(v=>{
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke();
+    ctx.fillText(v.toFixed(2), PL-6, y+3);
+  });
+  ctx.setLineDash([4,3]); ctx.strokeStyle='#e8b339'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(PL,toY(p)); ctx.lineTo(w-PR,toY(p)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#e8b339'; ctx.font='bold 10px Roboto Mono'; ctx.textAlign='left';
+  ctx.fillText('p = '+p.toFixed(2), w-PR-56, toY(p)-6);
+  if(lgnHistory.length===0){
+    ctx.fillStyle='#515761'; ctx.font='12px Inter'; ctx.textAlign='center';
+    ctx.fillText('Clique em "Sortear" para começar a simulação', w/2, h/2);
+    return;
+  }
+  const n = lgnHistory.length;
+  function toX(i){ return PL + plotW*(n<=1 ? 1 : i/(n-1)); }
+  ctx.beginPath();
+  lgnHistory.forEach((v,i)=>{
+    const px = toX(i), py = toY(v);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  });
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2; ctx.stroke();
+  const lastY = toY(lgnHistory[n-1]);
+  ctx.beginPath(); ctx.arc(toX(n-1), lastY, 4, 0, Math.PI*2);
+  ctx.fillStyle='#06b6d4'; ctx.fill();
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('n='+fmt(n), PL+10, h-8);
+}
+
+/* ===================== BERNOULLI -> BINOMIAL ===================== */
+function binomialPmf(n,k,p){ return comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k); }
+let lastTrialResults = [];
+function binNChanged(){ lastTrialResults=[]; renderBinomialBuilder(); }
+function binPChanged(){ lastTrialResults=[]; renderBinomialBuilder(); }
+function runBinomialTrials(){
+  const n = +document.getElementById('binN2').value;
+  const p = +document.getElementById('binP2').value/100;
+  const results=[];
+  for(let i=0;i<n;i++) results.push(Math.random()<p?1:0);
+  lastTrialResults = results;
+  renderBinomialBuilder();
+}
+function renderBinomialBuilder(){
+  const n = +document.getElementById('binN2').value;
+  const p = +document.getElementById('binP2').value/100;
+  document.getElementById('binN2Val').textContent = n;
+  document.getElementById('binP2Val').textContent = pct(p,0);
+  if(lastTrialResults.length !== n){ lastTrialResults = new Array(n).fill(null); }
+  document.getElementById('binTrialsRow').innerHTML = lastTrialResults.map(r =>
+    r===null ? `<div class="trial-chip pending">?</div>`
+             : `<div class="trial-chip ${r?'success':'fail'}">${r}</div>`
+  ).join('');
+  const hasResults = lastTrialResults.every(r=>r!==null);
+  const k = lastTrialResults.filter(r=>r===1).length;
+  document.getElementById('binSumResult').textContent = hasResults ? ('X₁+X₂+...+X'+n+' = '+k) : 'Clique em sortear';
+  const values=[]; let maxP=-1, mode=0;
+  for(let kk=0;kk<=n;kk++){ const v=binomialPmf(n,kk,p); values.push(v); if(v>maxP){maxP=v;mode=kk;} }
+  drawBarChart('binBuilderCanvas', values, hasResults? k : -1);
+  document.getElementById('binBuilderMean').textContent=(n*p).toFixed(2);
+  document.getElementById('binBuilderVar').textContent=(n*p*(1-p)).toFixed(2);
+}
+function drawBarChart(canvasId, values, highlightIndex){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = Math.max(...values);
+  const PB=22, PT=10;
+  const barW = w/n;
+  values.forEach((v,k)=>{
+    const barH = maxV>0 ? (v/maxV)*(h-PB-PT) : 0;
+    const x = k*barW + barW*0.15;
+    const bw = barW*0.7;
+    const y = h-PB-barH;
+    ctx.fillStyle = k===highlightIndex ? '#06b6d4' : 'rgba(6,182,212,.35)';
+    roundRectPath(ctx,x,y,bw,barH,3);
+    ctx.fill();
+    if(n<=26){
+      ctx.fillStyle = '#98a2b3';
+      ctx.font='9px Roboto Mono';
+      ctx.textAlign='center';
+      ctx.fillText(k, x+bw/2, h-8);
+    }
+  });
+}
+
+/* ===================== É OU NÃO É BERNOULLI ===================== */
+const bernoulliCheckItems = [
+  {emoji:'🪙', label:'Jogar uma moeda 1 vez e ver se dá cara', isB:true, note:'Dois resultados possíveis (cara/coroa), mesma chance sempre. É Bernoulli!'},
+  {emoji:'🎲', label:'Resultado de 1 lançamento de dado (1 a 6)', isB:false, note:'Tem 6 resultados, não 2. Só vira Bernoulli se reformularmos como sim/não, tipo "saiu 6?".'},
+  {emoji:'👶', label:'Número de filhos de uma família', isB:false, note:'É uma contagem (0,1,2,3...), não um sim/não único. Não é Bernoulli.'},
+  {emoji:'💊', label:'Paciente teve efeito colateral do remédio?', isB:true, note:'Só duas respostas possíveis: teve ou não teve. É Bernoulli!'},
+  {emoji:'📧', label:'Um e-mail é spam ou não é spam?', isB:true, note:'Exatamente duas categorias possíveis. É Bernoulli!'},
+  {emoji:'🌡️', label:'Temperatura registrada hoje ao meio-dia', isB:false, note:'É uma variável contínua, com infinitos valores possíveis. Não é Bernoulli.'},
+  {emoji:'🏀', label:'Número de cestas em 10 arremessos', isB:false, note:'Isso é a SOMA de 10 ensaios de Bernoulli — ou seja, uma Binomial, não um Bernoulli isolado.'},
+  {emoji:'🔧', label:'Uma peça saiu da linha de produção com defeito?', isB:true, note:'Defeituosa ou não defeituosa — duas opções. É Bernoulli!'},
+];
+function buildBernoulliCheck(){
+  document.getElementById('bernoulliCheckGrid').innerHTML = bernoulliCheckItems.map(it => `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div style="font-size:26px;text-align:center;">${it.emoji}</div>
+      <div class="card-text" style="text-align:center;margin-top:6px;">${it.label}</div>
+      <div class="classify-answer" style="text-align:center;margin-top:10px;">
+        <span class="badge ${it.isB?'badge-green':'badge-purple'}">${it.isB?'✅ É Bernoulli':'❌ Não é Bernoulli'}</span>
+        <div class="card-text" style="margin-top:8px;">${it.note}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Uma moeda viciada tem p=0,3 de chance de dar cara. Se X=1 quando dá cara, qual é E(X) e Var(X)?',
+   a:'<strong>E(X) = p = 0,3</strong>. <strong>Var(X) = p(1−p) = 0,3×0,7 = 0,21</strong>, então σ = √0,21 ≈ 0,458.'},
+  {q:'Numa fábrica, 5% das peças saem com defeito. Definindo X=1 como "peça defeituosa", qual a chance de uma peça sair boa?',
+   a:'X ~ Bernoulli(p=0,05). A chance de sair boa é <strong>P(X=0) = 1−0,05 = 0,95 (95%)</strong>.'},
+  {q:'Se Var(X)=0,16 para uma variável de Bernoulli, quais são os dois valores possíveis de p?',
+   a:'Resolvendo p(1−p)=0,16, ou seja p²−p+0,16=0: <strong>p=0,8 ou p=0,2</strong>. Repare que p e 1−p sempre geram a mesma variância — a parábola é simétrica em torno de p=0,5.'},
+  {q:'Um vendedor fecha uma venda a cada 4 visitas, em média (p=1/4=0,25). Qual é E(X) numa única visita?',
+   a:'<strong>E(X) = p = 0,25</strong> — ou seja, 25% de chance de sucesso numa única visita. Isso não significa "vai vender 0,25 produto"; é a taxa de sucesso de longo prazo.'},
+  {q:'Se somarmos 20 ensaios de Bernoulli(p=0,25) independentes, qual variável resulta e qual sua média?',
+   a:'A soma vira uma <strong>Binomial(n=20, p=0,25)</strong>, com <strong>E(X) = n×p = 20×0,25 = 5</strong> sucessos esperados.'},
+  {q:'Por que a variância de uma Bernoulli é máxima quando p=0,5?',
+   a:'Porque é quando o resultado é mais imprevisível — nem "quase sempre sucesso" nem "quase sempre fracasso". A função Var(X)=p(1−p) atinge seu pico em p=0,5, valendo <strong>0,25</strong>.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Um Ensaio de Bernoulli sempre tem exatamente dois resultados possíveis.', a:true,
+   explain:'Essa é a própria definição: sucesso ou fracasso, sem uma terceira opção.'},
+  {q:'Na Distribuição de Bernoulli, a variável X pode assumir qualquer número entre 0 e 1.', a:false,
+   explain:'X só pode ser 0 ou 1 — nunca 0,3 ou 0,7! Quem fica entre 0 e 1 é o parâmetro p (a probabilidade), não o valor de X.'},
+  {q:'"Sucesso" numa Bernoulli sempre representa algo positivo ou desejável.', a:false,
+   explain:'"Sucesso" é só o rótulo do evento que estamos contando — pode ser algo ruim, como uma peça com defeito ou um paciente com efeito colateral.'},
+  {q:'O valor esperado E(X) de uma Bernoulli é sempre igual a p.', a:true,
+   explain:'E(X) = 0×(1−p) + 1×p = p. Esse é um dos resultados mais elegantes (e úteis) da estatística.'},
+  {q:'A variância de uma Bernoulli é máxima quando p=0,5.', a:true,
+   explain:'Var(X)=p(1−p) atinge seu valor máximo (0,25) exatamente em p=0,5 — o ponto de maior incerteza.'},
+  {q:'A soma de vários ensaios de Bernoulli independentes e idênticos forma uma Distribuição Binomial.', a:true,
+   explain:'Exatamente: Binomial(n,p) é, por definição, a soma de n ensaios de Bernoulli(p) independentes.'},
+  {q:'O resultado de um lançamento de dado comum (1 a 6) já é, por si só, uma variável de Bernoulli.', a:false,
+   explain:'Um dado tem 6 resultados possíveis, não 2. Só vira Bernoulli se reformularmos a pergunta como sim/não, como "saiu 6?".'},
+  {q:'Se p=0 ou p=1, a variância de X é zero.', a:true,
+   explain:'Nesses extremos não existe mais incerteza — o resultado é sempre o mesmo, então não há espalhamento (Var=0).'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+buildIndicator();
+renderPBar();
+renderPmf();
+renderBCdf();
+renderExpectation();
+renderVariance();
+resetLgn();
+renderBinomialBuilder();
+buildBernoulliCheck();
+buildProblems();
+buildQuiz();
+window.addEventListener('resize', ()=>{
+  drawPBarChart(+document.getElementById('pBarSlider').value/100);
+  drawPmfChart(+document.getElementById('pmfP').value/100);
+  renderBCdf();
+  renderExpectation();
+  renderVariance();
+  drawLgnChart(+document.getElementById('lgnP').value/100);
+  renderBinomialBuilder();
+});
+</script>
+</body>
+</html>

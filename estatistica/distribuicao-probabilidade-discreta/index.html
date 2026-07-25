@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Introdução à Distribuição de Probabilidade Discreta explicada do zero, como se fosse para uma criança, com dados, urnas e muitos gráficos e simulações interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Distribuição de Probabilidade Discreta Explicada com Desenhos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+.hero-map-grid{display:flex;flex-direction:column;gap:10px;width:290px;}
+.hero-map-card{display:flex;align-items:center;gap:10px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.hero-map-exp{flex:1;font-size:18px;text-align:center;line-height:1.35;}
+.hero-map-exp span{display:block;font-size:10px;color:var(--text-secondary);font-family:'Inter',sans-serif;margin-top:2px;}
+.hero-map-arrow{font-size:15px;color:var(--text-disabled);flex-shrink:0;}
+.hero-map-x{font-family:'Roboto Mono',monospace;font-weight:800;color:var(--accent);font-size:14px;min-width:70px;text-align:center;flex-shrink:0;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn:disabled{opacity:.35;cursor:not-allowed;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card.c-yellow{border-top-color:var(--accent-yellow);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- DECISION FLOW ---- */
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.arranjo{border-color:var(--accent-blue);}
+.decision-branch.combinacao{border-color:var(--accent-purple);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- CLASSIFY EXERCISE ---- */
+.classify-card{cursor:pointer;transition:.15s;}
+.classify-card:hover{border-color:var(--border-strong);}
+.classify-answer{display:none;}
+.classify-card.revealed .classify-answer{display:block;}
+.classify-card.revealed{border-color:var(--accent);}
+
+/* ---- DICE GRID (espaço amostral) ---- */
+.dice-layout{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;}
+.dice-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;width:246px;flex-shrink:0;}
+.dice-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border-radius:4px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);font-family:'Roboto Mono',monospace;transition:.2s;}
+.dice-cell.hit{background:rgba(6,182,212,.9);color:#0b2e35;transform:scale(1.15);border-color:var(--accent);}
+.dice-sim-col{flex:1;min-width:260px;display:flex;flex-direction:column;gap:12px;}
+
+/* ---- GALLERY ---- */
+.gallery-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.gallery-card .canvas-wrap{padding:8px;}
+.gallery-title{font-size:13px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:6px;}
+.gallery-formula{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--text-primary);background:var(--bg-elevated);border-radius:5px;padding:5px 8px;text-align:center;}
+.gallery-text{font-size:11.5px;color:var(--text-secondary);line-height:1.55;}
+.gallery-link{font-size:10.5px;color:var(--accent);text-decoration:none;font-weight:700;margin-top:2px;}
+.gallery-link:hover{text-decoration:underline;}
+
+/* ---- MINI TABLE (pmf validity) ---- */
+.mini-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.mini-table th,.mini-table td{padding:5px 8px;text-align:center;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.mini-table th{color:var(--text-primary);font-size:10.5px;text-transform:uppercase;}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.grid-5{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+  .dice-layout{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Distribuição de Probabilidade Discreta</h1><span>Como transformar o acaso em números e gráficos que fazem sentido</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">15</div><div class="hstat-label">Conceitos</div></div>
+      <div class="hstat"><div class="hstat-num">ΣP=1</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">11</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do "o que é X" até a galeria das distribuições mais famosas</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-intro">
+    <div>
+      <h2>Toda vez que o acaso só pode cair em <em>números contáveis</em>, existe uma Distribuição Discreta</h2>
+      <p>Quantos filhos tem uma família? Qual número saiu no dado? Quantos clientes entraram na loja? Todas essas perguntas têm algo em comum: a resposta é sempre um número que dá para <strong>contar</strong> — 0, 1, 2, 3... nunca "2,3781" ou qualquer valor no meio. Sempre que isso acontece, existe uma <strong>Distribuição de Probabilidade Discreta</strong> escondida por trás, descrevendo quais valores são mais prováveis e quais são mais raros. Nesta aula vamos construir essa ideia do zero — com dados, urnas e muitos gráficos — até você enxergar a "família" completa de distribuições discretas mais usadas na prática.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Valores Contáveis</span>
+        <span class="badge badge-blue">P(X=k) — PMF</span>
+        <span class="badge badge-purple">ΣP(X=k) = 1</span>
+        <span class="badge badge-green">E(X) e Var(X)</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-map-grid">
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🎲<span>Qual número saiu no dado?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ∈ {1,2,...,6}</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">👨‍👩‍👧<span>Quantos filhos tem a família?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ∈ {0,1,2,...}</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">📞<span>Quantas ligações em 1 hora?</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ∈ {0,1,2,...}</div>
+        </div>
+      </div>
+      <div class="hero-visual-caption">Sempre valores "pulados", contáveis — nunca um número qualquer entre dois inteiros.</div>
+    </div>
+  </section>
+
+  <!-- ============ VARIÁVEL ALEATÓRIA ============ -->
+  <section class="section" id="s-var-aleatoria">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🔤 O que é uma Variável Aleatória?</div>
+    <p class="section-desc">
+      Uma <strong>Variável Aleatória</strong> (chamamos de <code style="color:var(--accent);">X</code>) é só uma <strong>régua numérica</strong> que colocamos em cima de um experimento com resultado incerto. Em vez de dizer "saiu a face com o cachorro desenhado", dizemos "saiu o número 4". A variável aleatória é a <strong>ponte</strong> entre o mundo real (moedas, dados, clientes, ligações) e os números que sabemos somar, multiplicar e colocar em gráfico. Quando essa régua só admite valores <strong>contáveis</strong> (0, 1, 2, 3...) — nunca frações intermediárias como 1,5 — chamamos essa variável de <strong>discreta</strong>. Clique nos exemplos abaixo para ver a régua em ação.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada exemplo para ver por que X vale esse número</div>
+      <div class="grid-2" id="varAleatoriaGrid"></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Não importa se o experimento é jogar um dado, contar clientes ou testar remédios — <strong>toda</strong> variável aleatória discreta pode ser descrita do mesmo jeito: uma lista de valores possíveis, cada um com sua própria probabilidade. É essa lista organizada que chamamos de <strong>distribuição de probabilidade</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ============ DISCRETA VS CONTÍNUA ============ -->
+  <section class="section" id="s-discreta-continua">
+    <div class="section-eyebrow">A Primeira Bifurcação</div>
+    <div class="section-title">🔍 Discreta ou Contínua? O primeiro diagnóstico</div>
+    <p class="section-desc">
+      Antes de escolher qualquer fórmula, pergunte: <strong>"dá para contar nos dedos (mesmo que precise de infinitos dedos), ou só dá para medir com uma régua/relógio?"</strong>. Se dá para contar (0, 1, 2, 3...) — mesmo que a lista seja infinita — a variável é <strong>discreta</strong>. Se o valor pode ser qualquer número dentro de um intervalo (como 1,732859...), a variável é <strong>contínua</strong>. Essa distinção decide quais ferramentas matemáticas usar depois. Clique em cada exemplo abaixo e treine o olho.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada exemplo para revelar se é discreta ou contínua</div>
+      <div class="grid-4" id="discContGrid"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Truque rápido: se a resposta pode ser <strong>"1,5"</strong> e isso fizer sentido no contexto (1,5 metro, 1,5 segundo), é contínua. Se "1,5" não faz sentido (1,5 filho? 1,5 ligação?), é discreta.</p>
+    </div>
+  </section>
+
+  <!-- ============ ESPAÇO AMOSTRAL -> VARIÁVEL X ============ -->
+  <section class="section" id="s-espaco-amostral">
+    <div class="section-eyebrow">De Onde a Distribuição Realmente Vem</div>
+    <div class="section-title">🗺️ Do Espaço Amostral até a Distribuição</div>
+    <p class="section-desc">
+      Toda distribuição nasce de um <strong>espaço amostral</strong> — a lista de todos os resultados possíveis. Jogue <strong>dois dados</strong> e some os pontos: existem 36 combinações possíveis (6 × 6), mas várias delas dão a <strong>mesma soma</strong>. Por exemplo, a soma 7 pode sair de 6 jeitos diferentes (1+6, 2+5, 3+4, 4+3, 5+2, 6+1), enquanto a soma 2 só sai de 1 jeito (1+1). É por isso que somas no meio (como 7) são muito mais prováveis que somas nas pontas (como 2 ou 12) — e é exatamente esse padrão que forma a distribuição.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Role dois dados e veja qual combinação "acende" e como a distribuição das somas cresce</div>
+      <div class="dice-layout">
+        <div class="dice-grid" id="diceGrid"></div>
+        <div class="dice-sim-col">
+          <div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap;">
+            <button class="player-btn primary" onclick="rollTwoDice()">🎲 Rolar dois dados</button>
+            <button class="player-btn" onclick="resetTwoDice()">⏹ Reiniciar</button>
+          </div>
+          <div class="result-display">
+            <div><span class="rl">Soma sorteada</span><span class="rv" id="twoDiceResult">?</span></div>
+          </div>
+          <div class="canvas-wrap"><canvas id="twoDiceCanvas" height="180"></canvas></div>
+          <div class="stat-cards" style="grid-template-columns:repeat(2,1fr);">
+            <div class="stat-card c-blue"><div class="stat-card-label">Rolagens</div><div class="stat-card-value" id="twoDiceTotal">0</div></div>
+            <div class="stat-card c-purple"><div class="stat-card-label">Soma mais provável</div><div class="stat-card-value">7</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>A grade colorida à esquerda é o <strong>espaço amostral</strong> (36 combinações igualmente prováveis). O gráfico de barras à direita é a <strong>distribuição da soma</strong> — ela nasce simplesmente de contar quantas células da grade caem em cada soma. Distribuição de probabilidade é sempre isso: contar (ou calcular) quão "populoso" é cada valor possível de X.</p>
+    </div>
+  </section>
+
+  <!-- ============ PMF ============ -->
+  <section class="section" id="s-pmf">
+    <div class="section-eyebrow">O Retrato Completo da Variável</div>
+    <div class="section-title">📊 Função de Probabilidade (PMF): P(X=k)</div>
+    <p class="section-desc">
+      A <strong>PMF</strong> (Probability Mass Function, ou Função de Probabilidade) é uma tabela — ou um gráfico de barras — que diz, para <strong>cada</strong> valor possível de X, qual é a chance dele acontecer: <code style="color:var(--accent);">P(X=k)</code>. Ela obedece a <strong>duas regras de ouro</strong>, sem exceção: cada barra tem altura <strong>maior ou igual a zero</strong> (não existe chance negativa!), e a <strong>soma de todas as barras é exatamente 1</strong> (100% de chance está distribuída entre os valores possíveis). Use o controle abaixo para "viciar" um dado e veja a PMF mudar de forma — mas nunca deixar de somar 1.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste para deixar o lado 6 do dado mais "pesado" e veja a PMF mudar</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>⚖️ Peso extra do lado 6 (1 = dado honesto)</span><span class="ctrl-v" id="pmfW6Val">1.0×</span></div>
+          <input type="range" id="pmfW6" min="1" max="6" step="0.5" value="1" oninput="renderDiePmf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="pmfDiceCanvas" height="220"></canvas></div>
+      <div class="card-formula">P(X=k) = peso(k) / Σ pesos, para k = 1,2,3,4,5,6</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Soma dos pesos</div><div class="stat-card-value" id="pmfWSum">6.0</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Σ P(X=k)</div><div class="stat-card-value" id="pmfPSum">1.000</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Menor probabilidade</div><div class="stat-card-value" id="pmfMin">0.167</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A regra de ouro da PMF</div>
+      <p>Não importa o quão "viciado" você deixe o dado — <code>Σ P(X=k)</code> sempre dá <strong>exatamente 1</strong>, porque alguma face vai sair. Isso vale para <strong>qualquer</strong> distribuição discreta, não só para dados: moedas, contagem de clientes, número de defeitos — todas obedecem a essas duas regras.</p>
+    </div>
+  </section>
+
+  <!-- ============ CDF ============ -->
+  <section class="section" id="s-cdf">
+    <div class="section-eyebrow">Somando a Probabilidade Aos Poucos</div>
+    <div class="section-title">📶 Função de Distribuição Acumulada (CDF): F(x) = P(X≤x)</div>
+    <p class="section-desc">
+      A <strong>CDF</strong> responde "qual a chance de X ser <em>até</em> esse valor?". Numa variável discreta, ela é sempre uma <strong>escadinha</strong>: fica parada entre um valor possível e o próximo, e dá um "salto" exatamente na altura da PMF quando passa por cada valor. No dado, ela sobe de degrau em degrau — cada degrau tem a altura de <code>P(X=k)</code>. Ajuste o peso do lado 6 e arraste x para ver a escada em ação.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o peso do dado e arraste x para ver F(x) = P(X ≤ x)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>⚖️ Peso extra do lado 6</span><span class="ctrl-v" id="cdfW6Val">1.0×</span></div>
+          <input type="range" id="cdfW6" min="1" max="6" step="0.5" value="1" oninput="renderDieCdf()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Valor de x</span><span class="ctrl-v" id="cdfXVal">3.5</span></div>
+          <input type="range" id="cdfX" min="0.5" max="6.5" step="0.1" value="3.5" oninput="renderDieCdf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="cdfDiceCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">A linha ciana em degraus é F(x). As barrinhas roxas embaixo mostram a PMF — cada "salto" da escada tem exatamente a altura da barrinha correspondente!</div>
+      <div class="result-display">
+        <div><span class="rl">F(x) = P(X ≤ x)</span><span class="rv" id="cdfResult">0.500</span></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>A CDF <strong>nunca diminui</strong> e sempre termina em <code>1</code> depois do maior valor possível. Numa distribuição discreta, ela é sempre "em degraus" — nunca uma rampa suave (isso só acontece nas variáveis contínuas, que ficam para outra aula).</p>
+    </div>
+  </section>
+
+  <!-- ============ VALOR ESPERADO ============ -->
+  <section class="section" id="s-esperanca">
+    <div class="section-eyebrow">O "Centro de Gravidade" da Distribuição</div>
+    <div class="section-title">⚖️ Valor Esperado E(X): a média de longo prazo</div>
+    <p class="section-desc">
+      O <strong>Valor Esperado</strong> <code style="color:var(--accent);">E(X) = Σ k × P(X=k)</code> é a média de X se repetíssemos o experimento infinitas vezes. Pense numa balança: colocamos um peso em cada valor possível, proporcional à sua probabilidade, e o <strong>ponto de equilíbrio</strong> é E(X). Num dado honesto, todos os pesos são iguais e a balança equilibra bem no meio, em <code>3,5</code>. Vicie o dado e veja a balança pender para o lado mais pesado.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o peso do lado 6 e veja o ponto de equilíbrio da balança se mover</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>⚖️ Peso extra do lado 6</span><span class="ctrl-v" id="expW6Val">1.0×</span></div>
+          <input type="range" id="expW6" min="1" max="6" step="0.5" value="1" oninput="renderDieExpectation()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="expDiceCanvas" height="190"></canvas></div>
+      <div class="card-formula" id="expDiceFormula"></div>
+      <div class="result-display">
+        <div><span class="rl">E(X)</span><span class="rv" id="expDiceResult">3.50</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Cuidado: E(X) não precisa ser um valor possível!</div>
+      <p>Num dado honesto, <code>E(X)=3,5</code> — mas o dado <strong>nunca</strong> mostra a face 3,5! O valor esperado é o centro de massa de longo prazo, não uma previsão de um único lançamento.</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIÂNCIA ============ -->
+  <section class="section" id="s-variancia">
+    <div class="section-eyebrow">O Quão Imprevisível é o Resultado</div>
+    <div class="section-title">📏 Variância Var(X): o quanto os valores se espalham</div>
+    <p class="section-desc">
+      A <strong>Variância</strong> <code style="color:var(--accent);">Var(X) = Σ (k − E(X))² × P(X=k)</code> mede o quanto X costuma se afastar da própria média. Cada barra do gráfico abaixo mostra <strong>quanto cada face contribui</strong> para essa "distância ao quadrado" total. Faces muito distantes da média (como 1 ou 6 num dado honesto) pesam mais na variância do que faces perto do centro (como 3 ou 4).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o peso do lado 6 e veja como cada face contribui para a variância</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>⚖️ Peso extra do lado 6</span><span class="ctrl-v" id="varW6Val">1.0×</span></div>
+          <input type="range" id="varW6" min="1" max="6" step="0.5" value="1" oninput="renderDieVariance()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="varDiceCanvas" height="200"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Cada barra é a parcela (k − E(X))² × P(X=k) que aquela face soma à variância total.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">E(X)</div><div class="stat-card-value" id="varDiceMean">3.500</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Var(X)</div><div class="stat-card-value" id="varDiceVar">2.917</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Desvio padrão σ</div><div class="stat-card-value" id="varDiceStd">1.708</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa?</div>
+      <p>Quanto mais "achatada e espalhada" a PMF, maior a variância — mais difícil prever o resultado de um lançamento individual. Quanto mais concentrada em poucos valores, menor a variância — mais previsível. Variância é, literalmente, uma nota para "quão surpreendente" costuma ser o resultado.</p>
+    </div>
+  </section>
+
+  <!-- ============ SIMULAÇÃO / LGN ============ -->
+  <section class="section" id="s-simulacao">
+    <div class="section-eyebrow">Vendo a Teoria Encontrar a Prática</div>
+    <div class="section-title">🔁 Simulação e Lei dos Grandes Números</div>
+    <p class="section-desc">
+      Se <code style="color:var(--accent);">E(X)</code> é a média "teórica" de longo prazo, o que acontece se realmente rolarmos o dado muitas vezes e calcularmos a <strong>média observada</strong> até aquele momento? A <strong>Lei dos Grandes Números</strong> garante que essa média vai se aproximando cada vez mais de E(X), conforme o número de rolagens cresce. Escolha um dado honesto ou viciado e veja isso acontecer ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha o dado, role muitas vezes e observe a linha se aproximar de E(X)</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="simFairBtn" onclick="setSimDie(false)">🎲 Dado honesto</button>
+        <button class="btn-toggle" id="simLoadedBtn" onclick="setSimDie(true)">⚖️ Dado viciado (mais 6)</button>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="player-btn primary" onclick="runDieSim(1)">🎲 Rolar 1 vez</button>
+        <button class="player-btn" onclick="runDieSim(50)">🎲 Rolar 50 vezes</button>
+        <button class="player-btn" onclick="runDieSim(500)">🎲 Rolar 500 vezes</button>
+        <button class="player-btn" onclick="resetDieSim()">⏹ Reiniciar</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="simCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">🟡 Linha amarela tracejada = E(X) teórico. 🔵 Linha ciana = média observada dos lançamentos até cada momento.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Rolagens realizadas</div><div class="stat-card-value" id="simTotalVal">0</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Média observada</div><div class="stat-card-value" id="simMeanVal">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">E(X) teórico</div><div class="stat-card-value" id="simTheoVal">3.500</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Com poucas rolagens, a linha ciana pula bastante. Mas conforme os lançamentos se acumulam, ela vai "grudando" na linha amarela — mesmo que cada rolagem individual continue sendo imprevisível. É a média de <strong>muitas</strong> rolagens que se torna previsível, não o resultado de uma rolagem isolada.</p>
+    </div>
+  </section>
+
+  <!-- ============ GALERIA ============ -->
+  <section class="section" id="s-galeria">
+    <div class="section-eyebrow">Conhecendo a Família</div>
+    <div class="section-title">🖼️ Galeria das Distribuições Discretas Mais Famosas</div>
+    <p class="section-desc">
+      Toda distribuição discreta compartilha a mesma estrutura — PMF, CDF, E(X), Var(X) — mas cada "família" tem um <strong>formato característico</strong>, dependendo de que tipo de pergunta ela responde. Aqui está um mapa rápido das mais usadas no dia a dia; cada uma merece (e tem) sua própria aula completa.
+    </p>
+
+    <div class="grid-5" id="galleryGrid"></div>
+
+    <div class="info-box">
+      <p>💡 Já temos uma aula inteira sobre a <a class="gallery-link" href="../distribuicao bernolli/index.html">Distribuição de Bernoulli</a>, incluindo como ela "vira" Binomial ao somar vários ensaios. As demais distribuições desta galeria seguem exatamente a mesma lógica de PMF/CDF/E(X)/Var(X) que você acabou de aprender aqui.</p>
+    </div>
+  </section>
+
+  <!-- ============ CLASSIFIQUE: É VÁLIDA? ============ -->
+  <section class="section" id="s-classifique">
+    <div class="section-eyebrow">Praticando o Olho Clínico</div>
+    <div class="section-title">✅ Essa tabela é uma distribuição de probabilidade válida?</div>
+    <p class="section-desc">Clique em cada tabela para descobrir se ela obedece às duas regras de ouro da PMF: todos os valores ≥ 0, e a soma exatamente 1.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada card para revelar a resposta</div>
+      <div class="grid-3" id="validityGrid"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Truque rápido: some todas as probabilidades primeiro. Se não der exatamente 1, já pode descartar — nem precisa olhar os valores individuais. Depois, confira se algum valor é negativo ou maior que 1.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela">
+    <div class="section-eyebrow">Tudo Que Você Precisa, num Só Lugar</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todos os conceitos desta aula reunidos, prontos para consulta.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🔤 Variável aleatória discreta</div>
+        <div class="card-formula">X ∈ {x₁, x₂, x₃, ...}</div>
+        <div class="card-text">Assume valores contáveis (finitos ou infinitos), nunca um número qualquer dentro de um intervalo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔍 Discreta vs Contínua</div>
+        <div class="card-formula">Conta (discreta) × Mede (contínua)</div>
+        <div class="card-text">Se "1,5" faz sentido como resposta, é contínua. Se não faz, é discreta.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗺️ Espaço amostral</div>
+        <div class="card-formula">Distribuição = contagem organizada</div>
+        <div class="card-text">A distribuição nasce de contar quantos resultados do espaço amostral caem em cada valor de X.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 PMF</div>
+        <div class="card-formula">P(X=k) ≥ 0 e Σ P(X=k) = 1</div>
+        <div class="card-text">A "tabela de chances" de cada valor possível. As duas regras de ouro nunca são quebradas.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📶 CDF</div>
+        <div class="card-formula">F(x) = P(X ≤ x)</div>
+        <div class="card-text">Escada que nunca diminui, começa em 0 e termina em 1, com saltos do tamanho da PMF.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚖️ Valor Esperado</div>
+        <div class="card-formula">E(X) = Σ k × P(X=k)</div>
+        <div class="card-text">O ponto de equilíbrio da distribuição — a média de longuíssimo prazo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Variância</div>
+        <div class="card-formula">Var(X) = Σ (k−E(X))² × P(X=k)</div>
+        <div class="card-text">O quanto os valores se espalham ao redor da média. σ = √Var(X).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🖼️ Família de distribuições</div>
+        <div class="card-formula">Uniforme, Bernoulli, Binomial, Poisson, Geométrica...</div>
+        <div class="card-text">Cada uma modela um tipo diferente de pergunta "contável", mas todas compartilham PMF/CDF/E(X)/Var(X).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔁 Lei dos Grandes Números</div>
+        <div class="card-formula">média observada → E(X)</div>
+        <div class="card-text">Quanto mais repetições, mais a média observada se aproxima do valor esperado teórico.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">🧭 Boas práticas: como não se confundir</div>
+
+    <div class="decision-flow">
+      <div class="decision-q">Antes de montar qualquer distribuição: os valores possíveis de X dão para contar (0,1,2,3...) ou só dá para medir com régua/relógio?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">✅ Dá para contar</div>
+          <div class="decision-result">➡️ É uma <strong>Variável Discreta</strong> — use PMF, ΣP(X=k)=1</div>
+          <div class="decision-example">Ex.: número de filhos, resultado de um dado, número de defeitos.</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">❌ Só dá para medir</div>
+          <div class="decision-result">➡️ É uma <strong>Variável Contínua</strong> — precisa de densidade de probabilidade (outra aula)</div>
+          <div class="decision-example">Ex.: altura, peso, tempo de espera, temperatura.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">1️⃣ PMF não é a probabilidade "acumulada"</div>
+        <div class="card-text">P(X=k) é a chance de X ser exatamente k. Se quiser "até k" ou "menos que k", use a CDF, não a PMF.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ E(X) é uma média, não uma previsão</div>
+        <div class="card-text">E(X)=3,5 num dado não significa que vai sair 3,5 — significa que essa é a média de infinitos lançamentos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Nem toda soma de números é uma PMF válida</div>
+        <div class="card-text">Sempre confira: todos os valores ≥ 0 e a soma total é exatamente 1. Sem isso, não é uma distribuição de probabilidade.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1: achar que "discreto" significa "poucos valores"</div>
+      <p>Não! Uma variável discreta pode ter <strong>infinitos</strong> valores possíveis (como "número de tentativas até acertar", que pode ser 1, 2, 3... sem limite). O que define "discreto" é ser contável, não ser finito.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2: confundir PMF com CDF</div>
+      <p>PMF é a altura de <strong>uma barra só</strong> (P(X=k)). CDF é a <strong>soma acumulada</strong> de todas as barras até aquele ponto (P(X≤k)). São gráficos visualmente diferentes: barras isoladas versus uma escada.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Toda vez que encontrar uma variável nova, escreva a lista de valores possíveis e as probabilidades de cada um. Se a soma bater em 1 e nada for negativo, você já tem uma distribuição de probabilidade válida em mãos — o resto (E(X), Var(X), gráficos) é só aplicar fórmula.</p>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer style="display:flex;justify-content:space-between;color:var(--text-disabled);font-size:11px;padding-top:10px;border-top:1px solid var(--border-color);">
+    <span>Profissão Dados — Distribuição de Probabilidade Discreta</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function comb(n,k){ if(k<0||k>n) return 0; k=Math.min(k,n-k); let r=1; for(let i=0;i<k;i++) r = r*(n-i)/(i+1); return Math.round(r); }
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function pct(x,d=1){ return (x*100).toFixed(d).replace('.',',')+'%'; }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function binomialPmf(n,k,p){ return comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k); }
+function poissonPmf(lambda,k){ let p=Math.exp(-lambda); for(let i=1;i<=k;i++) p*= lambda/i; return p; }
+function geometricPmf(p,k){ return p*Math.pow(1-p,k-1); }
+
+/* generic bar chart drawer, reused across many sections */
+function drawBars(canvasId, values, opts){
+  opts = Object.assign({labels:null, highlight:-1, color:'rgba(6,182,212,.6)', highlightColor:'#06b6d4',
+    showValues:true, valueFmt:(v)=>pct(v,1), PT:26, PB:24, PL:10, PR:10, maxV:null}, opts||{});
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = opts.maxV || Math.max(...values, 0.0001);
+  const plotW = w-opts.PL-opts.PR, plotH = h-opts.PT-opts.PB;
+  const slot = plotW/n;
+  values.forEach((v,i)=>{
+    const bh = (v/maxV)*plotH;
+    const x = opts.PL + i*slot + slot*0.15;
+    const bw = slot*0.7;
+    const y = opts.PT + plotH - bh;
+    ctx.fillStyle = i===opts.highlight ? opts.highlightColor : opts.color;
+    roundRectPath(ctx,x,y,bw,Math.max(bh,1),3); ctx.fill();
+    if(opts.showValues && bh>12){
+      ctx.fillStyle='#dfe5ef'; ctx.font='bold 9.5px Roboto Mono'; ctx.textAlign='center';
+      ctx.fillText(opts.valueFmt(v), x+bw/2, y-6);
+    }
+    if(opts.labels){
+      ctx.fillStyle='#98a2b3'; ctx.font='10px Inter'; ctx.textAlign='center';
+      ctx.fillText(opts.labels[i], x+bw/2, opts.PT+plotH+16);
+    }
+  });
+  ctx.strokeStyle='rgba(152,162,179,.25)';
+  ctx.beginPath(); ctx.moveTo(opts.PL,opts.PT+plotH); ctx.lineTo(w-opts.PR,opts.PT+plotH); ctx.stroke();
+}
+
+/* dice weight model shared logic (each section keeps its own slider value) */
+function dieProbs(w6){
+  const w=[1,1,1,1,1,w6];
+  const s=w.reduce((a,b)=>a+b,0);
+  return {probs:w.map(x=>x/s), weights:w, sum:s};
+}
+function dieMeanVar(probs){
+  let mean=0; probs.forEach((p,i)=>mean+=p*(i+1));
+  let variance=0; probs.forEach((p,i)=>variance+=p*Math.pow((i+1)-mean,2));
+  return {mean,variance};
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-intro', icon:'🎲', label:'O que é'},
+  {id:'s-var-aleatoria', icon:'🔤', label:'Variável X'},
+  {id:'s-discreta-continua', icon:'🔍', label:'Discreta x Contínua'},
+  {id:'s-espaco-amostral', icon:'🗺️', label:'Espaço Amostral'},
+  {id:'s-pmf', icon:'📊', label:'PMF'},
+  {id:'s-cdf', icon:'📶', label:'CDF'},
+  {id:'s-esperanca', icon:'⚖️', label:'E(X)'},
+  {id:'s-variancia', icon:'📏', label:'Var(X)'},
+  {id:'s-simulacao', icon:'🔁', label:'Simulação / LGN'},
+  {id:'s-galeria', icon:'🖼️', label:'Galeria'},
+  {id:'s-classifique', icon:'✅', label:'É válida?'},
+  {id:'s-tabela', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-dicas', icon:'🧭', label:'Boas Práticas'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== VARIÁVEL ALEATÓRIA ===================== */
+const varAleatoriaItems = [
+  {emoji:'🎲', q:'Jogamos um dado de 6 faces. Qual número saiu?', x:'X = a face sorteada (1 a 6)', why:'Contamos o resultado diretamente — cada face vira um número inteiro.'},
+  {emoji:'🚗', q:'Quantos carros passam por um cruzamento em 1 minuto?', x:'X = contagem de carros (0,1,2,...)', why:'X é uma contagem de eventos que ocorrem num intervalo de tempo.'},
+  {emoji:'👨‍👩‍👧', q:'Quantos filhos tem uma família sorteada aleatoriamente?', x:'X = número de filhos (0,1,2,...)', why:'Mais uma contagem — não existe "1,5 filho" fazendo sentido.'},
+  {emoji:'📞', q:'Quantas ligações um call center recebe em 1 hora?', x:'X = contagem de ligações (0,1,2,...)', why:'X conta ocorrências de um evento ao longo do tempo, sempre em números inteiros.'},
+];
+function buildVarAleatoria(){
+  document.getElementById('varAleatoriaGrid').innerHTML = varAleatoriaItems.map(it => `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div style="font-size:26px;text-align:center;">${it.emoji}</div>
+      <div class="card-text" style="text-align:center;margin-top:6px;font-weight:600;color:var(--text-primary);">${it.q}</div>
+      <div class="classify-answer" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+        <span class="badge badge-cyan" style="display:block;text-align:center;">${it.x}</span>
+        <div class="card-text" style="text-align:center;">${it.why}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===================== DISCRETA VS CONTÍNUA ===================== */
+const discContItems = [
+  {emoji:'👶', label:'Número de filhos de uma família', disc:true, note:'Contagem: 0,1,2,3... Discreta.'},
+  {emoji:'📏', label:'Altura de uma pessoa adulta', disc:false, note:'Medida: pode ser 1,732859... metros. Contínua.'},
+  {emoji:'📧', label:'Número de e-mails recebidos por dia', disc:true, note:'Contagem de eventos. Discreta.'},
+  {emoji:'⏱️', label:'Tempo de espera numa fila do banco', disc:false, note:'Medida de tempo, pode assumir qualquer valor positivo. Contínua.'},
+  {emoji:'✅', label:'Número de acertos em 10 questões', disc:true, note:'Só pode ser 0,1,2,...,10. Discreta.'},
+  {emoji:'⚖️', label:'Peso de um pacote de arroz', disc:false, note:'Medida contínua, mesmo que o rótulo diga "5kg" (o peso real varia). Contínua.'},
+  {emoji:'🚙', label:'Quantidade de carros vendidos no mês', disc:true, note:'Contagem de vendas. Discreta.'},
+  {emoji:'🌡️', label:'Temperatura registrada ao meio-dia', disc:false, note:'Medida, pode ser 28,4137°C. Contínua.'},
+];
+function buildDiscCont(){
+  document.getElementById('discContGrid').innerHTML = discContItems.map(it => `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div style="font-size:26px;text-align:center;">${it.emoji}</div>
+      <div class="card-text" style="text-align:center;margin-top:6px;">${it.label}</div>
+      <div class="classify-answer" style="text-align:center;margin-top:10px;">
+        <span class="badge ${it.disc?'badge-cyan':'badge-purple'}">${it.disc?'🔢 Discreta':'📏 Contínua'}</span>
+        <div class="card-text" style="margin-top:8px;">${it.note}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===================== ESPAÇO AMOSTRAL (dois dados) ===================== */
+let twoDiceCounts = new Array(13).fill(0); // index = sum (2..12)
+let twoDiceTotal = 0;
+function buildDiceGrid(){
+  let html='';
+  for(let d1=1; d1<=6; d1++){
+    for(let d2=1; d2<=6; d2++){
+      html += `<div class="dice-cell" data-d1="${d1}" data-d2="${d2}">${d1+d2}</div>`;
+    }
+  }
+  document.getElementById('diceGrid').innerHTML = html;
+}
+function rollTwoDice(){
+  const d1 = 1+Math.floor(Math.random()*6);
+  const d2 = 1+Math.floor(Math.random()*6);
+  const sum = d1+d2;
+  twoDiceCounts[sum]++;
+  twoDiceTotal++;
+  document.querySelectorAll('.dice-cell').forEach(c=>c.classList.remove('hit'));
+  const cell = document.querySelector(`.dice-cell[data-d1="${d1}"][data-d2="${d2}"]`);
+  if(cell) cell.classList.add('hit');
+  document.getElementById('twoDiceResult').textContent = sum;
+  document.getElementById('twoDiceTotal').textContent = fmt(twoDiceTotal);
+  drawTwoDiceHistogram();
+}
+function resetTwoDice(){
+  twoDiceCounts = new Array(13).fill(0);
+  twoDiceTotal = 0;
+  document.querySelectorAll('.dice-cell').forEach(c=>c.classList.remove('hit'));
+  document.getElementById('twoDiceResult').textContent = '?';
+  document.getElementById('twoDiceTotal').textContent = '0';
+  drawTwoDiceHistogram();
+}
+function drawTwoDiceHistogram(){
+  const values = [];
+  for(let s=2; s<=12; s++) values.push(twoDiceTotal>0 ? twoDiceCounts[s]/twoDiceTotal : (6-Math.abs(7-s))/36);
+  const labels = [];
+  for(let s=2; s<=12; s++) labels.push(s);
+  drawBars('twoDiceCanvas', values, {labels, color:'rgba(196,154,255,.6)', highlightColor:'#c49aff', valueFmt:(v)=>pct(v,0)});
+}
+
+/* ===================== PMF ===================== */
+function renderDiePmf(){
+  const w6 = +document.getElementById('pmfW6').value;
+  document.getElementById('pmfW6Val').textContent = w6.toFixed(1)+'×';
+  const {probs, sum} = dieProbs(w6);
+  document.getElementById('pmfWSum').textContent = sum.toFixed(1);
+  document.getElementById('pmfPSum').textContent = probs.reduce((a,b)=>a+b,0).toFixed(3);
+  document.getElementById('pmfMin').textContent = Math.min(...probs).toFixed(3);
+  drawBars('pmfDiceCanvas', probs, {labels:['1','2','3','4','5','6'], color:'rgba(6,182,212,.55)', highlightColor:'#06b6d4'});
+}
+
+/* ===================== CDF ===================== */
+function renderDieCdf(){
+  const w6 = +document.getElementById('cdfW6').value;
+  const x = +document.getElementById('cdfX').value;
+  document.getElementById('cdfW6Val').textContent = w6.toFixed(1)+'×';
+  document.getElementById('cdfXVal').textContent = x.toFixed(1);
+  const {probs} = dieProbs(w6);
+  const cum = [0];
+  for(let k=1;k<=6;k++) cum.push(cum[k-1]+probs[k-1]);
+  let Fx;
+  if(x<1) Fx=0; else if(x>=6) Fx=1; else { const k=Math.floor(x); Fx=cum[k]; }
+  document.getElementById('cdfResult').textContent = Fx.toFixed(3);
+  drawDieCdfChart(probs,cum,x,Fx);
+}
+function drawDieCdfChart(probs,cum,xVal,Fx){
+  const canvas = document.getElementById('cdfDiceCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=34, PR=14, PT=14, PB=52;
+  const plotH = h-PT-PB, plotW = w-PL-PR;
+  const xMin=0.3, xMax=6.7;
+  function toX(v){ return PL + plotW*(v-xMin)/(xMax-xMin); }
+  function toY(y){ return PT + plotH*(1-y); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  [0,0.25,0.5,0.75,1].forEach(v=>{
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke();
+    ctx.fillText(v.toFixed(2), PL-6, y+3);
+  });
+  const segs = [[xMin,1,0]];
+  for(let k=1;k<=5;k++) segs.push([k,k+1,cum[k]]);
+  segs.push([6,xMax,1]);
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2.4;
+  segs.forEach(([x0,x1,y])=>{
+    ctx.beginPath(); ctx.moveTo(toX(x0),toY(y)); ctx.lineTo(toX(x1),toY(y)); ctx.stroke();
+  });
+  for(let k=1;k<=6;k++){
+    const yBefore = cum[k-1], yAfter = cum[k];
+    ctx.beginPath(); ctx.arc(toX(k), toY(yBefore), 3.5, 0, Math.PI*2);
+    ctx.fillStyle='#111216'; ctx.fill(); ctx.strokeStyle='#06b6d4'; ctx.lineWidth=1.8; ctx.stroke();
+    ctx.beginPath(); ctx.arc(toX(k), toY(yAfter), 3.5, 0, Math.PI*2);
+    ctx.fillStyle='#06b6d4'; ctx.fill();
+  }
+  const rugY = PT+plotH+16, rugMaxH=20;
+  const maxPmf = Math.max(...probs);
+  for(let k=1;k<=6;k++){
+    const bh = (probs[k-1]/maxPmf)*rugMaxH;
+    ctx.fillStyle='rgba(196,154,255,.55)';
+    roundRectPath(ctx, toX(k)-9, rugY+rugMaxH-bh, 18, bh, 2);
+    ctx.fill();
+    ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+    ctx.fillText('k='+k, toX(k), rugY+rugMaxH+14);
+  }
+  const mx = toX(Math.max(xMin,Math.min(xMax,xVal)));
+  ctx.strokeStyle='#e8b339'; ctx.setLineDash([4,3]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mx, toY(0)); ctx.lineTo(mx, toY(Fx)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PL, toY(Fx)); ctx.lineTo(mx, toY(Fx)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(mx, toY(Fx), 5, 0, Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill();
+}
+
+/* ===================== VALOR ESPERADO (balança) ===================== */
+function renderDieExpectation(){
+  const w6 = +document.getElementById('expW6').value;
+  document.getElementById('expW6Val').textContent = w6.toFixed(1)+'×';
+  const {probs} = dieProbs(w6);
+  const {mean} = dieMeanVar(probs);
+  const terms = probs.map((p,i)=>(i+1)+'×'+p.toFixed(2)).join(' + ');
+  document.getElementById('expDiceFormula').innerHTML = `E(X) = ${terms} = <strong style="color:var(--accent);">${mean.toFixed(2)}</strong>`;
+  document.getElementById('expDiceResult').textContent = mean.toFixed(2);
+  drawDieBalance(probs, mean);
+}
+function drawDieBalance(probs, mean){
+  const canvas = document.getElementById('expDiceCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=40, PR=40;
+  function toX(k){ return PL + (w-PL-PR)*((k-1)/5); }
+  const beamY = h*0.44;
+  ctx.strokeStyle='#535966'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(toX(0.85), beamY); ctx.lineTo(toX(6.15), beamY); ctx.stroke();
+  for(let k=1;k<=6;k++){
+    const p = probs[k-1];
+    const r = 8+Math.sqrt(Math.max(p,0.01))*30;
+    const cx = toX(k), cy = beamY-r*0.55;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+    ctx.fillStyle='rgba(6,182,212,.75)'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=2; ctx.stroke();
+    ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center'; ctx.lineJoin='round';
+    ctx.lineWidth=4; ctx.strokeStyle='rgba(238,241,245,.95)';
+    ctx.strokeText(''+k, cx, cy+4);
+    ctx.fillStyle='#111216'; ctx.fillText(''+k, cx, cy+4);
+  }
+  const fx = toX(mean);
+  const fy = beamY+12;
+  ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(fx-10,fy+16); ctx.lineTo(fx+10,fy+16); ctx.closePath();
+  ctx.fillStyle='#e8b339'; ctx.fill();
+  ctx.fillStyle='#e8b339'; ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('E(X) = '+mean.toFixed(2), fx, fy+32);
+}
+
+/* ===================== VARIÂNCIA ===================== */
+function renderDieVariance(){
+  const w6 = +document.getElementById('varW6').value;
+  document.getElementById('varW6Val').textContent = w6.toFixed(1)+'×';
+  const {probs} = dieProbs(w6);
+  const {mean, variance} = dieMeanVar(probs);
+  document.getElementById('varDiceMean').textContent = mean.toFixed(3);
+  document.getElementById('varDiceVar').textContent = variance.toFixed(3);
+  document.getElementById('varDiceStd').textContent = Math.sqrt(variance).toFixed(3);
+  const contributions = probs.map((p,i)=> p*Math.pow((i+1)-mean,2));
+  drawBars('varDiceCanvas', contributions, {labels:['1','2','3','4','5','6'], color:'rgba(196,154,255,.55)', highlightColor:'#c49aff', valueFmt:(v)=>v.toFixed(3)});
+}
+
+/* ===================== SIMULAÇÃO / LGN ===================== */
+let simLoaded = false;
+let simHistory = [];
+let simSum = 0, simTotal = 0;
+function setSimDie(loaded){
+  simLoaded = loaded;
+  document.getElementById('simFairBtn').classList.toggle('active', !loaded);
+  document.getElementById('simLoadedBtn').classList.toggle('active', loaded);
+  resetDieSim();
+}
+function runDieSim(times){
+  const w6 = simLoaded ? 4 : 1;
+  const {probs} = dieProbs(w6);
+  const cum=[]; let acc=0; probs.forEach(p=>{acc+=p; cum.push(acc);});
+  for(let i=0;i<times;i++){
+    const r = Math.random();
+    let k=1; for(;k<=6;k++){ if(r<=cum[k-1]) break; }
+    simTotal++; simSum += k;
+    simHistory.push(simSum/simTotal);
+  }
+  renderDieSim();
+}
+function resetDieSim(){
+  simSum=0; simTotal=0; simHistory=[];
+  renderDieSim();
+}
+function renderDieSim(){
+  const w6 = simLoaded ? 4 : 1;
+  const {probs} = dieProbs(w6);
+  const {mean} = dieMeanVar(probs);
+  document.getElementById('simTotalVal').textContent = fmt(simTotal);
+  document.getElementById('simMeanVal').textContent = simTotal>0 ? (simSum/simTotal).toFixed(3) : '—';
+  document.getElementById('simTheoVal').textContent = mean.toFixed(3);
+  drawSimChart(mean);
+}
+function drawSimChart(mean){
+  const canvas = document.getElementById('simCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=36, PR=14, PT=14, PB=26;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  function toY(v){ return PT + plotH*(1-(v-1)/5); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  [1,2,3,4,5,6].forEach(v=>{
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke();
+    ctx.fillText(v.toFixed(0), PL-6, y+3);
+  });
+  ctx.setLineDash([4,3]); ctx.strokeStyle='#e8b339'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(PL,toY(mean)); ctx.lineTo(w-PR,toY(mean)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#e8b339'; ctx.font='bold 10px Roboto Mono'; ctx.textAlign='left';
+  ctx.fillText('E(X) = '+mean.toFixed(2), w-PR-80, toY(mean)-6);
+  if(simHistory.length===0){
+    ctx.fillStyle='#515761'; ctx.font='12px Inter'; ctx.textAlign='center';
+    ctx.fillText('Clique em "Rolar" para começar a simulação', w/2, h/2);
+    return;
+  }
+  const n = simHistory.length;
+  function toX(i){ return PL + plotW*(n<=1 ? 1 : i/(n-1)); }
+  ctx.beginPath();
+  simHistory.forEach((v,i)=>{
+    const px = toX(i), py = toY(v);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  });
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2; ctx.stroke();
+  const lastY = toY(simHistory[n-1]);
+  ctx.beginPath(); ctx.arc(toX(n-1), lastY, 4, 0, Math.PI*2);
+  ctx.fillStyle='#06b6d4'; ctx.fill();
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('n='+fmt(n), PL+10, h-8);
+}
+
+/* ===================== GALERIA ===================== */
+const galleryItems = [
+  {id:'galUniform', title:'🔢 Uniforme Discreta', formula:'P(X=k) = 1/n', text:'Todos os valores têm exatamente a mesma chance. Exemplo clássico: o dado honesto.', values:(()=>{const n=6; return Array(n).fill(1/n);})(), labels:['1','2','3','4','5','6']},
+  {id:'galBernoulli', title:'0️⃣1️⃣ Bernoulli', formula:'P(X=1)=p, P(X=0)=1−p', text:'Só dois resultados: sucesso ou fracasso. A peça mais simples de toda a estatística.', values:[0.65,0.35], labels:['0','1'], link:'../distribuicao bernolli/index.html'},
+  {id:'galBinomial', title:'🧱 Binomial', formula:'n ensaios de Bernoulli somados', text:'Conta quantos sucessos aparecem em n tentativas independentes, cada uma com chance p.', values:(()=>{const n=10,p=0.35,v=[]; for(let k=0;k<=n;k++) v.push(binomialPmf(n,k,p)); return v;})(), labels:null},
+  {id:'galPoisson', title:'🌟 Poisson', formula:'P(X=k) = e^-λ λᵏ/k!', text:'Conta eventos raros num intervalo fixo de tempo ou espaço, como ligações por hora.', values:(()=>{const lambda=3,v=[]; for(let k=0;k<=10;k++) v.push(poissonPmf(lambda,k)); return v;})(), labels:null},
+  {id:'galGeometric', title:'⏳ Geométrica', formula:'P(X=k) = p(1−p)ᵏ⁻¹', text:'Conta quantas tentativas até o primeiro sucesso — sempre decrescente.', values:(()=>{const p=0.35,v=[]; for(let k=1;k<=10;k++) v.push(geometricPmf(p,k)); return v;})(), labels:null},
+];
+function buildGallery(){
+  document.getElementById('galleryGrid').innerHTML = galleryItems.map(it => `
+    <div class="gallery-card">
+      <div class="gallery-title">${it.title}</div>
+      <div class="canvas-wrap"><canvas id="${it.id}" height="90"></canvas></div>
+      <div class="gallery-formula">${it.formula}</div>
+      <div class="gallery-text">${it.text}</div>
+      ${it.link ? `<a class="gallery-link" href="${it.link}">Ver aula completa →</a>` : ''}
+    </div>`).join('');
+  galleryItems.forEach(it => drawBars(it.id, it.values, {labels:it.labels, color:'rgba(6,182,212,.55)', highlightColor:'#06b6d4', showValues:false, PT:10, PB: it.labels ? 18 : 6}));
+}
+
+/* ===================== CLASSIFIQUE: PMF VÁLIDA? ===================== */
+const validityItems = [
+  {rows:[[1,0.20],[2,0.30],[3,0.50]], valid:true, note:'Todos os valores são ≥ 0 e a soma dá 0,20+0,30+0,50 = 1,00. É uma PMF válida.'},
+  {rows:[[1,0.50],[2,0.60]], valid:false, note:'A soma dá 0,50+0,60 = 1,10 — passou de 1! Não é uma PMF válida.'},
+  {rows:[[1,0.30],[2,-0.10],[3,0.80]], valid:false, note:'Existe um valor negativo (−0,10). Probabilidade nunca pode ser negativa. Não é válida.'},
+  {rows:[[1,0.25],[2,0.25],[3,0.25],[4,0.25]], valid:true, note:'Soma = 1,00 e todos os valores ≥ 0. É uma distribuição uniforme válida (4 valores igualmente prováveis).'},
+  {rows:[[0,0.10],[1,0.20],[2,0.30]], valid:false, note:'A soma dá apenas 0,10+0,20+0,30 = 0,60 — falta 0,40 para completar 1. Não é válida (a menos que faltem valores na tabela).'},
+  {rows:[[1,1.00]], valid:true, note:'Um único valor possível com 100% de chance. Soma = 1,00 e não há negativos. É uma PMF válida (variável degenerada/constante).'},
+];
+function buildValidity(){
+  document.getElementById('validityGrid').innerHTML = validityItems.map((it,i)=>{
+    const rowsHtml = it.rows.map(([k,p])=>`<tr><td>${k}</td><td>${p.toFixed(2)}</td></tr>`).join('');
+    const sum = it.rows.reduce((a,[,p])=>a+p,0);
+    return `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div class="card-title" style="justify-content:center;">Tabela ${i+1}</div>
+      <table class="mini-table"><thead><tr><th>k</th><th>P(X=k)</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+      <div class="classify-answer" style="text-align:center;margin-top:10px;">
+        <span class="badge ${it.valid?'badge-green':'badge-blue'}">${it.valid?'✅ PMF válida':'❌ Não é uma PMF'}</span>
+        <div class="card-text" style="margin-top:8px;">Soma calculada: <strong>${sum.toFixed(2)}</strong>. ${it.note}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Uma urna tem 3 bolas vermelhas e 2 azuis. Sorteando 1 bola e definindo X=1 se for vermelha e X=0 se for azul, monte a PMF de X.',
+   a:'P(X=1) = 3/5 = 0,60 e P(X=0) = 2/5 = 0,40. Confira: 0,60+0,40 = <strong>1,00</strong>, e nenhum valor é negativo — PMF válida.'},
+  {q:'Um dado honesto de 6 faces é lançado. Qual é E(X) e Var(X)?',
+   a:'<strong>E(X) = (1+2+3+4+5+6)/6 = 3,5</strong>. <strong>Var(X) = Σ(k−3,5)²×(1/6) ≈ 2,917</strong>, então σ ≈ 1,708.'},
+  {q:'Se P(X=1)=0,2, P(X=2)=0,3 e P(X=3)=p, e sabemos que a distribuição é válida, quanto vale p?',
+   a:'Como a soma tem que dar 1: 0,2+0,3+p=1, logo <strong>p = 0,5</strong>.'},
+  {q:'Numa loja, o número de clientes que compram por hora segue uma distribuição com E(X)=8. Isso significa que sempre entram exatamente 8 clientes por hora?',
+   a:'Não! <strong>E(X)=8</strong> é a média de longuíssimo prazo. Em horas específicas pode entrar 5, 10 ou 12 clientes — E(X) é só o "centro de gravidade" da distribuição, não uma previsão pontual.'},
+  {q:'Qual é a chance de um dado honesto mostrar um valor menor ou igual a 4? Use a CDF.',
+   a:'F(4) = P(X≤4) = P(X=1)+P(X=2)+P(X=3)+P(X=4) = 4×(1/6) = <strong>4/6 ≈ 0,667 (66,7%)</strong>.'},
+  {q:'Por que a soma de dois dados tem mais chance de dar 7 do que de dar 2?',
+   a:'Porque existem <strong>6 combinações</strong> do espaço amostral que somam 7 (1+6, 2+5, 3+4, 4+3, 5+2, 6+1), mas só <strong>1 combinação</strong> que soma 2 (1+1). Mais combinações no espaço amostral = mais probabilidade naquele valor de X.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Uma variável aleatória discreta só pode assumir valores contáveis, como 0, 1, 2, 3...', a:true,
+   explain:'Essa é a própria definição de variável discreta — mesmo que a lista de valores possíveis seja infinita, cada valor é contável.'},
+  {q:'Toda variável discreta tem, no máximo, poucos valores possíveis.', a:false,
+   explain:'Uma variável discreta pode ter infinitos valores possíveis (ex.: "número de tentativas até acertar"). O que importa é ser contável, não ser finita.'},
+  {q:'A soma de todas as probabilidades numa PMF sempre dá exatamente 1.', a:true,
+   explain:'Essa é uma das duas regras de ouro da PMF: Σ P(X=k) = 1, sempre — porque algum valor possível tem que acontecer.'},
+  {q:'A CDF de uma variável discreta é sempre uma curva suave, sem degraus.', a:false,
+   explain:'Pelo contrário: a CDF de uma variável discreta é sempre uma escada, com saltos exatamente do tamanho da PMF em cada valor possível.'},
+  {q:'O valor esperado E(X) precisa ser um dos valores que X realmente pode assumir.', a:false,
+   explain:'Não precisa! Num dado honesto, E(X)=3,5, mas o dado nunca mostra a face 3,5. E(X) é uma média de longo prazo, não um resultado possível.'},
+  {q:'A variância mede o quanto os valores de X se espalham ao redor da média.', a:true,
+   explain:'Exatamente: Var(X) = Σ(k−E(X))²×P(X=k) — quanto maior o espalhamento, maior a variância.'},
+  {q:'Bernoulli, Binomial, Poisson e Geométrica são todas exemplos de distribuições discretas.', a:true,
+   explain:'Sim! Todas modelam variáveis contáveis, cada uma para um tipo diferente de pergunta (sucesso/fracasso, contagem de sucessos, eventos raros, tentativas até o primeiro sucesso).'},
+  {q:'Se uma tabela de probabilidades tem um valor negativo, ela ainda pode ser uma PMF válida, desde que a soma dê 1.', a:false,
+   explain:'Não! As duas regras de ouro são obrigatórias juntas: todo valor ≥ 0 E soma = 1. Um único valor negativo já invalida a distribuição.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+buildVarAleatoria();
+buildDiscCont();
+buildDiceGrid();
+resetTwoDice();
+renderDiePmf();
+renderDieCdf();
+renderDieExpectation();
+renderDieVariance();
+resetDieSim();
+buildGallery();
+buildValidity();
+buildProblems();
+buildQuiz();
+window.addEventListener('resize', ()=>{
+  drawTwoDiceHistogram();
+  renderDiePmf();
+  renderDieCdf();
+  renderDieExpectation();
+  renderDieVariance();
+  drawSimChart(dieMeanVar(dieProbs(simLoaded?4:1).probs).mean);
+  buildGallery();
+});
+</script>
+</body>
+</html>

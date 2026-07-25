@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Distribuição de Poisson explicada do zero, como se fosse para uma criança, com linhas do tempo, call centers, padarias e muitos gráficos e simulações interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Distribuição de Poisson Explicada com Desenhos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+.hero-map-grid{display:flex;flex-direction:column;gap:10px;width:300px;}
+.hero-map-card{display:flex;align-items:center;gap:10px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.hero-map-exp{flex:1;font-size:20px;text-align:center;line-height:1.35;}
+.hero-map-exp span{display:block;font-size:10px;color:var(--text-secondary);font-family:'Inter',sans-serif;margin-top:2px;}
+.hero-map-arrow{font-size:15px;color:var(--text-disabled);flex-shrink:0;}
+.hero-map-x{font-family:'Roboto Mono',monospace;font-weight:800;color:var(--accent);font-size:12.5px;min-width:96px;text-align:center;flex-shrink:0;line-height:1.3;}
+
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn:disabled{opacity:.35;cursor:not-allowed;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.arranjo{border-color:var(--accent-blue);}
+.decision-branch.combinacao{border-color:var(--accent-purple);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+.classify-card{cursor:pointer;transition:.15s;}
+.classify-card:hover{border-color:var(--border-strong);}
+.classify-answer{display:none;}
+.classify-card.revealed .classify-answer{display:block;}
+.classify-card.revealed{border-color:var(--accent);}
+
+.cond-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.cond-num{font-size:32px;font-weight:800;color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;margin-bottom:6px;}
+
+.mini-chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.mini-chart-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:10px;}
+.mini-chart-title{font-size:11px;text-align:center;color:var(--text-secondary);margin-bottom:6px;font-weight:700;}
+.mini-chart-title strong{color:var(--text-primary);}
+
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.cond-grid,.mini-chart-grid{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Distribuição de Poisson</h1><span>Contando eventos raros que pipocam no tempo (ou no espaço)</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">16</div><div class="hstat-label">Conceitos</div></div>
+      <div class="hstat"><div class="hstat-num">λ</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">11</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~60min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: de eventos raros pipocando no tempo até contar quantos aconteceram</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Conte eventos raros num intervalo — isso é a <em>Distribuição de Poisson</em></h2>
+      <p>Imagine que você quer saber quantos e-mails chegam na sua caixa em 1 hora, quantas ligações um call center recebe em 1 hora, ou quantos carros passam num pedágio em 1 minuto. Esses eventos acontecem de forma aleatória, um de cada vez, numa <strong>taxa média conhecida</strong> — mas você nunca sabe exatamente quantos vão ocorrer até contar. O número de eventos que caem dentro de um intervalo fixo (de tempo, espaço, área ou volume) é uma <strong>variável aleatória de Poisson</strong>. Diferente da Binomial, aqui <strong>não existe um número fixo de tentativas</strong> — os eventos simplesmente vão pipocando ao longo do intervalo, cada um independente dos outros, numa taxa média constante chamada <code>λ</code> (lambda). Nesta aula vamos construir essa ideia do zero, com muitos desenhos, simulações e gráficos.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">λ taxa média</span>
+        <span class="badge badge-blue">X = nº de eventos</span>
+        <span class="badge badge-purple">E(X) = Var(X) = λ</span>
+        <span class="badge badge-green">sem número fixo de tentativas</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-map-grid">
+        <div class="hero-map-card">
+          <div class="hero-map-exp">📞<span>Ligações num call center por hora</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Poisson(λ=12)</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🌠<span>Estrelas cadentes vistas em 1 hora</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Poisson(λ=6)</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🚗<span>Carros passando num pedágio por minuto</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Poisson(λ=3)</div>
+        </div>
+      </div>
+      <div class="hero-visual-caption">Cada situação é "eventos raros pipocando no tempo" — só muda a taxa média λ e a unidade do intervalo.</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🎲 O que é a Distribuição de Poisson?</div>
+    <p class="section-desc">
+      Pense numa linha do tempo representando <strong>1 hora</strong>. Eventos (e-mails, ligações, clientes chegando) vão surgindo em momentos aleatórios ao longo dessa hora, um de cada vez, sem combinar horário nem ordem entre si. A taxa média — quantos eventos costumam acontecer nesse intervalo — chamamos de <code style="color:var(--accent);">λ</code> (lambda). O número total de eventos que caem dentro da hora é a nossa <strong>variável Poisson</strong>, e escrevemos <code>X ~ Poisson(λ)</code>. Ajuste λ abaixo e sorteie uma hora para ver os eventos pipocando na linha do tempo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste a taxa média λ, depois sorteie uma hora inteira</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 Taxa média de eventos por hora (λ)</span><span class="ctrl-v" id="oqueLambdaVal">6</span></div>
+          <input type="range" id="oqueLambda" min="1" max="20" step="1" value="6" oninput="oqueLambdaChanged()">
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-bottom:12px;">
+        <button class="player-btn primary" onclick="oqueSortear()">🎲 Sortear uma hora</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="oqueCanvas" height="120"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Cada bolinha ciana é um evento surgindo em algum minuto aleatório da hora. Repare que às vezes eles ficam mais "grudados" (aparecem mais escuros de tão sobrepostos) e às vezes bem espaçados — isso é normal!</div>
+      <div class="result-display">
+        <div><span class="rl">X = nº de eventos na hora</span><span class="rv" id="oqueResult">Clique em sortear</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>A Poisson não exige um número fixo de "tentativas" como a Binomial. Ela conta quantos eventos raros e independentes surgem dentro de um intervalo — de tempo, espaço, área ou volume — numa taxa média conhecida <code>λ</code>. Clique várias vezes em "sortear": o valor de X muda a cada hora, mesmo com a mesma taxa média λ!</p>
+    </div>
+  </section>
+
+  <!-- ============ CONDIÇÕES ============ -->
+  <section class="section" id="s-condicoes">
+    <div class="section-eyebrow">O Teste Antes de Usar a Fórmula</div>
+    <div class="section-title">✅ As 4 condições de um Processo de Poisson</div>
+    <p class="section-desc">
+      Nem toda contagem de eventos é uma Poisson! Para garantir que você pode usar a fórmula, confira estas <strong>4 condições</strong>.
+    </p>
+
+    <div class="cond-grid">
+      <div class="card">
+        <div class="cond-num">1</div>
+        <div class="card-title" style="justify-content:center;">Independência</div>
+        <div class="card-text" style="text-align:center;">Um evento acontecer <strong>não muda</strong> a chance de outro acontecer. Um e-mail chegando não "avisa" o próximo.</div>
+      </div>
+      <div class="card">
+        <div class="cond-num">2</div>
+        <div class="card-title" style="justify-content:center;">Taxa constante</div>
+        <div class="card-text" style="text-align:center;">A taxa média <code>λ</code> é a <strong>mesma</strong> ao longo de todo o intervalo — não muda de um minuto para o outro.</div>
+      </div>
+      <div class="card">
+        <div class="cond-num">3</div>
+        <div class="card-title" style="justify-content:center;">Sem simultâneos</div>
+        <div class="card-text" style="text-align:center;">Num instante bem pequeno, no máximo <strong>1 evento</strong> pode ocorrer. Dois eventos não acontecem exatamente ao mesmo tempo.</div>
+      </div>
+      <div class="card">
+        <div class="cond-num">4</div>
+        <div class="card-title" style="justify-content:center;">Intervalo definido</div>
+        <div class="card-text" style="text-align:center;">Precisamos de um intervalo claro — "por hora", "por página", "por km" — para contar os eventos dentro dele.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Se existir um <strong>número fixo n</strong> de tentativas conhecido de antemão (como "20 pacientes" ou "10 arremessos"), o modelo correto provavelmente é a <strong>Binomial</strong>, não a Poisson. Vamos ver mais exemplos na seção "É ou não é Poisson?".</p>
+    </div>
+  </section>
+
+  <!-- ============ PARÂMETRO λ ============ -->
+  <section class="section" id="s-parametro">
+    <div class="section-eyebrow">O Único Número Que Define Tudo</div>
+    <div class="section-title">🎚️ O parâmetro λ (lambda)</div>
+    <p class="section-desc">
+      Diferente da Binomial, que precisa de dois números (n e p), a Poisson precisa de <strong>um único número</strong>: <code style="color:var(--accent);">λ</code>, a taxa média de eventos no intervalo. É esse único número que decide tanto o centro quanto o formato da distribuição inteira. Arraste o controle e veja o "esqueleto" da distribuição mudar.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste λ e veja como ele molda a distribuição</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 λ — taxa média de eventos</span><span class="ctrl-v" id="paramLambdaVal">8</span></div>
+          <input type="range" id="paramLambda" min="1" max="25" step="1" value="8" oninput="renderParametro()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="paramCanvas" height="150"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Valor esperado E(X) = λ</div><div class="stat-card-value" id="paramMeanVal">8.00</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Moda (valor mais provável)</div><div class="stat-card-value" id="paramModeVal">8</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Gráfico truncado em k=</div><div class="stat-card-value" id="paramMaxKVal">30</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Diferente da Binomial, aqui <strong>não existe um valor máximo</strong> para X — ele poderia, em teoria, ser qualquer número inteiro de 0 até infinito (só que valores muito distantes de λ ficam extremamente improváveis). Por isso truncamos o gráfico num k razoável só para caber na tela.</p>
+    </div>
+  </section>
+
+  <!-- ============ PMF ============ -->
+  <section class="section" id="s-pmf">
+    <div class="section-eyebrow">O Retrato Completo da Poisson</div>
+    <div class="section-title">📊 Distribuição de Probabilidade (PMF)</div>
+    <p class="section-desc">
+      A chance de observar <strong>exatamente k eventos</strong> é dada por <code style="color:var(--accent);">P(X=k) = (λᵏ × e⁻λ) / k!</code>. Em palavras: <strong>(λ elevado a k)</strong> vezes <strong>(o número e elevado a −λ)</strong>, dividido por <strong>(k fatorial)</strong>. Arraste os controles e veja cada barrinha do gráfico — e sua fórmula por trás — mudar ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste λ e destaque um valor de k para ver a fórmula em ação</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 λ — taxa média</span><span class="ctrl-v" id="pmfLambdaVal">8</span></div>
+          <input type="range" id="pmfLambda" min="1" max="25" step="1" value="8" oninput="pmfLambdaChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✅ k — destacar</span><span class="ctrl-v" id="pmfKVal">4</span></div>
+          <input type="range" id="pmfK" min="0" max="26" step="1" value="4" oninput="renderPmf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="pmfCanvas" height="220"></canvas></div>
+      <div class="card-formula" id="pmfFormulaBreak"></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">P(X=k)</div><div class="stat-card-value" id="pmfKResult">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Valor mais provável (moda)</div><div class="stat-card-value" id="pmfModeResult">8</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A regra de ouro da PMF</div>
+      <p>Se somarmos <strong>todas</strong> as barrinhas, de k=0 até infinito, o resultado é <strong>sempre exatamente 1</strong> — não importa o λ escolhido. Alguma quantidade de eventos, de 0 pra cima, sempre acontece (mesmo que seja zero)!</p>
+    </div>
+  </section>
+
+  <!-- ============ CDF ============ -->
+  <section class="section" id="s-cdf">
+    <div class="section-eyebrow">Somando a Probabilidade Aos Poucos</div>
+    <div class="section-title">📶 Função Acumulada (CDF)</div>
+    <p class="section-desc">
+      A <strong>função acumulada</strong> <code style="color:var(--accent);">F(k) = P(X ≤ k)</code> responde "qual a chance de X ser <em>até</em> esse valor?". Basta somar todas as barrinhas da PMF de 0 até k. As barras cianas fortes abaixo são a região somada; as barras apagadas ficam de fora.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste λ e k para ver F(k) = P(X ≤ k)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 λ — taxa média</span><span class="ctrl-v" id="cdfLambdaVal">8</span></div>
+          <input type="range" id="cdfLambda" min="1" max="25" step="1" value="8" oninput="cdfLambdaChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>k — até quantos eventos</span><span class="ctrl-v" id="cdfKVal">10</span></div>
+          <input type="range" id="cdfK" min="0" max="26" step="1" value="10" oninput="renderCdf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="cdfCanvas" height="220"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-green"><div class="stat-card-label">F(k) = P(X≤k)</div><div class="stat-card-value" id="cdfLeResult">—</div></div>
+        <div class="stat-card c-red"><div class="stat-card-label">P(X&gt;k) = 1−F(k)</div><div class="stat-card-value" id="cdfGtResult">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">P(X=k)</div><div class="stat-card-value" id="cdfEqResult">—</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>A função acumulada <strong>nunca diminui</strong> e, conforme k cresce, se aproxima cada vez mais de 1 — mas, tecnicamente, só chega exatamente em 1 quando k vai até o infinito.</p>
+    </div>
+  </section>
+
+  <!-- ============ ESPERANÇA ============ -->
+  <section class="section" id="s-esperanca">
+    <div class="section-eyebrow">O "Centro de Gravidade" da Poisson</div>
+    <div class="section-title">⚖️ Valor Esperado E(X) = λ</div>
+    <p class="section-desc">
+      Aqui está uma das coisas mais bonitas da Poisson: o valor esperado é <strong>o próprio parâmetro</strong>: <code style="color:var(--accent);">E(X) = λ</code>. Se a taxa média de e-mails é 8 por hora, então, em média, você recebe exatamente 8 por hora — sem cálculo nenhum!
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste λ e veja a linha tracejada marcar E(X) = λ sobre a distribuição</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 λ — taxa média</span><span class="ctrl-v" id="expLambdaVal">10</span></div>
+          <input type="range" id="expLambda" min="1" max="25" step="1" value="10" oninput="renderEsperanca()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="expCanvas" height="200"></canvas></div>
+      <div class="card-formula" id="expFormula"></div>
+      <div class="result-display">
+        <div><span class="rl">E(X) = λ</span><span class="rv" id="expResult">10.00</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Cuidado: λ deve combinar com o intervalo da pergunta!</div>
+      <p>Se a taxa é 8 e-mails por hora, e a pergunta é sobre 3 horas, o λ certo para usar é <code>8×3=24</code>, não 8! O parâmetro λ é sempre "por unidade do intervalo original" — ajuste-o antes de calcular qualquer coisa.</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIÂNCIA ============ -->
+  <section class="section" id="s-variancia">
+    <div class="section-eyebrow">O Quão Imprevisível é a Contagem de Eventos</div>
+    <div class="section-title">📏 Variância Var(X) = λ</div>
+    <p class="section-desc">
+      Aqui vem a segunda coisa bonita da Poisson: a variância é <strong>exatamente igual</strong> à esperança: <code style="color:var(--accent);">Var(X) = λ</code>. Isso significa que <code>E(X)</code> e <code>Var(X)</code> são sempre <strong>a mesma reta</strong> quando desenhadas contra λ — um fato exclusivo da Poisson (na Binomial, por exemplo, a variância é sempre menor que a esperança).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste λ e veja o marcador se mover sobre a reta E(X)=Var(X)=λ</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 λ — taxa média</span><span class="ctrl-v" id="varLambdaVal">9</span></div>
+          <input type="range" id="varLambda" min="1" max="20" step="1" value="9" oninput="renderVariancia()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="varCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">🔵 A reta azul mostra E(X) e Var(X) ao mesmo tempo — elas são idênticas para qualquer λ!</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Var(X) = λ</div><div class="stat-card-value" id="varResult">9.00</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Desvio padrão σ = √λ</div><div class="stat-card-value" id="varSdResult">3.000</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">E(X) (para comparar)</div><div class="stat-card-value" id="varMeanCompare">9.00</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa?</div>
+      <p>Essa igualdade é tão característica da Poisson que, na prática, é usada como um <strong>teste de adequação</strong>: se você mede a média e a variância de uma contagem real e elas são bem diferentes uma da outra, isso é um sinal de que a Poisson pode não ser o modelo certo.</p>
+    </div>
+  </section>
+
+  <!-- ============ FORMA ============ -->
+  <section class="section" id="s-forma">
+    <div class="section-eyebrow">Nem Toda Poisson Parece Igual</div>
+    <div class="section-title">📐 A forma muda: de bem assimétrica a quase simétrica</div>
+    <p class="section-desc">
+      Quando <code>λ</code> é pequeno, a distribuição fica bem "torta", concentrada perto de 0 e com uma cauda longa para a direita. Conforme <code>λ</code> cresce, a distribuição fica cada vez mais <strong>parecida com um sino simétrico</strong>. Compare os três casos lado a lado.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Compare três valores fixos de λ</div>
+      <div class="mini-chart-grid">
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">λ=1 — <strong>bem assimétrica</strong></div>
+          <canvas id="formaCanvasLow" height="130"></canvas>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">λ=6 — <strong>moderadamente assimétrica</strong></div>
+          <canvas id="formaCanvasMid" height="130"></canvas>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">λ=20 — <strong>quase simétrica</strong></div>
+          <canvas id="formaCanvasHigh" height="130"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Isso acontece porque o desvio padrão relativo (σ/λ = 1/√λ) diminui conforme λ cresce — os valores ficam relativamente mais "concentrados" perto da média, mesmo que em números absolutos o espalhamento (σ=√λ) aumente.</p>
+    </div>
+  </section>
+
+  <!-- ============ POISSON VEM DA BINOMIAL ============ -->
+  <section class="section" id="s-binomial-limite">
+    <div class="section-eyebrow">De Onde a Poisson Realmente Vem</div>
+    <div class="section-title">🌉 Poisson como limite da Binomial</div>
+    <p class="section-desc">
+      A Poisson não caiu do céu: ela é o que acontece com a Binomial quando você faz o número de tentativas <code style="color:var(--accent-blue);">n</code> crescer <strong>muito</strong>, ao mesmo tempo que a chance de sucesso <code style="color:var(--accent-blue);">p</code> em cada tentativa fica <strong>muito pequena</strong> — mas mantendo o produto <code>n×p=λ</code> constante. Pense em dividir 1 hora em milhões de instantes minúsculos, cada um com uma chance minúscula de conter um e-mail. Ajuste λ e troque o n para ver as barras (Binomial) grudarem cada vez mais na linha amarela (Poisson).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste λ e escolha n — quanto maior o n, mais a Binomial(n, λ/n) se parece com Poisson(λ)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 λ — taxa média alvo</span><span class="ctrl-v" id="limiteLambdaVal">4</span></div>
+          <input type="range" id="limiteLambda" min="1" max="8" step="1" value="4" oninput="renderLimite()">
+        </div>
+      </div>
+      <div class="panel-label" style="margin-top:6px;">Número de tentativas n (a Binomial é dividida em n pedacinhos)</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle limite-n-btn" data-n="10" onclick="limiteSetN(10)">n=10</button>
+        <button class="btn-toggle limite-n-btn active" data-n="30" onclick="limiteSetN(30)">n=30</button>
+        <button class="btn-toggle limite-n-btn" data-n="100" onclick="limiteSetN(100)">n=100</button>
+        <button class="btn-toggle limite-n-btn" data-n="1000" onclick="limiteSetN(1000)">n=1.000</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="limiteCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">🔵 Barras cianas = Binomial(n, p=λ/n). 🟡 Linha amarela = Poisson(λ) teórica exata.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">p = λ/n</div><div class="stat-card-value" id="limitePVal">0.1333</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">n (tentativas)</div><div class="stat-card-value" id="limiteNVal">30</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Maior diferença Binomial−Poisson</div><div class="stat-card-value" id="limiteDiffVal">0.00000</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Com n=10, as barras cianas ainda destoam visivelmente da linha amarela. Suba para n=1.000 e observe a "maior diferença" cair para perto de zero — a Binomial e a Poisson praticamente se tornam a mesma curva.</p>
+    </div>
+  </section>
+
+  <!-- ============ SIMULAÇÃO ============ -->
+  <section class="section" id="s-simulacao">
+    <div class="section-eyebrow">Vendo a Teoria Encontrar a Prática</div>
+    <div class="section-title">🔁 Simulação: da hora sorteada ao histograma</div>
+    <p class="section-desc">
+      Cada vez que você "sorteia uma hora" (como na primeira seção) e conta os eventos, obtém <strong>um único número</strong> — uma amostra de X. Se você repetir isso muitas vezes e desenhar um histograma dos resultados, ele vai se parecer cada vez mais com a PMF teórica. Vamos ver isso ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste λ, rode várias horas simuladas e observe o histograma se aproximar da curva teórica</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 λ — taxa média por hora</span><span class="ctrl-v" id="simLambdaVal">8</span></div>
+          <input type="range" id="simLambda" min="1" max="25" step="1" value="8" oninput="simReset()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="player-btn primary" onclick="simRun(1)">🎲 Rodar 1 hora</button>
+        <button class="player-btn" onclick="simRun(100)">🎲 Rodar 100 horas</button>
+        <button class="player-btn" onclick="simRun(1000)">🎲 Rodar 1.000 horas</button>
+        <button class="player-btn" onclick="simReset()">⏹ Reiniciar</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="simCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">🟢 Barras verdes = frequência observada nas horas simuladas. 🟡 Linha amarela = PMF teórica exata.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Horas simuladas</div><div class="stat-card-value" id="simRunsVal">0</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Média observada</div><div class="stat-card-value" id="simEmpMean">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Média teórica λ</div><div class="stat-card-value" id="simTheoMean">8.00</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Com poucas horas simuladas, o histograma verde fica "esburacado" e irregular. Conforme as horas se acumulam, ele vai grudando na curva amarela teórica — a Lei dos Grandes Números em ação, agora para a distribuição inteira.</p>
+    </div>
+  </section>
+
+  <!-- ============ APROXIMAÇÃO NORMAL ============ -->
+  <section class="section" id="s-normal">
+    <div class="section-eyebrow">Quando λ Fica Grande</div>
+    <div class="section-title">🔔 Quando a Poisson vira um Sino (Aproximação Normal)</div>
+    <p class="section-desc">
+      Conforme <code style="color:var(--accent);">λ</code> cresce, a "escadinha" de barrinhas da Poisson começa a lembrar cada vez mais uma <strong>curva em forma de sino</strong> — a Distribuição Normal, com média <code>μ=λ</code> e desvio padrão <code>σ=√λ</code>. Essa aproximação costuma funcionar bem quando <code>λ ≥ 10</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste λ e veja a curva Normal (linha amarela) se ajustar às barras da Poisson</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 λ — taxa média</span><span class="ctrl-v" id="normLambdaVal">20</span></div>
+          <input type="range" id="normLambda" min="1" max="60" step="1" value="20" oninput="renderNormal()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="normCanvas" height="220"></canvas></div>
+      <div style="display:flex;justify-content:center;margin-top:12px;"><span class="badge badge-green" id="normBadge">✅ Aproximação boa</span></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">μ = λ</div><div class="stat-card-value" id="normMeanVal">20.00</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">σ = √λ</div><div class="stat-card-value" id="normSdVal">4.47</div></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Diminua λ e repare como o sino amarelo deixa de encaixar bem nas barras cianas quando λ fica pequeno (a distribuição fica torta demais para um sino simétrico). Nesses casos, use a fórmula exata da Poisson.</p>
+    </div>
+  </section>
+
+  <!-- ============ É OU NÃO É POISSON ============ -->
+  <section class="section" id="s-exemplos">
+    <div class="section-eyebrow">Praticando o Olho Clínico</div>
+    <div class="section-title">🔍 É ou não é Poisson?</div>
+    <p class="section-desc">Clique em cada situação para descobrir se ela é (ou não) uma Distribuição de Poisson — e, se não for, qual seria o modelo certo.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada exemplo para revelar a resposta</div>
+      <div class="grid-4" id="poissonCheckGrid"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Truque rápido: pergunte-se "existe um número fixo n de tentativas conhecido de antemão?". Se sim, provavelmente é Binomial ou Hipergeométrica. Se não existir esse n — só uma taxa média por intervalo — é Poisson.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela">
+    <div class="section-eyebrow">Tudo Que Você Precisa, num Só Lugar</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todos os conceitos desta aula reunidos, prontos para consulta.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">✅ Condições</div>
+        <div class="card-formula">Independência · Taxa constante · Sem simultâneos · Intervalo definido</div>
+        <div class="card-text">As 4 condições que uma situação precisa cumprir para valer a fórmula da Poisson.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎚️ Parâmetro</div>
+        <div class="card-formula">λ (taxa média de eventos no intervalo)</div>
+        <div class="card-text">Um único número define a distribuição inteira. X pode ser qualquer inteiro de 0 até infinito.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 PMF</div>
+        <div class="card-formula">P(X=k) = λᵏ e⁻λ / k!</div>
+        <div class="card-text">A chance de observar exatamente k eventos no intervalo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📶 CDF</div>
+        <div class="card-formula">F(k) = P(X≤k) = Σ P(X=i), i=0..k</div>
+        <div class="card-text">Soma acumulada da PMF até k. Nunca diminui; se aproxima de 1 conforme k cresce.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚖️ Valor Esperado</div>
+        <div class="card-formula">E(X) = λ</div>
+        <div class="card-text">O número médio de eventos esperado no intervalo — o próprio parâmetro.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Variância e Desvio Padrão</div>
+        <div class="card-formula">Var(X) = λ, σ = √λ</div>
+        <div class="card-text">Único caso em que a variância é exatamente igual à esperança.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 Aproximação Normal</div>
+        <div class="card-formula">λ ≥ 10</div>
+        <div class="card-text">Quando λ é grande, a Poisson ~ Normal(μ=λ, σ=√λ).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌉 Relação com a Binomial</div>
+        <div class="card-formula">n→∞, p→0, n×p=λ constante</div>
+        <div class="card-text">A Poisson é o caso-limite da Binomial quando há muitíssimas tentativas, cada uma com chance mínima de sucesso.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Soma de Poissons</div>
+        <div class="card-formula">X~Poisson(λ₁), Y~Poisson(λ₂) indep. ⇒ X+Y~Poisson(λ₁+λ₂)</div>
+        <div class="card-text">Somar contagens independentes de Poisson só soma as taxas médias.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">✅ Boas práticas: como não se confundir</div>
+
+    <div class="decision-flow">
+      <div class="decision-q">A situação tem eventos raros e independentes, numa taxa média constante, sem um número fixo de tentativas conhecido?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">✅ Sim, sem n fixo</div>
+          <div class="decision-result">➡️ É uma <strong>Poisson(λ)</strong></div>
+          <div class="decision-example">Ex.: ligações por hora, acessos por minuto, defeitos por metro de tecido.</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">❌ Não, existe n e p fixos</div>
+          <div class="decision-result">➡️ Precisa de outro modelo</div>
+          <div class="decision-example">n tentativas conhecidas e mesma chance p → Binomial. Sem reposição → Hipergeométrica.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">1️⃣ λ precisa combinar com o intervalo</div>
+        <div class="card-text">λ é sempre "por unidade" do intervalo original. Se a pergunta muda o intervalo (de 1 hora para 3 horas), multiplique λ na mesma proporção.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Poisson não tem valor máximo</div>
+        <div class="card-text">Diferente da Binomial, X pode (em teoria) ser qualquer inteiro de 0 ao infinito — não existe um "n" que limite o topo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Independência é essencial</div>
+        <div class="card-text">Eventos que se "contagiam" uns aos outros (como surtos de doenças) quebram a hipótese de independência e exigem modelos mais avançados.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1: esquecer de ajustar λ</div>
+      <p>Se a taxa é "5 carros por minuto" e a pergunta pede a chance para 2 minutos, o λ certo é <code>5×2=10</code>, não 5! Sempre reescreva λ na unidade de tempo/espaço da pergunta antes de calcular.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2: confundir Poisson com Binomial</div>
+      <p>Se o enunciado menciona um número fixo de tentativas (como "de 30 clientes...") com a mesma chance p para cada um, isso é Binomial — mesmo que envolva contagem de eventos "raros".</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Sempre que vir "quantos eventos ocorrem em..." sem um número fixo de tentativas, apenas uma taxa média, pare e escreva <code>X ~ Poisson(λ)</code> antes de calcular qualquer coisa.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer style="display:flex;justify-content:space-between;color:var(--text-disabled);font-size:11px;padding-top:10px;border-top:1px solid var(--border-color);">
+    <span>Profissão Dados — Distribuição de Poisson</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function pct(x,d=1){ return (x*100).toFixed(d).replace('.',',')+'%'; }
+function comb(n,k){ if(k<0||k>n) return 0; k=Math.min(k,n-k); let r=1; for(let i=0;i<k;i++) r = r*(n-i)/(i+1); return Math.round(r); }
+function binomialPmf(n,k,p){ if(p<=0) return k===0?1:0; if(p>=1) return k===n?1:0; return comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k); }
+function lnFactorial(k){ let s=0; for(let i=2;i<=k;i++) s+=Math.log(i); return s; }
+function poissonPmf(k,lambda){ if(k<0) return 0; if(lambda<=0) return k===0?1:0; return Math.exp(-lambda + k*Math.log(lambda) - lnFactorial(k)); }
+function gaussianPdf(x,mean,sd){ return Math.exp(-0.5*Math.pow((x-mean)/sd,2))/(sd*Math.sqrt(2*Math.PI)); }
+function fmtFactorial(k){ let f=1; for(let i=2;i<=k;i++) f*=i; return f>=1e6 ? f.toExponential(3) : fmt(f); }
+function lambdaToKMax(lambda){ return Math.max(15, Math.min(140, Math.ceil(lambda + 4*Math.sqrt(lambda) + 6))); }
+function samplePoisson(lambda){
+  if(lambda<=0) return 0;
+  if(lambda>30){
+    const u1=Math.random(), u2=Math.random();
+    const z=Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+    return Math.max(0, Math.round(lambda + z*Math.sqrt(lambda)));
+  }
+  const L=Math.exp(-lambda);
+  let k=0,p=1;
+  do{ k++; p*=Math.random(); } while(p>L);
+  return k-1;
+}
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* ===================== generic bar chart (PMF-shaped) ===================== */
+function drawPmfBars(canvasId, values, highlightIndex, afterDraw){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = Math.max(...values, 1e-9);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const barW = plotW/n;
+  values.forEach((v,k)=>{
+    const barH = (v/maxV)*plotH;
+    const x = PL + k*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - barH;
+    ctx.fillStyle = k===highlightIndex ? '#06b6d4' : 'rgba(6,182,212,.38)';
+    roundRectPath(ctx, x, y, Math.max(bw,1), barH, 2);
+    ctx.fill();
+    if(n<=40){
+      ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+      ctx.fillText(k, x+bw/2, PT+plotH+14);
+    }
+  });
+  const layout = {
+    toX:(k)=> PL + k*barW + barW/2,
+    toY:(v)=> PT + plotH - (v/maxV)*plotH,
+    PL, PT, plotW, plotH, barW, maxV
+  };
+  if(afterDraw) afterDraw(ctx, layout);
+  return layout;
+}
+function drawCdfBars(canvasId, values, k){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = Math.max(...values, 1e-9);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const barW = plotW/n;
+  values.forEach((v,kk)=>{
+    const barH = (v/maxV)*plotH;
+    const x = PL + kk*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - barH;
+    ctx.fillStyle = kk<=k ? '#06b6d4' : 'rgba(6,182,212,.18)';
+    roundRectPath(ctx, x, y, Math.max(bw,1), barH, 2);
+    ctx.fill();
+    if(n<=40){
+      ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+      ctx.fillText(kk, x+bw/2, PT+plotH+14);
+    }
+  });
+}
+function drawTimeline(canvasId, events){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=30, PR=30, midY=h/2;
+  ctx.strokeStyle='rgba(152,162,179,.35)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(PL,midY); ctx.lineTo(w-PR,midY); ctx.stroke();
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+  [0,0.25,0.5,0.75,1].forEach(f=>{
+    const x = PL+f*(w-PL-PR);
+    ctx.beginPath(); ctx.moveTo(x,midY-6); ctx.lineTo(x,midY+6); ctx.strokeStyle='rgba(152,162,179,.5)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillText(Math.round(f*60)+'min', x, midY+22);
+  });
+  if(events){
+    events.forEach(t=>{
+      const x = PL + t*(w-PL-PR);
+      ctx.beginPath(); ctx.arc(x, midY, 7, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(6,182,212,.55)';
+      ctx.fill();
+      ctx.strokeStyle='#06b6d4'; ctx.lineWidth=1.2; ctx.stroke();
+    });
+  }
+}
+function drawEqualityLine(canvasId, lambda){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=44,PR=20,PT=20,PB=32;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  const maxV=20;
+  function toX(v){ return PL+plotW*(v/maxV); }
+  function toY(v){ return PT+plotH*(1-v/maxV); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  for(let i=0;i<=4;i++){ const vv=maxV*i/4; const y=toY(vv); ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke(); ctx.fillText(vv.toFixed(0),PL-6,y+3); }
+  ctx.textAlign='center';
+  for(let i=0;i<=4;i++){ const vv=maxV*i/4; ctx.fillStyle='#98a2b3'; ctx.fillText(vv.toFixed(0), toX(vv), h-PB+16); }
+  ctx.beginPath(); ctx.moveTo(toX(0),toY(0)); ctx.lineTo(toX(maxV),toY(maxV));
+  ctx.strokeStyle='#36a2ef'; ctx.lineWidth=3; ctx.stroke();
+  ctx.setLineDash([4,3]); ctx.strokeStyle='#e8b339'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(toX(lambda),toY(0)); ctx.lineTo(toX(lambda),toY(lambda)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PL,toY(lambda)); ctx.lineTo(toX(lambda),toY(lambda)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(toX(lambda),toY(lambda),6,0,Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+}
+function drawSimChart(emp, theo){
+  const canvas = document.getElementById('simCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = emp.length;
+  const maxV = Math.max(...emp, ...theo, 0.01);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  const barW = plotW/n;
+  for(let k=0;k<n;k++){
+    const bh = (emp[k]/maxV)*plotH;
+    const x = PL + k*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - bh;
+    ctx.fillStyle='rgba(125,222,216,.75)';
+    roundRectPath(ctx,x,y,Math.max(bw,1),bh,2); ctx.fill();
+  }
+  ctx.beginPath();
+  for(let k=0;k<n;k++){
+    const cx = PL + k*barW + barW/2;
+    const cy = PT + plotH - (theo[k]/maxV)*plotH;
+    if(k===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy);
+  }
+  ctx.strokeStyle='#e8b339'; ctx.lineWidth=2; ctx.stroke();
+  if(n<=40){
+    ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+    for(let k=0;k<n;k++) ctx.fillText(k, PL+k*barW+barW/2, PT+plotH+14);
+  }
+}
+
+/* ===================== TOC pipeline ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🎲', label:'O que é'},
+  {id:'s-condicoes', icon:'✅', label:'Condições'},
+  {id:'s-parametro', icon:'🎚️', label:'Parâmetro λ'},
+  {id:'s-pmf', icon:'📊', label:'Distribuição (PMF)'},
+  {id:'s-cdf', icon:'📶', label:'Acumulada (CDF)'},
+  {id:'s-esperanca', icon:'⚖️', label:'E(X) = λ'},
+  {id:'s-variancia', icon:'📏', label:'Var(X) = λ'},
+  {id:'s-forma', icon:'📐', label:'Forma'},
+  {id:'s-binomial-limite', icon:'🌉', label:'Vem da Binomial'},
+  {id:'s-simulacao', icon:'🔁', label:'Simulação'},
+  {id:'s-normal', icon:'🔔', label:'Aprox. Normal'},
+  {id:'s-exemplos', icon:'🔍', label:'É Poisson?'},
+  {id:'s-tabela', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== O QUE É (timeline) ===================== */
+let oqueLastEvents = null;
+function oqueLambdaChanged(){ oqueLastEvents=null; renderOque(); }
+function oqueSortear(){
+  const lambda = +document.getElementById('oqueLambda').value;
+  const n = samplePoisson(lambda);
+  oqueLastEvents = Array.from({length:n}, ()=> Math.random());
+  renderOque();
+}
+function renderOque(){
+  const lambda = +document.getElementById('oqueLambda').value;
+  document.getElementById('oqueLambdaVal').textContent = lambda;
+  drawTimeline('oqueCanvas', oqueLastEvents);
+  document.getElementById('oqueResult').textContent = oqueLastEvents===null ? 'Clique em sortear' : `X = ${oqueLastEvents.length} evento(s) nesta hora`;
+}
+
+/* ===================== PARÂMETRO λ ===================== */
+function renderParametro(){
+  const lambda = +document.getElementById('paramLambda').value;
+  document.getElementById('paramLambdaVal').textContent = lambda;
+  const kMax = lambdaToKMax(lambda);
+  const values=[]; for(let k=0;k<=kMax;k++) values.push(poissonPmf(k,lambda));
+  drawPmfBars('paramCanvas', values, -1);
+  document.getElementById('paramMeanVal').textContent = lambda.toFixed(2);
+  let maxP=-1, mode=0; values.forEach((v,i)=>{ if(v>maxP){maxP=v; mode=i;} });
+  document.getElementById('paramModeVal').textContent = mode;
+  document.getElementById('paramMaxKVal').textContent = kMax;
+}
+
+/* ===================== PMF ===================== */
+function pmfLambdaChanged(){
+  const lambda = +document.getElementById('pmfLambda').value;
+  const kSlider = document.getElementById('pmfK');
+  const kMax = lambdaToKMax(lambda);
+  kSlider.max = kMax;
+  if(+kSlider.value>kMax) kSlider.value = Math.round(lambda);
+  renderPmf();
+}
+function renderPmf(){
+  const lambda = +document.getElementById('pmfLambda').value;
+  const k = +document.getElementById('pmfK').value;
+  document.getElementById('pmfLambdaVal').textContent = lambda;
+  document.getElementById('pmfKVal').textContent = k;
+  const kMax = lambdaToKMax(lambda);
+  const values=[]; for(let kk=0;kk<=kMax;kk++) values.push(poissonPmf(kk,lambda));
+  drawPmfBars('pmfCanvas', values, k);
+  const lk = Math.pow(lambda,k);
+  const elam = Math.exp(-lambda);
+  const prob = values[k];
+  document.getElementById('pmfFormulaBreak').innerHTML =
+    `λ<sup>${k}</sup>=${lk<1e6?lk.toFixed(4):lk.toExponential(3)} &nbsp;×&nbsp; e<sup>−λ</sup>=${elam.toFixed(6)} &nbsp;÷&nbsp; ${k}!=${fmtFactorial(k)} &nbsp;=&nbsp; <strong style="color:var(--accent)">${prob.toFixed(6)}</strong>`;
+  document.getElementById('pmfKResult').textContent = prob.toFixed(6)+' ('+pct(prob,3)+')';
+  let maxP=-1, mode=0; values.forEach((v,i)=>{ if(v>maxP){maxP=v; mode=i;} });
+  document.getElementById('pmfModeResult').textContent = mode;
+}
+
+/* ===================== CDF ===================== */
+function cdfLambdaChanged(){
+  const lambda = +document.getElementById('cdfLambda').value;
+  const kSlider = document.getElementById('cdfK');
+  const kMax = lambdaToKMax(lambda);
+  kSlider.max = kMax;
+  if(+kSlider.value>kMax) kSlider.value = Math.round(lambda);
+  renderCdf();
+}
+function renderCdf(){
+  const lambda = +document.getElementById('cdfLambda').value;
+  const k = +document.getElementById('cdfK').value;
+  document.getElementById('cdfLambdaVal').textContent = lambda;
+  document.getElementById('cdfKVal').textContent = k;
+  const kMax = lambdaToKMax(lambda);
+  const values=[]; for(let kk=0;kk<=kMax;kk++) values.push(poissonPmf(kk,lambda));
+  const Fk = values.slice(0,k+1).reduce((a,b)=>a+b,0);
+  document.getElementById('cdfLeResult').textContent = Fk.toFixed(4);
+  document.getElementById('cdfGtResult').textContent = (1-Fk).toFixed(4);
+  document.getElementById('cdfEqResult').textContent = values[k].toFixed(4);
+  drawCdfBars('cdfCanvas', values, k);
+}
+
+/* ===================== ESPERANÇA ===================== */
+function renderEsperanca(){
+  const lambda = +document.getElementById('expLambda').value;
+  document.getElementById('expLambdaVal').textContent = lambda;
+  document.getElementById('expFormula').innerHTML = `E(X) = λ = <strong style="color:var(--accent)">${lambda.toFixed(2)}</strong>`;
+  document.getElementById('expResult').textContent = lambda.toFixed(2);
+  const kMax = lambdaToKMax(lambda);
+  const values=[]; for(let k=0;k<=kMax;k++) values.push(poissonPmf(k,lambda));
+  drawPmfBars('expCanvas', values, -1, (ctx,L)=>{
+    const mx = L.toX(lambda);
+    ctx.setLineDash([4,3]); ctx.strokeStyle='#e8b339'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(mx, L.PT); ctx.lineTo(mx, L.PT+L.plotH); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#e8b339'; ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center';
+    ctx.fillText('E(X)='+lambda.toFixed(1), mx, L.PT-4);
+  });
+}
+
+/* ===================== VARIÂNCIA ===================== */
+function renderVariancia(){
+  const lambda = +document.getElementById('varLambda').value;
+  document.getElementById('varLambdaVal').textContent = lambda;
+  document.getElementById('varResult').textContent = lambda.toFixed(2);
+  document.getElementById('varSdResult').textContent = Math.sqrt(lambda).toFixed(3);
+  document.getElementById('varMeanCompare').textContent = lambda.toFixed(2);
+  drawEqualityLine('varCanvas', lambda);
+}
+
+/* ===================== FORMA ===================== */
+function renderForma(){
+  [{id:'formaCanvasLow',lambda:1},{id:'formaCanvasMid',lambda:6},{id:'formaCanvasHigh',lambda:20}].forEach(cfg=>{
+    const kMax = lambdaToKMax(cfg.lambda);
+    const values=[]; for(let k=0;k<=kMax;k++) values.push(poissonPmf(k,cfg.lambda));
+    drawPmfBars(cfg.id, values, -1);
+  });
+}
+
+/* ===================== POISSON VEM DA BINOMIAL ===================== */
+let limiteN = 30;
+function limiteSetN(n){
+  limiteN = n;
+  document.querySelectorAll('.limite-n-btn').forEach(b => b.classList.toggle('active', +b.dataset.n===n));
+  renderLimite();
+}
+function renderLimite(){
+  const lambda = +document.getElementById('limiteLambda').value;
+  document.getElementById('limiteLambdaVal').textContent = lambda;
+  const n = limiteN;
+  const p = Math.min(1, lambda/n);
+  document.getElementById('limitePVal').textContent = p.toFixed(4).replace('.',',');
+  document.getElementById('limiteNVal').textContent = fmt(n);
+  const kMax = lambdaToKMax(lambda);
+  const binomValues=[], poisValues=[];
+  for(let k=0;k<=kMax;k++){ binomValues.push(binomialPmf(n,k,p)); poisValues.push(poissonPmf(k,lambda)); }
+  let maxDiff=0; for(let k=0;k<=kMax;k++) maxDiff = Math.max(maxDiff, Math.abs(binomValues[k]-poisValues[k]));
+  document.getElementById('limiteDiffVal').textContent = maxDiff.toFixed(5);
+  drawPmfBars('limiteCanvas', binomValues, -1, (ctx,L)=>{
+    ctx.beginPath();
+    for(let k=0;k<=kMax;k++){
+      const px = L.toX(k), py = L.PT + L.plotH - (poisValues[k]/L.maxV)*L.plotH;
+      if(k===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle='#e8b339'; ctx.lineWidth=2.2; ctx.stroke();
+  });
+}
+
+/* ===================== SIMULAÇÃO ===================== */
+let simCounts = []; let simRuns = 0; let simKMax = 40;
+function simReset(){
+  const lambda = +document.getElementById('simLambda').value;
+  simKMax = lambdaToKMax(lambda);
+  simCounts = new Array(simKMax+1).fill(0);
+  simRuns = 0;
+  renderSim();
+}
+function simRun(times){
+  const lambda = +document.getElementById('simLambda').value;
+  if(simCounts.length !== simKMax+1) simCounts = new Array(simKMax+1).fill(0);
+  for(let t=0;t<times;t++){
+    let k = samplePoisson(lambda);
+    if(k>simKMax) k = simKMax;
+    simCounts[k]++;
+    simRuns++;
+  }
+  renderSim();
+}
+function renderSim(){
+  const lambda = +document.getElementById('simLambda').value;
+  document.getElementById('simLambdaVal').textContent = lambda;
+  document.getElementById('simRunsVal').textContent = fmt(simRuns);
+  const empMean = simRuns>0 ? simCounts.reduce((s,c,k)=>s+c*k,0)/simRuns : 0;
+  document.getElementById('simEmpMean').textContent = simRuns>0 ? empMean.toFixed(2) : '—';
+  document.getElementById('simTheoMean').textContent = lambda.toFixed(2);
+  const empProbs = simCounts.map(c => simRuns>0 ? c/simRuns : 0);
+  const theoProbs=[]; for(let k=0;k<=simKMax;k++) theoProbs.push(poissonPmf(k,lambda));
+  drawSimChart(empProbs, theoProbs);
+}
+
+/* ===================== APROXIMAÇÃO NORMAL ===================== */
+function renderNormal(){
+  const lambda = +document.getElementById('normLambda').value;
+  document.getElementById('normLambdaVal').textContent = lambda;
+  const mean = lambda, sd = Math.sqrt(lambda);
+  document.getElementById('normMeanVal').textContent = mean.toFixed(2);
+  document.getElementById('normSdVal').textContent = sd.toFixed(2);
+  const badge = document.getElementById('normBadge');
+  if(lambda>=10){ badge.className='badge badge-green'; badge.textContent='✅ Aproximação boa (λ≥10)'; }
+  else { badge.className='badge badge-purple'; badge.textContent='⚠️ Aproximação fraca (λ<10) — use a fórmula exata'; }
+  const kMax = lambdaToKMax(lambda);
+  const values=[]; for(let k=0;k<=kMax;k++) values.push(poissonPmf(k,lambda));
+  drawPmfBars('normCanvas', values, -1, (ctx,L)=>{
+    ctx.beginPath();
+    const step = Math.max(kMax/200, 0.25);
+    for(let x=0;x<=kMax;x+=step){
+      const gy = gaussianPdf(x,mean,sd);
+      const px = L.toX(x);
+      const py = L.PT + L.plotH - (gy/L.maxV)*L.plotH;
+      if(x===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle='#e8b339'; ctx.lineWidth=2.2; ctx.stroke();
+  });
+}
+
+/* ===================== É OU NÃO É POISSON ===================== */
+const poissonCheckItems = [
+  {emoji:'☎️', label:'Número de ligações recebidas por um call center em 1 hora, taxa média constante e chamadas independentes', isP:true, note:'Sem número fixo de tentativas, taxa média constante, chamadas independentes. É Poisson!'},
+  {emoji:'🏀', label:'Número de cestas certas em 10 arremessos livres, mesma pontaria em todos', isP:false, note:'Existe um n fixo (10 arremessos) e uma chance p por arremesso — isso é a Distribuição Binomial.'},
+  {emoji:'🌠', label:'Número de meteoros vistos no céu durante 1 hora numa chuva de meteoros', isP:true, note:'Eventos raros e independentes, numa taxa média constante ao longo da hora. É Poisson!'},
+  {emoji:'🎴', label:'Tirar 5 cartas de um baralho sem devolver e contar quantos ases saíram', isP:false, note:'Sem reposição e com um número fixo de cartas — isso é a Distribuição Hipergeométrica.'},
+  {emoji:'🧵', label:'Número de defeitos encontrados por metro de tecido produzido, numa taxa média constante', isP:true, note:'O "metro" é o intervalo (de espaço, não de tempo), e os defeitos são raros e independentes. É Poisson!'},
+  {emoji:'💊', label:'De 20 pacientes, quantos apresentam efeito colateral do remédio (mesma chance, independentes)', isP:false, note:'n=20 é um número fixo de tentativas com p fixo — isso é a Distribuição Binomial.'},
+  {emoji:'📧', label:'Número de erros de digitação encontrados numa página de um livro, com uma taxa média de erros por página', isP:true, note:'A página é o intervalo, e os erros são raros e independentes. É Poisson!'},
+  {emoji:'🎯', label:'Número de tentativas até acertar o alvo pela primeira vez', isP:false, note:'Aqui contamos tentativas até o 1º sucesso — isso é a Distribuição Geométrica.'},
+];
+function buildPoissonCheck(){
+  document.getElementById('poissonCheckGrid').innerHTML = poissonCheckItems.map(it => `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div style="font-size:26px;text-align:center;">${it.emoji}</div>
+      <div class="card-text" style="text-align:center;margin-top:6px;">${it.label}</div>
+      <div class="classify-answer" style="text-align:center;margin-top:10px;">
+        <span class="badge ${it.isP?'badge-green':'badge-purple'}">${it.isP?'✅ É Poisson':'❌ Não é Poisson'}</span>
+        <div class="card-text" style="margin-top:8px;">${it.note}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Uma padaria vende, em média, 4 bolos por dia. Qual a chance de não vender nenhum bolo em um dia?',
+   a:'X ~ Poisson(λ=4). <strong>P(X=0) = e⁻⁴ ≈ 0,0183 (1,83%)</strong>. Mesmo com uma média de 4 vendas, existe uma pequena chance de o dia terminar sem nenhuma venda.'},
+  {q:'Um site de suporte recebe, em média, 3 pedidos por hora. Qual a chance de receber exatamente 2 pedidos numa hora?',
+   a:'X ~ Poisson(λ=3). <strong>P(X=2) = (3²×e⁻³)/2! = 4,5×0,04979 ≈ 0,2240 (22,40%)</strong>.'},
+  {q:'Uma rodovia registra, em média, 2 acidentes por semana. Qual a chance de ocorrer pelo menos 1 acidente numa semana?',
+   a:'X ~ Poisson(λ=2). P(X≥1) = 1−P(X=0) = 1−e⁻² = 1−0,1353 ≈ <strong>0,8647 (86,47%)</strong>.'},
+  {q:'Um site recebe, em média, 500 acessos por hora. Qual a taxa λ por minuto, e qual a chance de não haver nenhum acesso em 1 minuto?',
+   a:'λ por minuto = 500/60 ≈ 8,333. X ~ Poisson(λ≈8,333). <strong>P(X=0) = e⁻⁸,³³³ ≈ 0,00024 (0,024%)</strong> — bem raro ficar 1 minuto inteiro sem acesso.'},
+  {q:'Um material radioativo emite, em média, 5 decaimentos por segundo. Se observarmos 2 segundos, qual λ devemos usar, e qual a chance de exatamente 8 decaimentos nesses 2 segundos?',
+   a:'Como o intervalo dobrou, λ = 5×2 = 10. X ~ Poisson(λ=10). <strong>P(X=8) = (10⁸×e⁻¹⁰)/8! ≈ 0,1126 (11,26%)</strong>.'},
+  {q:'Uma fábrica de tecidos encontra, em média, 1,5 defeito por rolo de tecido. Qual a chance de um rolo ter mais de 3 defeitos, ou seja, P(X&gt;3)?',
+   a:'X ~ Poisson(λ=1,5). P(X≤3) = P(0)+P(1)+P(2)+P(3) ≈ 0,2231+0,3347+0,2510+0,1255 = 0,9344. <strong>P(X&gt;3) = 1−0,9344 ≈ 0,0656 (6,56%)</strong>.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Na Distribuição de Poisson, existe sempre um valor máximo que X pode assumir.', a:false,
+   explain:'Não! X pode ser, em teoria, qualquer número inteiro de 0 até infinito — só que valores muito distantes de λ ficam extremamente improváveis.'},
+  {q:'O parâmetro λ representa a taxa média de eventos no intervalo considerado.', a:true,
+   explain:'Sim — λ é o único parâmetro da Poisson e é justamente essa taxa média.'},
+  {q:'Na Poisson, E(X) e Var(X) são sempre iguais.', a:true,
+   explain:'Correto — ambos valem exatamente λ. É uma característica exclusiva da Poisson.'},
+  {q:'Se dobrarmos o tamanho do intervalo de tempo considerado, λ também deve dobrar.', a:true,
+   explain:'Sim, λ é sempre proporcional ao tamanho do intervalo — dobrar o intervalo dobra a taxa esperada de eventos.'},
+  {q:'A Poisson pode ser vista como um caso-limite da Binomial quando n→∞ e p→0, mantendo n×p=λ constante.', a:true,
+   explain:'Exatamente — é a origem matemática da distribuição, mostrada na seção "Poisson vem da Binomial".'},
+  {q:'Quando λ é grande (λ≥10), a distribuição de Poisson começa a se parecer com uma Normal.', a:true,
+   explain:'Sim — essa é a aproximação Normal, com μ=λ e σ=√λ.'},
+  {q:'Contar quantos ases saem ao tirar 5 cartas de um baralho sem devolver é um exemplo de Distribuição de Poisson.', a:false,
+   explain:'Não — sem reposição e com um número fixo de cartas, isso é a Distribuição Hipergeométrica.'},
+  {q:'P(X=0) numa Poisson(λ) é sempre igual a e⁻λ.', a:true,
+   explain:'Correto — substituindo k=0 na fórmula P(X=k)=λᵏe⁻λ/k!, sobra apenas e⁻λ (já que λ⁰=1 e 0!=1).'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+renderOque();
+renderParametro();
+pmfLambdaChanged();
+cdfLambdaChanged();
+renderEsperanca();
+renderVariancia();
+renderForma();
+renderLimite();
+simReset();
+renderNormal();
+buildPoissonCheck();
+buildProblems();
+buildQuiz();
+window.addEventListener('resize', ()=>{
+  renderOque();
+  renderParametro();
+  renderPmf();
+  renderCdf();
+  renderEsperanca();
+  renderVariancia();
+  renderForma();
+  renderLimite();
+  renderSim();
+  renderNormal();
+});
+</script>
+</body>
+</html>

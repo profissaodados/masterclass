@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Unified Star Schema (Puppini Bridge) por dentro. Fan trap, chasm trap, a Bridge central, convenção _KEY_, Full Outer Join Effect, USS em Data Mesh e mais, com demos interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Unified Star Schema por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-new td{background:rgba(125,222,216,.14);color:var(--text-primary);}
+.data-table tr.row-bad td{background:rgba(248,107,99,.10);color:var(--text-primary);}
+
+/* ---- ANATOMY / CLICKABLE DIAGRAM (shared) ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.anatomy-grid.cols-3{grid-template-columns:1fr 1fr 1fr;gap:24px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.pq-nested{margin-left:14px;border-left:2px solid var(--border-color);padding-left:12px;margin-top:7px;margin-bottom:7px;}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- STAR vs USS COMPARE DIAGRAM ---- */
+.diagram-compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.diagram-panel{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:20px;}
+.diagram-panel-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;text-align:center;margin-bottom:4px;}
+.diagram-panel-title.star{color:var(--accent-purple);}
+.diagram-panel-title.uss{color:var(--accent);}
+.diagram-panel-caption{font-size:10.5px;color:var(--text-disabled);text-align:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-color);}
+.diagram-svg-wrap{position:relative;}
+.diagram-svg-wrap svg{position:absolute;inset:0;width:100%;height:100%;z-index:0;overflow:visible;}
+.dnode-grid{display:grid;gap:12px;position:relative;z-index:1;}
+.star-grid{grid-template-columns:1fr 1fr 1fr;grid-template-areas:". dt ." "dc fv dp";}
+.star-grid .n-dt{grid-area:dt;} .star-grid .n-dc{grid-area:dc;} .star-grid .n-fv{grid-area:fv;} .star-grid .n-dp{grid-area:dp;}
+.northwind-grid{grid-template-columns:repeat(5,1fr);grid-row-gap:34px;grid-template-areas:". ord od et ." "brd brd brd brd brd" "emp cus prd cat ter";}
+.northwind-grid .n-ord{grid-area:ord;} .northwind-grid .n-od{grid-area:od;} .northwind-grid .n-et{grid-area:et;}
+.northwind-grid .n-brd{grid-area:brd;padding:14px 10px;}
+.northwind-grid .n-emp{grid-area:emp;} .northwind-grid .n-cus{grid-area:cus;} .northwind-grid .n-prd{grid-area:prd;} .northwind-grid .n-cat{grid-area:cat;} .northwind-grid .n-ter{grid-area:ter;}
+@media (max-width:960px){
+  .northwind-grid{grid-template-columns:1fr;grid-template-areas:"ord" "od" "et" "brd" "emp" "cus" "prd" "cat" "ter";}
+}
+.dnode{border-radius:8px;padding:10px 10px;text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;border:2px solid;background:var(--bg-panel);cursor:pointer;transition:.15s;}
+.dnode:hover{transform:translateY(-2px);}
+.dnode.active{box-shadow:0 0 0 2px currentColor;}
+.dnode-sub{display:block;font-size:9px;font-weight:500;color:var(--text-secondary);margin-top:4px;font-family:'Inter',sans-serif;text-transform:none;letter-spacing:0;line-height:1.4;}
+.dnode.fact{border-color:var(--accent-purple);background:rgba(196,154,255,.14);color:var(--accent-purple);}
+.dnode.dim{border-color:var(--accent-blue);background:rgba(54,162,239,.10);color:var(--accent-blue);}
+.dnode.bridge{border-color:var(--accent);background:rgba(6,182,212,.16);color:var(--accent);}
+
+/* ---- BRIDGE TABLE VISUAL ---- */
+.bridge-table{width:100%;border-collapse:collapse;font-size:11.5px;font-family:'Roboto Mono',monospace;}
+.bridge-table th{background:rgba(6,182,212,.14);color:var(--accent);padding:8px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border-color);}
+.bridge-table td{padding:8px 10px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.bridge-table td.stage-sales{color:var(--accent-blue);font-weight:700;}
+.bridge-table td.stage-returns{color:var(--accent-purple);font-weight:700;}
+.bridge-table td.dash{color:var(--text-disabled);}
+
+/* ---- CHASM GRID (cartesian explosion visual) ---- */
+.chasm-grid{display:flex;gap:4px;flex-wrap:wrap;max-height:200px;overflow-y:auto;padding:2px;}
+.chasm-cell{width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;font-family:'Roboto Mono',monospace;font-weight:700;border:1.5px solid var(--accent-red);background:rgba(248,107,99,.14);color:var(--accent-red);flex-shrink:0;}
+
+/* ---- CHARTS (canvas bar charts) ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;margin-top:10px;}
+canvas{width:100%;display:block;}
+.chart-legend{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:8px;font-size:11.5px;color:var(--text-secondary);}
+.chart-legend .lg-dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px;}
+
+/* ---- SCHEMA CARD (Northwind ER overview) ---- */
+.schema-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;}
+.schema-card .sc-name{font-family:'Roboto Mono',monospace;font-weight:700;font-size:12.5px;color:var(--accent);margin-bottom:4px;}
+.schema-card .sc-grain{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.schema-card .sc-cols{font-size:11.5px;color:var(--text-secondary);line-height:1.6;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- LAYERED / STACK ---- */
+.layer-stack{display:flex;flex-direction:column;gap:10px;}
+.layer-row{border:1.5px solid var(--border-color);border-radius:8px;padding:14px 18px;background:var(--bg-elevated);cursor:pointer;transition:.2s;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;}
+.layer-row:hover{border-color:var(--border-strong);}
+.layer-row.active{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.layer-title{font-weight:700;font-size:13px;color:var(--text-primary);display:flex;align-items:center;gap:10px;}
+.layer-row.active .layer-title{color:var(--accent);}
+.layer-sub{font-size:11px;color:var(--text-secondary);}
+.layer-tag{font-size:9.5px;padding:3px 9px;border-radius:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border:1px solid var(--border-strong);color:var(--text-secondary);flex-shrink:0;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid,.anatomy-grid.cols-3{grid-template-columns:1fr;gap:20px;}
+  .diagram-compare{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Unified Star Schema</h1><span>A Bridge que pré-conecta tudo, para o self-service BI não errar a conta</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2020</div><div class="hstat-label">Origem (livro)</div></div>
+      <div class="hstat"><div class="hstat-num">1</div><div class="hstat-label">Puppini Bridge</div></div>
+      <div class="hstat"><div class="hstat-num">UNION</div><div class="hstat-label">Mecanismo-chave</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: dos traps de SQL à Bridge que resolve tudo</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Uma única tabela que <em>pré-resolve</em> todos os relacionamentos do modelo</h2>
+      <p><strong>Unified Star Schema (USS)</strong> é uma abordagem de modelagem dimensional criada por <strong>Francesco Puppini</strong> e formalizada em 2020 no livro <em>"The Unified Star Schema: An Agile and Resilient Approach to Data Warehouse and Analytics Design"</em>, com coautoria de <strong>Bill Inmon</strong> — uma das referências fundadoras do data warehousing. A proposta central: um usuário de negócio deveria conseguir montar uma consulta de self-service BI sem entender <em>fan trap</em>, <em>chasm trap</em> ou a ordem certa de JOINs. Em vez de conectar fatos e dimensões diretamente entre si, o USS introduz uma peça nova — a <strong>Puppini Bridge</strong> — uma tabela central construída com <code>UNION</code> (não <code>JOIN</code>) que pré-conecta todas as chaves do modelo antes de qualquer consulta ser escrita.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Self-Service BI</span>
+        <span class="badge badge-green">Zero Fan Trap</span>
+        <span class="badge badge-blue">Zero Chasm Trap</span>
+        <span class="badge badge-purple">UNION &gt; JOIN</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🌉 PUPPINI BRIDGE</div>
+        <div class="fc-body">
+          <div class="fc-row">_KEY_Sales · _KEY_Returns<br><span style="font-size:9.5px;opacity:.7;">chaves técnicas pré-conectadas</span></div>
+          <div class="fc-row">Stage<br><span style="font-size:9.5px;opacity:.7;">de qual tabela veio cada linha</span></div>
+        </div>
+        <div class="fc-foot">Construída com UNION, não JOIN</div>
+      </div>
+      <div class="file-chip-caption">A peça que substitui o "monte o JOIN certo" por "comece pela Bridge"</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🎯 O que é o Unified Star Schema?</div>
+    <p class="section-desc">
+      Modelos dimensionais clássicos (Kimball) funcionam muito bem enquanto existe <strong>um</strong> fato central cercado de dimensões simples. O problema aparece quando o negócio precisa de <strong>múltiplos fatos</strong> relacionados entre si — vendas e devoluções, pedidos e entregas, tweets e seguidores — e um analista de self-service BI tenta juntar tudo isso arrastando tabelas numa ferramenta de BI. Sem saber, ele cai em armadilhas clássicas de SQL (<em>fan trap</em>, <em>chasm trap</em>) que <strong>inflam silenciosamente os números</strong> — o relatório roda, não dá erro nenhum, e o valor está simplesmente errado. O USS ataca esse problema na raiz: em vez de deixar o usuário montar o JOIN, o modelo já entrega os relacionamentos <strong>pré-resolvidos</strong> numa única tabela central.
+    </p>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🙋 Self-Service BI sem armadilhas</div><div class="card-text">O usuário de negócio começa a consulta pela Bridge, não pelas tabelas de fato — elimina a chance de montar um JOIN M:N por engano.</div></div>
+      <div class="card"><div class="card-title">🌉 Uma Bridge central</div><div class="card-text">Todas as chaves de todas as tabelas de fato convivem numa única tabela, construída com <code>UNION</code> — nunca com <code>JOIN</code> direto entre fatos.</div></div>
+      <div class="card"><div class="card-title">🧩 Multi-fato por natureza</div><div class="card-text">Cubos OLAP tradicionais assumem um fato por vez. O USS foi desenhado desde o início para consultas que cruzam <strong>vários</strong> processos de negócio ao mesmo tempo.</div></div>
+    </div>
+    <div class="highlight-box">
+      <div class="highlight-title">Enriquecimento, não substituição</div>
+      <p>Revisores da obra de Puppini e Inmon (como Andriy Zabavskyy, autor de uma das análises mais citadas sobre o tema) resumem bem o posicionamento correto do USS: não é uma <strong>substituição</strong> do modelo dimensional de Kimball, provado por décadas de uso — é um <strong>enriquecimento</strong> dele, focado especificamente em resolver o ponto mais frágil do star schema clássico: relacionamentos entre múltiplos fatos.</p>
+    </div>
+  </section>
+
+  <!-- ============ FAN TRAP ============ -->
+  <section class="section" id="s-fantrap">
+    <div class="section-eyebrow">O Primeiro Vilão</div>
+    <div class="section-title">🕸️ Fan Trap: quando um JOIN 1:N duplica sua medida</div>
+    <p class="section-desc">
+      O <strong>fan trap</strong> acontece quando múltiplas linhas de uma tabela apontam para uma única chave em outra tabela que contém <strong>medidas</strong> — o JOIN "abre um leque" (daí o nome) e duplica essa medida uma vez para cada linha correspondente do outro lado. Vamos usar um caso real e bem conhecido de quem já modelou o banco de exemplo <strong>Northwind</strong>: a tabela <code>Orders</code> (cabeçalho do pedido) guarda o <code>Freight</code> (frete) <strong>uma vez por pedido</strong>, mas <code>Order Details</code> tem <strong>uma linha por produto</strong> daquele pedido. Juntar as duas para somar frete e quantidade ao mesmo tempo é a receita clássica do fan trap.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: quantos produtos (linhas de Order Details) o Pedido 10248 tem?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Itens do Pedido 10248</span><span class="ctrl-v" id="fanSliderVal">3</span></div>
+          <input type="range" id="fanSlider" min="1" max="4" step="1" value="3" oninput="fanReturnsS1=parseInt(this.value);renderFanTrap();">
+        </div>
+      </div>
+      <div class="ctrl-l">Resultado do JOIN ingênuo: Orders LEFT JOIN Order Details</div>
+      <table class="data-table" id="fanJoinedTable" style="margin-bottom:14px;"></table>
+      <div class="stat-cards" id="fanStats"></div>
+      <div class="chart-legend">
+        <span><span class="lg-dot" style="background:var(--accent-red);"></span>SUM(Freight) — JOIN ingênuo</span>
+        <span><span class="lg-dot" style="background:var(--accent);"></span>Freight real (tabela Orders)</span>
+      </div>
+      <div class="canvas-wrap"><canvas id="fanChart" height="190"></canvas></div>
+      <div class="section-desc" style="font-size:12px;margin-top:10px;">💡 Com <strong>1 item</strong> por pedido, o total ingênuo acerta por coincidência. A partir de <strong>2 itens</strong> no mesmo pedido, o <code>SUM(Freight)</code> do JOIN passa a contar o mesmo frete mais de uma vez — no Northwind real, o Pedido 10248 tem <strong>3</strong> linhas em Order Details, então um relatório ingênuo somaria <code>32.38</code> de frete <strong>três vezes</strong> só para esse pedido.</div>
+    </div>
+
+    <div class="warn-box">
+      <p>⚠️ O mais perigoso do fan trap: a consulta <strong>não quebra</strong>. Não há erro de sintaxe, não há exceção — só um número errado, silenciosamente inflado, que só alguém que já conhece o problema vai desconfiar de olhar.</p>
+    </div>
+  </section>
+
+  <!-- ============ CHASM TRAP ============ -->
+  <section class="section" id="s-chasmtrap">
+    <div class="section-eyebrow">O Segundo Vilão</div>
+    <div class="section-title">💥 Chasm Trap: quando duas tabelas "explodem" a mesma tabela central</div>
+    <p class="section-desc">
+      O <strong>chasm trap</strong> aparece quando uma tabela central é referenciada por <strong>duas ou mais</strong> tabelas simultaneamente, e todas são unidas na mesma consulta. Continuando no Northwind: cada <code>Employee</code> (funcionário) atende <strong>vários</strong> <code>Orders</code> (pedidos) e também está associado a <strong>vários</strong> <code>Territories</code> (territórios de venda) via <code>EmployeeTerritories</code>. Juntar Employee com Orders <strong>e</strong> EmployeeTerritories ao mesmo tempo não produz <code>pedidos + territórios</code> linhas (o correto) — produz até <code>pedidos × territórios</code>, uma combinação sem nenhum sentido de negócio.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: um funcionário com P pedidos e T territórios, unidos na mesma consulta</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Pedidos atendidos pelo funcionário</span><span class="ctrl-v" id="chasmTweetsVal">7</span></div>
+          <input type="range" id="chasmTweetsSlider" min="1" max="10" step="1" value="7" oninput="chasmTweets=parseInt(this.value);renderChasm();">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Territórios cobertos pelo funcionário</span><span class="ctrl-v" id="chasmFollowersVal">5</span></div>
+          <input type="range" id="chasmFollowersSlider" min="1" max="10" step="1" value="5" oninput="chasmFollowers=parseInt(this.value);renderChasm();">
+        </div>
+      </div>
+      <div class="ctrl-l">Cada célula abaixo é 1 linha do resultado do JOIN cartesiano (pedido × território)</div>
+      <div class="chasm-grid" id="chasmGrid"></div>
+      <div class="stat-cards" id="chasmStats"></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A fórmula geral</div>
+      <p>Se uma tabela central é referenciada por <em>k</em> tabelas com <em>N</em> linhas cada, o resultado de unir todas ao mesmo tempo varia entre <code>N</code> (o ideal, sem duplicação) e <code>N<sup>k</sup></code> (o pior caso, cartesiano completo). Quanto mais tabelas você tenta unir "de uma vez só" à mesma tabela central, mais rápido a explosão cresce — e <strong>medidas numéricas duplicadas por um chasm trap são extremamente difíceis de "desduplicar" depois do fato</strong>.</p>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:6px;">Três funcionários reais do Northwind, cada um com seu número de pedidos e territórios</div>
+    <table class="data-table" style="margin-bottom:10px;">
+      <thead><tr><th>Funcionário</th><th>Pedidos atendidos</th><th>Territórios cobertos</th><th>Linhas no JOIN cartesiano</th><th>Registros reais (via Bridge)</th></tr></thead>
+      <tbody>
+        <tr class="row-bad"><td>Steven Buchanan</td><td>5</td><td>3</td><td>15</td><td>8</td></tr>
+        <tr class="row-bad"><td>Margaret Peacock</td><td>4</td><td>2</td><td>8</td><td>6</td></tr>
+        <tr><td>Michael Suyama</td><td>2</td><td>1</td><td>2</td><td>3</td></tr>
+      </tbody>
+    </table>
+    <div class="chart-legend">
+      <span><span class="lg-dot" style="background:var(--accent-red);"></span>Linhas no JOIN cartesiano (errado)</span>
+      <span><span class="lg-dot" style="background:var(--accent);"></span>Registros reais via Bridge (correto)</span>
+    </div>
+    <div class="canvas-wrap"><canvas id="chasmEmployeesChart" height="200"></canvas></div>
+  </section>
+
+  <!-- ============ SOLUÇÕES ATUAIS ============ -->
+  <section class="section" id="s-solucoes">
+    <div class="section-eyebrow">Antes do USS</div>
+    <div class="section-title">🛠️ Como esses traps já eram contornados</div>
+    <p class="section-desc">Fan trap e chasm trap não são novidade — o mercado já tinha (e ainda tem) formas de evitá-los, cada uma com seu custo. Entender essas soluções ajuda a enxergar exatamente o que o USS formaliza e generaliza.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📊 Ferramentas de BI (Tableau, Qlik, Power BI)</div>
+        <div class="card-text">Em vez de pré-calcular um JOIN fixo, essas ferramentas guardam os <strong>relacionamentos como metadados</strong> e montam o JOIN certo <em>just-in-time</em>, de forma contextual, para cada visualização específica — o usuário nunca escreve o JOIN manualmente, então nunca comete o erro de juntar duas tabelas explosivas ao mesmo tempo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔀 A saída manual em SQL puro: UNION em vez de JOIN</div>
+        <div class="card-text">A solução artesanal, quando não se tem uma ferramenta de BI inteligente por trás: em vez de <code>JOIN</code> as tabelas problemáticas, usar <code>UNION</code> — que, por definição, <strong>nunca duplica linhas</strong> entre os conjuntos combinados. O preço é reestruturar os dados para que as linhas de fontes diferentes se alinhem pelas mesmas dimensões antes de agregar.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <p>💡 É exatamente esse padrão — <strong>UNION em vez de JOIN</strong> — que o Unified Star Schema pega emprestado das ferramentas de BI e formaliza como uma <strong>metodologia de modelagem completa</strong>, aplicável desde a camada de dados até a consulta final, e não só dentro do motor interno de uma ferramenta específica.</p>
+    </div>
+  </section>
+
+  <!-- ============ PUPPINI BRIDGE ============ -->
+  <section class="section" id="s-bridge">
+    <div class="section-eyebrow">A Peça Central</div>
+    <div class="section-title">🌉 A Puppini Bridge</div>
+    <p class="section-desc">
+      A <strong>Puppini Bridge</strong> é uma tabela central criada unindo (com <code>UNION</code>, nunca <code>JOIN</code>) as chaves de <strong>todas</strong> as tabelas de fato do modelo, mais uma coluna <code>Stage</code> que identifica de qual tabela de origem cada linha veio. É, como descrevem os textos de referência sobre o tema, uma espécie de <strong>central telefônica</strong> que já pré-conectou todos os registros — o usuário nunca precisa decidir sozinho como Orders se conecta com Order Details.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Como duas tabelas de fato do Northwind alimentam a Bridge — clique nos blocos</div>
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">📦 Fato Orders</div>
+          <div class="pq-clickable" data-id="fs-key" onclick="pickBridgeDiagram('fs-key')">_KEY_Order</div>
+          <div class="pq-clickable" data-id="fs-qty" onclick="pickBridgeDiagram('fs-qty')">Freight (medida)</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🧾 Fato Order Details</div>
+          <div class="pq-clickable" data-id="fr-key" onclick="pickBridgeDiagram('fr-key')">_KEY_OrderDetail</div>
+          <div class="pq-clickable" data-id="fr-fk" onclick="pickBridgeDiagram('fr-fk')">_KEY_Order (referência)</div>
+          <div class="pq-clickable" data-id="fr-qty" onclick="pickBridgeDiagram('fr-qty')">Quantity × UnitPrice (medida)</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin:14px 0;">
+        <span class="chip" style="font-size:12.5px;">⬇ ambos alimentam via UNION ⬇</span>
+      </div>
+      <div class="pq-box" style="max-width:480px;margin:0 auto;">
+        <div class="pq-box-label">🌉 Puppini Bridge</div>
+        <div class="pq-clickable" data-id="br-stage" onclick="pickBridgeDiagram('br-stage')">Stage ("Orders" ou "OrderDetails")</div>
+        <div class="pq-nested">
+          <div class="pq-clickable" data-id="br-ks" onclick="pickBridgeDiagram('br-ks')">_KEY_Order</div>
+          <div class="pq-clickable" data-id="br-kr" onclick="pickBridgeDiagram('br-kr')">_KEY_OrderDetail</div>
+          <div class="pq-clickable" data-id="br-measure" onclick="pickBridgeDiagram('br-measure')">Freight (medida movida pra cá)</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="bridgeDiagramDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">A Bridge não faz JOIN entre Orders e Order Details — ela empilha (UNION) as chaves de cada uma, marcando com Stage de onde vieram.</div>
+      </div>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:6px;">Puppini Bridge resultante para 3 pedidos reais do Northwind (linhas empilhadas via UNION, nunca combinadas via JOIN)</div>
+    <div style="overflow-x:auto;">
+    <table class="bridge-table">
+      <thead><tr><th>Stage</th><th>_KEY_Order</th><th>_KEY_OrderDetail</th><th>Freight</th><th>Produto</th></tr></thead>
+      <tbody>
+        <tr><td class="stage-sales">Orders</td><td>10248</td><td class="dash">—</td><td>32.38</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">Orders</td><td>10249</td><td class="dash">—</td><td>11.61</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">Orders</td><td>10250</td><td class="dash">—</td><td>65.83</td><td class="dash">—</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10248</td><td>10248-11</td><td class="dash">—</td><td>Queso Cabrales</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10248</td><td>10248-42</td><td class="dash">—</td><td>Singaporean Hokkien Fried Mee</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10248</td><td>10248-72</td><td class="dash">—</td><td>Mozzarella di Giovanni</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10249</td><td>10249-14</td><td class="dash">—</td><td>Tofu</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10249</td><td>10249-51</td><td class="dash">—</td><td>Manjimup Dried Apples</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10250</td><td>10250-41</td><td class="dash">—</td><td>Jack's New England Clam Chowder</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10250</td><td>10250-51</td><td class="dash">—</td><td>Manjimup Dried Apples</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10250</td><td>10250-65</td><td class="dash">—</td><td>Louisiana Fiery Hot Pepper Sauce</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="info-box">
+      <p>💡 Repare: mesmo o Pedido 10248 tendo <strong>3 produtos</strong> em Order Details (a mesma situação que causava o fan trap), a linha <code>Stage="Orders"</code> de 10248 aparece <strong>uma única vez</strong>, com <code>Freight = 32.38</code>. As 3 linhas de produto viram linhas <em>separadas</em> com <code>Stage="OrderDetails"</code>, sem tocar na medida de frete. Nada duplica porque não existe JOIN entre Orders e Order Details — só UNION.</p>
+    </div>
+  </section>
+
+  <!-- ============ NOMENCLATURA ============ -->
+  <section class="section" id="s-nomenclatura">
+    <div class="section-eyebrow">O Contrato Comum</div>
+    <div class="section-title">🔑 A convenção de nomenclatura _KEY_</div>
+    <p class="section-desc">Para a Bridge funcionar como uma "central telefônica" genérica, o USS exige um padrão rígido de nomes — é essa previsibilidade que permite até <strong>automatizar</strong> a geração da Bridge a partir do modelo de dados.</p>
+    <table class="data-table">
+      <thead><tr><th>Elemento</th><th>Exemplo</th><th>Papel</th></tr></thead>
+      <tbody>
+        <tr><td><code>_KEY_&lt;Entidade&gt;</code></td><td><code>_KEY_Sales</code>, <code>_KEY_Returns</code></td><td>Chave técnica padronizada — todo fato ganha uma coluna com esse prefixo, usada exclusivamente para conectar via Bridge.</td></tr>
+        <tr><td>Chave composta</td><td><code>_KEY_Sales = HASH(pedido_id || linha_id)</code></td><td>Quando a chave de negócio tem mais de uma coluna, elas são concatenadas ou transformadas em hash e viram uma única coluna técnica.</td></tr>
+        <tr><td>ID original preservado</td><td><code>Sale_ID</code> continua existindo ao lado de <code>_KEY_Sales</code></td><td>O identificador legível para humanos não é removido — ele só deixa de ser o mecanismo de conexão entre tabelas.</td></tr>
+        <tr><td><code>Stage</code></td><td><code>"Sales"</code>, <code>"Returns"</code></td><td>Marca de qual tabela de origem aquela linha da Bridge veio — essencial para agregações condicionais na consulta final.</td></tr>
+      </tbody>
+    </table>
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa</div>
+      <p>Com nomes 100% padronizados, uma ferramenta de BI (ou um framework interno) consegue reconhecer automaticamente quais colunas de quais tabelas devem entrar na Bridge — sem depender de um analista decidir manualmente, tabela por tabela, como cada relacionamento deveria ser montado.</p>
+    </div>
+  </section>
+
+  <!-- ============ FILOSOFIA ============ -->
+  <section class="section" id="s-filosofia">
+    <div class="section-eyebrow">A Virada Conceitual</div>
+    <div class="section-title">🔄 A mudança de filosofia nos relacionamentos</div>
+    <p class="section-desc">No Kimball clássico, dimensões se conectam <strong>diretamente</strong> ao fato por chave estrangeira, e fatos diferentes normalmente não se conectam entre si dentro do mesmo modelo (cada cubo OLAP resolve um processo de negócio de cada vez). O USS muda essa premissa: <strong>nenhuma entidade se conecta diretamente a outra</strong> — toda conexão passa pela Bridge, inclusive entre múltiplas tabelas de fato que antes viviam isoladas em cubos separados.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⭐ Kimball clássico</div>
+        <div class="card-text">Fato ↔ Dimensão por FK direta. Múltiplos fatos normalmente não se conectam entre si no mesmo modelo — cruzar processos de negócio diferentes (vendas × devoluções × entregas) exige um trabalho de modelagem à parte, frequentemente fora do alcance do usuário de self-service.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌉 Unified Star Schema</div>
+        <div class="card-text">Toda entidade — inclusive o que antes seria uma dimensão — se conecta às demais <strong>apenas através da Bridge</strong>. Isso libera consultas que cruzam múltiplos processos de negócio ao mesmo tempo, algo tradicionalmente difícil dentro de um cubo OLAP mono-fato.</div>
+      </div>
+    </div>
+    <div class="info-box">
+      <p>💡 Isso não significa que dimensões "deixam de existir" — atributos descritivos (nome do cliente, categoria do produto) continuam existindo nas próprias tabelas. O que muda é <strong>como elas se conectam</strong>: nunca diretamente a outra entidade, sempre via Bridge.</p>
+    </div>
+  </section>
+
+  <!-- ============ MEDIDAS NA BRIDGE ============ -->
+  <section class="section" id="s-medidas">
+    <div class="section-eyebrow">Consertando o Fan Trap</div>
+    <div class="section-title">📥 Movendo medidas em risco para dentro da Bridge</div>
+    <p class="section-desc">A técnica concreta que elimina o fan trap: quando uma tabela de fato está no lado "1" de uma relação 1:N arriscada (como Orders em relação a Order Details), sua medida é <strong>copiada para dentro da própria Puppini Bridge</strong>, na linha correspondente ao <code>Stage</code> daquela tabela. Consultas passam a agregar a medida <strong>a partir da Bridge</strong>, nunca de um JOIN direto entre Orders e Order Details.</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- ERRADO: JOIN direto entre as duas tabelas de fato, sujeito a fan trap</span>
+<span class="kw">SELECT</span> o.order_id, <span class="fn">SUM</span>(o.freight) <span class="kw">AS</span> frete_total
+<span class="kw">FROM</span> orders o
+<span class="kw">LEFT JOIN</span> order_details od <span class="kw">ON</span> od.order_id <span class="kw">=</span> o.order_id
+<span class="kw">GROUP BY</span> o.order_id;
+<span class="cm">-- se o.order_id tiver 3 produtos em order_details, freight entra 3x na SUM</span>
+
+<span class="cm">-- CERTO: agrega a partir da Bridge, condicionando por Stage</span>
+<span class="kw">SELECT</span> b._KEY_Order,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage <span class="kw">=</span> <span class="st">'Orders'</span>       <span class="kw">THEN</span> b.freight    <span class="kw">END</span>) <span class="kw">AS</span> frete_total,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage <span class="kw">=</span> <span class="st">'OrderDetails'</span> <span class="kw">THEN</span> b.line_total <span class="kw">END</span>) <span class="kw">AS</span> receita_itens
+<span class="kw">FROM</span> puppini_bridge b
+<span class="kw">GROUP BY</span> b._KEY_Order;</div>
+    <div class="ok-box">
+      <div class="highlight-title">Resultado com o Pedido 10248 tendo 3 produtos em Order Details</div>
+      <p><code>frete_total = 32.38</code> (correto, sem duplicação) e <code>receita_itens</code> soma corretamente os 3 produtos (168.00 + 98.00 + 174.00 = 440.00) — porque cada medida vive na sua própria linha de <code>Stage</code>, e a agregação condicional nunca mistura as duas.</p>
+    </div>
+  </section>
+
+  <!-- ============ FULL OUTER JOIN EFFECT ============ -->
+  <section class="section" id="s-fullouter">
+    <div class="section-eyebrow">Um Bônus da Bridge</div>
+    <div class="section-title">🧩 O "Full Outer Join Effect"</div>
+    <p class="section-desc">Como a Bridge é construída via <code>UNION</code> de <strong>todas</strong> as chaves de <strong>todas</strong> as tabelas de fato, ela automaticamente contém toda entidade que existe em qualquer uma delas — mesmo que não tenha correspondência nas demais. O efeito prático é equivalente a um <code>FULL OUTER JOIN</code> entre todos os fatos do modelo, só que pré-calculado e sem o custo de escrever manualmente essa cadeia de outer joins.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">❌ INNER JOIN tradicional</div>
+        <div class="card-text">Um cliente que nunca comprou nada <strong>desaparece</strong> do resultado assim que a consulta faz <code>JOIN</code> com a tabela de vendas — mesmo que a pergunta de negócio seja justamente "quais clientes nunca compraram".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Via Puppini Bridge</div>
+        <div class="card-text">Como o cliente já está na Bridge (com <code>Stage="Customer"</code>, mesmo sem nenhuma linha de <code>Stage="Orders"</code> correspondente), ele continua aparecendo no resultado — com as métricas de venda simplesmente vazias, não removidas.</div>
+      </div>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:6px;">Exemplo: 4 clientes do Northwind num recorte trimestral, um deles sem nenhum pedido</div>
+    <table class="data-table" style="margin-bottom:10px;">
+      <thead><tr><th>Cliente</th><th>Pedidos no período</th><th>Aparece com INNER JOIN?</th><th>Aparece via Puppini Bridge?</th></tr></thead>
+      <tbody>
+        <tr><td>Vins et alcools Chevalier</td><td>1</td><td>✅ Sim</td><td>✅ Sim</td></tr>
+        <tr><td>Toms Spezialitäten</td><td>1</td><td>✅ Sim</td><td>✅ Sim</td></tr>
+        <tr><td>Hanari Carnes</td><td>1</td><td>✅ Sim</td><td>✅ Sim</td></tr>
+        <tr class="row-bad"><td>Rattlesnake Canyon Grocery</td><td>0</td><td>❌ Não — some do relatório</td><td>✅ Sim, com métricas vazias</td></tr>
+      </tbody>
+    </table>
+    <div class="chart-legend">
+      <span><span class="lg-dot" style="background:var(--accent-red);"></span>INNER JOIN tradicional</span>
+      <span><span class="lg-dot" style="background:var(--accent);"></span>Via Puppini Bridge</span>
+    </div>
+    <div class="canvas-wrap"><canvas id="fullOuterChart" height="170"></canvas></div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa</div>
+      <p>Esse efeito é o que permite ao USS responder, sem malabarismo de SQL, perguntas do tipo "todos os clientes, tenham ou não comprado" ou "todos os pedidos e todos os territórios de um funcionário, mesmo que um dos dois conjuntos esteja vazio" — exatamente os casos que motivam o chasm trap quando resolvidos com JOIN direto.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">⭐ Star Schema clássico vs. Unified Star Schema</div>
+    <p class="section-desc">Mesmo cenário de negócio — cliente, produto e uma venda — modelado das duas formas. Clique em qualquer caixa dos dois diagramas.</p>
+
+    <div class="interactive-panel">
+      <div class="diagram-compare">
+        <div class="diagram-panel">
+          <div class="diagram-panel-title star">⭐ Star Schema (Kimball)</div>
+          <div class="diagram-panel-caption">Dimensões conectadas por FK direta ao fato central</div>
+          <div class="diagram-svg-wrap" id="starWrap">
+            <svg id="starSvg"></svg>
+            <div class="dnode-grid star-grid">
+              <div class="dnode dim n-dt" id="star-dt" onclick="pickDiagramNode('star-dt')">DIM_TEMPO<span class="dnode-sub">data · mês · ano</span></div>
+              <div class="dnode dim n-dc" id="star-dc" onclick="pickDiagramNode('star-dc')">DIM_CLIENTE<span class="dnode-sub">nome · cidade · segmento</span></div>
+              <div class="dnode fact n-fv" id="star-fv" onclick="pickDiagramNode('star-fv')">FATO_VENDAS<span class="dnode-sub">cliente_sk · produto_sk · tempo_sk · qtd · valor</span></div>
+              <div class="dnode dim n-dp" id="star-dp" onclick="pickDiagramNode('star-dp')">DIM_PRODUTO<span class="dnode-sub">nome · categoria · marca</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="diagram-panel">
+          <div class="diagram-panel-title uss">🌉 Unified Star Schema</div>
+          <div class="diagram-panel-caption">Toda entidade conecta só à Puppini Bridge, nunca entre si</div>
+          <div class="diagram-svg-wrap" id="ussWrap">
+            <svg id="ussSvg"></svg>
+            <div class="dnode-grid star-grid">
+              <div class="dnode dim n-dt" id="uss-dt" onclick="pickDiagramNode('uss-dt')">FATO_CLIENTE<span class="dnode-sub">nome · cidade · segmento</span></div>
+              <div class="dnode dim n-dc" id="uss-dc" onclick="pickDiagramNode('uss-dc')">FATO_PRODUTO<span class="dnode-sub">nome · categoria · marca</span></div>
+              <div class="dnode bridge n-fv" id="uss-fv" onclick="pickDiagramNode('uss-fv')">PUPPINI BRIDGE<span class="dnode-sub">_KEY_Cliente · _KEY_Produto · _KEY_Vendas · Stage</span></div>
+              <div class="dnode dim n-dp" id="uss-dp" onclick="pickDiagramNode('uss-dp')">FATO_VENDAS<span class="dnode-sub">quantidade · valor</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="diagramCompareDetail">
+        <div class="ad-title">👆 Clique em qualquer caixa dos dois diagramas</div>
+        <div class="ad-text">No Star Schema, tudo converge por FK direta ao fato. No USS, tudo converge à Bridge — inclusive o que antes era o próprio fato de vendas.</div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>Abordagem</th><th>Estrutura central</th><th>Mecanismo de relacionamento</th><th>Risco de fan/chasm trap</th><th>Self-Service BI</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="color:var(--accent-purple);">Star Schema (Kimball)</strong></td><td>Um fato por cubo, cercado de dimensões</td><td>JOIN direto fato ↔ dimensão</td><td>Alto quando múltiplos fatos são combinados livremente</td><td>Arriscado — usuário monta o JOIN</td></tr>
+        <tr><td><strong>Snowflake Schema</strong></td><td>Dimensões normalizadas em sub-dimensões</td><td>Cadeia de JOINs fato → dim → sub-dim</td><td>Mesmo risco do star, com mais JOINs no caminho</td><td>Pior — mais tabelas para entender</td></tr>
+        <tr class="row-scan"><td><strong style="color:var(--accent);">Unified Star Schema</strong></td><td>Puppini Bridge (UNION de chaves)</td><td>Bridge pré-conectada, sem JOIN M:N direto entre fatos</td><td>Eliminado por construção (UNION não duplica)</td><td>Alto — usuário só parte da Bridge</td></tr>
+      </tbody>
+    </table>
+
+    <div class="ctrl-l" style="margin-top:14px;">JOINs manuais necessários para a pergunta "frete + receita + territórios por funcionário" do case Northwind</div>
+    <div class="canvas-wrap"><canvas id="joinsComparisonChart" height="180"></canvas></div>
+  </section>
+
+  <!-- ============ CONSULTANDO ============ -->
+  <section class="section" id="s-consulta">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">💻 Consultando: com JOIN tradicional vs. via Bridge</div>
+    <p class="section-desc">Pergunta de negócio: "quanto de frete cada cliente pagou e quanto gastou em produtos?". A versão tradicional arrisca fan trap se um pedido tiver múltiplos produtos; a versão via Bridge nunca duplica.</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">❌ JOIN tradicional (risco de fan trap)</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> c.company_name,
+       <span class="fn">SUM</span>(o.freight)               <span class="kw">AS</span> frete_total,
+       <span class="fn">SUM</span>(od.quantity * od.unit_price) <span class="kw">AS</span> receita_produtos
+<span class="kw">FROM</span> customers c
+<span class="kw">JOIN</span> orders o        <span class="kw">ON</span> o.customer_id <span class="kw">=</span> c.customer_id
+<span class="kw">LEFT JOIN</span> order_details od <span class="kw">ON</span> od.order_id <span class="kw">=</span> o.order_id
+<span class="kw">GROUP BY</span> c.company_name;
+<span class="cm">-- pedido com 2+ produtos duplica freight_total</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">✅ Via Puppini Bridge (sem duplicação)</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> c.company_name,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'Orders'</span>       <span class="kw">THEN</span> b.freight    <span class="kw">END</span>) <span class="kw">AS</span> frete_total,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'OrderDetails'</span> <span class="kw">THEN</span> b.line_total <span class="kw">END</span>) <span class="kw">AS</span> receita_produtos
+<span class="kw">FROM</span> puppini_bridge b
+<span class="kw">LEFT JOIN</span> customers c <span class="kw">ON</span> c._KEY_Customer <span class="kw">=</span> b._KEY_Customer
+<span class="kw">GROUP BY</span> c.company_name;
+<span class="cm">-- cada medida agregada só dentro do seu próprio Stage</span></div>
+      </div>
+    </div>
+    <div class="info-box">
+      <p>💡 O usuário de self-service BI nunca precisa decidir <strong>a ordem</strong> dos JOINs nem <strong>quais</strong> tabelas de fato podem ser combinadas com segurança — ele sempre começa <code>FROM puppini_bridge</code> e deixa a agregação condicional por <code>Stage</code> fazer o trabalho de isolar cada medida.</p>
+    </div>
+  </section>
+
+  <!-- ============ CASE COMPLETO NORTHWIND ============ -->
+  <section class="section" id="s-northwind">
+    <div class="section-eyebrow">Do Zero ao Fim</div>
+    <div class="section-title">📦 Case Completo: Modelando o Northwind com USS</div>
+    <p class="section-desc">Vamos juntar tudo que vimos até aqui num único case, usando o banco de exemplo mais famoso de BI: o <strong>Northwind</strong>. Diferente das seções anteriores, que isolavam um trap por vez, aqui vamos usar as <strong>8 tabelas</strong> do schema — clientes, funcionários, pedidos, itens de pedido, produtos, categorias, territórios e a associação funcionário-território — para construir a Bridge completa e responder, numa única consulta, uma pergunta que cruza múltiplas tabelas de fato ao mesmo tempo.</p>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">As tabelas do Northwind usadas neste case</div>
+    <div class="grid-4">
+      <div class="schema-card"><div class="sc-name">Customers</div><div class="sc-grain">1 linha por cliente</div><div class="sc-cols">CustomerID · CompanyName · Country</div></div>
+      <div class="schema-card"><div class="sc-name">Employees</div><div class="sc-grain">1 linha por funcionário</div><div class="sc-cols">EmployeeID · Nome · Title</div></div>
+      <div class="schema-card"><div class="sc-name">Orders</div><div class="sc-grain">1 linha por pedido</div><div class="sc-cols">OrderID · CustomerID · EmployeeID · Freight</div></div>
+      <div class="schema-card"><div class="sc-name">Order Details</div><div class="sc-grain">1 linha por produto do pedido</div><div class="sc-cols">OrderID · ProductID · Quantity · UnitPrice</div></div>
+      <div class="schema-card"><div class="sc-name">Products</div><div class="sc-grain">1 linha por produto</div><div class="sc-cols">ProductID · ProductName · CategoryID</div></div>
+      <div class="schema-card"><div class="sc-name">Categories</div><div class="sc-grain">1 linha por categoria</div><div class="sc-cols">CategoryID · CategoryName</div></div>
+      <div class="schema-card"><div class="sc-name">Territories</div><div class="sc-grain">1 linha por território de venda</div><div class="sc-cols">TerritoryID · TerritoryDescription</div></div>
+      <div class="schema-card"><div class="sc-name">EmployeeTerritories</div><div class="sc-grain">1 linha por funcionário × território</div><div class="sc-cols">EmployeeID · TerritoryID</div></div>
+    </div>
+
+    <div class="warn-box">
+      <p>⚠️ Recapitulando os dois traps encontrados nesse mesmo schema: <code>Orders → Order Details</code> gera <strong>fan trap</strong> no <code>Freight</code> (seção 🕸️ Fan Trap), e <code>Employees → Orders + EmployeeTerritories</code> gera <strong>chasm trap</strong> ao contar pedidos e territórios juntos (seção 💥 Chasm Trap). A Bridge abaixo resolve os dois ao mesmo tempo.</p>
+    </div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">Diagrama do case: quem alimenta a Bridge via UNION (Stage) e quem só decora chaves via JOIN comum — clique em qualquer bloco</div>
+    <div class="interactive-panel">
+      <div class="diagram-svg-wrap" id="nwWrap">
+        <svg id="nwSvg"></svg>
+        <div class="dnode-grid northwind-grid">
+          <div class="dnode fact n-ord" id="nw-ord" onclick="pickNorthwindNode('nw-ord')">Orders<span class="dnode-sub">Stage="Orders" · Freight</span></div>
+          <div class="dnode fact n-od" id="nw-od" onclick="pickNorthwindNode('nw-od')">Order Details<span class="dnode-sub">Stage="OrderDetails" · LineTotal</span></div>
+          <div class="dnode fact n-et" id="nw-et" onclick="pickNorthwindNode('nw-et')">EmployeeTerritories<span class="dnode-sub">Stage="EmployeeTerritory"</span></div>
+          <div class="dnode bridge n-brd" id="nw-brd" onclick="pickNorthwindNode('nw-brd')">🌉 PUPPINI BRIDGE NORTHWIND<span class="dnode-sub">_KEY_Order · _KEY_OrderDetail · _KEY_Employee · _KEY_Customer · _KEY_Territory · Stage</span></div>
+          <div class="dnode dim n-emp" id="nw-emp" onclick="pickNorthwindNode('nw-emp')">Employees<span class="dnode-sub">nome · title</span></div>
+          <div class="dnode dim n-cus" id="nw-cus" onclick="pickNorthwindNode('nw-cus')">Customers<span class="dnode-sub">company · country</span></div>
+          <div class="dnode dim n-prd" id="nw-prd" onclick="pickNorthwindNode('nw-prd')">Products<span class="dnode-sub">nome · category_id</span></div>
+          <div class="dnode dim n-cat" id="nw-cat" onclick="pickNorthwindNode('nw-cat')">Categories<span class="dnode-sub">category_name</span></div>
+          <div class="dnode dim n-ter" id="nw-ter" onclick="pickNorthwindNode('nw-ter')">Territories<span class="dnode-sub">territory_description</span></div>
+        </div>
+      </div>
+      <div class="chart-legend" style="margin-top:14px;">
+        <span><span class="lg-dot" style="background:var(--accent-purple);"></span>Alimentam a Bridge via UNION (Stage)</span>
+        <span><span class="lg-dot" style="background:var(--accent);"></span>A Bridge</span>
+        <span><span class="lg-dot" style="background:var(--accent-blue);"></span>Dimensões N:1 — decoram chaves via JOIN comum</span>
+      </div>
+      <div class="anatomy-detail" id="nwDiagramDetail">
+        <div class="ad-title">👆 Clique em qualquer tabela</div>
+        <div class="ad-text">As três tabelas roxas empilham suas chaves na Bridge via UNION — nunca via JOIN entre si. As cinco tabelas azuis só decoram uma chave da Bridge com um nome legível, numa relação N:1 sem nenhum risco de trap.</div>
+      </div>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:6px;">A Puppini Bridge completa do Northwind — 3 pedidos, 3 clientes e 3 funcionários, três Stages diferentes empilhados via UNION</div>
+    <div style="overflow-x:auto;">
+    <table class="bridge-table">
+      <thead><tr><th>Stage</th><th>_KEY_Order</th><th>_KEY_OrderDetail</th><th>_KEY_Employee</th><th>_KEY_Customer</th><th>_KEY_Territory</th><th>Freight</th><th>LineTotal</th></tr></thead>
+      <tbody>
+        <tr><td class="stage-sales">Orders</td><td>10248</td><td class="dash">—</td><td>5</td><td>VINET</td><td class="dash">—</td><td>32.38</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">Orders</td><td>10249</td><td class="dash">—</td><td>6</td><td>TOMSP</td><td class="dash">—</td><td>11.61</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">Orders</td><td>10250</td><td class="dash">—</td><td>4</td><td>HANAR</td><td class="dash">—</td><td>65.83</td><td class="dash">—</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10248</td><td>10248-11</td><td class="dash">—</td><td>VINET</td><td class="dash">—</td><td class="dash">—</td><td>168.00</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10248</td><td>10248-42</td><td class="dash">—</td><td>VINET</td><td class="dash">—</td><td class="dash">—</td><td>98.00</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10248</td><td>10248-72</td><td class="dash">—</td><td>VINET</td><td class="dash">—</td><td class="dash">—</td><td>174.00</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10249</td><td>10249-14</td><td class="dash">—</td><td>TOMSP</td><td class="dash">—</td><td class="dash">—</td><td>167.40</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10249</td><td>10249-51</td><td class="dash">—</td><td>TOMSP</td><td class="dash">—</td><td class="dash">—</td><td>1696.00</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10250</td><td>10250-41</td><td class="dash">—</td><td>HANAR</td><td class="dash">—</td><td class="dash">—</td><td>77.00</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10250</td><td>10250-51</td><td class="dash">—</td><td>HANAR</td><td class="dash">—</td><td class="dash">—</td><td>1484.00</td></tr>
+        <tr><td class="stage-returns">OrderDetails</td><td>10250</td><td>10250-65</td><td class="dash">—</td><td>HANAR</td><td class="dash">—</td><td class="dash">—</td><td>252.00</td></tr>
+        <tr><td class="stage-sales">EmployeeTerritory</td><td class="dash">—</td><td class="dash">—</td><td>5</td><td class="dash">—</td><td>60179</td><td class="dash">—</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">EmployeeTerritory</td><td class="dash">—</td><td class="dash">—</td><td>5</td><td class="dash">—</td><td>30346</td><td class="dash">—</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">EmployeeTerritory</td><td class="dash">—</td><td class="dash">—</td><td>5</td><td class="dash">—</td><td>31406</td><td class="dash">—</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">EmployeeTerritory</td><td class="dash">—</td><td class="dash">—</td><td>6</td><td class="dash">—</td><td>02116</td><td class="dash">—</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">EmployeeTerritory</td><td class="dash">—</td><td class="dash">—</td><td>4</td><td class="dash">—</td><td>19713</td><td class="dash">—</td><td class="dash">—</td></tr>
+        <tr><td class="stage-sales">EmployeeTerritory</td><td class="dash">—</td><td class="dash">—</td><td>4</td><td class="dash">—</td><td>55113</td><td class="dash">—</td><td class="dash">—</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="section-desc" style="font-size:12px;">💡 Repare como a Bridge fica <strong>esparsa</strong> — cada Stage só preenche as colunas que fazem sentido para ele, deixando as demais em branco. <code>_KEY_Customer</code> é <strong>propagado</strong> das linhas de <code>Orders</code> para as linhas de <code>OrderDetails</code> do mesmo pedido (o cliente é sempre o mesmo dentro de um pedido), o que permite cortar a receita por cliente sem nenhum JOIN adicional. É exatamente essa "matriz esparsa" que a seção de Data Mesh, logo a seguir, aponta como o principal desafio de escala do padrão.</div>
+
+    <div class="ctrl-l" style="margin-top:10px;">Dimensões auxiliares deste case — Customers e Territories, usadas para decorar a Bridge com nomes legíveis</div>
+    <div class="grid-2">
+      <table class="data-table">
+        <thead><tr><th>_KEY_Customer</th><th>CompanyName</th><th>Country</th></tr></thead>
+        <tbody>
+          <tr><td>VINET</td><td>Vins et alcools Chevalier</td><td>France</td></tr>
+          <tr><td>TOMSP</td><td>Toms Spezialitäten</td><td>Germany</td></tr>
+          <tr><td>HANAR</td><td>Hanari Carnes</td><td>Brazil</td></tr>
+        </tbody>
+      </table>
+      <table class="data-table">
+        <thead><tr><th>TerritoryID</th><th>TerritoryDescription</th></tr></thead>
+        <tbody>
+          <tr><td>60179</td><td>Findlay</td></tr>
+          <tr><td>30346</td><td>Roswell</td></tr>
+          <tr><td>31406</td><td>Macon</td></tr>
+          <tr><td>02116</td><td>Boston</td></tr>
+          <tr><td>19713</td><td>Neenah</td></tr>
+          <tr><td>55113</td><td>Minneapolis</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:10px;">A consulta final: frete + receita + territórios cobertos, por funcionário, numa única passada pela Bridge</div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> e.nome,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'Orders'</span>            <span class="kw">THEN</span> b.freight          <span class="kw">END</span>) <span class="kw">AS</span> frete_total,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'OrderDetails'</span>      <span class="kw">THEN</span> b.line_total       <span class="kw">END</span>) <span class="kw">AS</span> receita_total,
+       <span class="fn">COUNT</span>(<span class="kw">DISTINCT CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'EmployeeTerritory'</span> <span class="kw">THEN</span> b._KEY_Territory <span class="kw">END</span>) <span class="kw">AS</span> territorios_cobertos
+<span class="kw">FROM</span> puppini_bridge_northwind b
+<span class="kw">JOIN</span> employees e <span class="kw">ON</span> e._KEY_Employee <span class="kw">=</span> b._KEY_Employee
+<span class="kw">GROUP BY</span> e.nome;
+<span class="cm">-- uma única passada pela Bridge: nenhum fan trap no frete, nenhum chasm trap nos territórios</span></div>
+
+    <div class="ctrl-l" style="margin-top:10px;">Resultado — correto, sem nenhuma das duas armadilhas. A coluna de territórios já chega com nomes legíveis, via um JOIN comum (sem risco) à dimensão Territories</div>
+    <table class="data-table" style="margin-bottom:10px;">
+      <thead><tr><th>Funcionário</th><th>Frete Total</th><th>Receita Total</th><th>Territórios Cobertos</th><th>Territórios (nomes)</th></tr></thead>
+      <tbody>
+        <tr class="row-scan"><td>Steven Buchanan</td><td>R$ 32,38</td><td>R$ 440,00</td><td>3</td><td>Findlay, Roswell, Macon</td></tr>
+        <tr class="row-scan"><td>Michael Suyama</td><td>R$ 11,61</td><td>R$ 1.863,40</td><td>1</td><td>Boston</td></tr>
+        <tr class="row-scan"><td>Margaret Peacock</td><td>R$ 65,83</td><td>R$ 1.813,00</td><td>2</td><td>Neenah, Minneapolis</td></tr>
+      </tbody>
+    </table>
+    <div class="section-desc" style="font-size:12px;">💡 A coluna <code>Territórios Cobertos</code> vem do <code>COUNT(DISTINCT ...)</code> protegido pelo <code>Stage</code>; a coluna <code>Territórios (nomes)</code> vem de um segundo passo simples — as mesmas linhas de <code>Stage="EmployeeTerritory"</code>, sem agregação, juntadas a <code>territories</code> por <code>_KEY_Territory</code> — exatamente o mesmo padrão usado para decorar produtos com o nome da categoria.</div>
+    <div class="canvas-wrap"><canvas id="northwindRevenueChart" height="190"></canvas></div>
+
+    <div class="ok-box">
+      <div class="highlight-title">O que uma única Bridge acabou de responder</div>
+      <p>Frete (medida de <code>Orders</code>), receita de produtos (medida de <code>Order Details</code>) e contagem de territórios (relacionamento de <code>EmployeeTerritories</code>, decorado com nomes via <code>Territories</code>) — três granularidades e três tabelas de fato diferentes, respondidas numa <strong>única consulta</strong>, sem um único <code>DISTINCT</code> de emergência ou subconsulta corretiva para "consertar" a duplicação depois do fato. <code>Employees</code> e <code>Customers</code> entram como dimensões que decoram o resultado — exatamente como a filosofia do USS prevê: tudo se conecta pela Bridge, e cada dimensão só entra para dar nome legível a uma chave.</p>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:18px;">📦 Outro exemplo, agora no grão do pedido: frete + itens + receita, numa única passada pela Bridge</div>
+    <p class="section-desc">Trocando o agrupamento de <code>_KEY_Employee</code> para <code>_KEY_Order</code>, a mesma Bridge responde no grão do pedido — e a coluna <code>itens</code> abaixo é literalmente o número de linhas de <code>Order Details</code> que causaria a duplicação do frete se alguém ainda juntasse <code>Orders</code> com <code>Order Details</code> via JOIN direto (seção 🕸️ Fan Trap).</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> b._KEY_Order,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'Orders'</span>       <span class="kw">THEN</span> b.freight    <span class="kw">END</span>) <span class="kw">AS</span> frete,
+       <span class="fn">COUNT</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'OrderDetails'</span> <span class="kw">THEN</span> <span class="num">1</span>          <span class="kw">END</span>) <span class="kw">AS</span> itens,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'OrderDetails'</span> <span class="kw">THEN</span> b.line_total <span class="kw">END</span>) <span class="kw">AS</span> receita
+<span class="kw">FROM</span> puppini_bridge_northwind b
+<span class="kw">GROUP BY</span> b._KEY_Order;
+<span class="cm">-- mesma bridge, agrupada por _KEY_Order em vez de _KEY_Employee — nem precisa de JOIN a uma dimensão</span></div>
+    <table class="data-table">
+      <thead><tr><th>Pedido</th><th>Frete</th><th>Itens (Order Details)</th><th>Receita</th></tr></thead>
+      <tbody>
+        <tr><td>10248</td><td>R$ 32,38</td><td>3</td><td>R$ 440,00</td></tr>
+        <tr><td>10249</td><td>R$ 11,61</td><td>2</td><td>R$ 1.863,40</td></tr>
+        <tr><td>10250</td><td>R$ 65,83</td><td>3</td><td>R$ 1.813,00</td></tr>
+      </tbody>
+    </table>
+    <div class="info-box">
+      <p>💡 Repare que essa consulta nem precisou de <code>JOIN</code> a nenhuma dimensão — <code>_KEY_Order</code> já é a própria chave da Bridge. É o exemplo mais simples possível do padrão: qualquer grão que já exista na Bridge (pedido, funcionário, cliente) vira uma consulta só de agregação condicional, sem tocar em nenhuma tabela de fato diretamente.</p>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:18px;">🔄 Mesma Bridge, outro corte: e se a pergunta fosse por categoria de produto, não por funcionário?</div>
+    <p class="section-desc">Essa é a prova real de flexibilidade do USS: a <strong>mesma</strong> Puppini Bridge construída acima responde a uma pergunta totalmente diferente — sem adicionar uma única tabela nova, só trocando o JOIN de dimensão auxiliar (Products → Categories) por cima do <code>Stage="OrderDetails"</code>. E, como no exemplo por funcionário, dá pra combinar mais de um sinal na mesma passada: receita, produtos distintos vendidos e o ticket médio entre eles.</p>
+    <table class="data-table" style="margin-bottom:10px;">
+      <thead><tr><th>Produto (em Order Details)</th><th>Categoria</th></tr></thead>
+      <tbody>
+        <tr><td>Queso Cabrales</td><td>Dairy Products</td></tr>
+        <tr><td>Mozzarella di Giovanni</td><td>Dairy Products</td></tr>
+        <tr><td>Singaporean Hokkien Fried Mee</td><td>Grains/Cereals</td></tr>
+        <tr><td>Tofu</td><td>Produce</td></tr>
+        <tr><td>Manjimup Dried Apples</td><td>Produce</td></tr>
+        <tr><td>Jack's New England Clam Chowder</td><td>Seafood</td></tr>
+        <tr><td>Louisiana Fiery Hot Pepper Sauce</td><td>Condiments</td></tr>
+      </tbody>
+    </table>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> cat.category_name,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'OrderDetails'</span> <span class="kw">THEN</span> b.line_total <span class="kw">END</span>) <span class="kw">AS</span> receita,
+       <span class="fn">COUNT</span>(<span class="kw">DISTINCT CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'OrderDetails'</span> <span class="kw">THEN</span> b.product_id <span class="kw">END</span>) <span class="kw">AS</span> produtos_distintos
+<span class="kw">FROM</span> puppini_bridge_northwind b
+<span class="kw">JOIN</span> products   p   <span class="kw">ON</span> p.product_id  <span class="kw">=</span> b.product_id
+<span class="kw">JOIN</span> categories cat <span class="kw">ON</span> cat.category_id <span class="kw">=</span> p.category_id
+<span class="kw">GROUP BY</span> cat.category_name;
+<span class="cm">-- mesma bridge da consulta anterior — só o JOIN de dimensão auxiliar mudou</span></div>
+    <table class="data-table">
+      <thead><tr><th>Categoria</th><th>Receita</th><th>Produtos Distintos</th><th>Ticket Médio por Produto</th></tr></thead>
+      <tbody>
+        <tr><td>Produce</td><td>R$ 3.347,40</td><td>2</td><td>R$ 1.673,70</td></tr>
+        <tr><td>Dairy Products</td><td>R$ 342,00</td><td>2</td><td>R$ 171,00</td></tr>
+        <tr><td>Condiments</td><td>R$ 252,00</td><td>1</td><td>R$ 252,00</td></tr>
+        <tr><td>Grains/Cereals</td><td>R$ 98,00</td><td>1</td><td>R$ 98,00</td></tr>
+        <tr><td>Seafood</td><td>R$ 77,00</td><td>1</td><td>R$ 77,00</td></tr>
+      </tbody>
+    </table>
+    <div class="canvas-wrap"><canvas id="categoryRevenueChart" height="200"></canvas></div>
+    <div class="info-box">
+      <p>💡 Nenhum dos dois traps aparece aqui: <code>Products → Categories</code> é uma relação N:1 comum (cada produto tem uma única categoria), então esse JOIN de dimensão não arrisca nada — o cuidado com <code>Stage</code> continua sendo o que protege exclusivamente a medida <code>line_total</code>, vinda da tabela que realmente explode (Order Details). Repare em <strong>Produce</strong>: "Manjimup Dried Apples" aparece em <strong>2 pedidos diferentes</strong> (10249 e 10250), mas o <code>COUNT(DISTINCT product_id)</code> conta esse produto <strong>uma única vez</strong> — exatamente o que se espera de uma contagem de produtos distintos, e só funciona porque a medida de receita e a contagem distinta protegida por <code>Stage</code> nunca se confundem.</p>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:18px;">🌍 Um terceiro corte, com a última tabela que faltava: receita por país do cliente</div>
+    <p class="section-desc">A última tabela do schema que ainda não tinha entrado numa consulta: <code>Customers</code>. Como <code>_KEY_Customer</code> já está propagado em toda linha de <code>Stage="OrderDetails"</code> (herdado do pedido), bastar juntar <code>customers</code> por essa chave para cortar a mesma receita por <code>Country</code> — de novo, a <strong>mesma</strong> Bridge, zero tabelas novas.</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> c.country,
+       <span class="fn">SUM</span>(<span class="kw">CASE WHEN</span> b.Stage<span class="kw">=</span><span class="st">'OrderDetails'</span> <span class="kw">THEN</span> b.line_total <span class="kw">END</span>) <span class="kw">AS</span> receita
+<span class="kw">FROM</span> puppini_bridge_northwind b
+<span class="kw">JOIN</span> customers c <span class="kw">ON</span> c._KEY_Customer <span class="kw">=</span> b._KEY_Customer
+<span class="kw">GROUP BY</span> c.country;
+<span class="cm">-- de novo: mesma bridge, terceiro JOIN de dimensão diferente</span></div>
+    <table class="data-table">
+      <thead><tr><th>País</th><th>Receita</th></tr></thead>
+      <tbody>
+        <tr><td>France</td><td>R$ 440,00</td></tr>
+        <tr><td>Germany</td><td>R$ 1.863,40</td></tr>
+        <tr><td>Brazil</td><td>R$ 1.813,00</td></tr>
+      </tbody>
+    </table>
+    <div class="section-desc" style="font-size:12px;">💡 Os valores coincidem com o corte por funcionário só porque este case ilustrativo tem <strong>1 pedido por cliente</strong> — com um histórico real, o mesmo mecanismo agregaria dezenas de pedidos por país sem precisar de nenhuma mudança na Bridge ou na lógica de JOIN.</div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">As 8 tabelas, um único case</div>
+      <p><code>Orders</code> e <code>Order Details</code> alimentam a Bridge com medidas protegidas por <code>Stage</code>; <code>EmployeeTerritories</code> alimenta a Bridge com um relacionamento puro, sem medida; <code>Employees</code>, <code>Customers</code>, <code>Products</code>, <code>Categories</code> e <code>Territories</code> entram como dimensões N:1 comuns, decorando chaves com nomes legíveis — nunca arriscando um trap, porque nenhuma delas "explode" a granularidade da Bridge. Quatro perguntas de negócio completamente diferentes (por funcionário, por pedido, por categoria, por país), <strong>zero</strong> tabelas novas entre uma e outra.</p>
+    </div>
+  </section>
+
+  <!-- ============ DATA MESH ============ -->
+  <section class="section" id="s-datamesh">
+    <div class="section-eyebrow">Além do Data Warehouse</div>
+    <div class="section-title">🕸️ Unified Star Schema para modelar Data Products</div>
+    <p class="section-desc">A ideia da Bridge também se aplica fora do data warehouse clássico — em arquiteturas de <strong>Data Mesh</strong>, onde cada domínio de negócio publica seus próprios "data products". O problema tradicional: um data product de "Compras" normalmente precisa <strong>duplicar</strong> dimensões de Cliente e Produto que pertencem a outros domínios, criando conflito de ownership e risco de divergência de dados.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">❌ Abordagem dimensional tradicional em Data Mesh</div>
+        <div class="card-text">Cada data product expõe seu próprio mini star schema, com dimensões <strong>replicadas e polarizadas</strong> de outros domínios — quem consome precisa entender a lógica de JOIN de cada product separadamente, e conversar com os donos para confirmar que está juntando certo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Abordagem USS em Data Mesh</div>
+        <div class="card-text">Cada data product expõe fatos "puros" — livres de informação de outros domínios — mais sua <strong>própria Bridge</strong>, já usando a convenção de nomenclatura <code>_KEY_</code> padronizada. Os relacionamentos entre domínios ficam confinados à Bridge, nunca replicados dentro do fato.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">👤 Cadastro de Cliente</div><div class="card-text">Data product do domínio de clientes: fato + bridge próprios, sem depender de nenhum outro domínio.</div></div>
+      <div class="card"><div class="card-title">🛒 Vendas</div><div class="card-text">Data product do domínio comercial: fato de compras + bridge própria, referenciando <code>_KEY_Cliente</code> e <code>_KEY_Produto</code> sem duplicar os atributos desses domínios.</div></div>
+      <div class="card"><div class="card-title">📦 Envio</div><div class="card-text">Data product de logística: fato de remessas + bridge própria, plugável às demais através das chaves padronizadas.</div></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A Bridge global virtual</div>
+      <p>Como cada domínio já publica sua Bridge seguindo a mesma convenção de nomenclatura, um time de plataforma pode montar uma <strong>Bridge global virtual</strong> — um <code>UNION</code> automático de todas as bridges de todos os data products — sem que nenhum domínio precise coordenar isso manualmente com os demais. Ferramentas como Power BI conseguem inclusive aproveitar essa lógica associativa automaticamente, a partir só dos nomes padronizados.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📈 Escalabilidade da Bridge</div><div class="card-text">Bridges muito largas (muitas colunas <code>_KEY_</code>) podem virar matrizes esparsas grandes — bancos colunares orientados a NoSQL (HBase, Cassandra) tendem a lidar melhor com esse formato do que um relacional tradicional.</div></div>
+      <div class="card"><div class="card-title">📐 Onde colocar as medidas</div><div class="card-text">Decidir quais medidas migram para a Bridge (para evitar fan trap) e quais ficam só no fato original é uma escolha de design que pode comprometer a limpeza da interface do data product se feita sem critério.</div></div>
+      <div class="card"><div class="card-title">🤖 Automação da geração</div><div class="card-text">Gerar a Bridge automaticamente a partir do modelo entidade-relacionamento é o próximo passo natural — mas ainda depende de templates e tooling mantidos por um time de plataforma.</div></div>
+    </div>
+
+    <div class="ctrl-l" style="margin-top:6px;">Ilustração: colunas _KEY_ na Bridge global virtual conforme mais domínios publicam data products (2 chaves por domínio, em média)</div>
+    <div class="canvas-wrap"><canvas id="bridgeGrowthChart" height="180"></canvas></div>
+    <div class="section-desc" style="font-size:12px;">💡 O crescimento é <strong>linear no número de colunas</strong>, mas cada linha da Bridge global só preenche as poucas colunas do seu próprio Stage — por isso a matriz fica cada vez mais esparsa (mais colunas em branco por linha) à medida que o mesh cresce, reforçando o desafio de escala citado acima.</div>
+  </section>
+
+  <!-- ============ QUANDO USAR ============ -->
+  <section class="section" id="s-quando-usar">
+    <div class="section-eyebrow">Trade-offs</div>
+    <div class="section-title">⚖️ Quando usar (e quando não usar) o Unified Star Schema</div>
+    <div class="grid-2">
+      <div class="ok-box">
+        <div class="highlight-title">✅ Bons cenários</div>
+        <p>Ambientes de self-service BI onde usuários de negócio escrevem as próprias consultas; necessidade de analisar <strong>múltiplos processos de negócio</strong> cruzados (vendas × devoluções × entregas); arquiteturas de Data Mesh com vários data products que precisam se conectar sem duplicar dimensões; modelos que crescem com frequência, adicionando novas entidades e relacionamentos.</p>
+      </div>
+      <div class="warn-box">
+        <p style="margin-bottom:6px;"><strong style="color:var(--accent-red);text-transform:uppercase;letter-spacing:.5px;font-size:13px;">⚠️ Maus cenários</strong></p>
+        <p>Modelo simples, com um único fato e poucas dimensões estáveis — o star schema clássico já resolve isso sem a complexidade adicional de manter uma Bridge; time sem familiaridade com o padrão UNION-based, que pode confundir a Bridge com um JOIN tradicional; ecossistema de ferramentas de BI ainda mais maduro e testado para star schema clássico do que para USS.</p>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:4px;">
+      <div class="card"><div class="card-title">📊 Bridge pode crescer muito</div><div class="card-text">Conforme mais entidades entram no modelo, a Bridge ganha mais colunas <code>_KEY_</code> — em modelos muito grandes, isso vira uma matriz esparsa que exige atenção de performance.</div></div>
+      <div class="card"><div class="card-title">🐌 UNION em escala precisa de teste</div><div class="card-text">Embora UNION evite duplicação por construção, seu custo de execução em volumes muito grandes ainda precisa ser validado e, se necessário, otimizado (índices, particionamento) caso a caso.</div></div>
+      <div class="card"><div class="card-title">🧰 Ecossistema de tooling mais novo</div><div class="card-text">Star schema tem décadas de suporte consolidado em ferramentas de BI e livros didáticos. USS, formalizado em 2020, ainda está construindo esse mesmo nível de maturidade de mercado.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Unified Star Schema</span>
+    <span>
+      Fontes: <a href="https://medium.com/data-science/the-new-unified-star-schema-paradigm-in-analytics-data-modeling-review-a245b2641dc8" target="_blank" rel="noopener">The New Unified Star Schema Paradigm</a> ·
+      <a href="https://medium.com/data-science/escaping-sql-traps-with-the-unified-star-schema-562c534b1a3e" target="_blank" rel="noopener">Escaping SQL Traps</a> ·
+      <a href="https://medium.com/agile-lab-engineering/unified-star-schema-to-model-data-products-872ed0520ae7" target="_blank" rel="noopener">USS to Model Data Products</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🎯', label:'O que é'},
+  {id:'s-fantrap', icon:'🕸️', label:'Fan Trap'},
+  {id:'s-chasmtrap', icon:'💥', label:'Chasm Trap'},
+  {id:'s-solucoes', icon:'🛠️', label:'Soluções Atuais'},
+  {id:'s-bridge', icon:'🌉', label:'Puppini Bridge'},
+  {id:'s-nomenclatura', icon:'🔑', label:'Nomenclatura'},
+  {id:'s-filosofia', icon:'🔄', label:'Filosofia'},
+  {id:'s-medidas', icon:'📥', label:'Medidas na Bridge'},
+  {id:'s-fullouter', icon:'🧩', label:'Full Outer Join'},
+  {id:'s-comparacao', icon:'⭐', label:'Comparação'},
+  {id:'s-consulta', icon:'💻', label:'Consultando'},
+  {id:'s-northwind', icon:'📦', label:'Case Northwind'},
+  {id:'s-datamesh', icon:'🕸️', label:'Data Mesh'},
+  {id:'s-quando-usar', icon:'⚖️', label:'Quando Usar'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== BAR CHART HELPER (canvas, no libs) ===================== */
+function drawBarChart(canvasId, data, opts={}){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width || canvas.parentElement.clientWidth || 600;
+  const h = opts.height || 190;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas.style.height = h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+
+  const padL=10, padB=32, padT=18, padR=10;
+  const plotW = w-padL-padR, plotH = h-padT-padB;
+  const allVals = data.flatMap(d => d.values.map(v => v.value));
+  const maxVal = Math.max(...allVals, 1) * 1.2;
+  const groupW = plotW/data.length;
+  const seriesCount = data[0].values.length;
+  const groupPad = 16;
+  const barGap = 6;
+  const barW = (groupW - groupPad*2 - barGap*(seriesCount-1)) / seriesCount;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<=3;i++){
+    const y = padT + plotH*(i/3);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
+  }
+
+  data.forEach((d,gi) => {
+    const gx = padL + groupW*gi + groupPad;
+    d.values.forEach((v,vi) => {
+      const bh = Math.max((v.value/maxVal)*plotH, 1);
+      const bx = gx + vi*(barW+barGap);
+      const by = padT+plotH-bh;
+      ctx.fillStyle = v.color;
+      const r = Math.min(4, barW/2);
+      ctx.beginPath();
+      ctx.moveTo(bx, by+r);
+      ctx.arcTo(bx,by,bx+r,by,r);
+      ctx.lineTo(bx+barW-r,by);
+      ctx.arcTo(bx+barW,by,bx+barW,by+r,r);
+      ctx.lineTo(bx+barW, by+bh);
+      ctx.lineTo(bx, by+bh);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#dfe5ef';
+      ctx.font = '10px "Roboto Mono", monospace';
+      ctx.textAlign = 'center';
+      const label = Number.isInteger(v.value) ? String(v.value) : v.value.toFixed(2);
+      ctx.fillText(label, bx+barW/2, by-6);
+    });
+    ctx.fillStyle = '#98a2b3';
+    ctx.font = '10.5px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.label, gx + (groupW-groupPad*2)/2, h-12);
+  });
+}
+
+/* ===================== FAN TRAP DEMO (Northwind: Orders x Order Details) ===================== */
+const COLOR_RED = '#f86b63', COLOR_CYAN = '#06b6d4', COLOR_BLUE = '#36a2ef';
+const NW_PRODUCTS_10248 = ['Queso Cabrales','Singaporean Hokkien Fried Mee','Mozzarella di Giovanni','Chai'];
+let fanReturnsS1 = 3;
+function renderFanTrap(){
+  document.getElementById('fanSliderVal').textContent = fanReturnsS1;
+  const orders = [
+    {id:'10248', freight:32.38, items: NW_PRODUCTS_10248.slice(0, fanReturnsS1)},
+    {id:'10249', freight:11.61, items: ['Tofu']},
+    {id:'10250', freight:65.83, items: ["Jack's New England Clam Chowder"]},
+  ];
+
+  let joined = [];
+  orders.forEach(o => {
+    if(o.items.length === 0) joined.push({order:o.id, freight:o.freight, product:null, dup:false});
+    else o.items.forEach(p => joined.push({order:o.id, freight:o.freight, product:p, dup: o.items.length > 1}));
+  });
+
+  const naiveSum = joined.reduce((a,r) => a + r.freight, 0);
+  const correctSum = orders.reduce((a,o) => a + o.freight, 0);
+
+  document.getElementById('fanJoinedTable').innerHTML = `
+    <thead><tr><th>Order ID</th><th>Freight</th><th>Produto (Order Details)</th></tr></thead>
+    <tbody>${joined.map(r => `<tr class="${r.dup ? 'row-bad':''}"><td>${r.order}</td><td>${r.freight.toFixed(2)}</td><td>${r.product || '—'}</td></tr>`).join('')}</tbody>`;
+
+  const wrong = Math.abs(naiveSum - correctSum) > 0.001;
+  document.getElementById('fanStats').innerHTML = `
+    <div class="stat-card ${wrong ? 'c-red':'c-green'}"><div class="stat-card-label">SUM(Freight) — JOIN ingênuo</div><div class="stat-card-value">${naiveSum.toFixed(2)}${wrong ? ' ❌':' ✅'}</div></div>
+    <div class="stat-card c-blue"><div class="stat-card-label">Total real (tabela Orders)</div><div class="stat-card-value">${correctSum.toFixed(2)}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Via Puppini Bridge</div><div class="stat-card-value">${correctSum.toFixed(2)} ✅</div></div>`;
+
+  drawBarChart('fanChart', [
+    {label:'Pedido 10248', values:[{value:+(32.38*fanReturnsS1).toFixed(2), color:COLOR_RED},{value:32.38, color:COLOR_CYAN}]},
+    {label:'Pedido 10249', values:[{value:11.61, color:COLOR_RED},{value:11.61, color:COLOR_CYAN}]},
+    {label:'Pedido 10250', values:[{value:65.83, color:COLOR_RED},{value:65.83, color:COLOR_CYAN}]},
+  ]);
+}
+renderFanTrap();
+
+/* ===================== CHASM TRAP DEMO (Northwind: Employee x Orders x Territories) ===================== */
+let chasmTweets = 7, chasmFollowers = 5;
+function renderChasm(){
+  document.getElementById('chasmTweetsVal').textContent = chasmTweets;
+  document.getElementById('chasmFollowersVal').textContent = chasmFollowers;
+  const naive = chasmTweets * chasmFollowers;
+  const correct = chasmTweets + chasmFollowers;
+  let cells = '';
+  for(let i=0;i<naive;i++) cells += `<div class="chasm-cell">${i+1}</div>`;
+  document.getElementById('chasmGrid').innerHTML = cells;
+  document.getElementById('chasmStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">JOIN cartesiano (pedidos × territórios)</div><div class="stat-card-value">${naive}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Esperado (via Bridge/UNION)</div><div class="stat-card-value">${correct}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">Fator de inflação</div><div class="stat-card-value">${(naive/correct).toFixed(1)}×</div></div>`;
+}
+renderChasm();
+
+function renderChasmEmployeesChart(){
+  drawBarChart('chasmEmployeesChart', [
+    {label:'Buchanan', values:[{value:15, color:COLOR_RED},{value:8, color:COLOR_CYAN}]},
+    {label:'Peacock', values:[{value:8, color:COLOR_RED},{value:6, color:COLOR_CYAN}]},
+    {label:'Suyama', values:[{value:2, color:COLOR_RED},{value:3, color:COLOR_CYAN}]},
+  ]);
+}
+
+/* ===================== NORTHWIND CASE: revenue by employee (single series) ===================== */
+function renderNorthwindRevenueChart(){
+  drawBarChart('northwindRevenueChart', [
+    {label:'Buchanan', values:[{value:440.00, color:COLOR_BLUE}]},
+    {label:'Suyama', values:[{value:1863.40, color:COLOR_BLUE}]},
+    {label:'Peacock', values:[{value:1813.00, color:COLOR_BLUE}]},
+  ], {height:190});
+}
+
+/* ===================== COMPARAÇÃO: JOINs necessários por abordagem ===================== */
+function renderJoinsComparisonChart(){
+  drawBarChart('joinsComparisonChart', [
+    {label:'Star Schema', values:[{value:5, color:'#c49aff'}]},
+    {label:'Snowflake', values:[{value:7, color:'#c49aff'}]},
+    {label:'Unified Star Schema', values:[{value:1, color:COLOR_CYAN}]},
+  ], {height:180});
+}
+
+/* ===================== FULL OUTER JOIN EFFECT: clientes retornados ===================== */
+function renderFullOuterChart(){
+  drawBarChart('fullOuterChart', [
+    {label:'Clientes no relatório', values:[{value:3, color:COLOR_RED},{value:4, color:COLOR_CYAN}]},
+  ], {height:170});
+}
+
+/* ===================== DATA MESH: crescimento da Bridge global ===================== */
+function renderBridgeGrowthChart(){
+  drawBarChart('bridgeGrowthChart', [
+    {label:'1 domínio', values:[{value:2, color:COLOR_BLUE}]},
+    {label:'2 domínios', values:[{value:4, color:COLOR_BLUE}]},
+    {label:'3 domínios', values:[{value:6, color:COLOR_BLUE}]},
+    {label:'4 domínios', values:[{value:8, color:COLOR_BLUE}]},
+    {label:'5 domínios', values:[{value:10, color:COLOR_BLUE}]},
+  ], {height:180});
+}
+
+/* ===================== NORTHWIND CASE: mesma bridge, corte por categoria ===================== */
+function renderCategoryRevenueChart(){
+  drawBarChart('categoryRevenueChart', [
+    {label:'Produce', values:[{value:3347.40, color:COLOR_BLUE}]},
+    {label:'Dairy', values:[{value:342.00, color:COLOR_BLUE}]},
+    {label:'Condiments', values:[{value:252.00, color:COLOR_BLUE}]},
+    {label:'Grains', values:[{value:98.00, color:COLOR_BLUE}]},
+    {label:'Seafood', values:[{value:77.00, color:COLOR_BLUE}]},
+  ], {height:200});
+}
+
+function redrawAllCharts(){
+  renderFanTrap();
+  renderChasmEmployeesChart();
+  renderNorthwindRevenueChart();
+  renderJoinsComparisonChart();
+  renderFullOuterChart();
+  renderBridgeGrowthChart();
+  renderCategoryRevenueChart();
+}
+window.addEventListener('resize', redrawAllCharts);
+window.addEventListener('load', redrawAllCharts);
+setTimeout(redrawAllCharts, 300);
+
+/* ===================== PUPPINI BRIDGE DIAGRAM ===================== */
+const bridgeDiagramInfo = {
+  'fs-key': {t:'_KEY_Order', d:'Chave técnica padronizada da tabela de fato Orders — usada exclusivamente para conectar essa entidade à Bridge, nunca para JOIN direto com outra tabela de fato.'},
+  'fs-qty': {t:'Freight (medida em risco)', d:'Como um pedido pode ter múltiplos produtos em Order Details, essa medida está em risco de fan trap se for unida diretamente com Order Details — por isso ela é copiada para dentro da Bridge.'},
+  'fr-key': {t:'_KEY_OrderDetail', d:'Chave técnica padronizada da tabela de fato Order Details — uma por combinação de pedido e produto.'},
+  'fr-fk': {t:'_KEY_Order (referência)', d:'Order Details referencia o pedido original — mas essa referência só é usada para popular a Bridge via UNION, nunca para um JOIN direto entre as duas tabelas de fato.'},
+  'fr-qty': {t:'Quantity × UnitPrice (medida)', d:'Medida própria de Order Details — não sofre risco de duplicação porque Order Details não é o lado "1" de nenhuma relação 1:N neste cenário.'},
+  'br-stage': {t:'Stage', d:'Coluna que identifica de qual tabela de origem veio cada linha da Bridge — "Orders" ou "OrderDetails". É o que permite agregação condicional segura na consulta final.'},
+  'br-ks': {t:'_KEY_Order na Bridge', d:'Presente em toda linha, tanto nas vindas de Orders quanto nas vindas de Order Details — é o que permite juntar as duas perspectivas por essa chave comum.'},
+  'br-kr': {t:'_KEY_OrderDetail na Bridge', d:'Só preenchida nas linhas com Stage="OrderDetails" — nas linhas de Stage="Orders" fica nula, sem que isso afete a medida de frete.'},
+  'br-measure': {t:'Freight movido para a Bridge', d:'Ao mover essa medida para dentro da própria Bridge, ela nunca é tocada pelo processo de UNION que traz os produtos de Order Details — eliminando o fan trap por construção.'},
+};
+function pickBridgeDiagram(id){
+  document.querySelectorAll('#s-bridge .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = bridgeDiagramInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-bridge [data-id="${id}"]`).classList.add('active');
+  document.getElementById('bridgeDiagramDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== STAR SCHEMA vs USS DIAGRAM ===================== */
+function clipPointOnRect(cx, cy, hw, hh, dx, dy, pad){
+  if(dx === 0 && dy === 0) return {x:cx, y:cy};
+  const tx = dx !== 0 ? hw/Math.abs(dx) : Infinity;
+  const ty = dy !== 0 ? hh/Math.abs(dy) : Infinity;
+  const t = Math.min(tx, ty);
+  const len = Math.hypot(dx, dy);
+  const tAdj = Math.max(t - (pad/len), 0);
+  return {x: cx+dx*tAdj, y: cy+dy*tAdj};
+}
+function drawDiagramLines(wrapId, svgId, pairs){
+  const wrap = document.getElementById(wrapId);
+  const svg = document.getElementById(svgId);
+  if(!wrap || !svg) return;
+  const wrapRect = wrap.getBoundingClientRect();
+  svg.setAttribute('width', wrapRect.width);
+  svg.setAttribute('height', wrapRect.height);
+  svg.setAttribute('viewBox', `0 0 ${wrapRect.width} ${wrapRect.height}`);
+  svg.innerHTML = pairs.map(([a,b]) => {
+    const elA = document.getElementById(a), elB = document.getElementById(b);
+    if(!elA || !elB) return '';
+    const ra = elA.getBoundingClientRect(), rb = elB.getBoundingClientRect();
+    const cxa = ra.left + ra.width/2 - wrapRect.left, cya = ra.top + ra.height/2 - wrapRect.top;
+    const cxb = rb.left + rb.width/2 - wrapRect.left, cyb = rb.top + rb.height/2 - wrapRect.top;
+    const dx = cxb-cxa, dy = cyb-cya;
+    // stop each line at the edge of its box (plus a small gap) instead of the center,
+    // so it never overlaps the translucent .dnode fill
+    const p1 = clipPointOnRect(cxa, cya, ra.width/2, ra.height/2, dx, dy, 3);
+    const p2 = clipPointOnRect(cxb, cyb, rb.width/2, rb.height/2, -dx, -dy, 3);
+    return `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" style="stroke:var(--border-strong);stroke-width:1.5;" />`;
+  }).join('');
+}
+function drawAllDiagramLines(){
+  drawDiagramLines('starWrap', 'starSvg', [['star-fv','star-dt'],['star-fv','star-dc'],['star-fv','star-dp']]);
+  drawDiagramLines('ussWrap', 'ussSvg', [['uss-fv','uss-dt'],['uss-fv','uss-dc'],['uss-fv','uss-dp']]);
+  drawDiagramLines('nwWrap', 'nwSvg', [
+    ['nw-brd','nw-ord'], ['nw-brd','nw-od'], ['nw-brd','nw-et'],
+    ['nw-brd','nw-emp'], ['nw-brd','nw-cus'], ['nw-brd','nw-prd'], ['nw-brd','nw-ter'],
+    ['nw-prd','nw-cat'],
+  ]);
+}
+window.addEventListener('resize', drawAllDiagramLines);
+window.addEventListener('load', drawAllDiagramLines);
+requestAnimationFrame(drawAllDiagramLines);
+setTimeout(drawAllDiagramLines, 300); // fonts/layout settle
+
+const diagramNodeInfo = {
+  'star-dt': {t:'DIM_TEMPO', d:'Dimensão de calendário — uma linha por data. Conectada diretamente ao fato por chave estrangeira, como manda o Kimball clássico.'},
+  'star-dc': {t:'DIM_CLIENTE', d:'Snapshot atual (ou histórico via SCD) dos atributos do cliente, achatados numa única linha por cliente.'},
+  'star-fv': {t:'FATO_VENDAS', d:'O centro do star schema clássico — guarda as chaves substitutas de cada dimensão mais as métricas do evento. Se outro fato (ex: devoluções) precisar se conectar aqui, o risco de fan/chasm trap aparece.'},
+  'star-dp': {t:'DIM_PRODUTO', d:'Snapshot atual dos atributos do produto: nome, categoria, marca.'},
+  'uss-dt': {t:'FATO_CLIENTE', d:'O que antes era uma dimensão agora é tratado como mais uma entidade que só se conecta a outras através da Bridge — nunca por FK direta a Fato_Vendas.'},
+  'uss-dc': {t:'FATO_PRODUTO', d:'Mesma lógica: os atributos de produto continuam existindo, mas a conexão com as demais entidades passa exclusivamente pela Bridge.'},
+  'uss-fv': {t:'PUPPINI BRIDGE', d:'A peça central do USS. Construída via UNION das chaves de Fato_Cliente, Fato_Produto e Fato_Vendas — nunca via JOIN direto entre elas. Qualquer consulta começa por aqui.'},
+  'uss-dp': {t:'FATO_VENDAS', d:'A própria venda vira só mais um fato que se conecta à Bridge — sem ocupar mais nenhum papel especial de "centro do modelo" como no star schema clássico.'},
+};
+function pickDiagramNode(id){
+  document.querySelectorAll('.dnode').forEach(el => el.classList.remove('active'));
+  const info = diagramNodeInfo[id];
+  if(!info) return;
+  document.getElementById(id).classList.add('active');
+  document.getElementById('diagramCompareDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== NORTHWIND CASE DIAGRAM ===================== */
+const northwindNodeInfo = {
+  'nw-ord': {t:'📦 Orders — Stage="Orders"', d:'Alimenta a Bridge via UNION, nunca via JOIN com as outras tabelas de fato. 1 linha por pedido. Carrega Freight, a medida que corria risco de fan trap ao ser combinada com Order Details.'},
+  'nw-od': {t:'🧾 Order Details — Stage="OrderDetails"', d:'Alimenta a Bridge via UNION. 1 linha por produto do pedido — a granularidade mais fina do case. Carrega line_total (Quantity × UnitPrice), protegida do fan trap por viver no seu próprio Stage.'},
+  'nw-et': {t:'🌐 EmployeeTerritories — Stage="EmployeeTerritory"', d:'Alimenta a Bridge via UNION. 1 linha por funcionário × território — um relacionamento puro, sem nenhuma medida. Era essa tabela, somada a Orders, que causava o chasm trap ao contar pedidos e territórios juntos.'},
+  'nw-brd': {t:'🌉 Puppini Bridge Northwind', d:'A peça central: UNION de _KEY_Order, _KEY_OrderDetail, _KEY_Employee, _KEY_Customer e _KEY_Territory, mais a coluna Stage. Toda consulta do case — por funcionário, por categoria ou por país — começa aqui, nunca direto numa tabela de fato.'},
+  'nw-emp': {t:'👤 Employees (dimensão)', d:'Relação N:1 comum sobre _KEY_Employee — decora o resultado com o nome do funcionário. Nenhum risco de trap: cada linha da Bridge referencia no máximo um funcionário.'},
+  'nw-cus': {t:'🏢 Customers (dimensão)', d:'Relação N:1 comum sobre _KEY_Customer — propagado das linhas de Orders para as de Order Details do mesmo pedido, o que permite cortar receita por CompanyName ou Country sem JOIN extra.'},
+  'nw-prd': {t:'📦 Products (dimensão)', d:'Relação N:1 comum sobre _KEY_OrderDetail — cada linha de Order Details referencia exatamente um produto. É o elo que encadeia até Categories.'},
+  'nw-cat': {t:'🏷️ Categories (dimensão encadeada)', d:'Não conecta à Bridge diretamente — conecta a Products, que por sua vez conecta à Bridge. Products → Categories é outra relação N:1, então a cadeia de JOIN chega até aqui sem nenhum risco de duplicação.'},
+  'nw-ter': {t:'🗺️ Territories (dimensão)', d:'Relação N:1 comum sobre _KEY_Territory — decora as linhas de Stage="EmployeeTerritory" com o nome legível do território (Findlay, Boston, Macon...).'},
+};
+function pickNorthwindNode(id){
+  document.querySelectorAll('#nwWrap .dnode').forEach(el => el.classList.remove('active'));
+  const info = northwindNodeInfo[id];
+  if(!info) return;
+  document.getElementById(id).classList.add('active');
+  document.getElementById('nwDiagramDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O fan trap ocorre quando um JOIN 1:N duplica uma medida presente no lado "1" da relação.', a:true, e:'Verdadeiro. É exatamente o caso de Orders × Order Details no Northwind: cada produto extra no mesmo pedido duplica o Freight no resultado do JOIN.'},
+  {q:'O chasm trap se resolve simplesmente adicionando mais JOINs à consulta.', a:false, e:'Falso. Mais JOINs simultâneos contra a mesma tabela central pioram o chasm trap — a solução é UNION (ou a Puppini Bridge), não mais JOINs.'},
+  {q:'A Puppini Bridge é construída com UNION, nunca com JOIN entre as tabelas de fato.', a:true, e:'Verdadeiro. É justamente o UNION — que nunca duplica linhas — que elimina fan trap e chasm trap por construção.'},
+  {q:'No USS, medidas em risco de fan trap podem ser copiadas para dentro da própria Bridge.', a:true, e:'Verdadeiro. Mover a medida para a Bridge, associada ao seu Stage, evita que ela seja duplicada quando outra tabela de fato se conecta à mesma chave — é assim que o Freight do Pedido 10248 nunca é contado 3 vezes.'},
+  {q:'O Unified Star Schema elimina completamente a necessidade de atributos descritivos (o que antes eram dimensões).', a:false, e:'Falso. Atributos descritivos continuam existindo nas tabelas — o que muda é que elas se conectam apenas através da Bridge, nunca diretamente entre si.'},
+  {q:'O "Full Outer Join Effect" garante que entidades sem correspondência ainda apareçam no resultado.', a:true, e:'Verdadeiro. Como a Bridge é um UNION de todas as chaves de todas as tabelas, uma entidade sem par correspondente ainda aparece — com as métricas do outro lado vazias, não removida do resultado.'},
+  {q:'Segundo revisores da obra de Puppini e Inmon, o USS substitui totalmente o modelo dimensional de Kimball em qualquer cenário.', a:false, e:'Falso. A conclusão mais comum entre revisores é que o USS é um enriquecimento do modelo dimensional clássico, focado em resolver relacionamentos entre múltiplos fatos — não uma substituição total.'},
+  {q:'Em arquiteturas de Data Mesh, cada domínio pode manter sua própria Bridge, e uma "Bridge global virtual" une todas via UNION.', a:true, e:'Verdadeiro. Cada data product publica fatos e bridge próprios seguindo a convenção _KEY_, permitindo que um time de plataforma monte uma bridge global sem coordenação manual entre domínios.'},
+  {q:'No case do Northwind, o Freight só duplica porque Order Details tem uma linha por produto do pedido, não uma linha por pedido.', a:true, e:'Verdadeiro. Freight vive na granularidade de Orders (1 por pedido); Order Details vive numa granularidade mais fina (1 por produto) — juntar as duas sem cuidado replica o Freight por produto.'},
+  {q:'A Bridge do case Northwind consegue responder, numa única consulta, frete + receita + territórios cobertos por funcionário sem cair em nenhuma das duas armadilhas.', a:true, e:'Verdadeiro. A agregação condicional por Stage isola o Freight (Orders) da receita (Order Details) e do COUNT DISTINCT de territórios (EmployeeTerritory) — três granularidades, uma consulta, zero duplicação.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

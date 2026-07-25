@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Porcentagem explicada do zero, com grades de 100 quadrados, etiquetas de preço, termômetros, gráficos de pizza e muitas demos visuais interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Porcentagem do Jeito Fácil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-eq{grid-column:1/-1;text-align:center;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--accent);font-weight:700;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;max-width:230px;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-yellow{border-top-color:var(--accent-yellow);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- DECISION FLOW ---- */
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.certo{border-color:var(--accent-green);}
+.decision-branch.errado{border-color:var(--accent-red);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- PERCENT GRID (100 squares) ---- */
+.grid100-wrap{display:flex;justify-content:center;padding:10px 0;}
+.grid100{display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(10,1fr);gap:3px;width:240px;height:240px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:10px;flex-shrink:0;}
+.grid100 .cell{border-radius:2px;background:var(--bg-panel);border:1px solid var(--border-color);transition:background .1s,border-color .1s;}
+.grid100 .cell.on{background:var(--accent);border-color:var(--accent);}
+
+/* ---- PERCENT BAR (fraction/decimal/percent + calc) ---- */
+.pbar-track{position:relative;height:34px;border-radius:8px;background:var(--bg-elevated);border:1px solid var(--border-color);overflow:hidden;}
+.pbar-fill{position:absolute;top:0;left:0;bottom:0;background:linear-gradient(90deg,var(--accent),var(--accent-green));border-radius:8px 0 0 8px;transition:width .15s;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;min-width:2px;}
+.pbar-fill span{font-size:11px;font-weight:800;color:#0b1116;font-family:'Roboto Mono',monospace;white-space:nowrap;}
+.pbar-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-disabled);margin-top:4px;}
+
+/* ---- PRICE TAG ---- */
+.tag-row{display:flex;gap:20px;justify-content:center;align-items:center;flex-wrap:wrap;padding:10px 0;}
+.price-tag{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:10px;padding:18px 26px;text-align:center;min-width:150px;}
+.price-tag-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;}
+.price-val{font-family:'Roboto Mono',monospace;font-weight:700;}
+.price-tag.before .price-val{color:var(--text-disabled);text-decoration:line-through;font-size:18px;}
+.price-tag.after{border-color:var(--accent-green);}
+.price-tag.after .price-val{color:var(--accent-green);font-size:26px;font-weight:800;}
+.price-tag.after.after-up{border-color:var(--accent-red);}
+.price-tag.after.after-up .price-val{color:var(--accent-red);}
+.tag-arrow{font-size:22px;color:var(--text-disabled);}
+
+/* ---- VERTICAL BAR (variação / pontos percentuais) ---- */
+.vbar-row{display:flex;gap:36px;justify-content:center;align-items:flex-end;padding:12px 0;flex-wrap:wrap;}
+.vbar-col{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.vbar-box{width:60px;height:150px;display:flex;align-items:flex-end;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;overflow:hidden;}
+.vbar-fill{width:100%;transition:height .2s;border-radius:0 0 6px 6px;}
+.vbar-label{font-size:11px;color:var(--text-secondary);text-align:center;}
+.vbar-value{font-family:'Roboto Mono',monospace;font-weight:800;font-size:14px;}
+.vbar-mid{text-align:center;min-width:110px;}
+
+/* ---- PIE LEGEND (reused for gráficos) ---- */
+.pie-wrap{display:flex;gap:24px;flex-wrap:wrap;align-items:center;justify-content:center;}
+.pie-legend{display:flex;flex-direction:column;gap:8px;font-size:12.5px;min-width:200px;}
+.pie-legend-item{display:flex;align-items:center;gap:8px;}
+.pie-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+#pzCanvas{width:230px;height:230px;max-width:100%;}
+
+/* ---- MINI-CHARTS (soluções visuais dos problemas) ---- */
+.mini-chart{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border-color);}
+.mini-vbar-row{display:flex;gap:22px;justify-content:center;align-items:flex-end;padding:6px 0 2px;flex-wrap:wrap;}
+.mini-vbar-col{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.mini-vbar-box{width:42px;height:90px;display:flex;align-items:flex-end;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;overflow:hidden;}
+.mini-vbar-fill{width:100%;border-radius:0 0 5px 5px;transition:height .15s;}
+.mini-vbar-label{font-size:10.5px;color:var(--text-secondary);text-align:center;line-height:1.5;}
+.mini-pictogram{display:flex;flex-wrap:wrap;gap:4px;max-width:340px;margin:6px auto 0;justify-content:center;}
+.mini-pic-cell{width:15px;height:15px;border-radius:3px;background:var(--bg-elevated);border:1px solid var(--border-color);}
+.mini-pic-cell.on{background:var(--accent);border-color:var(--accent);}
+.mini-pic-caption{text-align:center;font-size:10.5px;color:var(--text-disabled);margin-top:6px;}
+.mini-stack-track{position:relative;height:30px;border-radius:6px;background:var(--bg-elevated);border:1px solid var(--border-color);overflow:hidden;display:flex;max-width:420px;margin:6px auto 0;}
+.mini-stack-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#0b1116;font-family:'Roboto Mono',monospace;white-space:nowrap;overflow:hidden;}
+.mini-stack-legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--text-secondary);}
+.mini-stack-legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:middle;}
+
+/* ---- REGRA DE TRÊS TABLE ---- */
+.r3-table{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:420px;margin:10px auto;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;}
+.r3-cell{background:var(--bg-elevated);padding:14px;text-align:center;font-family:'Roboto Mono',monospace;font-size:15px;border:1px solid var(--border-color);position:relative;}
+.r3-cell.hl{color:var(--accent);font-weight:800;background:rgba(6,182,212,.08);}
+.r3-arrows{text-align:center;font-size:11px;color:var(--text-disabled);margin-top:2px;}
+
+footer{display:flex;justify-content:space-between;padding-top:20px;border-top:1px solid var(--border-color);font-size:11.5px;color:var(--text-disabled);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+  .pie-wrap{flex-direction:column;}
+  .r3-table{max-width:100%;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Porcentagem</h1><span>Partes de cem, do jeito mais visual possível</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">13</div><div class="hstat-label">Conceitos</div></div>
+      <div class="hstat"><div class="hstat-num">%/100</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">9</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~45min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do quadradinho até o gráfico de pizza</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Porcentagem é só <em>contar em grupos de 100</em></h2>
+      <p>Toda vez que alguém fala <strong>"50% de desconto"</strong> ou <strong>"a prova teve 80% de acerto"</strong>, está usando porcentagem. A palavra vem do latim <em>per centum</em>, que quer dizer <strong>"por cem"</strong>. Se você imaginar qualquer coisa dividida em <strong>100 pedacinhos iguais</strong>, a porcentagem é simplesmente quantos desses pedacinhos você está contando. Nesta aula vamos construir essa ideia com grades de 100 quadrados, etiquetas de preço, termômetros e gráficos de pizza — tudo bem visual, um passo de cada vez.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Por Cem</span>
+        <span class="badge badge-green">Fração • Decimal • %</span>
+        <span class="badge badge-blue">Desconto e Aumento</span>
+        <span class="badge badge-purple">Matemática do Dia a Dia</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="grid100" id="heroGrid100"></div>
+      <div class="hero-eq">42 quadrados coloridos de 100 = 42%</div>
+      <div class="hero-visual-caption">É só isso que "porcentagem" quer dizer — role a página e pinte você mesmo!</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🔢 O que é Porcentagem?</div>
+    <p class="section-desc">
+      Imagine uma folha quadriculada com <strong>100 quadradinhos</strong> — 10 fileiras de 10. Se você pintar <strong>1 quadradinho</strong>, pintou <strong>1%</strong> da folha. Se pintar <strong>50</strong>, pintou <strong>50%</strong> (metade). Se pintar todos os <strong>100</strong>, pintou <strong>100%</strong> (a folha inteira). O símbolo <code style="color:var(--accent);">%</code> é só um jeito curto de escrever <code style="color:var(--accent);">"em cada 100"</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste o controle e pinte os quadradinhos — cada quadrado vale 1%</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Quadrados pintados</span><span class="ctrl-v" id="gridVal">42</span></div>
+          <input type="range" id="gridSlider" min="0" max="100" step="1" value="42" oninput="renderGrid()">
+        </div>
+      </div>
+      <div class="grid100-wrap"><div class="grid100" id="grid100"></div></div>
+      <div class="result-display">
+        <div><span class="rl">Quadrados pintados</span><span class="rv" id="gridCount">42 de 100</span></div>
+        <div><span class="rl">Fração</span><span class="rv" id="gridFrac">42/100</span></div>
+        <div><span class="rl">Porcentagem</span><span class="rv" id="gridPct">42%</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Porcentagem é sempre uma comparação com <strong>100</strong>. Não importa se o "todo" é uma pizza, uma turma de alunos ou o preço de um tênis — a porcentagem sempre responde: <strong>"se eu dividisse isso em 100 partes iguais, quantas dessas partes eu estou olhando?"</strong></p>
+    </div>
+  </section>
+
+  <!-- ============ EQUIVALÊNCIA ============ -->
+  <section class="section" id="s-equivalencia">
+    <div class="section-eyebrow">Três Jeitos de Escrever a Mesma Coisa</div>
+    <div class="section-title">🍰 Fração, Decimal e Porcentagem</div>
+    <p class="section-desc">
+      Fração, número decimal e porcentagem são <strong>três roupas diferentes</strong> para a mesma quantidade. <code style="color:var(--accent);">50%</code> é o mesmo que <code style="color:var(--accent);">50/100</code>, que simplifica para <code style="color:var(--accent);">1/2</code>, que é o mesmo que <code style="color:var(--accent);">0,5</code>. Para ir de porcentagem para decimal, é só <strong>dividir por 100</strong> (andar a vírgula duas casas para a esquerda).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste e veja as três formas mudarem juntas</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Valor</span><span class="ctrl-v" id="eqVal">50</span></div>
+          <input type="range" id="eqSlider" min="0" max="100" step="1" value="50" oninput="renderEq()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle" onclick="setEq(10)">10%</button>
+        <button class="btn-toggle" onclick="setEq(20)">20%</button>
+        <button class="btn-toggle" onclick="setEq(25)">25%</button>
+        <button class="btn-toggle" onclick="setEq(33)">33%</button>
+        <button class="btn-toggle" onclick="setEq(50)">50%</button>
+        <button class="btn-toggle" onclick="setEq(75)">75%</button>
+        <button class="btn-toggle" onclick="setEq(100)">100%</button>
+      </div>
+      <div class="pbar-track"><div class="pbar-fill" id="eqBarFill" style="width:50%;"><span>50%</span></div></div>
+      <div class="pbar-labels"><span>0%</span><span>50%</span><span>100%</span></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Porcentagem</div><div class="stat-card-value" id="eqPercent">50%</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Decimal</div><div class="stat-card-value" id="eqDecimal">0,50</div></div>
+        <div class="stat-card"><div class="stat-card-label">Fração (de 100)</div><div class="stat-card-value" id="eqFracRaw">50/100</div></div>
+        <div class="stat-card c-yellow"><div class="stat-card-label">Fração simplificada</div><div class="stat-card-value" id="eqFracSimple">1/2</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Truque rápido</div>
+      <p>Para virar decimal em porcentagem, faça o caminho contrário: <strong>multiplique por 100</strong> (ande a vírgula duas casas para a direita). Assim, <code>0,07</code> vira <code>7%</code>, e <code>1,5</code> vira <code>150%</code> — sim, porcentagem pode passar de 100%!</p>
+    </div>
+  </section>
+
+  <!-- ============ CALCULANDO X% DE UM VALOR ============ -->
+  <section class="section" id="s-calculo">
+    <div class="section-eyebrow">A Conta Mais Usada do Dia a Dia</div>
+    <div class="section-title">💰 Calculando X% de um valor</div>
+    <p class="section-desc">
+      Para achar quanto é <strong>X% de um valor</strong>, a fórmula é sempre a mesma: transforme a porcentagem em decimal (divida por 100) e <strong>multiplique</strong> pelo valor total. Ajuste o valor total e a porcentagem abaixo e veja a "fatia" sendo calculada na hora.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Quanto é X% de um valor total?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>💵 Valor total</span><span class="ctrl-v" id="calcTotalVal">R$ 200,00</span></div>
+          <input type="range" id="calcTotal" min="10" max="1000" step="10" value="200" oninput="renderCalculo()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Porcentagem</span><span class="ctrl-v" id="calcPctVal">15%</span></div>
+          <input type="range" id="calcPct" min="0" max="100" step="1" value="15" oninput="renderCalculo()">
+        </div>
+      </div>
+      <div class="pbar-track"><div class="pbar-fill" id="calcBarFill" style="width:15%;"><span id="calcBarLabel">R$ 30,00</span></div></div>
+      <div class="pbar-labels"><span>R$ 0</span><span id="calcBarMidLabel">100%</span></div>
+      <div class="result-display">
+        <div><span class="rl">Fórmula</span><span class="rv" id="calcFormula" style="font-size:13px;">15% de R$200 = 0,15 × R$200 = R$30</span></div>
+      </div>
+      <div class="stat-cards" style="grid-template-columns:repeat(4,1fr);margin-top:16px;">
+        <div class="stat-card"><div class="stat-card-label">1% (2 casas)</div><div class="stat-card-value" id="cheat1">R$2,00</div></div>
+        <div class="stat-card"><div class="stat-card-label">10% (1 casa)</div><div class="stat-card-value" id="cheat10">R$20,00</div></div>
+        <div class="stat-card"><div class="stat-card-label">25% (metade da metade)</div><div class="stat-card-value" id="cheat25">R$50,00</div></div>
+        <div class="stat-card"><div class="stat-card-label">50% (metade)</div><div class="stat-card-value" id="cheat50">R$100,00</div></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 <strong>10% de mentalidade rápida:</strong> para achar 10% de qualquer valor, basta "andar a vírgula uma casa para a esquerda" (dividir por 10). A partir do 10% dá para montar quase qualquer outra porcentagem: 5% é metade do 10%, 20% é o dobro do 10%, 30% é o triplo, e assim por diante.</p>
+    </div>
+  </section>
+
+  <!-- ============ DESCONTO E ACRÉSCIMO ============ -->
+  <section class="section" id="s-desconto">
+    <div class="section-eyebrow">A Etiqueta de Preço</div>
+    <div class="section-title">🛍️ Desconto e Acréscimo</div>
+    <p class="section-desc">
+      Numa <strong>promoção</strong>, tiramos uma porcentagem do preço (desconto). Num <strong>reajuste</strong>, adicionamos uma porcentagem ao preço (acréscimo). Em ambos os casos, primeiro calculamos "quanto é X% do preço" e depois <strong>subtraímos ou somamos</strong> esse valor ao preço original.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Monte a etiqueta: escolha o preço, a porcentagem e o tipo de mudança</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;justify-content:center;">
+        <button class="btn-toggle active" id="discBtnDesc" onclick="setDiscMode('desconto')">🔻 Desconto</button>
+        <button class="btn-toggle" id="discBtnAcr" onclick="setDiscMode('acrescimo')">🔺 Acréscimo</button>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🏷️ Preço original</span><span class="ctrl-v" id="discPriceVal">R$ 120,00</span></div>
+          <input type="range" id="discPrice" min="10" max="500" step="5" value="120" oninput="renderDesconto()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Porcentagem</span><span class="ctrl-v" id="discPctVal">20%</span></div>
+          <input type="range" id="discPct" min="0" max="90" step="5" value="20" oninput="renderDesconto()">
+        </div>
+      </div>
+      <div class="tag-row">
+        <div class="price-tag before">
+          <div class="price-tag-label">Preço antes</div>
+          <div class="price-val" id="discBefore">R$ 120,00</div>
+        </div>
+        <div class="tag-arrow">➜</div>
+        <div class="price-tag after" id="discAfterCard">
+          <div class="price-tag-label" id="discDiffLabel">Você economiza</div>
+          <div class="price-tag-label" style="font-size:9.5px;color:var(--text-disabled);" id="discDiffVal">R$ 24,00</div>
+          <div class="price-val" id="discAfter">R$ 96,00</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum: "50% de desconto + 50% de acréscimo volta ao preço original?"</div>
+      <p><strong>Não!</strong> Se um produto de R$100 sobe 50% (vira R$150) e depois desce 50% (vira R$75), o preço final é <strong>R$75</strong>, não R$100. Isso acontece porque a segunda porcentagem é calculada sobre um valor <strong>diferente</strong> do original. Fique de olho nisso na seção de Boas Práticas!</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIAÇÃO PERCENTUAL ============ -->
+  <section class="section" id="s-variacao">
+    <div class="section-eyebrow">Comparando Um Antes e Um Depois</div>
+    <div class="section-title">📈 Variação Percentual</div>
+    <p class="section-desc">
+      Quando um valor muda de um "antes" para um "depois" — o preço da gasolina, a população de uma cidade, o número de seguidores — usamos a <strong>variação percentual</strong> para medir o tamanho dessa mudança, em relação ao valor original: <code style="color:var(--accent);">variação % = (depois − antes) ÷ antes × 100</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o valor antes e depois, e veja a variação</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📉 Valor antes</span><span class="ctrl-v" id="varAntesLabel">R$ 200,00</span></div>
+          <input type="range" id="varAntes" min="10" max="500" step="10" value="200" oninput="renderVariacao()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📈 Valor depois</span><span class="ctrl-v" id="varDepoisLabel">R$ 260,00</span></div>
+          <input type="range" id="varDepois" min="10" max="500" step="10" value="260" oninput="renderVariacao()">
+        </div>
+      </div>
+      <div class="vbar-row">
+        <div class="vbar-col">
+          <div class="vbar-box"><div class="vbar-fill" id="varBarAntes" style="background:var(--accent-blue);height:80px;"></div></div>
+          <div class="vbar-label">Antes<br><span class="vbar-value" id="varAntesVal" style="color:var(--accent-blue);">R$200,00</span></div>
+        </div>
+        <div class="vbar-mid">
+          <div style="font-size:30px;" id="varArrow">▲</div>
+          <div id="varLabel" style="font-size:12px;color:var(--text-secondary);">Aumento de</div>
+          <div id="varResult" style="font-size:22px;font-weight:800;font-family:'Roboto Mono',monospace;">+30,0%</div>
+        </div>
+        <div class="vbar-col">
+          <div class="vbar-box"><div class="vbar-fill" id="varBarDepois" style="background:var(--accent-green);height:104px;"></div></div>
+          <div class="vbar-label">Depois<br><span class="vbar-value" id="varDepoisVal" style="color:var(--accent-green);">R$260,00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Repare</div>
+      <p>A mesma diferença em reais pode significar variações percentuais bem diferentes. Um aumento de R$10 num item de R$20 é um enorme <strong>+50%</strong>, mas o mesmo R$10 num item de R$1000 é apenas <strong>+1%</strong>. A variação percentual sempre depende do valor <em>de partida</em>.</p>
+    </div>
+  </section>
+
+  <!-- ============ PONTOS PERCENTUAIS ============ -->
+  <section class="section" id="s-pontos">
+    <div class="section-eyebrow">A Pegadinha Mais Comum das Notícias</div>
+    <div class="section-title">🌡️ Pontos Percentuais x Porcentagem</div>
+    <p class="section-desc">
+      Se uma taxa sobe de <strong>20%</strong> para <strong>25%</strong>, ela subiu <strong>5 pontos percentuais</strong> (a diferença simples entre os dois números). Mas, em termos <strong>relativos</strong>, ela cresceu <strong>25%</strong> — porque 5 é 25% de 20! Jornais costumam confundir os dois. Ajuste as taxas abaixo e compare.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Exemplo: taxa de juros ou taxa de aprovação — antes e depois</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🌡️ Taxa antes</span><span class="ctrl-v" id="ppAntesVal">20,0%</span></div>
+          <input type="range" id="ppAntes" min="1" max="50" step="0.5" value="20" oninput="renderPontos()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🌡️ Taxa depois</span><span class="ctrl-v" id="ppDepoisVal">25,0%</span></div>
+          <input type="range" id="ppDepois" min="1" max="50" step="0.5" value="25" oninput="renderPontos()">
+        </div>
+      </div>
+      <div class="vbar-row">
+        <div class="vbar-col">
+          <div class="vbar-box"><div class="vbar-fill" id="ppFillAntes" style="background:var(--accent-blue);height:56px;"></div></div>
+          <div class="vbar-label">Antes: <strong>20,0%</strong></div>
+        </div>
+        <div class="vbar-col">
+          <div class="vbar-box"><div class="vbar-fill" id="ppFillDepois" style="background:var(--accent-green);height:70px;"></div></div>
+          <div class="vbar-label">Depois: <strong>25,0%</strong></div>
+        </div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Diferença em pontos percentuais</div><div class="stat-card-value" id="ppDiffPP">+5,0 p.p.</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Variação percentual relativa</div><div class="stat-card-value" id="ppDiffRel">+25,0%</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Como não confundir</div>
+      <p><strong>Pontos percentuais</strong> é uma subtração simples entre duas porcentagens. <strong>Porcentagem (variação relativa)</strong> é a divisão dessa diferença pelo valor original. São respostas diferentes para perguntas diferentes — sempre confira qual das duas a pergunta está pedindo.</p>
+    </div>
+  </section>
+
+  <!-- ============ JUROS SIMPLES ============ -->
+  <section class="section" id="s-juros">
+    <div class="section-eyebrow">Porcentagem que Cresce com o Tempo</div>
+    <div class="section-title">🏦 Juros Simples</div>
+    <p class="section-desc">
+      Juros são uma porcentagem cobrada (ou ganha) sobre um valor, <strong>por período de tempo</strong>. No <strong>juro simples</strong>, o juro de cada mês é calculado sempre sobre o valor <strong>original</strong> (o capital), então ele cresce em <strong>linha reta</strong>: <code style="color:var(--accent);">J = C × i × t</code> e <code style="color:var(--accent);">Montante = C + J</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o capital, a taxa mensal e o tempo</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>💵 Capital (C)</span><span class="ctrl-v" id="jurosCapitalVal">R$ 1000,00</span></div>
+          <input type="range" id="jurosCapital" min="100" max="5000" step="100" value="1000" oninput="renderJuros()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📊 Taxa ao mês (i)</span><span class="ctrl-v" id="jurosTaxaVal">2,0%</span></div>
+          <input type="range" id="jurosTaxa" min="0.5" max="10" step="0.5" value="2" oninput="renderJuros()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📅 Tempo (t)</span><span class="ctrl-v" id="jurosTempoVal">12 meses</span></div>
+          <input type="range" id="jurosTempo" min="1" max="24" step="1" value="12" oninput="renderJuros()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="jurosCanvas" height="220"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">Juros ganhos (J)</span><span class="rv" id="jurosJ">R$240,00</span></div>
+        <div><span class="rl">Montante final (C+J)</span><span class="rv" id="jurosM">R$1240,00</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 No juro simples, a linha do gráfico é sempre <strong>reta</strong> — o valor ganho por mês é sempre o mesmo. Já no <strong>juro composto</strong> (o juro sobre juro, usado na poupança e em investimentos), a linha vira uma curva que sobe cada vez mais rápido, porque os juros de um mês passam a render juros também.</p>
+    </div>
+  </section>
+
+  <!-- ============ PORCENTAGEM EM GRÁFICOS ============ -->
+  <section class="section" id="s-graficos">
+    <div class="section-eyebrow">Lendo o Mundo em Fatias</div>
+    <div class="section-title">🥧 Porcentagem em Gráficos de Pizza</div>
+    <p class="section-desc">
+      Um gráfico de pizza mostra como um total se divide em partes — e a <strong>soma de todas as fatias é sempre 100%</strong>, não importa quantas fatias existam. Ajuste as "horas do dia" de cada atividade abaixo e veja como as fatias se recalculam sozinhas, sempre somando 100%.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Monte seu dia (em horas) e veja a pizza de porcentagens</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>😴 Sono</span><span class="ctrl-v" id="pzAVal">8h</span></div>
+          <input type="range" id="pzA" min="0" max="16" step="1" value="8" oninput="renderPizza()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📚 Estudo</span><span class="ctrl-v" id="pzBVal">6h</span></div>
+          <input type="range" id="pzB" min="0" max="16" step="1" value="6" oninput="renderPizza()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎮 Lazer</span><span class="ctrl-v" id="pzCVal">4h</span></div>
+          <input type="range" id="pzC" min="0" max="16" step="1" value="4" oninput="renderPizza()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🍽️ Outros</span><span class="ctrl-v" id="pzDVal">6h</span></div>
+          <input type="range" id="pzD" min="0" max="16" step="1" value="6" oninput="renderPizza()">
+        </div>
+      </div>
+      <div class="pie-wrap">
+        <canvas id="pzCanvas" width="230" height="230" style="flex-shrink:0;"></canvas>
+        <div class="pie-legend" id="pzLegend"></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Confira sempre</div>
+      <p>Não importa quantas horas você colocar em cada categoria, as porcentagens sempre vão somar exatamente <strong>100%</strong> — porque a pizza inteira representa "todas as horas do dia consideradas". Se um gráfico de pizza por aí não soma 100%, alguma coisa está errada nele!</p>
+    </div>
+  </section>
+
+  <!-- ============ REGRA DE TRÊS ============ -->
+  <section class="section" id="s-regra3">
+    <div class="section-eyebrow">O Jeito Clássico de Resolver na Escola</div>
+    <div class="section-title">⚖️ Regra de Três para Porcentagem</div>
+    <p class="section-desc">
+      A <strong>regra de três</strong> organiza o problema numa tabelinha: de um lado o <strong>total</strong> (que vale 100%), do outro a <strong>parte</strong> (que vale X%). Depois é só <strong>multiplicar em cruz</strong> e dividir: <code style="color:var(--accent);">X = (parte × 100) ÷ total</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o total e a parte, e veja a regra de três em ação</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Total</span><span class="ctrl-v" id="r3TotalVal">40</span></div>
+          <input type="range" id="r3Total" min="1" max="200" step="1" value="40" oninput="renderRegra3()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Parte</span><span class="ctrl-v" id="r3ParteVal">10</span></div>
+          <input type="range" id="r3Parte" min="0" max="200" step="1" value="10" oninput="renderRegra3()">
+        </div>
+      </div>
+      <div class="r3-table">
+        <div class="r3-cell hl" id="r3TotalCell">40</div>
+        <div class="r3-cell hl">100%</div>
+        <div class="r3-cell" id="r3ParteCell">10</div>
+        <div class="r3-cell" id="r3XCell">X%</div>
+      </div>
+      <div class="r3-arrows">↖ multiplique em cruz: parte × 100, depois divida pelo total ↗</div>
+      <div class="result-display">
+        <div><span class="rl">Conta</span><span class="rv" id="r3Formula" style="font-size:14px;">10 × 100 ÷ 40 = 25,0%</span></div>
+        <div><span class="rl">Resultado (X)</span><span class="rv" id="r3X">25,0%</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Essa é exatamente a mesma matemática da seção "Calculando X% de um valor" — só que organizada numa tabela. Use o método que fizer mais sentido para você: os dois sempre dão a mesma resposta.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela">
+    <div class="section-eyebrow">A Chuva de Fórmulas, Organizada</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todos os conceitos desta aula reunidos num só lugar, com quando usar cada um.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🔢 Porcentagem em fração</div>
+        <div class="card-formula">X% = X/100</div>
+        <div class="card-text">A base de tudo: porcentagem é sempre uma fração com denominador 100.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🍰 Porcentagem em decimal</div>
+        <div class="card-formula">X% = X ÷ 100</div>
+        <div class="card-text">Para usar numa conta, transforme a porcentagem em decimal (ande a vírgula duas casas).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💰 X% de um valor</div>
+        <div class="card-formula">parte = (X÷100) × total</div>
+        <div class="card-text">A conta mais comum do dia a dia: descontos, gorjetas, impostos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔻 Desconto</div>
+        <div class="card-formula">preço novo = preço × (1 − X/100)</div>
+        <div class="card-text">Tira X% do preço original de uma só vez.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔺 Acréscimo</div>
+        <div class="card-formula">preço novo = preço × (1 + X/100)</div>
+        <div class="card-text">Soma X% ao preço original de uma só vez.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📈 Variação percentual</div>
+        <div class="card-formula">var% = (depois−antes)/antes × 100</div>
+        <div class="card-text">Mede o tamanho de uma mudança em relação ao valor de partida.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌡️ Pontos percentuais</div>
+        <div class="card-formula">p.p. = depois − antes</div>
+        <div class="card-text">Diferença simples entre duas porcentagens — não divida por nada.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏦 Juros simples</div>
+        <div class="card-formula">J = C × i × t</div>
+        <div class="card-text">Juro sempre calculado sobre o capital original; cresce em linha reta.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚖️ Regra de três</div>
+        <div class="card-formula">X = (parte × 100) ÷ total</div>
+        <div class="card-text">Organiza total=100% e parte=X% numa tabela, e multiplica em cruz.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">✅ Boas práticas: como não se confundir</div>
+
+    <div class="decision-flow">
+      <div class="decision-q">Duas mudanças percentuais seguidas (ex.: +50% depois −50%) voltam ao valor original?</div>
+      <div class="decision-branches">
+        <div class="decision-branch errado">
+          <div class="decision-label">❌ Pensamento errado</div>
+          <div class="decision-result">"+50% e depois −50% se cancelam e o preço volta ao normal."</div>
+          <div class="decision-example">R$100 → +50% = R$150 → −50% = <strong>R$75</strong> (não voltou a R$100!)</div>
+        </div>
+        <div class="decision-branch certo">
+          <div class="decision-label">✅ Pensamento correto</div>
+          <div class="decision-result">Cada porcentagem é calculada sobre o valor <strong>daquele momento</strong>, não sobre o valor original.</div>
+          <div class="decision-example">O −50% depois incidiu sobre R$150, não sobre os R$100 originais.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">1️⃣ Sempre pergunte: "porcentagem de quê?"</div>
+        <div class="card-text">"20% de desconto" só faz sentido se você souber 20% <strong>de qual valor</strong>. O "total" muda de contexto para contexto — identifique-o antes de calcular.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Pontos percentuais ≠ porcentagem</div>
+        <div class="card-text">"A taxa subiu 5 pontos percentuais" e "a taxa subiu 5%" são frases diferentes. Releia a seção de pontos percentuais sempre que uma notícia falar de taxas.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Porcentagem pode passar de 100%</div>
+        <div class="card-text">Se um valor mais que dobrou, a variação é maior que 100%. Isso é normal e correto — porcentagem não é limitada a "no máximo o total".</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1: somar porcentagens de totais diferentes</div>
+      <p>50% de uma turma de 20 alunos (10 alunos) + 50% de uma turma de 30 alunos (15 alunos) <strong>não é</strong> "50% das duas turmas juntas". O resultado real é 25 alunos em 50 no total, ou seja, também 50% — mas isso só coincide por acaso dos números escolhidos; em geral é preciso somar as quantidades reais, não as porcentagens.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2: "100% de desconto" e "aumentar 200%"</div>
+      <p>100% de desconto significa que o item fica de graça (você tira 100% do preço). Já "aumentar 200%" significa que o valor final é <strong>3 vezes</strong> o original (o valor original + mais duas vezes ele), não o dobro.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Antes de calcular, desenhe (ou imagine) a grade de 100 quadradinhos ou a etiqueta de preço. Visualizar qual é o "todo" e qual é a "parte" evita quase todos os erros comuns com porcentagem.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Porcentagem</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function fmtMoney(n){ return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function fmtDec(n,d){ return n.toFixed(d).replace('.',','); }
+function gcd(a,b){ return b ? gcd(b,a%b) : a; }
+function getCss(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🔢', label:'O que é %'},
+  {id:'s-equivalencia', icon:'🍰', label:'Fração/Decimal/%'},
+  {id:'s-calculo', icon:'💰', label:'X% de um valor'},
+  {id:'s-desconto', icon:'🛍️', label:'Desconto/Acréscimo'},
+  {id:'s-variacao', icon:'📈', label:'Variação %'},
+  {id:'s-pontos', icon:'🌡️', label:'Pontos % x %'},
+  {id:'s-juros', icon:'🏦', label:'Juros Simples'},
+  {id:'s-graficos', icon:'🥧', label:'Gráficos'},
+  {id:'s-regra3', icon:'⚖️', label:'Regra de Três'},
+  {id:'s-tabela', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== GRID DE 100 (percentual) ===================== */
+function buildGrid100(id){
+  let html='';
+  for(let i=0;i<100;i++) html += `<div class="cell" data-i="${i}"></div>`;
+  document.getElementById(id).innerHTML = html;
+}
+function fillGrid100(id, n){
+  const cells = document.querySelectorAll('#'+id+' .cell');
+  cells.forEach((c,i) => c.classList.toggle('on', i<n));
+}
+buildGrid100('heroGrid100');
+fillGrid100('heroGrid100', 42);
+buildGrid100('grid100');
+function renderGrid(){
+  const v = +document.getElementById('gridSlider').value;
+  document.getElementById('gridVal').textContent = v;
+  fillGrid100('grid100', v);
+  document.getElementById('gridCount').textContent = v+' de 100';
+  document.getElementById('gridFrac').textContent = v+'/100';
+  document.getElementById('gridPct').textContent = v+'%';
+}
+
+/* ===================== EQUIVALÊNCIA (fração/decimal/%) ===================== */
+function renderEq(){
+  const v = +document.getElementById('eqSlider').value;
+  document.getElementById('eqVal').textContent = v;
+  document.getElementById('eqPercent').textContent = v+'%';
+  document.getElementById('eqDecimal').textContent = fmtDec(v/100,2);
+  document.getElementById('eqFracRaw').textContent = v+'/100';
+  let fracLabel;
+  if(v===0){ fracLabel = '0'; }
+  else{
+    const g = gcd(v,100);
+    fracLabel = (v/g)+'/'+(100/g);
+  }
+  document.getElementById('eqFracSimple').textContent = fracLabel;
+  const fill = document.getElementById('eqBarFill');
+  fill.style.width = v+'%';
+  fill.querySelector('span').textContent = v+'%';
+}
+function setEq(v){ document.getElementById('eqSlider').value = v; renderEq(); }
+
+/* ===================== CALCULANDO X% DE UM VALOR ===================== */
+function renderCalculo(){
+  const total = +document.getElementById('calcTotal').value;
+  const pct = +document.getElementById('calcPct').value;
+  document.getElementById('calcTotalVal').textContent = fmtMoney(total);
+  document.getElementById('calcPctVal').textContent = pct+'%';
+  const parte = total*pct/100;
+  document.getElementById('calcFormula').textContent = `${pct}% de ${fmtMoney(total)} = ${fmtDec(pct/100,2)} × ${fmtMoney(total)} = ${fmtMoney(parte)}`;
+  const fill = document.getElementById('calcBarFill');
+  fill.style.width = Math.max(pct,1)+'%';
+  document.getElementById('calcBarLabel').textContent = fmtMoney(parte);
+  document.getElementById('calcBarMidLabel').textContent = fmtMoney(total)+' (100%)';
+  document.getElementById('cheat1').textContent = fmtMoney(total*0.01);
+  document.getElementById('cheat10').textContent = fmtMoney(total*0.10);
+  document.getElementById('cheat25').textContent = fmtMoney(total*0.25);
+  document.getElementById('cheat50').textContent = fmtMoney(total*0.50);
+}
+
+/* ===================== DESCONTO E ACRÉSCIMO ===================== */
+let discMode = 'desconto';
+function setDiscMode(m){
+  discMode = m;
+  document.getElementById('discBtnDesc').classList.toggle('active', m==='desconto');
+  document.getElementById('discBtnAcr').classList.toggle('active', m==='acrescimo');
+  renderDesconto();
+}
+function renderDesconto(){
+  const price = +document.getElementById('discPrice').value;
+  const pct = +document.getElementById('discPct').value;
+  document.getElementById('discPriceVal').textContent = fmtMoney(price);
+  document.getElementById('discPctVal').textContent = pct+'%';
+  const diff = price*pct/100;
+  const card = document.getElementById('discAfterCard');
+  let newPrice;
+  if(discMode==='desconto'){
+    newPrice = price-diff;
+    document.getElementById('discDiffLabel').textContent = 'Você economiza';
+    card.classList.remove('after-up');
+  } else {
+    newPrice = price+diff;
+    document.getElementById('discDiffLabel').textContent = 'Você paga a mais';
+    card.classList.add('after-up');
+  }
+  document.getElementById('discBefore').textContent = fmtMoney(price);
+  document.getElementById('discAfter').textContent = fmtMoney(newPrice);
+  document.getElementById('discDiffVal').textContent = fmtMoney(diff);
+}
+
+/* ===================== VARIAÇÃO PERCENTUAL ===================== */
+function renderVariacao(){
+  const antes = +document.getElementById('varAntes').value;
+  const depois = +document.getElementById('varDepois').value;
+  document.getElementById('varAntesLabel').textContent = fmtMoney(antes);
+  document.getElementById('varDepoisLabel').textContent = fmtMoney(depois);
+  document.getElementById('varAntesVal').textContent = fmtMoney(antes);
+  document.getElementById('varDepoisVal').textContent = fmtMoney(depois);
+  const variacao = ((depois-antes)/antes)*100;
+  const up = variacao >= 0;
+  document.getElementById('varResult').textContent = (up?'+':'')+fmtDec(variacao,1)+'%';
+  document.getElementById('varResult').style.color = up ? 'var(--accent-green)' : 'var(--accent-red)';
+  document.getElementById('varArrow').textContent = up ? '▲' : '▼';
+  document.getElementById('varArrow').style.color = up ? 'var(--accent-green)' : 'var(--accent-red)';
+  document.getElementById('varLabel').textContent = up ? 'Aumento de' : 'Queda de';
+  const maxV = Math.max(antes, depois, 1);
+  document.getElementById('varBarAntes').style.height = (antes/maxV*140)+'px';
+  document.getElementById('varBarDepois').style.height = (depois/maxV*140)+'px';
+}
+
+/* ===================== PONTOS PERCENTUAIS ===================== */
+function renderPontos(){
+  const a = +document.getElementById('ppAntes').value;
+  const d = +document.getElementById('ppDepois').value;
+  document.getElementById('ppAntesVal').textContent = fmtDec(a,1)+'%';
+  document.getElementById('ppDepoisVal').textContent = fmtDec(d,1)+'%';
+  const diff = d-a;
+  const rel = a!==0 ? (diff/a*100) : 0;
+  document.getElementById('ppDiffPP').textContent = (diff>=0?'+':'')+fmtDec(diff,1)+' p.p.';
+  document.getElementById('ppDiffRel').textContent = (rel>=0?'+':'')+fmtDec(rel,1)+'%';
+  const maxScale = 50;
+  document.getElementById('ppFillAntes').style.height = (a/maxScale*140)+'px';
+  document.getElementById('ppFillDepois').style.height = (d/maxScale*140)+'px';
+  document.querySelectorAll('#s-pontos .vbar-label')[0].innerHTML = 'Antes: <strong>'+fmtDec(a,1)+'%</strong>';
+  document.querySelectorAll('#s-pontos .vbar-label')[1].innerHTML = 'Depois: <strong>'+fmtDec(d,1)+'%</strong>';
+}
+
+/* ===================== JUROS SIMPLES ===================== */
+function renderJuros(){
+  const C = +document.getElementById('jurosCapital').value;
+  const i = +document.getElementById('jurosTaxa').value;
+  const t = +document.getElementById('jurosTempo').value;
+  document.getElementById('jurosCapitalVal').textContent = fmtMoney(C);
+  document.getElementById('jurosTaxaVal').textContent = fmtDec(i,1)+'%';
+  document.getElementById('jurosTempoVal').textContent = t+' meses';
+  const J = C*i/100*t;
+  const M = C+J;
+  document.getElementById('jurosJ').textContent = fmtMoney(J);
+  document.getElementById('jurosM').textContent = fmtMoney(M);
+  drawJurosChart(C,i,t,M);
+}
+function drawJurosChart(C,i,t,M){
+  const canvas = document.getElementById('jurosCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || 600, cssH = 220;
+  canvas.width = cssW*dpr; canvas.height = cssH*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,cssW,cssH);
+  const padL=76, padR=16, padT=16, padB=30;
+  const plotW = cssW-padL-padR, plotH = cssH-padT-padB;
+  const yMin = C, yMax = M>C ? M : C+1;
+  ctx.strokeStyle = getCss('--border-color'); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
+  ctx.fillStyle = getCss('--text-disabled'); ctx.font = '10px Inter'; ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.fillText(fmtMoney(yMin), padL-8, padT+plotH);
+  ctx.fillText(fmtMoney(yMax), padL-8, padT+6);
+  ctx.textAlign='center';
+  ctx.fillText('mês 0', padL, padT+plotH+16);
+  ctx.fillText('mês '+t, padL+plotW, padT+plotH+16);
+  ctx.beginPath();
+  ctx.strokeStyle = getCss('--accent'); ctx.lineWidth = 2.5;
+  for(let m=0;m<=t;m++){
+    const val = C + C*i/100*m;
+    const x = padL + (t>0 ? (m/t)*plotW : 0);
+    const y = padT + plotH - ((val-yMin)/(yMax-yMin))*plotH;
+    if(m===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+  ctx.fillStyle = getCss('--accent');
+  for(let m=0;m<=t;m++){
+    const val = C + C*i/100*m;
+    const x = padL + (t>0 ? (m/t)*plotW : 0);
+    const y = padT + plotH - ((val-yMin)/(yMax-yMin))*plotH;
+    ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
+  }
+}
+
+/* ===================== PORCENTAGEM EM GRÁFICOS (pizza) ===================== */
+function renderPizza(){
+  const w = [+document.getElementById('pzA').value, +document.getElementById('pzB').value, +document.getElementById('pzC').value, +document.getElementById('pzD').value];
+  const labels = ['😴 Sono','📚 Estudo','🎮 Lazer','🍽️ Outros'];
+  const colors = [getCss('--accent-blue'), getCss('--accent'), getCss('--accent-green'), getCss('--accent-yellow')];
+  document.getElementById('pzAVal').textContent = w[0]+'h';
+  document.getElementById('pzBVal').textContent = w[1]+'h';
+  document.getElementById('pzCVal').textContent = w[2]+'h';
+  document.getElementById('pzDVal').textContent = w[3]+'h';
+  const total = w.reduce((a,b)=>a+b,0) || 1;
+  const pcts = w.map(v => v/total*100);
+  drawDonut(pcts, colors);
+  document.getElementById('pzLegend').innerHTML = labels.map((l,idx) =>
+    `<div class="pie-legend-item"><span class="pie-swatch" style="background:${colors[idx]};"></span>${l} — <strong>${fmtDec(pcts[idx],1)}%</strong> (${w[idx]}h)</div>`
+  ).join('') + `<div class="pie-legend-item" style="border-top:1px solid var(--border-color);padding-top:8px;margin-top:2px;"><strong>Total: ${fmtDec(pcts.reduce((a,b)=>a+b,0),1)}%</strong></div>`;
+}
+function drawDonut(pcts, colors){
+  const canvas = document.getElementById('pzCanvas');
+  const size = 230;
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+  const cx = size/2, cy = size/2, rOuter = 105, rInner = 55;
+  let start = -Math.PI/2;
+  pcts.forEach((p,idx) => {
+    const angle = (p/100)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,rOuter,start,start+angle);
+    ctx.closePath();
+    ctx.fillStyle = colors[idx];
+    ctx.fill();
+    start += angle;
+  });
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath(); ctx.arc(cx,cy,rInner,0,Math.PI*2); ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = getCss('--text-primary');
+  ctx.font = '700 16px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('100%', cx, cy);
+}
+
+/* ===================== REGRA DE TRÊS ===================== */
+function renderRegra3(){
+  const total = +document.getElementById('r3Total').value;
+  const parte = +document.getElementById('r3Parte').value;
+  document.getElementById('r3TotalVal').textContent = total;
+  document.getElementById('r3ParteVal').textContent = parte;
+  document.getElementById('r3TotalCell').textContent = total;
+  document.getElementById('r3ParteCell').textContent = parte;
+  const x = total>0 ? (parte*100/total) : 0;
+  document.getElementById('r3XCell').textContent = fmtDec(x,1)+'%';
+  document.getElementById('r3X').textContent = fmtDec(x,1)+'%';
+  document.getElementById('r3Formula').textContent = `${parte} × 100 ÷ ${total} = ${fmtDec(x,1)}%`;
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+function miniVBar(items, maxVal){
+  maxVal = maxVal || Math.max(...items.map(it=>it.value), 1);
+  return '<div class="mini-vbar-row">' + items.map(it => {
+    const h = Math.max(6, Math.round(it.value/maxVal*80));
+    return `<div class="mini-vbar-col">
+      <div class="mini-vbar-box"><div class="mini-vbar-fill" style="height:${h}px;background:${it.color};"></div></div>
+      <div class="mini-vbar-label">${it.label}<br><strong style="color:${it.color};">${it.display}</strong></div>
+    </div>`;
+  }).join('') + '</div>';
+}
+function miniPictogram(total, filled, caption){
+  let html = '<div class="mini-pictogram">';
+  for(let i=0;i<total;i++) html += `<div class="mini-pic-cell ${i<filled?'on':''}"></div>`;
+  html += '</div>';
+  if(caption) html += `<div class="mini-pic-caption">${caption}</div>`;
+  return html;
+}
+function miniStack(segments){
+  const total = segments.reduce((a,b)=>a+b.value,0) || 1;
+  const track = '<div class="mini-stack-track">' + segments.map(s => {
+    const w = s.value/total*100;
+    return `<div class="mini-stack-seg" style="width:${w}%;background:${s.color};">${w>14?s.short:''}</div>`;
+  }).join('') + '</div>';
+  const legend = '<div class="mini-stack-legend">' + segments.map(s => `<span><span class="sw" style="background:${s.color};"></span>${s.label}</span>`).join('') + '</div>';
+  return track + legend;
+}
+const problems = [
+  {q:'Uma calça custava R$120 e está com 20% de desconto. Quanto custa agora?',
+   a:'Desconto = 20% de R$120 = 0,20 × 120 = R$24. Preço novo = 120 − 24 = <strong>R$96,00</strong>.',
+   chart: miniVBar([{label:'Antes',value:120,color:'var(--accent-blue)',display:'R$120'},{label:'Depois',value:96,color:'var(--accent-green)',display:'R$96'}])},
+  {q:'Você almoçou por R$50 e quer deixar 10% de gorjeta. Quanto deve deixar?',
+   a:'10% de R$50 = 0,10 × 50 = <strong>R$5,00</strong> de gorjeta (total pago: R$55,00).',
+   chart: miniStack([{label:'Almoço (R$50)',value:50,color:'var(--accent-blue)',short:'R$50'},{label:'Gorjeta 10% (R$5)',value:5,color:'var(--accent-green)',short:'R$5'}])},
+  {q:'De 40 alunos numa turma, 30 foram aprovados. Qual foi a porcentagem de aprovação?',
+   a:'Porcentagem = (30 ÷ 40) × 100 = 0,75 × 100 = <strong>75%</strong> de aprovação.',
+   chart: miniPictogram(40,30,'🟦 30 aprovados de 40 alunos = 75%')},
+  {q:'Um salário de R$2.000 teve um aumento de 8%. Qual é o novo salário?',
+   a:'Aumento = 8% de R$2.000 = 0,08 × 2000 = R$160. Novo salário = 2000 + 160 = <strong>R$2.160,00</strong>.',
+   chart: miniVBar([{label:'Antes',value:2000,color:'var(--accent-blue)',display:'R$2.000'},{label:'Depois',value:2160,color:'var(--accent-green)',display:'R$2.160'}])},
+  {q:'A gasolina custava R$5,00 e passou a custar R$5,50. Qual foi a variação percentual?',
+   a:'Variação = (5,50 − 5,00) ÷ 5,00 × 100 = 0,50 ÷ 5,00 × 100 = <strong>+10%</strong>.',
+   chart: miniVBar([{label:'Antes',value:5.00,color:'var(--accent-blue)',display:'R$5,00'},{label:'Depois',value:5.50,color:'var(--accent-red)',display:'R$5,50'}])},
+  {q:'A taxa de juros de um banco subiu de 8% para 10%. Isso é um aumento de quantos pontos percentuais? E de quantos % relativos?',
+   a:'Pontos percentuais = 10 − 8 = <strong>2 p.p.</strong> Variação relativa = (2 ÷ 8) × 100 = <strong>25%</strong> de aumento na taxa.',
+   chart: miniVBar([{label:'Antes',value:8,color:'var(--accent-blue)',display:'8%'},{label:'Depois',value:10,color:'var(--accent-green)',display:'10%'}])},
+  {q:'Uma compra de R$350 tem 8% de imposto embutido. Quanto disso é imposto, e qual o valor sem imposto?',
+   a:'Imposto = 8% de R$350 = 0,08 × 350 = <strong>R$28,00</strong>. Valor sem imposto = 350 − 28 = <strong>R$322,00</strong>.',
+   chart: miniStack([{label:'Produto (R$322)',value:322,color:'var(--accent-blue)',short:'R$322'},{label:'Imposto 8% (R$28)',value:28,color:'var(--accent-red)',short:'R$28'}])},
+  {q:'A bateria do celular estava em 80% e caiu para 60%. Quantos pontos percentuais caiu? E qual foi a queda percentual relativa?',
+   a:'Pontos percentuais = 80 − 60 = <strong>20 p.p.</strong> Queda relativa = (20 ÷ 80) × 100 = <strong>25%</strong> da carga que ele tinha foi consumida.',
+   chart: miniVBar([{label:'Antes',value:80,color:'var(--accent-green)',display:'🔋 80%'},{label:'Depois',value:60,color:'var(--accent-yellow)',display:'🔋 60%'}])},
+  {q:'Uma postagem tinha 200 curtidas ontem e hoje está com 250. Qual foi o crescimento percentual de curtidas?',
+   a:'Crescimento = (250 − 200) ÷ 200 × 100 = 50 ÷ 200 × 100 = <strong>+25%</strong> em relação a ontem.',
+   chart: miniVBar([{label:'Ontem',value:200,color:'var(--accent-blue)',display:'200'},{label:'Hoje',value:250,color:'var(--accent-green)',display:'250'}])},
+  {q:'Uma prova tinha 25 questões e você acertou 20. Quantos % você acertou, e quantas questões seriam 90% de acerto?',
+   a:'Acerto = (20 ÷ 25) × 100 = <strong>80%</strong>. Para 90%: 0,90 × 25 = <strong>22,5</strong>, ou seja, seria preciso acertar 23 questões (arredondando para cima).',
+   chart: miniPictogram(25,20,'✅ 20 questões certas de 25 = 80%')},
+  {q:'A conta de um restaurante deu R$180 e o garçom cobra 10% de taxa de serviço. Dividindo entre 4 pessoas, quanto cada uma paga?',
+   a:'Taxa de serviço = 10% de R$180 = R$18. Total = 180 + 18 = R$198. Por pessoa = 198 ÷ 4 = <strong>R$49,50</strong> cada.',
+   chart: miniStack([{label:'Conta (R$180)',value:180,color:'var(--accent-blue)',short:'R$180'},{label:'Serviço 10% (R$18)',value:18,color:'var(--accent-green)',short:'R$18'}])},
+  {q:'Uma cidade tinha 50.000 habitantes e cresceu 4% em um ano. Quantos habitantes tem agora?',
+   a:'Crescimento = 4% de 50.000 = 0,04 × 50.000 = 2.000 habitantes. População nova = 50.000 + 2.000 = <strong>52.000 habitantes</strong>.',
+   chart: miniVBar([{label:'Antes',value:50000,color:'var(--accent-blue)',display:'50.000'},{label:'Depois',value:52000,color:'var(--accent-green)',display:'52.000'}])},
+];
+function renderProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Ver resposta</span></div>
+      <div class="quiz-answer">${p.a}${p.chart ? `<div class="mini-chart">${p.chart}</div>` : ''}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {tag:true, q:'50% de um número é o mesmo que metade desse número.', a:'<span class="quiz-tag true">VERDADEIRO</span> 50% = 50/100 = 1/2, então 50% de qualquer valor é sempre a sua metade.'},
+  {tag:false, q:'Se um preço sobe 20% e depois desce 20%, ele volta ao valor original.', a:'<span class="quiz-tag false">FALSO</span> A segunda variação incide sobre o valor já alterado, não sobre o original — por isso o resultado final fica um pouco abaixo do valor inicial.'},
+  {tag:true, q:'Uma porcentagem pode ser maior que 100%.', a:'<span class="quiz-tag true">VERDADEIRO</span> Se algo mais que dobrou, por exemplo, a variação passa de 100%. Porcentagem não tem limite superior fixo.'},
+  {tag:false, q:'"A taxa subiu 5 pontos percentuais" é o mesmo que "a taxa subiu 5%".', a:'<span class="quiz-tag false">FALSO</span> Pontos percentuais são uma subtração simples entre duas taxas; "subir 5%" se refere a uma variação relativa, que depende do valor de partida.'},
+  {tag:true, q:'As fatias de um gráfico de pizza sempre somam 100%.', a:'<span class="quiz-tag true">VERDADEIRO</span> A pizza inteira representa o total (100%); cada fatia é uma parte proporcional desse total.'},
+  {tag:false, q:'Para achar 10% de um valor, basta dividir esse valor por 100.', a:'<span class="quiz-tag false">FALSO</span> Dividir por 100 dá 1% do valor. Para achar 10%, divida por 10 (ou multiplique por 0,10).'},
+  {tag:true, q:'No juro simples, o valor cresce em linha reta ao longo do tempo.', a:'<span class="quiz-tag true">VERDADEIRO</span> Como o juro de cada período é sempre calculado sobre o capital original, o crescimento é constante — uma reta no gráfico.'},
+  {tag:false, q:'"100% de aumento" significa que o valor final é o triplo do original.', a:'<span class="quiz-tag false">FALSO</span> "100% de aumento" significa que você soma mais um valor igual ao original — ou seja, o valor final é o <strong>dobro</strong>. O triplo seria "200% de aumento".'},
+];
+function renderQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta</span></div>
+      <div class="quiz-answer">${item.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+renderGrid();
+renderEq();
+renderCalculo();
+renderDesconto();
+renderVariacao();
+renderPontos();
+renderJuros();
+renderPizza();
+renderRegra3();
+renderProblems();
+renderQuiz();
+updateToc();
+</script>
+</body>
+</html>

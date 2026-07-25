@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Regressão Linear explicada do zero, com retas arrastáveis, mínimos quadrados, resíduos, R², outliers e muitas demos visuais interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Regressão Linear do Jeito Fácil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-chart-box{width:100%;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);padding:14px;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+.canvas-wrap.drag canvas{cursor:grab;}
+.canvas-wrap.drag canvas:active{cursor:grabbing;}
+
+/* ---- LEGEND ---- */
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-secondary);}
+.legend-swatch{width:14px;height:4px;border-radius:2px;flex-shrink:0;}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.drag-hint{font-size:11.5px;color:var(--text-disabled);text-align:center;margin-top:6px;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- MULTIPLE REGRESSION DIAGRAM ---- */
+.mreg-diagram{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;padding:10px 0;}
+.mreg-inputs{display:flex;flex-direction:column;gap:10px;}
+.mreg-chip{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--text-primary);padding:10px 16px;border-radius:8px;font-size:12.5px;font-weight:600;min-width:170px;text-align:center;}
+.mreg-arrow{font-size:22px;color:var(--border-strong);padding:0 18px;}
+.mreg-output{background:rgba(6,182,212,.10);border:2px solid var(--accent);color:var(--accent);padding:16px 22px;border-radius:8px;font-size:14px;font-weight:800;text-align:center;min-width:170px;}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .stat-cards{grid-template-columns:1fr;}
+  .mreg-diagram{flex-direction:column;}
+  .mreg-arrow{padding:8px 0;transform:rotate(90deg);}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Regressão Linear</h1><span>Achando a melhor reta para explicar (e prever) os dados</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">y=a+bx</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">9</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">R²</div><div class="hstat-label">Métrica-estrela</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: da nuvem de pontos até prever o futuro</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>A arte de desenhar <em>a linha reta</em> que melhor resume seus dados</h2>
+      <p>Regressão Linear é a técnica que responde a uma pergunta muito simples: <strong>"existe um padrão em linha reta entre duas coisas, e dá pra usar esse padrão pra prever o futuro?"</strong> Quanto mais horas eu estudo, maior minha nota? Quanto mais quente o dia, mais sorvete se vende? Nesta aula vamos construir essa ideia do zero — com pontos que você mesmo vai arrastar na tela — até chegar nas fórmulas de verdade que o computador usa.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Previsão</span>
+        <span class="badge badge-green">Mínimos Quadrados</span>
+        <span class="badge badge-blue">Correlação</span>
+        <span class="badge badge-purple">Base do Machine Learning</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-chart-box">
+        <div class="canvas-wrap" style="background:transparent;border:none;padding:0;"><canvas id="heroCanvas" height="200"></canvas></div>
+      </div>
+      <div class="hero-visual-caption">Cada 🍦 é um dia diferente — a linha é o "resumo" da relação entre calor e vendas. Role a página e mexa você mesmo!</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">📈 O que é Regressão Linear?</div>
+    <p class="section-desc">
+      Imagine uma turma de alunos: cada um estudou um número de horas diferente para uma prova, e tirou uma nota diferente. Se você marcar cada aluno como um pontinho num gráfico (horas no eixo de baixo, nota no eixo de lado), vai notar que os pontos "meio que" sobem juntos — quem estudou mais, geralmente tirou nota mais alta. A Regressão Linear é o processo de <strong>desenhar a reta que passa o mais perto possível de todos esses pontos ao mesmo tempo</strong>, para resumir esse padrão numa fórmula simples: <code style="color:var(--accent);">nota = a + b × horas</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste qualquer bolinha 🔵 e veja a linha se ajustar sozinha</div>
+      <div class="canvas-wrap drag"><canvas id="introCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#36a2ef;"></span> Um aluno (horas × nota)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> Linha de regressão (a melhor reta)</div>
+      </div>
+      <div class="drag-hint">👆 Clique e arraste os pontos — a reta se recalcula sozinha, ao vivo, para continuar sendo "a melhor" para a nova posição.</div>
+      <div class="result-display">
+        <div><span class="rl">Equação atual</span><span class="rv" id="introEq">nota = 4.20 + 0.65 × horas</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Repare que a reta nunca passa <em>exatamente</em> em cima de todos os pontos — isso quase nunca é possível. O objetivo da regressão não é acertar todo mundo, é achar a reta com o <strong>menor erro total possível</strong>. Esse é o assunto de quase toda esta aula.</p>
+    </div>
+  </section>
+
+  <!-- ============ CORRELAÇÃO ============ -->
+  <section class="section" id="s-correlacao">
+    <div class="section-eyebrow">Antes da Reta, o Padrão</div>
+    <div class="section-title">🧲 Correlação: os pontos "combinam" entre si?</div>
+    <p class="section-desc">
+      Antes de traçar qualquer reta, vale perguntar: <strong>as duas variáveis sobem e descem juntas, ou não têm nada a ver uma com a outra?</strong> Isso se chama <strong>correlação</strong>, e tem um número que a mede: o <strong>coeficiente de correlação (r)</strong>, que vai de −1 até +1. Perto de +1: quando uma sobe, a outra sobe junto. Perto de −1: quando uma sobe, a outra desce. Perto de 0: uma não tem relação linear com a outra.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste o controle e veja a nuvem de pontos mudar de formato</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Força e direção da correlação (r alvo)</span><span class="ctrl-v" id="corrRVal">+0.9</span></div>
+          <input type="range" id="corrR" min="-100" max="100" step="10" value="90" oninput="renderCorrelation()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="corrCanvas" height="240"></canvas></div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-top:12px;">
+        <button class="player-btn" onclick="regenCorrelation()">🎲 Sortear nova nuvem</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">r medido nesta nuvem</span><span class="rv" id="corrMeasured">0.91</span></div>
+        <div><span class="rl">O que isso significa</span><span class="rv" id="corrLabel" style="font-size:14px;">Correlação forte positiva</span></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📈 r perto de +1</div>
+        <div class="card-text">Correlação <strong>positiva</strong>: as duas coisas crescem juntas. Ex.: horas de estudo × nota, altura × tamanho do sapato.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📉 r perto de −1</div>
+        <div class="card-text">Correlação <strong>negativa</strong>: quando uma sobe, a outra desce. Ex.: preço do produto × quantidade vendida, velocidade × tempo de viagem.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">☁️ r perto de 0</div>
+        <div class="card-text">Sem correlação linear: os pontos formam uma nuvem sem direção clara. Ex.: número do sapato × nota na prova.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Correlação não é causa!</div>
+      <p>Duas coisas terem correlação forte não prova que uma <em>causa</em> a outra. Cidades com mais sorveterias também têm mais afogamentos — não porque sorvete cause afogamento, mas porque as duas coisas aumentam no verão. Sempre desconfie antes de dizer "X causa Y" só porque r é alto.</p>
+    </div>
+  </section>
+
+  <!-- ============ A EQUAÇÃO DA RETA ============ -->
+  <section class="section" id="s-equacao">
+    <div class="section-eyebrow">A Peça Que Mais Aparece</div>
+    <div class="section-title">📐 A equação da reta: y = a + b·x</div>
+    <p class="section-desc">
+      Toda reta do mundo pode ser descrita com apenas dois números. O <strong>intercepto (a)</strong> diz onde a reta cruza o eixo vertical — o valor de y quando x é zero. A <strong>inclinação (b)</strong>, também chamada de <strong>coeficiente angular</strong>, diz o quanto y sobe (ou desce) para cada unidade que x aumenta. Mexa nos dois controles abaixo e sinta a diferença.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Brinque com a inclinação (b) e o intercepto (a)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Intercepto — a (onde a reta começa)</span><span class="ctrl-v" id="eqAVal">2.0</span></div>
+          <input type="range" id="eqA" min="-5" max="5" step="0.5" value="2" oninput="renderEquation()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Inclinação — b (quão "íngreme" a reta é)</span><span class="ctrl-v" id="eqBVal">0.8</span></div>
+          <input type="range" id="eqB" min="-2" max="2" step="0.1" value="0.8" oninput="renderEquation()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="eqCanvas" height="260"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#e8b339;"></span> Ponto onde a reta cruza x=0 (o intercepto a)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#c49aff;"></span> Triângulo "sobe/anda" (a inclinação b)</div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Equação</span><span class="rv" id="eqFormula">y = 2.0 + 0.8x</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🎯 Intercepto (a)</div>
+        <div class="card-text">Se <code>a = 4.2</code> numa reta de "nota = a + b×horas", isso quer dizer que um aluno que estudou <strong>zero horas</strong> tende a tirar 4.2 — o "ponto de partida" antes de qualquer esforço extra.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🚀 Inclinação (b)</div>
+        <div class="card-text">Se <code>b = 0.65</code>, cada hora extra de estudo aumenta a nota prevista em <strong>0.65 pontos</strong>. Quanto maior o b (positivo), mais "íngreme" a reta sobe. Se b for negativo, a reta desce.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MÍNIMOS QUADRADOS ============ -->
+  <section class="section" id="s-minimos-quadrados">
+    <div class="section-eyebrow">Como Achar "A Melhor" Reta</div>
+    <div class="section-title">📏 Mínimos Quadrados: a régua que escolhe a melhor reta</div>
+    <p class="section-desc">
+      Existem infinitas retas que poderíamos desenhar perto dos pontos — mas só <strong>uma</strong> é considerada "a melhor". A régua usada para decidir é o <strong>Método dos Mínimos Quadrados</strong>: para cada ponto, mede-se a distância vertical até a reta (o <strong>resíduo</strong>, o "erro" daquele ponto), eleva-se essa distância <strong>ao quadrado</strong> (para que erros positivos e negativos não se cancelem, e para punir mais os erros grandes), e soma-se tudo. A melhor reta é a que deixa essa <strong>soma dos quadrados</strong> a menor possível.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Tente bater a máquina: ajuste a e b para deixar os quadrados vermelhos os menores possível</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Intercepto — a</span><span class="ctrl-v" id="lsqAVal">4.0</span></div>
+          <input type="range" id="lsqA" min="0" max="8" step="0.1" value="4" oninput="renderLsq()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Inclinação — b</span><span class="ctrl-v" id="lsqBVal">0.4</span></div>
+          <input type="range" id="lsqB" min="-1" max="2" step="0.05" value="0.4" oninput="renderLsq()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="lsqCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#36a2ef;"></span> Ponto real</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> Sua reta</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#f86b63;opacity:.5;border-radius:2px;"></span> Quadrado do erro (resíduo²)</div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:12px;">
+        <button class="player-btn primary" onclick="snapToOls()">🤖 Deixar o computador achar a melhor reta (OLS)</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Soma dos quadrados (SQE) — sua reta</span><span class="rv" id="lsqSSE">—</span></div>
+        <div><span class="rl">Menor SQE possível (a melhor reta)</span><span class="rv" id="lsqBestSSE">—</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 O nome "mínimos quadrados" (em inglês, <em>OLS — Ordinary Least Squares</em>) vem exatamente disso: minimizar a soma dos quadrados dos resíduos. Existe uma fórmula matemática que calcula a e b <strong>direto</strong>, sem precisar tentar reta por reta como você acabou de fazer — é isso que o botão "🤖" usa por baixo dos panos.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📐 Fórmula da inclinação</div>
+        <div class="card-formula">b = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)²</div>
+        <div class="card-text">Compara o quanto x e y variam <strong>juntos</strong> (numerador) com o quanto x varia sozinho (denominador).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Fórmula do intercepto</div>
+        <div class="card-formula">a = ȳ − b·x̄</div>
+        <div class="card-text">Depois de achar b, o intercepto garante que a reta passe exatamente pelo "ponto médio" dos dados (x̄, ȳ).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ R² ============ -->
+  <section class="section" id="s-r2">
+    <div class="section-eyebrow">O Quanto Confiar na Reta</div>
+    <div class="section-title">🎯 R²: quanto a reta realmente explica</div>
+    <p class="section-desc">
+      Depois de achar a melhor reta, surge outra pergunta: <strong>ela é boa mesmo, ou só "a menos ruim"?</strong> O <strong>R² (R-quadrado)</strong> responde isso: é a fração da variação dos dados que a reta consegue explicar, indo de 0 (a reta não explica nada) até 1 (a reta explica tudo, perfeitamente). Ele compara o erro da <em>sua reta</em> com o erro de um "modelo preguiçoso" que só chuta sempre a média.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Mexa no ruído dos dados e veja o R² subir ou descer</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Quantidade de "bagunça" (ruído) nos dados</span><span class="ctrl-v" id="r2NoiseVal">Médio</span></div>
+          <input type="range" id="r2Noise" min="0" max="4" step="1" value="1" oninput="renderR2()">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="panel-label" style="margin-top:8px;">Linha da média (modelo "preguiçoso")</div>
+          <div class="canvas-wrap"><canvas id="r2CanvasMean" height="220"></canvas></div>
+        </div>
+        <div>
+          <div class="panel-label" style="margin-top:8px;">Linha de regressão (sua reta)</div>
+          <div class="canvas-wrap"><canvas id="r2CanvasReg" height="220"></canvas></div>
+        </div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card c-red"><div class="stat-card-label">Erro do modelo preguiçoso (SQT)</div><div class="stat-card-value" id="r2SST">—</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Erro da sua reta (SQE)</div><div class="stat-card-value" id="r2SSE">—</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">R² = 1 − SQE/SQT</div><div class="stat-card-value" id="r2Value">—</div></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🟢 R² perto de 1 (ex.: 0.95)</div>
+        <div class="card-text">A reta explica quase toda a variação — os pontos estão bem "colados" nela. Ótimo para prever.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🟡 R² no meio (ex.: 0.5)</div>
+        <div class="card-text">A reta explica parte do padrão, mas ainda sobra bastante variação sem explicação — outros fatores também influenciam y.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔴 R² perto de 0</div>
+        <div class="card-text">A reta praticamente não ajuda mais do que simplesmente chutar a média toda vez. x não é um bom previsor de y.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OUTLIERS ============ -->
+  <section class="section" id="s-outliers">
+    <div class="section-eyebrow">O Ponto Que Estraga Tudo</div>
+    <div class="section-title">⚠️ Outliers: como um ponto fora da curva vira a reta de ponta cabeça</div>
+    <p class="section-desc">
+      Como a fórmula dos mínimos quadrados eleva os erros <strong>ao quadrado</strong>, um único ponto muito distante dos outros (um <strong>outlier</strong>) pesa muito mais do que deveria — e pode "puxar" a reta inteira na direção dele. Arraste o ponto vermelho para bem longe da nuvem e observe.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste o ponto vermelho 🔴 (o outlier) e veja a reta se contorcer</div>
+      <div class="canvas-wrap drag"><canvas id="outlierCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#36a2ef;"></span> Pontos normais</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#f86b63;"></span> O outlier (arrastável)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> Reta com o outlier</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#7dded8;border-top:1px dashed #7dded8;background:transparent;height:0;"></span> Reta sem o outlier</div>
+      </div>
+      <div class="drag-hint">👆 Arraste o ponto vermelho para longe da nuvem — repare como a reta sólida se afasta da reta tracejada (que ignora o outlier).</div>
+      <div style="display:flex;justify-content:center;margin-top:10px;">
+        <button class="player-btn" onclick="resetOutlier()">↩️ Reposicionar outlier</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Inclinação COM outlier</span><span class="rv" id="outSlopeWith">—</span></div>
+        <div><span class="rl">Inclinação SEM outlier</span><span class="rv" id="outSlopeWithout">—</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Nem todo outlier deve ser removido!</div>
+      <p>Antes de simplesmente apagar um ponto estranho, pergunte: é um <strong>erro de digitação/medição</strong> (aí sim, remova ou corrija) ou é um <strong>caso real e importante</strong> (aí ele carrega informação valiosa e deve ficar)? Remover outliers "porque atrapalham" sem investigar é um dos erros mais comuns em análise de dados.</p>
+    </div>
+  </section>
+
+  <!-- ============ REGRESSÃO MÚLTIPLA ============ -->
+  <section class="section" id="s-multipla">
+    <div class="section-eyebrow">E Se Tiver Mais de Uma Variável?</div>
+    <div class="section-title">🧩 Regressão Linear Múltipla</div>
+    <p class="section-desc">
+      Tudo o que vimos até aqui usou <strong>uma</strong> variável para prever outra (horas → nota). Mas, no mundo real, quase sempre existe <strong>mais de um fator</strong> influenciando o resultado. O preço de uma casa não depende só da área — depende também do número de quartos, da localização, da idade do imóvel... A <strong>Regressão Linear Múltipla</strong> é a mesma ideia da reta, só que generalizada para vários "x" ao mesmo tempo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">De uma reta (2D) para um "plano" com várias variáveis</div>
+      <div class="mreg-diagram">
+        <div class="mreg-inputs">
+          <div class="mreg-chip">📐 Área da casa (m²)</div>
+          <div class="mreg-chip">🛏️ Número de quartos</div>
+          <div class="mreg-chip">📍 Distância do centro (km)</div>
+        </div>
+        <div class="mreg-arrow">➜</div>
+        <div class="mreg-output">💰 Preço previsto da casa</div>
+      </div>
+      <div class="card-formula" style="margin-top:6px;">preço = a + b₁·área + b₂·quartos + b₃·distância</div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Cada "b" agora é a inclinação <strong>daquela</strong> variável, mantendo as outras fixas — ex.: b₁ diz quanto o preço sobe por m² extra, se quartos e distância não mudarem.</div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Com 2 variáveis (x₁, x₂), a "reta" vira um <strong>plano</strong> num espaço 3D. Com 3 ou mais variáveis, já não dá mais para desenhar — mas a matemática continua funcionando exatamente igual, só que num espaço com mais dimensões.</p>
+    </div>
+  </section>
+
+  <!-- ============ PRESSUPOSTOS ============ -->
+  <section class="section" id="s-pressupostos">
+    <div class="section-eyebrow">Antes de Confiar na Reta</div>
+    <div class="section-title">🔍 Pressupostos: quando a regressão linear pode enganar</div>
+    <p class="section-desc">
+      A regressão linear só funciona bem se algumas condições forem (mais ou menos) verdadeiras. Uma das formas mais fáceis de checar isso é olhar o <strong>gráfico de resíduos</strong>: os erros (resíduos) espalhados contra os valores previstos. Se tudo estiver bem, os pontos devem parecer uma "nuvem aleatória" ao redor de zero, sem nenhum padrão visível.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Compare um gráfico de resíduos saudável com dois problemáticos</div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle active" id="residBtn-good" onclick="setResidPattern('good')">✅ Saudável</button>
+        <button class="btn-toggle" id="residBtn-funnel" onclick="setResidPattern('funnel')">📯 Funil (heterocedasticidade)</button>
+        <button class="btn-toggle" id="residBtn-curve" onclick="setResidPattern('curve')">〰️ Curva (não-linearidade)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="residCanvas" height="220"></canvas></div>
+      <div class="section-desc" id="residExplain" style="text-align:center;font-size:12.5px;margin-top:8px;"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">1️⃣ Linearidade</div>
+        <div class="card-text">A relação entre x e y precisa ser realmente "em linha reta". Se os dados formam uma curva, uma reta vai errar sistematicamente.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Homocedasticidade</div>
+        <div class="card-text">O tamanho do erro deve ser parecido em toda a faixa de x. Se o erro cresce conforme x cresce (formato de funil), isso é <strong>heterocedasticidade</strong>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Independência dos erros</div>
+        <div class="card-text">O erro de um ponto não deveria "avisar" o erro do próximo — comum em dados de série temporal, onde um dia influencia o seguinte.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">4️⃣ Normalidade dos resíduos</div>
+        <div class="card-text">Para testes estatísticos formais (intervalos de confiança, valores-p), espera-se que os resíduos sigam aproximadamente uma distribuição normal.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela-formulas">
+    <div class="section-eyebrow">A Chuva de Fórmulas, Organizada</div>
+    <div class="section-title">📋 Tabela-resumo: as fórmulas desta aula</div>
+    <p class="section-desc">Todas as peças reunidas num só lugar.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📈 Equação da reta</div>
+        <div class="card-formula">y = a + b·x</div>
+        <div class="card-text">a = intercepto (valor de y quando x=0). b = inclinação (quanto y muda por unidade de x).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🚀 Inclinação (OLS)</div>
+        <div class="card-formula">b = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)²</div>
+        <div class="card-text">Mede o quanto x e y variam juntos, ajustado pela variação de x.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Intercepto (OLS)</div>
+        <div class="card-formula">a = ȳ − b·x̄</div>
+        <div class="card-text">Garante que a reta passe pelo ponto médio (x̄, ȳ) dos dados.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Resíduo</div>
+        <div class="card-formula">eᵢ = yᵢ − ŷᵢ</div>
+        <div class="card-text">Diferença entre o valor real (yᵢ) e o valor previsto pela reta (ŷᵢ), para cada ponto.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">➕ Soma dos Quadrados dos Erros</div>
+        <div class="card-formula">SQE = Σ(yᵢ−ŷᵢ)²</div>
+        <div class="card-text">O que os mínimos quadrados minimizam para achar a melhor reta.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧮 Coeficiente de Determinação</div>
+        <div class="card-formula">R² = 1 − SQE/SQT</div>
+        <div class="card-text">Fração da variação de y explicada pela reta, de 0 (nada) a 1 (tudo).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando a Fórmula</div>
+    <div class="section-title">✅ Boas práticas: usando a regressão com responsabilidade</div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">1️⃣ Sempre plote os dados primeiro</div>
+        <div class="card-text">Olhe o gráfico de dispersão antes de calcular qualquer coisa — às vezes a relação claramente não é uma reta, e nenhuma fórmula vai consertar isso.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Não extrapole demais</div>
+        <div class="card-text">A reta só é confiável dentro da faixa de x que você observou. Prever muito além dos dados coletados é um chute, não uma previsão.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ R² alto não significa "verdade absoluta"</div>
+        <div class="card-text">Um R² alto mostra bom ajuste aos dados que você tem, mas não prova causalidade nem garante que o modelo generaliza para dados novos.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1</div>
+      <p>Confundir correlação com causalidade — dizer que x "causa" y só porque r é alto. Sempre pergunte se não existe uma terceira variável escondida explicando as duas.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2</div>
+      <p>Deixar um outlier não investigado dominar a reta inteira. Sempre olhe o gráfico e pergunte se aquele ponto é um erro de dados ou uma informação real e importante.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Depois de ajustar a reta, sempre olhe o gráfico de resíduos. Se ele mostrar um padrão (curva, funil), a regressão linear simples provavelmente não é a ferramenta certa para aquele problema.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Regressão Linear</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers gerais ===================== */
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function fmt2(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function mean(arr){ return arr.reduce((s,v)=>s+v,0)/arr.length; }
+function computeOLS(points){
+  const n = points.length;
+  const xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+  const xbar = mean(xs), ybar = mean(ys);
+  let num=0, den=0;
+  for(let i=0;i<n;i++){ num += (xs[i]-xbar)*(ys[i]-ybar); den += (xs[i]-xbar)*(xs[i]-xbar); }
+  const b = den===0 ? 0 : num/den;
+  const a = ybar - b*xbar;
+  return {a,b};
+}
+function pearsonR(points){
+  const n = points.length;
+  const xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+  const xbar = mean(xs), ybar = mean(ys);
+  let num=0, dx=0, dy=0;
+  for(let i=0;i<n;i++){ num += (xs[i]-xbar)*(ys[i]-ybar); dx += (xs[i]-xbar)**2; dy += (ys[i]-ybar)**2; }
+  if(dx===0||dy===0) return 0;
+  return num/Math.sqrt(dx*dy);
+}
+function sseOf(points,a,b){
+  return points.reduce((s,p)=> s + (p.y-(a+b*p.x))**2, 0);
+}
+function sstOf(points){
+  const ybar = mean(points.map(p=>p.y));
+  return points.reduce((s,p)=> s + (p.y-ybar)**2, 0);
+}
+function scaleMaker(xMin,xMax,yMin,yMax,w,h,pad){
+  const ix = pad.l, iw = w-pad.l-pad.r;
+  const iy = pad.t, ih = h-pad.t-pad.b;
+  return {
+    x: v => ix + (v-xMin)/(xMax-xMin) * iw,
+    y: v => iy + ih - (v-yMin)/(yMax-yMin) * ih,
+    xInv: px => xMin + (px-ix)/iw * (xMax-xMin),
+    yInv: py => yMin + (iy+ih-py)/ih * (yMax-yMin),
+    pad, ix, iy, iw, ih
+  };
+}
+function drawGrid(ctx,w,h,sc,xMin,xMax,yMin,yMax,xStep,yStep,xLabel,yLabel){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = 'rgba(83,89,102,.25)';
+  ctx.fillStyle = '#98a2b3';
+  ctx.font = '10px Roboto Mono';
+  ctx.lineWidth = 1;
+  for(let v=Math.ceil(xMin/xStep)*xStep; v<=xMax; v+=xStep){
+    const px = sc.x(v);
+    ctx.beginPath(); ctx.moveTo(px, sc.iy); ctx.lineTo(px, sc.iy+sc.ih); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillText(fmt2(v).replace('.00',''), px, sc.iy+sc.ih+14);
+  }
+  for(let v=Math.ceil(yMin/yStep)*yStep; v<=yMax; v+=yStep){
+    const py = sc.y(v);
+    ctx.beginPath(); ctx.moveTo(sc.ix, py); ctx.lineTo(sc.ix+sc.iw, py); ctx.stroke();
+    ctx.textAlign='right'; ctx.fillText(fmt2(v).replace('.00',''), sc.ix-6, py+3);
+  }
+  ctx.strokeStyle = 'rgba(223,229,239,.4)';
+  ctx.beginPath(); ctx.moveTo(sc.ix, sc.iy); ctx.lineTo(sc.ix, sc.iy+sc.ih); ctx.lineTo(sc.ix+sc.iw, sc.iy+sc.ih); ctx.stroke();
+  if(xLabel){ ctx.textAlign='center'; ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.fillText(xLabel, sc.ix+sc.iw/2, h-2); }
+  if(yLabel){ ctx.save(); ctx.translate(11,sc.iy+sc.ih/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center'; ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.fillText(yLabel,0,0); ctx.restore(); }
+}
+function drawRegLine(ctx,sc,a,b,xMin,xMax,color,dashed){
+  ctx.save();
+  if(dashed) ctx.setLineDash([6,5]);
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(sc.x(xMin), sc.y(a+b*xMin));
+  ctx.lineTo(sc.x(xMax), sc.y(a+b*xMax));
+  ctx.stroke();
+  ctx.restore();
+}
+function drawPts(ctx,sc,points,color,r,activeIdx){
+  points.forEach((p,i)=>{
+    ctx.beginPath();
+    ctx.arc(sc.x(p.x), sc.y(p.y), i===activeIdx? r+2 : r, 0, Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = i===activeIdx? 1 : 0.92;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+}
+window.addEventListener('resize', ()=>{ renderAll(); });
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'📈', label:'O que é'},
+  {id:'s-correlacao', icon:'🧲', label:'Correlação'},
+  {id:'s-equacao', icon:'📐', label:'Equação da Reta'},
+  {id:'s-minimos-quadrados', icon:'📏', label:'Mínimos Quadrados'},
+  {id:'s-r2', icon:'🎯', label:'R²'},
+  {id:'s-outliers', icon:'⚠️', label:'Outliers'},
+  {id:'s-multipla', icon:'🧩', label:'Reg. Múltipla'},
+  {id:'s-pressupostos', icon:'🔍', label:'Pressupostos'},
+  {id:'s-tabela-formulas', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== HERO CANVAS (estático, sorvete x temperatura) ===================== */
+const heroPoints = [{x:18,y:8},{x:20,y:11},{x:22,y:15},{x:24,y:16},{x:25,y:19},{x:27,y:22},{x:28,y:24},{x:30,y:27},{x:31,y:26},{x:33,y:31},{x:34,y:33},{x:35,y:30}];
+function drawHero(){
+  const cv = document.getElementById('heroCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(16,37,4,36,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,16,37,4,36,4,8,'Temperatura (°C)','Sorvetes vendidos');
+  const {a,b} = computeOLS(heroPoints);
+  drawRegLine(ctx,sc,a,b,16,37,'#06b6d4',false);
+  heroPoints.forEach(p=>{
+    ctx.font='16px Inter'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🍦', sc.x(p.x), sc.y(p.y));
+  });
+}
+drawHero();
+
+/* ===================== SEÇÃO: O QUE É (scatter arrastável) ===================== */
+let introPoints = [{x:1,y:4.6},{x:1.5,y:4.9},{x:2,y:5.4},{x:2.5,y:5.5},{x:3,y:6.2},{x:3.5,y:6.0},{x:4,y:6.8},{x:5,y:7.3},{x:5.5,y:7.6},{x:6,y:8.0},{x:7,y:8.6},{x:8,y:9.1}];
+let introDrag = -1;
+function drawIntro(){
+  const cv = document.getElementById('introCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,9,3,10,w,h,{l:34,r:14,t:14,b:26});
+  cv.__sc = sc;
+  drawGrid(ctx,w,h,sc,0,9,3,10,1,1,'Horas de estudo','Nota da prova');
+  const {a,b} = computeOLS(introPoints);
+  drawRegLine(ctx,sc,a,b,0,9,'#06b6d4',false);
+  drawPts(ctx,sc,introPoints,'#36a2ef',6,introDrag);
+  document.getElementById('introEq').textContent = `nota = ${fmt2(a)} + ${fmt2(b)} × horas`;
+}
+function attachDrag(canvasId, getPoints, onMove, xMin,xMax,yMin,yMax, redraw){
+  const cv = document.getElementById(canvasId);
+  let dragIdx = -1;
+  function posFromEvent(e){
+    const rect = cv.getBoundingClientRect();
+    const clientX = e.touches? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches? e.touches[0].clientY : e.clientY;
+    return {px:(clientX-rect.left)*(cv.width/rect.width), py:(clientY-rect.top)*(cv.height/rect.height)};
+  }
+  function findNearest(px,py){
+    const sc = cv.__sc; const pts = getPoints();
+    let best=-1, bestD=18;
+    pts.forEach((p,i)=>{
+      const d = Math.hypot(sc.x(p.x)-px, sc.y(p.y)-py);
+      if(d<bestD){ bestD=d; best=i; }
+    });
+    return best;
+  }
+  function down(e){
+    const {px,py} = posFromEvent(e);
+    dragIdx = findNearest(px,py);
+    onMove(dragIdx);
+    if(dragIdx>-1) e.preventDefault();
+  }
+  function move(e){
+    if(dragIdx===-1) return;
+    const {px,py} = posFromEvent(e);
+    const sc = cv.__sc;
+    let x = sc.xInv(px), y = sc.yInv(py);
+    x = Math.min(xMax, Math.max(xMin, x));
+    y = Math.min(yMax, Math.max(yMin, y));
+    getPoints()[dragIdx].x = x; getPoints()[dragIdx].y = y;
+    redraw();
+    e.preventDefault();
+  }
+  function up(){ dragIdx=-1; onMove(-1); }
+  cv.addEventListener('mousedown', down);
+  cv.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', up);
+  cv.addEventListener('touchstart', down, {passive:false});
+  cv.addEventListener('touchmove', move, {passive:false});
+  window.addEventListener('touchend', up);
+}
+attachDrag('introCanvas', ()=>introPoints, (i)=>{introDrag=i;}, 0,9,3,10, drawIntro);
+
+/* ===================== SEÇÃO: CORRELAÇÃO ===================== */
+let corrPoints = [];
+function genCorrData(rTarget, n){
+  const pts = [];
+  for(let i=0;i<n;i++){
+    const x = (Math.random()*2-1);
+    const noise = (Math.random()*2-1);
+    const y = rTarget*x + Math.sqrt(Math.max(0,1-rTarget*rTarget))*noise;
+    pts.push({x, y});
+  }
+  return pts;
+}
+function regenCorrelation(){
+  const rTarget = (+document.getElementById('corrR').value)/100;
+  corrPoints = genCorrData(rTarget, 40);
+  renderCorrelation(true);
+}
+function renderCorrelation(skipRegen){
+  const rTarget = (+document.getElementById('corrR').value)/100;
+  document.getElementById('corrRVal').textContent = (rTarget>=0?'+':'') + rTarget.toFixed(1);
+  if(!skipRegen && corrPoints.length===0) corrPoints = genCorrData(rTarget,40);
+  else if(!skipRegen) corrPoints = genCorrData(rTarget,40);
+  const cv = document.getElementById('corrCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(-1.3,1.3,-1.3,1.3,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,-1.3,1.3,-1.3,1.3,0.5,0.5,'variável x','variável y');
+  drawPts(ctx,sc,corrPoints,'#36a2ef',5,-1);
+  const rMeasured = pearsonR(corrPoints);
+  document.getElementById('corrMeasured').textContent = fmt2(rMeasured);
+  let label;
+  const ar = Math.abs(rMeasured);
+  if(ar>0.7) label = rMeasured>0? 'Correlação forte positiva' : 'Correlação forte negativa';
+  else if(ar>0.3) label = rMeasured>0? 'Correlação fraca positiva' : 'Correlação fraca negativa';
+  else label = 'Quase nenhuma correlação';
+  document.getElementById('corrLabel').textContent = label;
+}
+regenCorrelation();
+
+/* ===================== SEÇÃO: EQUAÇÃO DA RETA ===================== */
+function renderEquation(){
+  const a = +document.getElementById('eqA').value;
+  const b = +document.getElementById('eqB').value;
+  document.getElementById('eqAVal').textContent = fmt2(a);
+  document.getElementById('eqBVal').textContent = fmt2(b);
+  document.getElementById('eqFormula').textContent = `y = ${fmt2(a)} ${b>=0?'+':'-'} ${fmt2(Math.abs(b))}x`;
+  const cv = document.getElementById('eqCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(-6,6,-6,6,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,-6,6,-6,6,2,2,'x','y');
+  drawRegLine(ctx,sc,a,b,-6,6,'#06b6d4',false);
+  // intercept marker
+  ctx.beginPath(); ctx.arc(sc.x(0), sc.y(a), 6, 0, Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  // slope triangle at x=1..3
+  const x1=1, x2=3;
+  const y1=a+b*x1, y2=a+b*x2;
+  ctx.save();
+  ctx.strokeStyle='#c49aff'; ctx.setLineDash([4,4]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(sc.x(x1),sc.y(y1)); ctx.lineTo(sc.x(x2),sc.y(y1)); ctx.lineTo(sc.x(x2),sc.y(y2)); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle='#c49aff'; ctx.font='11px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText(`Δx=${x2-x1}`, sc.x((x1+x2)/2), sc.y(y1)+16);
+  ctx.save(); ctx.translate(sc.x(x2)+16, sc.y((y1+y2)/2)); ctx.fillText(`Δy=${fmt2(y2-y1)}`,0,0); ctx.restore();
+}
+
+/* ===================== SEÇÃO: MÍNIMOS QUADRADOS ===================== */
+const lsqPoints = [{x:1,y:4.6},{x:2,y:5.2},{x:2,y:5.9},{x:3,y:6.0},{x:3,y:6.6},{x:4,y:6.9},{x:5,y:7.4},{x:5,y:7.9},{x:6,y:8.3},{x:7,y:9.0}];
+function renderLsq(){
+  const a = +document.getElementById('lsqA').value;
+  const b = +document.getElementById('lsqB').value;
+  document.getElementById('lsqAVal').textContent = fmt2(a);
+  document.getElementById('lsqBVal').textContent = fmt2(b);
+  const cv = document.getElementById('lsqCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,8,3,10,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,8,3,10,1,1,'Horas de estudo','Nota da prova');
+  // residual squares
+  lsqPoints.forEach(p=>{
+    const yhat = a+b*p.x;
+    const resid = p.y-yhat;
+    const px = sc.x(p.x), py1 = sc.y(p.y), py2 = sc.y(yhat);
+    const sidePx = Math.abs(py1-py2);
+    const sq = Math.max(sidePx, 2);
+    ctx.fillStyle = 'rgba(248,107,99,.35)';
+    ctx.strokeStyle = 'rgba(248,107,99,.7)'; ctx.lineWidth=1;
+    const top = Math.min(py1,py2);
+    ctx.fillRect(px, top, sq, sq);
+    ctx.strokeRect(px, top, sq, sq);
+  });
+  drawRegLine(ctx,sc,a,b,0,8,'#06b6d4',false);
+  drawPts(ctx,sc,lsqPoints,'#36a2ef',5,-1);
+  const sse = sseOf(lsqPoints,a,b);
+  const best = computeOLS(lsqPoints);
+  const bestSse = sseOf(lsqPoints,best.a,best.b);
+  document.getElementById('lsqSSE').textContent = fmt2(sse);
+  document.getElementById('lsqBestSSE').textContent = fmt2(bestSse);
+}
+function snapToOls(){
+  const best = computeOLS(lsqPoints);
+  document.getElementById('lsqA').value = Math.min(8,Math.max(0,best.a)).toFixed(1);
+  document.getElementById('lsqB').value = Math.min(2,Math.max(-1,best.b)).toFixed(2);
+  renderLsq();
+}
+
+/* ===================== SEÇÃO: R² ===================== */
+const r2Base = [{x:1,y:5},{x:2,y:5.5},{x:3,y:6},{x:4,y:6.5},{x:5,y:7},{x:6,y:7.5},{x:7,y:8},{x:8,y:8.5},{x:9,y:9},{x:2,y:5.3},{x:5,y:7.2},{x:7,y:7.8}];
+const noiseLabels = ['Nenhum','Baixo','Médio','Alto','Extremo'];
+let r2Points = [];
+function genR2Points(level){
+  const noiseAmp = level*0.9;
+  return r2Base.map(p=>({x:p.x, y:p.y + (Math.random()*2-1)*noiseAmp}));
+}
+function renderR2(){
+  const level = +document.getElementById('r2Noise').value;
+  document.getElementById('r2NoiseVal').textContent = noiseLabels[level];
+  r2Points = genR2Points(level);
+  const ybar = mean(r2Points.map(p=>p.y));
+  const {a,b} = computeOLS(r2Points);
+
+  const cvM = document.getElementById('r2CanvasMean');
+  const ctxM = cvM.getContext('2d');
+  const w1 = cvM.width = cvM.clientWidth, h1 = cvM.height;
+  const sc1 = scaleMaker(0,10,3,11,w1,h1,{l:32,r:12,t:12,b:24});
+  drawGrid(ctxM,w1,h1,sc1,0,10,3,11,2,2,'x','y');
+  r2Points.forEach(p=>{
+    ctxM.strokeStyle='rgba(248,107,99,.6)'; ctxM.lineWidth=1.5;
+    ctxM.beginPath(); ctxM.moveTo(sc1.x(p.x),sc1.y(p.y)); ctxM.lineTo(sc1.x(p.x),sc1.y(ybar)); ctxM.stroke();
+  });
+  drawRegLine(ctxM,sc1,ybar,0,0,10,'#f86b63',true);
+  drawPts(ctxM,sc1,r2Points,'#36a2ef',5,-1);
+
+  const cvR = document.getElementById('r2CanvasReg');
+  const ctxR = cvR.getContext('2d');
+  const w2 = cvR.width = cvR.clientWidth, h2 = cvR.height;
+  const sc2 = scaleMaker(0,10,3,11,w2,h2,{l:32,r:12,t:12,b:24});
+  drawGrid(ctxR,w2,h2,sc2,0,10,3,11,2,2,'x','y');
+  r2Points.forEach(p=>{
+    const yhat = a+b*p.x;
+    ctxR.strokeStyle='rgba(125,222,216,.7)'; ctxR.lineWidth=1.5;
+    ctxR.beginPath(); ctxR.moveTo(sc2.x(p.x),sc2.y(p.y)); ctxR.lineTo(sc2.x(p.x),sc2.y(yhat)); ctxR.stroke();
+  });
+  drawRegLine(ctxR,sc2,a,b,0,10,'#06b6d4',false);
+  drawPts(ctxR,sc2,r2Points,'#36a2ef',5,-1);
+
+  const sst = sstOf(r2Points);
+  const sse = sseOf(r2Points,a,b);
+  const r2 = sst===0? 0 : 1 - sse/sst;
+  document.getElementById('r2SST').textContent = fmt2(sst);
+  document.getElementById('r2SSE').textContent = fmt2(sse);
+  document.getElementById('r2Value').textContent = fmt2(r2);
+}
+
+/* ===================== SEÇÃO: OUTLIERS ===================== */
+let outlierPoints = [{x:20,y:10},{x:22,y:14},{x:24,y:17},{x:25,y:19},{x:27,y:23},{x:28,y:25},{x:30,y:29},{x:32,y:33},{x:33,y:35}];
+let outlierPt = {x:26,y:21};
+let outlierDrag = -1;
+function allOutlierPoints(){ return [...outlierPoints, outlierPt]; }
+function drawOutlier(){
+  const cv = document.getElementById('outlierCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(15,45,5,50,w,h,{l:34,r:14,t:14,b:26});
+  cv.__sc = sc;
+  drawGrid(ctx,w,h,sc,15,45,5,50,5,10,'Temperatura (°C)','Sorvetes vendidos');
+  const withOut = computeOLS(allOutlierPoints());
+  const withoutOut = computeOLS(outlierPoints);
+  drawRegLine(ctx,sc,withoutOut.a,withoutOut.b,15,45,'#7dded8',true);
+  drawRegLine(ctx,sc,withOut.a,withOut.b,15,45,'#06b6d4',false);
+  drawPts(ctx,sc,outlierPoints,'#36a2ef',5,-1);
+  drawPts(ctx,sc,[outlierPt],'#f86b63',7, outlierDrag===0?0:-1);
+  document.getElementById('outSlopeWith').textContent = fmt2(withOut.b);
+  document.getElementById('outSlopeWithout').textContent = fmt2(withoutOut.b);
+}
+function attachOutlierDrag(){
+  const cv = document.getElementById('outlierCanvas');
+  function posFromEvent(e){
+    const rect = cv.getBoundingClientRect();
+    const clientX = e.touches? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches? e.touches[0].clientY : e.clientY;
+    return {px:(clientX-rect.left)*(cv.width/rect.width), py:(clientY-rect.top)*(cv.height/rect.height)};
+  }
+  function down(e){
+    const {px,py} = posFromEvent(e);
+    const sc = cv.__sc;
+    const d = Math.hypot(sc.x(outlierPt.x)-px, sc.y(outlierPt.y)-py);
+    if(d<20){ outlierDrag=0; e.preventDefault(); }
+  }
+  function move(e){
+    if(outlierDrag!==0) return;
+    const {px,py} = posFromEvent(e);
+    const sc = cv.__sc;
+    outlierPt.x = Math.min(45,Math.max(15, sc.xInv(px)));
+    outlierPt.y = Math.min(50,Math.max(5, sc.yInv(py)));
+    drawOutlier();
+    e.preventDefault();
+  }
+  function up(){ outlierDrag=-1; drawOutlier(); }
+  cv.addEventListener('mousedown',down);
+  cv.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',up);
+  cv.addEventListener('touchstart',down,{passive:false});
+  cv.addEventListener('touchmove',move,{passive:false});
+  window.addEventListener('touchend',up);
+}
+function resetOutlier(){ outlierPt = {x:26,y:21}; drawOutlier(); }
+attachOutlierDrag();
+
+/* ===================== SEÇÃO: PRESSUPOSTOS (resíduos) ===================== */
+const residPatterns = {
+  good: {
+    explain: 'Nuvem sem padrão ao redor de zero — os erros parecem aleatórios em qualquer faixa de x. É exatamente isso que esperamos de uma boa regressão linear.',
+    gen: ()=> Array.from({length:40},()=>({x: Math.random()*10, y:(Math.random()*2-1)*1.5}))
+  },
+  funnel: {
+    explain: 'O espalhamento dos erros CRESCE conforme x aumenta (formato de funil) — isso é heterocedasticidade. A reta continua "certa" na média, mas o erro típico não é mais constante.',
+    gen: ()=> Array.from({length:40},()=>{ const x=Math.random()*10; return {x, y:(Math.random()*2-1)*(0.3+x*0.35)}; })
+  },
+  curve: {
+    explain: 'Os erros formam uma curva (positivos nas pontas, negativos no meio, ou vice-versa) — sinal de que a relação real NÃO é uma linha reta, e um modelo linear está errando de forma sistemática.',
+    gen: ()=> Array.from({length:40},()=>{ const x=Math.random()*10; return {x, y: 1.6*Math.sin((x-5)*0.6) + (Math.random()*2-1)*0.5}; })
+  }
+};
+let currentResidPattern = 'good';
+let residData = residPatterns.good.gen();
+function setResidPattern(p){
+  currentResidPattern = p;
+  residData = residPatterns[p].gen();
+  ['good','funnel','curve'].forEach(k=>document.getElementById('residBtn-'+k).classList.toggle('active', k===p));
+  document.getElementById('residExplain').textContent = residPatterns[p].explain;
+  drawResid();
+}
+function drawResid(){
+  const cv = document.getElementById('residCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,10,-4,4,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,-4,4,2,2,'Valor previsto (ŷ)','Resíduo (y - ŷ)');
+  ctx.strokeStyle='rgba(232,179,57,.7)'; ctx.setLineDash([5,4]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(sc.x(0),sc.y(0)); ctx.lineTo(sc.x(10),sc.y(0)); ctx.stroke();
+  ctx.setLineDash([]);
+  drawPts(ctx,sc,residData,'#c49aff',4,-1);
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Uma imobiliária ajustou uma reta: preço (mil R$) = 80 + 3.5 × área (m²). Qual o preço previsto para uma casa de 120 m²?',
+   a:'Basta substituir na equação: preço = 80 + 3.5 × 120 = 80 + 420 = <strong>500 mil reais</strong>. O intercepto (80) seria o "preço" de uma área zero — só faz sentido matemático, não literal.'},
+  {q:'Um estudo encontrou correlação r = 0.85 entre "número de vendedores em uma loja" e "vendas do mês". Isso prova que contratar mais vendedores AUMENTA as vendas?',
+   a:'Não necessariamente! Correlação alta não prova causalidade. Pode ser que lojas maiores/mais movimentadas contratem mais vendedores E vendam mais — o tamanho da loja seria a causa real por trás dos dois.'},
+  {q:'Uma reta de regressão tem R² = 0.12 entre "altura da pessoa" e "salário mensal". O que isso sugere?',
+   a:'Um R² tão baixo (0.12) mostra que a altura explica muito pouco da variação do salário — outros fatores (profissão, experiência, educação...) importam muito mais. A reta não é útil para prever salário a partir da altura.'},
+  {q:'Numa reta ajustada com 8 pontos, um novo ponto muito distante dos demais foi adicionado, e a inclinação mudou de 0.6 para 1.9. O que provavelmente aconteceu?',
+   a:'O novo ponto é um <strong>outlier</strong> que está "puxando" a reta para si — porque o método dos mínimos quadrados eleva os erros ao quadrado, pontos muito distantes pesam desproporcionalmente na soma total.'},
+  {q:'Um gráfico de resíduos mostra os pontos formando um "funil" que se abre conforme x cresce. Que problema é esse, e o que ele indica?',
+   a:'É <strong>heterocedasticidade</strong>: a variabilidade do erro não é constante ao longo de x. Isso não invalida a reta, mas enfraquece a confiança nos intervalos e testes estatísticos construídos em cima dela.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'O objetivo da regressão linear é fazer a reta passar exatamente em cima de todos os pontos.', a:false,
+   explain:'Isso quase nunca é possível (nem desejável). O objetivo é minimizar o erro TOTAL — a soma dos quadrados dos resíduos — não zerar o erro de cada ponto individual.'},
+  {q:'Correlação (r) igual a 1 significa uma correlação positiva perfeita.', a:true,
+   explain:'r = 1 significa que todos os pontos estão exatamente sobre uma reta crescente. Na prática, dados reais raramente chegam nesse extremo.'},
+  {q:'Correlação forte entre duas variáveis sempre prova que uma causa a outra.', a:false,
+   explain:'Correlação não implica causalidade. Pode existir uma terceira variável (fator confundidor) explicando as duas, ou pode ser pura coincidência.'},
+  {q:'Um único outlier pode mudar bastante a inclinação da reta de regressão.', a:true,
+   explain:'Como o método dos mínimos quadrados eleva os erros ao quadrado, pontos muito distantes têm peso desproporcional na soma total — e podem "puxar" a reta inteira.'},
+  {q:'R² igual a 0.9 significa que a reta prevê 90% dos valores individuais com exatidão perfeita.', a:false,
+   explain:'R² = 0.9 significa que a reta explica 90% da VARIAÇÃO total dos dados — não que 90% dos pontos caem exatamente em cima da reta.'},
+  {q:'Na regressão linear múltipla, cada coeficiente (b) mede o efeito daquela variável mantendo as outras constantes.', a:true,
+   explain:'É exatamente essa a interpretação: b₁ mede o efeito de x₁ sobre y "segurando" x₂, x₃, etc. no mesmo valor.'},
+  {q:'Um gráfico de resíduos em forma de curva sugere que a relação entre x e y pode não ser realmente linear.', a:true,
+   explain:'Se os resíduos formam um padrão curvo, o modelo linear está errando de forma sistemática — sinal de que talvez seja preciso uma curva, não uma reta.'},
+  {q:'É sempre uma boa prática usar a reta para prever valores de x bem fora da faixa de dados observada.', a:false,
+   explain:'Isso é extrapolação, e é arriscado: não há garantia de que o padrão linear observado continue válido fora do intervalo de dados coletados.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT / RENDER ALL ===================== */
+function renderAll(){
+  drawHero();
+  drawIntro();
+  renderCorrelation(true);
+  renderEquation();
+  renderLsq();
+  renderR2();
+  drawOutlier();
+  drawResid();
+}
+drawIntro();
+renderEquation();
+renderLsq();
+renderR2();
+drawOutlier();
+setResidPattern('good');
+buildProblems();
+buildQuiz();
+</script>
+</body>
+</html>

@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Distribuição Normal explicada do zero, com Galton Board, curva ajustável, regra 68-95-99.7, z-score, área/probabilidade e o Teorema Central do Limite, tudo em demos visuais interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Distribuição Normal do Jeito Fácil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-chart-box{width:100%;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);padding:14px;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+.canvas-wrap.drag canvas{cursor:grab;}
+.canvas-wrap.drag canvas:active{cursor:grabbing;}
+
+/* ---- LEGEND ---- */
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-secondary);}
+.legend-swatch{width:14px;height:4px;border-radius:2px;flex-shrink:0;}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.drag-hint{font-size:11.5px;color:var(--text-disabled);text-align:center;margin-top:6px;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-yellow{border-top-color:var(--accent-yellow);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- PRESET CHIPS ---- */
+.preset-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.preset-chip{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-secondary);padding:9px 14px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;transition:.15s;}
+.preset-chip:hover{border-color:var(--accent-blue);color:var(--text-primary);}
+.preset-chip.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .stat-cards{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Distribuição Normal</h1><span>A curva de sino que aparece em (quase) todo lugar</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">68-95-99.7</div><div class="hstat-label">Regra empírica</div></div>
+      <div class="hstat"><div class="hstat-num">μ, σ</div><div class="hstat-label">Parâmetros-chave</div></div>
+      <div class="hstat"><div class="hstat-num">N(μ,σ²)</div><div class="hstat-label">Notação</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: da nuvem de bolinhas até prever probabilidades</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Por que tanta coisa no mundo forma o mesmo <em>desenho de sino</em>?</h2>
+      <p>Altura das crianças de uma turma, peso de maçãs numa árvore, tempo de reação das pessoas, erros de medição de uma régua... quando você junta <strong>muitas medidas parecidas</strong> e desenha um gráfico com elas, quase sempre aparece o mesmo formato: um "monte" no meio e caudas finas dos dois lados. Esse formato tem nome — <strong>Distribuição Normal</strong>, ou <em>curva de sino</em> — e nesta aula você vai construir essa ideia do zero, brincando com gráficos, até entender exatamente de onde ela vem e para que serve.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Curva de Sino</span>
+        <span class="badge badge-green">Regra 68-95-99.7</span>
+        <span class="badge badge-blue">Z-score</span>
+        <span class="badge badge-purple">Teorema Central do Limite</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-chart-box">
+        <div class="canvas-wrap" style="background:transparent;border:none;padding:0;"><canvas id="heroCanvas" height="220"></canvas></div>
+      </div>
+      <div class="hero-visual-caption">Cada barrinha é "quantos alunos têm essa altura" — a maioria fica pertinho da média, e poucos são bem baixinhos ou bem altos. Role a página e mexa você mesmo!</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🔔 O que é a Distribuição Normal?</div>
+    <p class="section-desc">
+      Imagine que você mede a altura de <strong>todos os alunos de uma escola</strong> e anota cada altura numa fila de caixinhas — uma caixinha para "1,30 a 1,35m", outra para "1,35 a 1,40m", e assim por diante. Quanto mais alunos tiverem aquela altura, mais alta fica a pilha de marcas naquela caixinha. Quando você faz isso com <strong>milhares de alunos</strong>, quase sempre o desenho final é o mesmo: uma colina com um pico no meio (perto da altura "normal", mais comum) e ladeiras que descem suavemente para os dois lados (poucos bem baixinhos, poucos bem altos). Isso é a <strong>Distribuição Normal</strong>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique no botão e "meça" uma nova turma de alunos — veja o histograma se formar</div>
+      <div class="canvas-wrap"><canvas id="introCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:#36a2ef;"></span> Quantos alunos têm cada altura (histograma real da turma)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> A curva teórica "de sino" (Distribuição Normal)</div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:12px;">
+        <button class="player-btn primary" onclick="regenIntro()">🎲 Medir uma nova turma de 200 alunos</button>
+      </div>
+      <div class="drag-hint">Repare: cada turma é um pouco diferente (é aleatório!), mas o formato de sino sempre aparece — porque a altura das pessoas realmente se comporta assim.</div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>A Distribuição Normal não é "uma curva qualquer parecida com sino" — é uma <strong>fórmula matemática precisa</strong>, controlada por só dois números: onde fica o centro (a <em>média</em>, μ) e o quão "espalhada" ou "apertada" é a colina (o <em>desvio padrão</em>, σ). Vamos brincar com os dois já na próxima seção.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📏 Coisas que costumam ser "normais"</div>
+        <div class="card-text">Altura e peso de pessoas, notas de provas com muitos alunos, tempo de reação, erros de medição de instrumentos, QI, batimentos cardíacos em repouso.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🚫 Coisas que NÃO costumam ser normais</div>
+        <div class="card-text">Renda das famílias de um país (poucos ganham MUITO mais), população das cidades, número de curtidas em posts virais — essas têm "cauda longa" de um lado só.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Por que isso importa</div>
+        <div class="card-text">Se sabemos que algo segue a curva normal, conseguimos calcular <strong>probabilidades</strong> — tipo "qual a chance de um aluno medir mais de 1,60m?" — sem medir todo mundo de novo.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GALTON BOARD ============ -->
+  <section class="section" id="s-galton">
+    <div class="section-eyebrow">De Onde Vem Esse Formato?</div>
+    <div class="section-title">🎱 A Caixa de Bolinhas (Galton Board): o sino nasce do acaso</div>
+    <p class="section-desc">
+      Aqui está o truque mágico por trás da curva de sino: solte uma bolinha caindo por uma fileira de pininhos. A cada pino, ela pode ir <strong>para a esquerda ou para a direita</strong>, na sorte, tipo cara-ou-coroa. Uma bolinha sozinha pode cair em qualquer caixinha lá embaixo. Mas solte <strong>centenas</strong> de bolinhas, cada uma tomando decisões aleatórias diferentes, e o monte que se forma nas caixinhas vira... a curva de sino! Isso acontece porque cair bem na pontinha (sempre esquerda ou sempre direita) é muito mais raro do que cair perto do meio (misturando esquerda e direita).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Solte bolinhas e veja o histograma da base virar um sino</div>
+      <div class="canvas-wrap"><canvas id="galtonCanvas" height="380"></canvas></div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-top:12px;">
+        <button class="player-btn" onclick="galtonRelease(1)">⚪ Soltar 1 bolinha</button>
+        <button class="player-btn" onclick="galtonRelease(30)">⚪⚪ Soltar 30 bolinhas</button>
+        <button class="player-btn primary" onclick="galtonRelease(300)">⚪⚪⚪ Soltar 300 bolinhas</button>
+        <button class="player-btn" onclick="galtonReset()">↩️ Resetar</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Bolinhas soltas até agora</span><span class="rv" id="galtonTotal">0</span></div>
+        <div><span class="rl">Caixinha mais cheia</span><span class="rv" id="galtonMode">—</span></div>
+      </div>
+      <div class="drag-hint">Cada pino é uma decisão de "sorte" (esquerda ou direita). O caminho de cada bolinha é único, mas o resultado no conjunto sempre se aproxima do sino.</div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Esse aparelho de verdade existe desde 1894, inventado pelo cientista <strong>Francis Galton</strong>, e é usado até hoje em museus de ciência para mostrar visualmente como a aleatoriedade "pura" (várias decisões de sorte, somadas) produz naturalmente a curva normal. É o mesmo motivo pelo qual a altura das pessoas é normal: ela é resultado da soma de <em>muitos</em> fatores pequenos e independentes (genética, alimentação, sono...).</p>
+    </div>
+  </section>
+
+  <!-- ============ MÉDIA E DESVIO PADRÃO ============ -->
+  <section class="section" id="s-media-desvio">
+    <div class="section-eyebrow">Os Dois Números Que Controlam Tudo</div>
+    <div class="section-title">📊 Média (μ) e Desvio Padrão (σ): centro e espalhamento</div>
+    <p class="section-desc">
+      Toda curva normal é 100% definida por só duas coisas. A <strong>média (μ)</strong> é onde fica o "pico" da colina — o valor mais comum, o centro de tudo. O <strong>desvio padrão (σ)</strong> diz o quão "espalhados" os valores estão ao redor da média: σ pequeno faz uma colina alta e estreita (quase todo mundo parecido); σ grande faz uma colina baixa e larga (muita variedade).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Mexa nos dois controles e veja a colina mudar de posição e formato</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Média — μ (onde fica o centro)</span><span class="ctrl-v" id="mdMuVal">140 cm</span></div>
+          <input type="range" id="mdMu" min="110" max="170" step="1" value="140" oninput="renderMediaDesvio()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Desvio padrão — σ (o quanto se espalha)</span><span class="ctrl-v" id="mdSigmaVal">10 cm</span></div>
+          <input type="range" id="mdSigma" min="3" max="25" step="1" value="10" oninput="renderMediaDesvio()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mdCanvas" height="260"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#e8b339;"></span> Média (μ) — o pico da colina</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#c49aff;"></span> Um desvio padrão (σ) de distância</div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Notação</span><span class="rv" id="mdNotation">N(140, 10²)</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🎯 Média (μ) pequena mudança</div>
+        <div class="card-text">Mudar μ <strong>desloca a colina inteira</strong> para a esquerda ou direita, sem mudar seu formato. Se a turma do ano seguinte for mais alta em média, a curva toda "anda" para a direita.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">↔️ Desvio padrão (σ) muda a largura</div>
+        <div class="card-text">σ pequeno (ex.: 3cm) = turma bem uniforme, quase todo mundo com altura parecida. σ grande (ex.: 20cm) = turma bem variada, com muitos alunos baixinhos e muitos bem altos.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REGRA EMPÍRICA 68-95-99.7 ============ -->
+  <section class="section" id="s-regra-empirica">
+    <div class="section-eyebrow">O Atalho Mais Usado da Estatística</div>
+    <div class="section-title">📐 A Regra 68-95-99.7: fatiando a colina em pedaços</div>
+    <p class="section-desc">
+      Toda curva normal, não importa o μ e o σ, sempre obedece à <strong>mesma proporção</strong> quando você fatia ela em "desvios padrão" de distância da média. Isso é tão útil que ganhou um apelido: <strong>regra empírica</strong> (ou regra 68-95-99.7). Ela diz: <strong>68%</strong> dos valores ficam a até 1σ da média, <strong>95%</strong> ficam a até 2σ, e <strong>99.7%</strong> ficam a até 3σ — sobrando só 0.3% bem lá nas pontas.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique nos botões e veja a fatia colorida (e a % que ela representa)</div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle active" id="regraBtn-1" onclick="setRegraBand(1)">±1σ → 68%</button>
+        <button class="btn-toggle" id="regraBtn-2" onclick="setRegraBand(2)">±2σ → 95%</button>
+        <button class="btn-toggle" id="regraBtn-3" onclick="setRegraBand(3)">±3σ → 99.7%</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="regraCanvas" height="260"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">Faixa de altura destacada</span><span class="rv" id="regraFaixa">130 cm — 150 cm</span></div>
+        <div><span class="rl">% de alunos dentro dessa faixa</span><span class="rv" id="regraPct">68%</span></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Exemplo concreto</div>
+      <p>Se a altura da nossa turma segue N(140, 10²) — média 140cm, desvio padrão 10cm — então <strong>68% dos alunos medem entre 130 e 150cm</strong>, <strong>95% medem entre 120 e 160cm</strong>, e praticamente todo mundo (99.7%) mede entre 110 e 170cm. Um aluno com 175cm nessa turma seria bem incomum!</p>
+    </div>
+  </section>
+
+  <!-- ============ Z-SCORE ============ -->
+  <section class="section" id="s-zscore">
+    <div class="section-eyebrow">Colocando Todo Mundo na Mesma Régua</div>
+    <div class="section-title">🎯 Z-score: "quantos desvios padrão de distância da média?"</div>
+    <p class="section-desc">
+      O <strong>z-score</strong> (ou valor padronizado) transforma qualquer valor bruto (tipo "155cm") num número que diz apenas: <strong>quantos desvios padrão esse valor está acima ou abaixo da média</strong>. A fórmula é simples: <code style="color:var(--accent);">z = (x − μ) / σ</code>. Um z positivo está acima da média; negativo está abaixo. Isso é útil porque permite <strong>comparar coisas em escalas diferentes</strong> — tipo comparar uma nota de matemática com uma nota de redação.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste o controle e veja onde esse aluno "cai" na curva</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Altura do aluno (x)</span><span class="ctrl-v" id="zXVal">155 cm</span></div>
+          <input type="range" id="zX" min="105" max="175" step="1" value="155" oninput="renderZscore()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="zCanvas" height="260"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">Fórmula</span><span class="rv" id="zFormula" style="font-size:15px;">z = (155 − 140) / 10</span></div>
+        <div><span class="rl">Z-score</span><span class="rv" id="zValue">+1.50</span></div>
+        <div><span class="rl">O que significa</span><span class="rv" id="zLabel" style="font-size:13px;">1.5 desvios ACIMA da média</span></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">➕ z positivo</div>
+        <div class="card-text">O valor está <strong>acima</strong> da média. Quanto maior o z, mais raro/alto é o valor (z=2 já é bem incomum).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">0️⃣ z perto de 0</div>
+        <div class="card-text">O valor está bem <strong>perto da média</strong> — é um valor "típico", nem alto nem baixo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">➖ z negativo</div>
+        <div class="card-text">O valor está <strong>abaixo</strong> da média. z=−2, por exemplo, é tão incomum "para baixo" quanto z=+2 é "para cima".</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ÁREA = PROBABILIDADE ============ -->
+  <section class="section" id="s-area">
+    <div class="section-eyebrow">Da Curva Para a Chance</div>
+    <div class="section-title">📏 Área sob a curva = Probabilidade</div>
+    <p class="section-desc">
+      Aqui está a parte mais poderosa da curva normal: a <strong>área total</strong> embaixo dela vale sempre <strong>100%</strong> (todo mundo está em algum lugar da curva). Isso significa que a <strong>área de um pedaço</strong> da curva é exatamente a <strong>probabilidade (ou %) de cair naquele intervalo</strong>. Escolha um intervalo de altura abaixo e veja a fatia colorida — e a porcentagem — mudar ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha o intervalo de altura [a, b] e veja a área (probabilidade) calculada</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Limite inferior — a</span><span class="ctrl-v" id="areaAVal">130 cm</span></div>
+          <input type="range" id="areaA" min="100" max="180" step="1" value="130" oninput="renderArea()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Limite superior — b</span><span class="ctrl-v" id="areaBVal">150 cm</span></div>
+          <input type="range" id="areaB" min="100" max="180" step="1" value="150" oninput="renderArea()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="areaCanvas" height="260"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">P(a &lt; altura &lt; b)</span><span class="rv" id="areaProb">68.3%</span></div>
+        <div><span class="rl">Isso quer dizer</span><span class="rv" id="areaLabel" style="font-size:13px;">A chance de um aluno aleatório medir entre 130 e 150cm</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Por trás dessa área existe uma fórmula chamada <strong>Função de Distribuição Acumulada (CDF)</strong>, escrita como Φ(z) — mas você não precisa calcular a mão: tabelas prontas (ou o computador) já entregam essa área para qualquer z. O que importa é a <em>ideia</em>: área = chance.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMPARANDO CURVAS ============ -->
+  <section class="section" id="s-comparando">
+    <div class="section-eyebrow">O Mesmo Sino, Em Todo Lugar</div>
+    <div class="section-title">⚖️ Comparando curvas do mundo real</div>
+    <p class="section-desc">
+      A beleza da curva normal é que ela descreve fenômenos completamente diferentes — só muda o μ (centro) e o σ (espalhamento). Clique nos exemplos abaixo e veja como a mesma "forma de sino" se ajusta a cada situação.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha um exemplo do mundo real</div>
+      <div class="preset-row" id="presetRow"></div>
+      <div class="canvas-wrap" style="margin-top:14px;"><canvas id="presetCanvas" height="260"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Média (μ)</div><div class="stat-card-value" id="presetMu">170</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Desvio padrão (σ)</div><div class="stat-card-value" id="presetSigma">7</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Faixa "típica" (±1σ)</div><div class="stat-card-value" id="presetFaixa">163–177</div></div>
+      </div>
+      <div class="section-desc" id="presetExplain" style="text-align:center;font-size:12.5px;margin-top:10px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ TEOREMA CENTRAL DO LIMITE ============ -->
+  <section class="section" id="s-tcl">
+    <div class="section-eyebrow">O Truque Que Explica Por Que a Normal é Tão Comum</div>
+    <div class="section-title">🎲 Teorema Central do Limite: somando dados que nem são normais</div>
+    <p class="section-desc">
+      Um único dado de 6 lados <strong>não</strong> segue a curva normal — cada número (1 a 6) tem a <strong>mesma chance</strong>, formando um gráfico "chapado" (uniforme). Mas observe o que acontece quando você <strong>soma vários dados</strong> e repete isso muitas vezes: o histograma das somas vai, magicamente, virando uma curva de sino — mesmo o dado individual não sendo normal! Isso é o <strong>Teorema Central do Limite (TCL)</strong>, uma das ideias mais importantes de toda a estatística.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha quantos dados somar por rodada, depois jogue várias rodadas</div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle active" id="tclBtn-1" onclick="setTclDice(1)">🎲 1 dado</button>
+        <button class="btn-toggle" id="tclBtn-2" onclick="setTclDice(2)">🎲🎲 2 dados</button>
+        <button class="btn-toggle" id="tclBtn-5" onclick="setTclDice(5)">5 dados</button>
+        <button class="btn-toggle" id="tclBtn-10" onclick="setTclDice(10)">10 dados</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="tclCanvas" height="260"></canvas></div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-top:12px;">
+        <button class="player-btn" onclick="tclRoll(50)">🎲 Jogar 50 rodadas</button>
+        <button class="player-btn primary" onclick="tclRoll(1000)">🎲 Jogar 1000 rodadas</button>
+        <button class="player-btn" onclick="tclReset()">↩️ Resetar</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Rodadas jogadas</span><span class="rv" id="tclTotal">0</span></div>
+        <div><span class="rl">Soma média observada</span><span class="rv" id="tclMean">—</span></div>
+      </div>
+      <div class="drag-hint">Com 1 dado, o histograma fica "chapado" (uniforme). A partir de 2, 5 e principalmente 10 dados somados, ele já parece muito com uma curva normal.</div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso é tão importante</div>
+      <p>O TCL diz que, se você somar ou tirar a <strong>média de muitas medidas independentes</strong> — não importa qual seja a distribuição original de cada uma — o resultado tende a uma curva normal. É por isso que a curva normal aparece "em todo lugar": muitos fenômenos (altura, erros de medição) são resultado da soma de vários fatores pequenos e independentes, exatamente como somar vários dados.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela-formulas">
+    <div class="section-eyebrow">A Chuva de Fórmulas, Organizada</div>
+    <div class="section-title">📋 Tabela-resumo: as fórmulas desta aula</div>
+    <p class="section-desc">Todas as peças reunidas num só lugar.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🔔 Densidade Normal (PDF)</div>
+        <div class="card-formula">f(x) = (1/σ√(2π)) · e^(−(x−μ)²/2σ²)</div>
+        <div class="card-text">A fórmula exata da curva de sino — controlada só por μ (centro) e σ (espalhamento).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Z-score (padronização)</div>
+        <div class="card-formula">z = (x − μ) / σ</div>
+        <div class="card-text">Quantos desvios padrão um valor está distante da média — permite comparar escalas diferentes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Regra empírica</div>
+        <div class="card-formula">68% / 95% / 99.7%</div>
+        <div class="card-text">Percentual dentro de μ±1σ, μ±2σ e μ±3σ, respectivamente, em qualquer curva normal.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔵 Normal padrão</div>
+        <div class="card-formula">Z ~ N(0, 1²)</div>
+        <div class="card-text">A curva normal "de referência", com média 0 e desvio padrão 1 — para onde todo z-score aponta.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Probabilidade (CDF)</div>
+        <div class="card-formula">P(a &lt; X &lt; b) = Φ(z_b) − Φ(z_a)</div>
+        <div class="card-text">A área sob a curva entre dois pontos — Φ é a função acumulada da normal padrão.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎲 Teorema Central do Limite</div>
+        <div class="card-formula">X̄ ~ N(μ, σ²/n) quando n é grande</div>
+        <div class="card-text">A média de várias amostras independentes tende a uma curva normal, mesmo que os dados originais não sejam normais.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Assumindo Normalidade</div>
+    <div class="section-title">✅ Boas práticas: usando a curva normal com responsabilidade</div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">1️⃣ Sempre olhe o histograma primeiro</div>
+        <div class="card-text">Antes de assumir que seus dados são normais, plote um histograma. Se ele for bem torto de um lado (assimétrico), a curva normal pode não ser o modelo certo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Nem tudo é normal</div>
+        <div class="card-text">Renda, tempos de espera, número de curtidas em posts — esses fenômenos costumam ter cauda longa de um lado só, bem diferentes da curva simétrica.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ A regra 68-95-99.7 é aproximação</div>
+        <div class="card-text">Ela vale exatamente para uma curva normal perfeita. Em dados reais (que nunca são 100% normais), use-a como estimativa, não como lei absoluta.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1</div>
+      <p>Confundir "normal" no sentido de "comum/esperado" com a <strong>Distribuição Normal</strong> (o modelo matemático específico). Nem todo fenômeno "normal" no dia a dia segue essa curva.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2</div>
+      <p>Ignorar outliers e caudas pesadas assumindo que "tudo é normal". Em finanças, por exemplo, eventos extremos (crises) acontecem muito mais do que a curva normal prevê.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Graças ao Teorema Central do Limite, mesmo quando os dados originais não são normais, a <strong>média de amostras grandes</strong> tende a ser aproximadamente normal — essa é a base por trás de muitíssimos testes estatísticos usados na prática.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Distribuição Normal</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers gerais ===================== */
+function fmt2(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmt1(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+function fmt0(n){ return Math.round(n).toLocaleString('pt-BR'); }
+function mean(arr){ return arr.reduce((s,v)=>s+v,0)/arr.length; }
+function scaleMaker(xMin,xMax,yMin,yMax,w,h,pad){
+  const ix = pad.l, iw = w-pad.l-pad.r;
+  const iy = pad.t, ih = h-pad.t-pad.b;
+  return {
+    x: v => ix + (v-xMin)/(xMax-xMin) * iw,
+    y: v => iy + ih - (v-yMin)/(yMax-yMin) * ih,
+    xInv: px => xMin + (px-ix)/iw * (xMax-xMin),
+    yInv: py => yMin + (iy+ih-py)/ih * (yMax-yMin),
+    pad, ix, iy, iw, ih
+  };
+}
+function drawGrid(ctx,w,h,sc,xMin,xMax,yMin,yMax,xStep,yStep,xLabel,yLabel){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = 'rgba(83,89,102,.25)';
+  ctx.fillStyle = '#98a2b3';
+  ctx.font = '10px Roboto Mono';
+  ctx.lineWidth = 1;
+  for(let v=Math.ceil(xMin/xStep)*xStep; v<=xMax+1e-9; v+=xStep){
+    const px = sc.x(v);
+    ctx.beginPath(); ctx.moveTo(px, sc.iy); ctx.lineTo(px, sc.iy+sc.ih); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillText(fmt0(v), px, sc.iy+sc.ih+14);
+  }
+  for(let v=Math.ceil(yMin/yStep)*yStep; v<=yMax+1e-9; v+=yStep){
+    const py = sc.y(v);
+    ctx.beginPath(); ctx.moveTo(sc.ix, py); ctx.lineTo(sc.ix+sc.iw, py); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(223,229,239,.4)';
+  ctx.beginPath(); ctx.moveTo(sc.ix, sc.iy); ctx.lineTo(sc.ix, sc.iy+sc.ih); ctx.lineTo(sc.ix+sc.iw, sc.iy+sc.ih); ctx.stroke();
+  if(xLabel){ ctx.textAlign='center'; ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.fillText(xLabel, sc.ix+sc.iw/2, h-2); }
+  if(yLabel){ ctx.save(); ctx.translate(11,sc.iy+sc.ih/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center'; ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.fillText(yLabel,0,0); ctx.restore(); }
+}
+window.addEventListener('resize', ()=>{ renderAll(); });
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== matemática da normal ===================== */
+function normalPDF(x,mu,sigma){ return Math.exp(-0.5*Math.pow((x-mu)/sigma,2)) / (sigma*Math.sqrt(2*Math.PI)); }
+function erf(x){
+  const sign = x<0? -1:1; x=Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t=1/(1+p*x);
+  const y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+function normalCDF(x,mu,sigma){ return 0.5*(1+erf((x-mu)/(sigma*Math.SQRT2))); }
+function drawNormalCurve(ctx,sc,mu,sigma,xMin,xMax,color,lw){
+  ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=lw||2.5; ctx.beginPath();
+  const steps=220;
+  for(let i=0;i<=steps;i++){
+    const x = xMin + (xMax-xMin)*i/steps;
+    const y = normalPDF(x,mu,sigma);
+    const px=sc.x(x), py=sc.y(y);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke(); ctx.restore();
+}
+function fillNormalArea(ctx,sc,mu,sigma,aFrom,aTo,xMin,xMax,color){
+  const from=Math.max(aFrom,xMin), to=Math.min(aTo,xMax);
+  if(to<=from) return;
+  ctx.save(); ctx.fillStyle=color; ctx.beginPath();
+  const steps=100;
+  ctx.moveTo(sc.x(from), sc.y(0));
+  for(let i=0;i<=steps;i++){
+    const x = from + (to-from)*i/steps;
+    ctx.lineTo(sc.x(x), sc.y(normalPDF(x,mu,sigma)));
+  }
+  ctx.lineTo(sc.x(to), sc.y(0));
+  ctx.closePath(); ctx.fill(); ctx.restore();
+}
+function boxMuller(mu,sigma){
+  const u1 = Math.max(Math.random(), 1e-9), u2 = Math.random();
+  const z = Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+  return mu + z*sigma;
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🔔', label:'O que é'},
+  {id:'s-galton', icon:'🎱', label:'Galton Board'},
+  {id:'s-media-desvio', icon:'📊', label:'Média e Desvio'},
+  {id:'s-regra-empirica', icon:'📐', label:'Regra 68-95-99.7'},
+  {id:'s-zscore', icon:'🎯', label:'Z-score'},
+  {id:'s-area', icon:'📏', label:'Área = Prob.'},
+  {id:'s-comparando', icon:'⚖️', label:'Comparando'},
+  {id:'s-tcl', icon:'🎲', label:'Teor. Central'},
+  {id:'s-tabela-formulas', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== HERO CANVAS (histograma estático + curva) ===================== */
+const heroBins = [
+  {lo:120,hi:125,count:2},{lo:125,hi:130,count:6},{lo:130,hi:135,count:14},{lo:135,hi:140,count:24},
+  {lo:140,hi:145,count:26},{lo:145,hi:150,count:20},{lo:150,hi:155,count:12},{lo:155,hi:160,count:5},{lo:160,hi:165,count:1}
+];
+function drawHero(){
+  const cv = document.getElementById('heroCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(118,167,0,28,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,118,167,0,28,10,7,'Altura (cm)','Nº de alunos');
+  heroBins.forEach(b=>{
+    const x1=sc.x(b.lo), x2=sc.x(b.hi), y0=sc.y(0), y1=sc.y(b.count);
+    ctx.fillStyle='rgba(54,162,239,.55)'; ctx.strokeStyle='rgba(54,162,239,.9)'; ctx.lineWidth=1;
+    ctx.fillRect(x1+1,y1,x2-x1-2,y0-y1); ctx.strokeRect(x1+1,y1,x2-x1-2,y0-y1);
+  });
+  const maxCount = Math.max(...heroBins.map(b=>b.count));
+  const mu=142, sigma=8;
+  const peakPdf = normalPDF(mu,mu,sigma);
+  ctx.save();
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2.5; ctx.beginPath();
+  const steps=150;
+  for(let i=0;i<=steps;i++){
+    const x = 118 + (167-118)*i/steps;
+    const y = normalPDF(x,mu,sigma) / peakPdf * maxCount * 1.05;
+    const px=sc.x(x), py=sc.y(y);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke(); ctx.restore();
+}
+drawHero();
+
+/* ===================== SEÇÃO: O QUE É (histograma amostrado) ===================== */
+function sampleHeights(n,mu,sigma){
+  const arr=[];
+  for(let i=0;i<n;i++) arr.push(boxMuller(mu,sigma));
+  return arr;
+}
+let introSample = sampleHeights(200,140,10);
+function drawIntro(){
+  const cv = document.getElementById('introCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const xMin=105, xMax=175, binWidth=5;
+  const nBins = Math.round((xMax-xMin)/binWidth);
+  const counts = new Array(nBins).fill(0);
+  introSample.forEach(v=>{
+    let idx = Math.floor((v-xMin)/binWidth);
+    idx = Math.max(0,Math.min(nBins-1,idx));
+    counts[idx]++;
+  });
+  const maxCount = Math.max(...counts,1);
+  const sc = scaleMaker(xMin,xMax,0,maxCount*1.15,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,xMin,xMax,0,maxCount*1.15,10,Math.ceil(maxCount/5),'Altura (cm)','Nº de alunos');
+  for(let i=0;i<nBins;i++){
+    const lo=xMin+i*binWidth, hi=lo+binWidth;
+    const x1=sc.x(lo), x2=sc.x(hi), y0=sc.y(0), y1=sc.y(counts[i]);
+    ctx.fillStyle='rgba(54,162,239,.55)'; ctx.strokeStyle='rgba(54,162,239,.9)'; ctx.lineWidth=1;
+    ctx.fillRect(x1+1,y1,x2-x1-2,y0-y1); ctx.strokeRect(x1+1,y1,x2-x1-2,y0-y1);
+  }
+  const mu=140, sigma=10;
+  const peakPdf = normalPDF(mu,mu,sigma);
+  const scaleFactor = introSample.length*binWidth;
+  ctx.save();
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2.5; ctx.beginPath();
+  const steps=180;
+  for(let i=0;i<=steps;i++){
+    const x = xMin + (xMax-xMin)*i/steps;
+    const y = normalPDF(x,mu,sigma) * scaleFactor;
+    const px=sc.x(x), py=sc.y(y);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke(); ctx.restore();
+}
+function regenIntro(){ introSample = sampleHeights(200,140,10); drawIntro(); }
+
+/* ===================== SEÇÃO: GALTON BOARD ===================== */
+const galton = {
+  rows: 9,
+  counts: new Array(10).fill(0),
+  balls: [],
+  spawnQueue: 0,
+  running: false,
+  total: 0
+};
+function galtonBallX(centerX, spacing, decisions, uptoRow){
+  const full = Math.floor(uptoRow);
+  const frac = uptoRow-full;
+  const rightsFull = decisions.slice(0,full).reduce((s,d)=>s+d,0);
+  const xFull = centerX + (rightsFull - full/2)*spacing;
+  if(full>=decisions.length || frac<=0) return xFull;
+  const rightsNext = rightsFull + decisions[full];
+  const xNext = centerX + (rightsNext - (full+1)/2)*spacing;
+  return xFull + (xNext-xFull)*frac;
+}
+function drawGalton(){
+  const cv = document.getElementById('galtonCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  ctx.clearRect(0,0,w,h);
+  const rows = galton.rows;
+  const centerX = w/2;
+  const boardTop = 22;
+  const rowHeight = 22;
+  const spacing = Math.min(30, (w-40)/(rows+2));
+  const boardBottom = boardTop + rows*rowHeight;
+  const binTop = boardBottom + 14;
+  const binBottom = h - 20;
+
+  // pegs
+  ctx.fillStyle = 'rgba(152,162,179,.45)';
+  for(let r=0;r<rows;r++){
+    const level = r+1;
+    for(let k=0;k<=level;k++){
+      const x = centerX + (k-level/2)*spacing;
+      const y = boardTop + level*rowHeight;
+      ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fill();
+    }
+  }
+
+  // histogram bars
+  const maxCount = Math.max(...galton.counts, 1);
+  const binAreaH = binBottom - binTop;
+  for(let k=0;k<galton.counts.length;k++){
+    const x = centerX + (k-rows/2)*spacing;
+    const barH = (galton.counts[k]/maxCount) * binAreaH;
+    ctx.fillStyle = 'rgba(6,182,212,.55)';
+    ctx.strokeStyle = 'rgba(6,182,212,.9)'; ctx.lineWidth=1;
+    const barW = spacing*0.72;
+    ctx.fillRect(x-barW/2, binBottom-barH, barW, barH);
+    ctx.strokeRect(x-barW/2, binBottom-barH, barW, barH);
+  }
+  // divider between pegs and bins
+  ctx.strokeStyle='rgba(223,229,239,.25)'; ctx.beginPath(); ctx.moveTo(20,boardBottom+7); ctx.lineTo(w-20,boardBottom+7); ctx.stroke();
+
+  // theoretical binomial curve overlay once some balls fell
+  if(galton.total>10){
+    const p=0.5, muB = rows*p, sigmaB = Math.sqrt(rows*p*(1-p));
+    const peak = normalPDF(muB,muB,sigmaB);
+    ctx.save(); ctx.strokeStyle='#e8b339'; ctx.setLineDash([5,4]); ctx.lineWidth=2; ctx.beginPath();
+    const steps=100;
+    for(let i=0;i<=steps;i++){
+      const k = 0 + (rows-0)*i/steps;
+      const x = centerX + (k-rows/2)*spacing;
+      const y = normalPDF(k,muB,sigmaB)/peak * maxCount;
+      const py = binBottom - (y/maxCount)*binAreaH;
+      if(i===0) ctx.moveTo(x,py); else ctx.lineTo(x,py);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  // falling balls
+  ctx.fillStyle = '#f86b63';
+  galton.balls.forEach(b=>{
+    const x = galtonBallX(centerX,spacing,b.decisions,b.progress);
+    const y = boardTop + b.progress*rowHeight;
+    ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+  });
+
+  // caption row for max bin
+  let modeIdx=0; galton.counts.forEach((c,i)=>{ if(c>galton.counts[modeIdx]) modeIdx=i; });
+  document.getElementById('galtonTotal').textContent = galton.total;
+  document.getElementById('galtonMode').textContent = galton.total>0 ? ('Caixa '+modeIdx) : '—';
+}
+function galtonStep(){
+  if(galton.spawnQueue>0 && galton.balls.length<80){
+    const toSpawn = Math.min(3, galton.spawnQueue);
+    for(let i=0;i<toSpawn;i++){
+      const decisions = Array.from({length:galton.rows},()=>Math.random()<0.5?0:1);
+      galton.balls.push({decisions, progress:0});
+    }
+    galton.spawnQueue -= toSpawn;
+  }
+  galton.balls.forEach(b=> b.progress += 0.22);
+  galton.balls = galton.balls.filter(b=>{
+    if(b.progress >= galton.rows){
+      const bin = b.decisions.reduce((s,d)=>s+d,0);
+      galton.counts[bin]++;
+      galton.total++;
+      return false;
+    }
+    return true;
+  });
+  drawGalton();
+  if(galton.balls.length>0 || galton.spawnQueue>0){
+    requestAnimationFrame(galtonStep);
+  } else {
+    galton.running=false;
+  }
+}
+function galtonRelease(n){
+  galton.spawnQueue += n;
+  if(!galton.running){ galton.running=true; requestAnimationFrame(galtonStep); }
+}
+function galtonReset(){
+  galton.counts = new Array(10).fill(0);
+  galton.balls = [];
+  galton.spawnQueue = 0;
+  galton.total = 0;
+  drawGalton();
+}
+
+/* ===================== SEÇÃO: MÉDIA E DESVIO PADRÃO ===================== */
+function renderMediaDesvio(){
+  const mu = +document.getElementById('mdMu').value;
+  const sigma = +document.getElementById('mdSigma').value;
+  document.getElementById('mdMuVal').textContent = mu + ' cm';
+  document.getElementById('mdSigmaVal').textContent = sigma + ' cm';
+  document.getElementById('mdNotation').textContent = `N(${mu}, ${sigma}²)`;
+  const cv = document.getElementById('mdCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const xMin=80, xMax=200;
+  const yMax = normalPDF(0,0,3)*1.1;
+  const sc = scaleMaker(xMin,xMax,0,yMax,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,xMin,xMax,0,yMax,20,yMax/5,'Altura (cm)','Densidade');
+  drawNormalCurve(ctx,sc,mu,sigma,xMin,xMax,'#06b6d4',2.5);
+  // mean marker
+  ctx.beginPath(); ctx.arc(sc.x(mu), sc.y(normalPDF(mu,mu,sigma)), 6, 0, Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.save(); ctx.strokeStyle='rgba(232,179,57,.5)'; ctx.setLineDash([4,4]); ctx.beginPath();
+  ctx.moveTo(sc.x(mu),sc.y(0)); ctx.lineTo(sc.x(mu),sc.y(normalPDF(mu,mu,sigma))); ctx.stroke(); ctx.restore();
+  // sigma bracket
+  const y0 = normalPDF(mu,mu,sigma)*0.42;
+  ctx.save(); ctx.strokeStyle='#c49aff'; ctx.lineWidth=1.8;
+  ctx.beginPath(); ctx.moveTo(sc.x(mu),sc.y(y0)); ctx.lineTo(sc.x(mu+sigma),sc.y(y0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sc.x(mu),sc.y(y0)-4); ctx.lineTo(sc.x(mu),sc.y(y0)+4); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sc.x(mu+sigma),sc.y(y0)-4); ctx.lineTo(sc.x(mu+sigma),sc.y(y0)+4); ctx.stroke();
+  ctx.restore();
+  ctx.fillStyle='#c49aff'; ctx.font='11px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('σ', sc.x(mu+sigma/2), sc.y(y0)-8);
+}
+
+/* ===================== SEÇÃO: REGRA EMPÍRICA ===================== */
+const REGRA_MU=140, REGRA_SIGMA=10;
+let regraBand = 1;
+const regraPctMap = {1:'68%',2:'95%',3:'99.7%'};
+function setRegraBand(k){
+  regraBand = k;
+  [1,2,3].forEach(n=>document.getElementById('regraBtn-'+n).classList.toggle('active', n===k));
+  renderRegra();
+}
+function renderRegra(){
+  const cv = document.getElementById('regraCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const xMin=100, xMax=180;
+  const yMax = normalPDF(REGRA_MU,REGRA_MU,REGRA_SIGMA)*1.15;
+  const sc = scaleMaker(xMin,xMax,0,yMax,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,xMin,xMax,0,yMax,10,yMax/5,'Altura (cm)','Densidade');
+  const lo = REGRA_MU - regraBand*REGRA_SIGMA, hi = REGRA_MU + regraBand*REGRA_SIGMA;
+  const colors = {1:'rgba(6,182,212,.4)',2:'rgba(125,222,216,.35)',3:'rgba(196,154,255,.3)'};
+  fillNormalArea(ctx,sc,REGRA_MU,REGRA_SIGMA,lo,hi,xMin,xMax,colors[regraBand]);
+  drawNormalCurve(ctx,sc,REGRA_MU,REGRA_SIGMA,xMin,xMax,'#06b6d4',2.5);
+  document.getElementById('regraFaixa').textContent = `${fmt0(lo)} cm — ${fmt0(hi)} cm`;
+  document.getElementById('regraPct').textContent = regraPctMap[regraBand];
+}
+
+/* ===================== SEÇÃO: Z-SCORE ===================== */
+const Z_MU=140, Z_SIGMA=10;
+function renderZscore(){
+  const x = +document.getElementById('zX').value;
+  document.getElementById('zXVal').textContent = x + ' cm';
+  const z = (x-Z_MU)/Z_SIGMA;
+  document.getElementById('zFormula').textContent = `z = (${x} − ${Z_MU}) / ${Z_SIGMA}`;
+  document.getElementById('zValue').textContent = (z>=0?'+':'') + fmt2(z);
+  let label;
+  const az = Math.abs(z);
+  if(az<0.3) label = 'Bem perto da média (valor típico)';
+  else label = `${fmt2(az)} desvios ${z>=0?'ACIMA':'ABAIXO'} da média`;
+  document.getElementById('zLabel').textContent = label;
+
+  const cv = document.getElementById('zCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const xMin=100, xMax=180;
+  const yMax = normalPDF(Z_MU,Z_MU,Z_SIGMA)*1.15;
+  const sc = scaleMaker(xMin,xMax,0,yMax,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,xMin,xMax,0,yMax,10,yMax/5,'Altura (cm)','Densidade');
+  drawNormalCurve(ctx,sc,Z_MU,Z_SIGMA,xMin,xMax,'#06b6d4',2.5);
+  const px = sc.x(x), py = sc.y(normalPDF(x,Z_MU,Z_SIGMA));
+  ctx.save(); ctx.strokeStyle='rgba(248,107,99,.6)'; ctx.setLineDash([4,4]); ctx.beginPath();
+  ctx.moveTo(px,sc.y(0)); ctx.lineTo(px,py); ctx.stroke(); ctx.restore();
+  ctx.beginPath(); ctx.arc(px,py,6,0,Math.PI*2); ctx.fillStyle='#f86b63'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+/* ===================== SEÇÃO: ÁREA = PROBABILIDADE ===================== */
+const AREA_MU=140, AREA_SIGMA=10;
+function renderArea(){
+  let a = +document.getElementById('areaA').value;
+  let b = +document.getElementById('areaB').value;
+  if(a>b){ const t=a; a=b; b=t; }
+  document.getElementById('areaAVal').textContent = a + ' cm';
+  document.getElementById('areaBVal').textContent = b + ' cm';
+  const cv = document.getElementById('areaCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const xMin=100, xMax=180;
+  const yMax = normalPDF(AREA_MU,AREA_MU,AREA_SIGMA)*1.15;
+  const sc = scaleMaker(xMin,xMax,0,yMax,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,xMin,xMax,0,yMax,10,yMax/5,'Altura (cm)','Densidade');
+  fillNormalArea(ctx,sc,AREA_MU,AREA_SIGMA,a,b,xMin,xMax,'rgba(6,182,212,.4)');
+  drawNormalCurve(ctx,sc,AREA_MU,AREA_SIGMA,xMin,xMax,'#06b6d4',2.5);
+  const prob = (normalCDF(b,AREA_MU,AREA_SIGMA) - normalCDF(a,AREA_MU,AREA_SIGMA))*100;
+  document.getElementById('areaProb').textContent = fmt1(prob)+'%';
+  document.getElementById('areaLabel').textContent = `A chance de um aluno aleatório medir entre ${a} e ${b}cm`;
+}
+
+/* ===================== SEÇÃO: COMPARANDO CURVAS ===================== */
+const presets = [
+  {label:'📏 Altura adulta', mu:170, sigma:7, unit:'cm', explain:'A altura de adultos costuma ter média por volta de 170cm com desvio padrão de 7cm — a maioria das pessoas mede entre 163 e 177cm.'},
+  {label:'🧠 QI', mu:100, sigma:15, unit:'pts', explain:'O QI foi desenhado de propósito para ter média 100 e desvio padrão 15 — por isso 68% das pessoas têm QI entre 85 e 115.'},
+  {label:'📝 Nota do Enem', mu:500, sigma:100, unit:'pts', explain:'As notas do Enem (na escala TRI) tendem a ficar centradas perto de 500, com desvio padrão de aproximadamente 100 pontos.'},
+  {label:'⏱️ Tempo de reação', mu:250, sigma:40, unit:'ms', explain:'O tempo de reação humano a um estímulo simples (como apertar um botão numa luz) tem média perto de 250 milissegundos, variando cerca de 40ms para mais ou para menos.'},
+];
+let presetIdx = 0;
+function buildPresets(){
+  document.getElementById('presetRow').innerHTML = presets.map((p,i)=>`
+    <button class="preset-chip ${i===0?'active':''}" id="preset-${i}" onclick="setPreset(${i})">${p.label}</button>`).join('');
+}
+function setPreset(i){
+  presetIdx = i;
+  presets.forEach((p,idx)=>document.getElementById('preset-'+idx).classList.toggle('active', idx===i));
+  renderPreset();
+}
+function renderPreset(){
+  const p = presets[presetIdx];
+  document.getElementById('presetMu').textContent = p.mu + ' ' + p.unit;
+  document.getElementById('presetSigma').textContent = p.sigma + ' ' + p.unit;
+  document.getElementById('presetFaixa').textContent = `${p.mu-p.sigma}–${p.mu+p.sigma}`;
+  document.getElementById('presetExplain').textContent = p.explain;
+  const cv = document.getElementById('presetCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const xMin = p.mu - 4*p.sigma, xMax = p.mu + 4*p.sigma;
+  const yMax = normalPDF(p.mu,p.mu,p.sigma)*1.15;
+  const sc = scaleMaker(xMin,xMax,0,yMax,w,h,{l:34,r:14,t:14,b:26});
+  const step = Math.max(1, Math.round((xMax-xMin)/6));
+  drawGrid(ctx,w,h,sc,xMin,xMax,0,yMax,step,yMax/5,`Valor (${p.unit})`,'Densidade');
+  fillNormalArea(ctx,sc,p.mu,p.sigma,p.mu-p.sigma,p.mu+p.sigma,xMin,xMax,'rgba(6,182,212,.28)');
+  drawNormalCurve(ctx,sc,p.mu,p.sigma,xMin,xMax,'#06b6d4',2.5);
+}
+
+/* ===================== SEÇÃO: TEOREMA CENTRAL DO LIMITE ===================== */
+const tcl = { nDice:1, counts:{}, total:0 };
+function setTclDice(n){
+  tcl.nDice = n;
+  [1,2,5,10].forEach(k=>document.getElementById('tclBtn-'+k).classList.toggle('active', k===n));
+  tclReset();
+}
+function tclReset(){
+  tcl.counts = {};
+  tcl.total = 0;
+  document.getElementById('tclTotal').textContent = 0;
+  document.getElementById('tclMean').textContent = '—';
+  drawTcl();
+}
+function tclRoll(rounds){
+  for(let r=0;r<rounds;r++){
+    let sum=0;
+    for(let d=0;d<tcl.nDice;d++) sum += 1+Math.floor(Math.random()*6);
+    tcl.counts[sum] = (tcl.counts[sum]||0)+1;
+    tcl.total++;
+  }
+  const sums = Object.keys(tcl.counts).map(Number);
+  let totalSum=0, totalCount=0;
+  sums.forEach(s=>{ totalSum += s*tcl.counts[s]; totalCount += tcl.counts[s]; });
+  document.getElementById('tclTotal').textContent = tcl.total;
+  document.getElementById('tclMean').textContent = totalCount? fmt2(totalSum/totalCount) : '—';
+  drawTcl();
+}
+function drawTcl(){
+  const cv = document.getElementById('tclCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const n = tcl.nDice;
+  const xMin = n-0.5, xMax = 6*n+0.5;
+  const maxCount = Math.max(...Object.values(tcl.counts), 1);
+  const sc = scaleMaker(xMin,xMax,0,maxCount*1.15,w,h,{l:34,r:14,t:14,b:26});
+  const step = n===1? 1 : Math.max(1, Math.round(n));
+  drawGrid(ctx,w,h,sc,xMin,xMax,0,maxCount*1.15,step*2,Math.ceil(maxCount/5)||1,'Soma dos dados','Frequência');
+  for(let s=n; s<=6*n; s++){
+    const c = tcl.counts[s]||0;
+    if(c===0) continue;
+    const x1=sc.x(s-0.42), x2=sc.x(s+0.42), y0=sc.y(0), y1=sc.y(c);
+    ctx.fillStyle='rgba(196,154,255,.55)'; ctx.strokeStyle='rgba(196,154,255,.9)'; ctx.lineWidth=1;
+    ctx.fillRect(x1,y1,x2-x1,y0-y1); ctx.strokeRect(x1,y1,x2-x1,y0-y1);
+  }
+  if(tcl.total>20){
+    const muT = n*3.5, sigmaT = Math.sqrt(n*35/12);
+    const peak = normalPDF(muT,muT,sigmaT);
+    ctx.save(); ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2.2; ctx.beginPath();
+    const steps=150;
+    for(let i=0;i<=steps;i++){
+      const x = xMin + (xMax-xMin)*i/steps;
+      const y = normalPDF(x,muT,sigmaT)/peak*maxCount;
+      const px=sc.x(x), py=sc.y(y);
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'A altura dos alunos de uma turma segue N(140, 10²). Qual a altura correspondente a um z-score de +1.5?',
+   a:'Usando z = (x−μ)/σ, isolamos x: x = μ + z·σ = 140 + 1.5×10 = <strong>155 cm</strong>. Ou seja, um aluno com z=+1.5 mede 155cm.'},
+  {q:'O QI segue aproximadamente N(100, 15²). Que porcentagem das pessoas tem QI entre 85 e 115?',
+   a:'85 e 115 são exatamente μ−1σ e μ+1σ (100−15 e 100+15). Pela regra empírica, isso corresponde a <strong>68%</strong> das pessoas.'},
+  {q:'O tempo de reação de uma pessoa segue N(250ms, 40²). Qual o z-score de um tempo de reação de 300ms?',
+   a:'z = (300−250)/40 = 50/40 = <strong>+1.25</strong>. Esse tempo de reação está 1.25 desvios padrão acima da média (uma reação um pouco mais lenta que a maioria).'},
+  {q:'As notas do Enem seguem aproximadamente N(500, 100²). Aproximadamente que porcentagem dos candidatos tira acima de 600?',
+   a:'600 corresponde a z=+1 (500+1×100). Pela regra empírica, 68% ficam entre μ±1σ, sobrando 32% nas duas caudas — 16% em cada cauda. Logo, cerca de <strong>16%</strong> dos candidatos tiram acima de 600.'},
+  {q:'Numa fábrica, o peso de pacotes de arroz segue N(1000g, 15²). Qual a probabilidade (aproximada) de um pacote pesar menos de 970g?',
+   a:'970g corresponde a z=(970−1000)/15=−2. Pela regra empírica, 95% dos pacotes ficam entre μ±2σ, sobrando 5% nas duas caudas — 2.5% em cada cauda. Logo, a probabilidade é de aproximadamente <strong>2.5%</strong>.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'A Distribuição Normal é totalmente definida por apenas dois números: a média (μ) e o desvio padrão (σ).', a:true,
+   explain:'Correto! Esses dois parâmetros determinam completamente o centro e o formato da curva — não existe nenhum outro número extra necessário.'},
+  {q:'A média (μ) controla o quão "larga" ou "estreita" é a curva normal.', a:false,
+   explain:'É o desvio padrão (σ) que controla a largura. A média (μ) apenas desloca a curva para a esquerda ou direita, sem mudar seu formato.'},
+  {q:'Pela regra empírica, cerca de 95% dos valores ficam a até 2 desvios padrão de distância da média.', a:true,
+   explain:'Exatamente: 68% dentro de ±1σ, 95% dentro de ±2σ e 99.7% dentro de ±3σ, em qualquer curva normal.'},
+  {q:'Um z-score negativo significa que o valor está acima da média.', a:false,
+   explain:'z negativo significa que o valor está ABAIXO da média. z positivo é que indica um valor acima da média.'},
+  {q:'A área total sob qualquer curva normal é sempre igual a 100% (ou 1).', a:true,
+   explain:'Sim — toda a "massa" de probabilidade está distribuída sob a curva, então a área total sempre soma 100%.'},
+  {q:'Um único dado de 6 lados, jogado sozinho, já segue a distribuição normal.', a:false,
+   explain:'Não — um dado sozinho segue a distribuição uniforme (todo número tem a mesma chance). É a SOMA de vários dados que se aproxima da normal, pelo Teorema Central do Limite.'},
+  {q:'O Teorema Central do Limite explica por que a curva normal aparece em tantos fenômenos diferentes da natureza.', a:true,
+   explain:'Correto — fenômenos que resultam da soma de muitos fatores pequenos e independentes (como altura, influenciada por genética, nutrição, sono etc.) tendem a se aproximar da curva normal.'},
+  {q:'A regra 68-95-99.7 é uma lei absoluta que vale perfeitamente para qualquer conjunto de dados do mundo real.', a:false,
+   explain:'Ela vale exatamente para uma curva normal teórica perfeita. Dados reais são apenas aproximadamente normais, então a regra deve ser usada como estimativa, não como garantia absoluta.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT / RENDER ALL ===================== */
+function renderAll(){
+  drawHero();
+  drawIntro();
+  drawGalton();
+  renderMediaDesvio();
+  renderRegra();
+  renderZscore();
+  renderArea();
+  renderPreset();
+  drawTcl();
+}
+drawIntro();
+drawGalton();
+renderMediaDesvio();
+setRegraBand(1);
+renderZscore();
+renderArea();
+buildPresets();
+renderPreset();
+setTclDice(1);
+buildProblems();
+buildQuiz();
+</script>
+</body>
+</html>

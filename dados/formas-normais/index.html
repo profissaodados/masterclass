@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Formas Normais explicadas como se fosse para uma criança, com caixinhas, setas mágicas, pizzas e muitos exemplos visuais e interativos (1FN, 2FN, 3FN, BCNF, 4FN, 5FN).">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Formas Normais Explicadas com Desenhos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+.hero-box-stack{display:flex;flex-direction:column;gap:8px;width:260px;}
+.hero-box{display:flex;align-items:center;gap:10px;background:var(--bg-panel);border:1.5px solid var(--border-color);border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.2);font-size:12px;}
+.hero-box .hb-icon{font-size:18px;}
+.hero-box .hb-txt{flex:1;color:var(--text-secondary);}
+.hero-box .hb-txt strong{color:var(--text-primary);}
+.hero-box.messy{border-color:var(--accent-red);}
+.hero-box.tidy{border-color:var(--accent-green);}
+.hero-arrow-down{text-align:center;font-size:18px;color:var(--text-disabled);}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn:disabled{opacity:.35;cursor:not-allowed;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--accent);} .cm{color:var(--text-disabled);font-style:italic;} .st{color:var(--accent-green);} .fn{color:var(--accent-blue);} .num{color:var(--accent-purple);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table td.cell-dup{background:rgba(248,107,99,.16);color:var(--accent-red);font-weight:700;border-radius:4px;}
+.data-table td.cell-key{background:rgba(6,182,212,.14);color:var(--accent);font-weight:700;border-radius:4px;}
+.data-table td.cell-new{background:rgba(125,222,216,.16);color:var(--accent-green);font-weight:700;border-radius:4px;}
+.table-caption{font-size:11px;color:var(--text-disabled);margin-top:6px;text-align:center;}
+.table-scroll{overflow-x:auto;}
+.table-name{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--text-primary);background:var(--bg-elevated);border:1px solid var(--border-strong);border-radius:6px 6px 0 0;padding:7px 12px;text-transform:uppercase;letter-spacing:.5px;}
+.table-block{margin-bottom:6px;}
+
+/* ---- KEYS ANATOMY ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.anatomy-grid.cols-3{grid-template-columns:1fr 1fr 1fr;gap:24px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- KV LIST (dependência funcional) ---- */
+.kv-list{display:flex;flex-direction:column;gap:8px;}
+.kv-pair{display:flex;align-items:center;gap:12px;transition:.2s;flex-wrap:wrap;cursor:pointer;}
+.kv-key{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--accent-blue);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:12.5px;min-width:140px;text-align:center;flex-shrink:0;}
+.kv-arrow{color:var(--text-disabled);font-size:16px;flex-shrink:0;}
+.kv-value{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-primary);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:12.5px;flex:1;transition:.2s;}
+.kv-pair.highlight .kv-key{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.kv-pair.highlight .kv-value{border-color:var(--accent);background:rgba(6,182,212,.10);color:var(--accent);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- BAR CHART (redundância antes/depois) ---- */
+.barchart{display:flex;align-items:flex-end;gap:28px;height:180px;padding:10px 10px 0;}
+.barchart-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:8px;}
+.barchart-bar{width:56px;border-radius:6px 6px 0 0;transition:height .6s cubic-bezier(.4,0,.2,1);position:relative;}
+.barchart-bar .bb-val{position:absolute;top:-22px;left:0;right:0;text-align:center;font-family:'Roboto Mono',monospace;font-weight:800;font-size:13px;color:var(--text-primary);}
+.barchart-label{font-size:11px;color:var(--text-secondary);text-align:center;font-weight:600;}
+
+/* ---- WIZARD (passo a passo) ---- */
+.wizard-steps{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+.wizard-tables{display:flex;flex-direction:column;gap:18px;}
+.wizard-multi{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media (max-width:760px){.wizard-multi{grid-template-columns:1fr;}}
+
+/* ---- CARTESIAN GRID (4FN) ---- */
+.cart-grid{display:grid;gap:6px;}
+.cart-cell{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:10px 8px;text-align:center;font-size:11.5px;color:var(--text-secondary);}
+.cart-cell.head{background:var(--bg-highlight);color:var(--text-primary);font-weight:700;}
+.cart-cell.combo{color:var(--accent-red);font-weight:700;background:rgba(248,107,99,.10);}
+
+/* ---- NESTED FORMS DIAGRAM ---- */
+.nf-nest{display:flex;flex-direction:column;align-items:center;padding:26px;}
+.nf-box{width:100%;border:2px solid;border-radius:16px;padding:22px;text-align:center;cursor:pointer;transition:.2s;position:relative;}
+.nf-box:hover{transform:scale(1.008);}
+.nf-box.active{box-shadow:0 0 0 3px currentColor inset;}
+.nf-box-title{font-weight:800;font-size:14px;letter-spacing:.5px;}
+.nf-box-sub{font-size:10.5px;color:var(--text-secondary);margin-top:4px;text-transform:none;letter-spacing:0;}
+.nf-1{border-color:var(--accent-red);color:var(--accent-red);}
+.nf-2{border-color:var(--accent-yellow);color:var(--accent-yellow);padding:34px 26px;}
+.nf-3{border-color:var(--accent-blue);color:var(--accent-blue);padding:46px 26px;}
+.nf-bcnf{border-color:var(--accent-purple);color:var(--accent-purple);padding:58px 26px;}
+.nf-4{border-color:var(--accent);color:var(--accent);padding:70px 26px;}
+.nf-5{border-color:var(--accent-green);color:var(--accent-green);padding:82px 26px 26px;}
+.nf-box + .nf-box{margin-top:-52px;}
+
+/* ---- TIMELINE-ISH STEP LIST ---- */
+.step-list{display:flex;flex-direction:column;gap:0;}
+.step-row{display:grid;grid-template-columns:34px 1fr;gap:14px;padding:10px 0;}
+.step-num{width:34px;height:34px;border-radius:50%;background:var(--bg-elevated);border:1.5px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-family:'Roboto Mono',monospace;font-size:13px;flex-shrink:0;}
+.step-txt{font-size:12.5px;color:var(--text-secondary);line-height:1.7;padding-top:4px;}
+.step-txt strong{color:var(--text-primary);}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid,.anatomy-grid.cols-3{grid-template-columns:1fr;gap:20px;}
+  .barchart{gap:14px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Formas Normais</h1><span>Como organizar tabelas sem bagunça, explicado com desenhos</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">1970</div><div class="hstat-label">Origem (Edgar Codd)</div></div>
+      <div class="hstat"><div class="hstat-num">6</div><div class="hstat-label">Formas (1FN→5FN)</div></div>
+      <div class="hstat"><div class="hstat-num">0</div><div class="hstat-label">Dado repetido à toa</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: da bagunça à tabela perfeita</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Cada informação mora em <em>uma casa só</em> — e cada casa sabe seu próprio endereço</h2>
+      <p>Imagine sua caixa de brinquedos toda bagunçada: carrinhos misturados com bonecas, peças de quebra-cabeça soltas dentro da caixa de blocos. Para achar qualquer coisa, você precisa revirar tudo — e se perder uma peça, nem percebe. <strong>Normalizar um banco de dados</strong> é exatamente o processo de arrumar essa caixa: cada tipo de brinquedo ganha sua própria caixinha, com etiqueta, e cada informação passa a existir <em>em um único lugar</em>. Essas regras de arrumação têm nome — <strong>Formas Normais</strong> — e foram criadas em 1970 pelo matemático <strong>Edgar F. Codd</strong>. Nesta aula vamos montar, caixinha por caixinha, da 1ª até a 5ª forma normal, usando uma pizzaria como exemplo do início ao fim.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Sem repetição</span>
+        <span class="badge badge-green">Sem contradição</span>
+        <span class="badge badge-blue">Fácil de manter</span>
+        <span class="badge badge-purple">Passo a passo</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-box-stack">
+        <div class="hero-box messy"><span class="hb-icon">🧸</span><span class="hb-txt"><strong>Antes:</strong> tudo misturado numa caixa só</span></div>
+      </div>
+      <div class="hero-arrow-down">⬇ arrumando ⬇</div>
+      <div class="hero-box-stack">
+        <div class="hero-box tidy"><span class="hb-icon">📦</span><span class="hb-txt"><strong>Clientes</strong><br><span style="font-size:9.5px;opacity:.75;">nome, cidade, telefone</span></span></div>
+        <div class="hero-box tidy"><span class="hb-icon">🍕</span><span class="hb-txt"><strong>Produtos</strong><br><span style="font-size:9.5px;opacity:.75;">sabor, categoria, preço</span></span></div>
+        <div class="hero-box tidy"><span class="hb-icon">🧾</span><span class="hb-txt"><strong>Pedidos</strong><br><span style="font-size:9.5px;opacity:.75;">quem pediu, quando</span></span></div>
+      </div>
+      <div class="hero-visual-caption">Depois de normalizar: uma caixinha por assunto</div>
+    </div>
+  </section>
+
+  <!-- ============ POR QUE NORMALIZAR ============ -->
+  <section class="section" id="s-porque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧸 Por que arrumar a caixa? As 3 anomalias</div>
+    <p class="section-desc">Quando a mesma informação aparece repetida em vários lugares de uma tabela, três problemas — chamados de <strong>anomalias</strong> — aparecem mais cedo ou mais tarde. Veja a tabela de pedidos da nossa pizzaria <strong>antes</strong> de qualquer arrumação: repare que o telefone da Ana aparece em três linhas diferentes.</p>
+
+    <div class="table-scroll">
+      <table class="data-table" id="anomalyTable"></table>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">➕ Anomalia de Inserção</div><div class="card-text">Para cadastrar um cliente novo que <strong>ainda não fez nenhum pedido</strong>, você seria obrigado a inventar um pedido falso — porque nesta tabela um cliente só existe se tiver uma linha de pedido junto.</div></div>
+      <div class="card"><div class="card-title">✏️ Anomalia de Atualização</div><div class="card-text">Se a Ana mudar de telefone, é preciso lembrar de trocar <strong>em todas as linhas</strong> onde o nome dela aparece. Esquecer uma única linha faz a tabela contradizer ela mesma.</div></div>
+      <div class="card"><div class="card-title">🗑️ Anomalia de Exclusão</div><div class="card-text">Se você apagar o único pedido do Bruno (porque ele cancelou), <strong>perde também</strong> o cadastro inteiro do Bruno — telefone, cidade, tudo — mesmo sem querer excluir o cliente.</div></div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente a anomalia de atualização: troque o telefone da Ana</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Novo telefone da Ana</div>
+          <input type="text" id="anomalyPhoneInput" value="11 91234-5678" oninput="renderAnomalyUpdate()">
+        </div>
+      </div>
+      <div class="table-scroll"><table class="data-table" id="anomalyUpdateTable"></table></div>
+      <div class="result-display">
+        <div><span class="rl">Linhas com o telefone antigo</span><span class="rv" id="anomalyMissed">—</span></div>
+        <div><span class="rl">Risco</span><span class="rv" id="anomalyRisk" style="font-size:14px;">—</span></div>
+      </div>
+      <div class="section-desc" style="font-size:12px;margin-top:10px;">💡 Repare: mesmo digitando o telefone novo, as <span style="color:var(--accent-red);font-weight:700;">linhas destacadas em vermelho</span> continuam com o telefone antigo — porque a mesma informação foi copiada em vários lugares. É exatamente isso que a normalização elimina.</div>
+    </div>
+  </section>
+
+  <!-- ============ CHAVES ============ -->
+  <section class="section" id="s-chaves">
+    <div class="section-eyebrow">O Vocabulário Básico</div>
+    <div class="section-title">🔑 Chaves: o "nome único" de cada linha</div>
+    <p class="section-desc">Antes de normalizar qualquer coisa, precisamos combinar um vocabulário. Toda tabela bem organizada tem uma forma de identificar cada linha sem ambiguidade — isso se chama <strong>chave</strong>. Clique em cada tipo para entender a diferença.</p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid cols-3" id="keysWrap">
+        <div class="pq-box">
+          <div class="pq-box-label">🗝️ Chave Candidata</div>
+          <div class="pq-clickable" data-id="candidata" onclick="pickKey('candidata')">cpf ou email — qualquer um identifica sozinho</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">👑 Chave Primária</div>
+          <div class="pq-clickable" data-id="primaria" onclick="pickKey('primaria')">cliente_id — a candidata escolhida oficialmente</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🧩 Chave Composta</div>
+          <div class="pq-clickable" data-id="composta" onclick="pickKey('composta')">(pedido_id, produto_id) — duas colunas juntas</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="keysDetail">
+        <div class="ad-title">👆 Clique em uma caixinha</div>
+        <div class="ad-text">Cada tipo de chave tem um papel diferente na hora de decidir "o que depende do quê" — a base de toda forma normal.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔗 Chave Estrangeira (FK)</div><div class="card-text">Quando uma tabela guarda a chave primária de <strong>outra</strong> tabela para apontar para ela — por exemplo, <code>Pedidos.cliente_id</code> apontando para <code>Clientes.cliente_id</code> — isso é uma <strong>foreign key</strong>. É a "cola" que religa as caixinhas depois de separadas.</div></div>
+      <div class="card"><div class="card-title">🌟 Atributo Primo (Prime)</div><div class="card-text">Qualquer coluna que faça parte de <strong>alguma</strong> chave candidata é chamada de <strong>atributo primo</strong>. As demais colunas — que só descrevem, mas não identificam nada — são <strong>não-primas</strong>. Essa distinção decide as regras da 2ª e 3ª forma normal.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ DEPENDÊNCIA FUNCIONAL ============ -->
+  <section class="section" id="s-dependencia">
+    <div class="section-eyebrow">A Seta Mágica</div>
+    <div class="section-title">➡️ Dependência Funcional: "se eu sei A, eu já sei B"</div>
+    <p class="section-desc">Uma <strong>dependência funcional</strong> é só uma forma chique de dizer: <em>"conhecendo o valor de uma coluna, eu descubro o valor de outra sem precisar perguntar de novo."</em> Se você sabe o CEP de alguém, você já sabe a cidade — não existe CEP que sirva para duas cidades diferentes. Essa é a <strong>seta mágica</strong> que vamos usar o resto da aula inteira para decidir onde cada coluna deve morar.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada seta para ler em voz alta</div>
+      <div class="kv-list" id="fdList"></div>
+      <div class="anatomy-detail" id="fdDetail">
+        <div class="ad-title">👆 Clique em uma seta</div>
+        <div class="ad-text">Repare que setas diferentes têm "força" diferente: algumas saem de uma coluna só, outras precisam de duas colunas juntas para apontar para o resultado.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card"><div class="card-title">1️⃣ Dependência total</div><div class="card-text">Quando o resultado só aparece se você usar <strong>a chave inteira</strong>. Ex: <code>(pedido_id, produto_id) → preço_cobrado</code> — o preço daquele item só faz sentido sabendo o pedido <em>e</em> o produto juntos.</div></div>
+      <div class="card"><div class="card-title">✂️ Dependência parcial</div><div class="card-text">Quando o resultado já aparece usando <strong>só um pedaço</strong> da chave composta. Ex: em <code>(pedido_id, produto_id) → categoria</code>, a categoria só depende de <code>produto_id</code> — o <code>pedido_id</code> é peso morto. É essa dependência parcial que a <strong>2ª Forma Normal</strong> vai eliminar.</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔁 Dependência transitiva</div><div class="card-text">Quando A → B e B → C, então A também "enxerga" C, mas por um caminho indireto: <code>cliente_id → cep → cidade</code>. A cidade depende do cliente <em>através</em> do CEP, não diretamente. É essa dependência transitiva que a <strong>3ª Forma Normal</strong> vai eliminar.</div></div>
+      <div class="card"><div class="card-title">👑 Determinante</div><div class="card-text">A coluna (ou grupo de colunas) do lado <strong>esquerdo</strong> da seta é chamada de <strong>determinante</strong>. A regra da <strong>BCNF</strong>, mais à frente, é simples de enunciar assim: <em>todo determinante precisa ser uma chave candidata.</em></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 1FN ============ -->
+  <section class="section" id="s-1fn">
+    <div class="section-eyebrow">Regra 1 de 6</div>
+    <div class="section-title">1️⃣ Primeira Forma Normal (1FN): uma casinha, um valor</div>
+    <p class="section-desc">A 1ª Forma Normal exige que cada célula da tabela guarde <strong>um único valor atômico</strong> — nunca uma lista, nunca vários itens amontoados na mesma casinha. Se uma coluna guarda "Calabresa, Mussarela" numa única célula, ela está violando a 1FN.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Alterne entre a versão bagunçada e a versão atômica</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btn1fnNo" onclick="set1fnView(false)">🧸 Sem 1FN (bagunçado)</button>
+        <button class="btn-toggle" id="btn1fnYes" onclick="set1fnView(true)">📦 Com 1FN (atômico)</button>
+      </div>
+      <div class="table-scroll"><table class="data-table" id="fn1Table"></table></div>
+      <div class="result-display">
+        <div><span class="rl">Valores por célula (pior caso)</span><span class="rv" id="fn1Multi">—</span></div>
+        <div><span class="rl">Fácil buscar "quem pediu Calabresa"?</span><span class="rv" id="fn1Search" style="font-size:14px;">—</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="ok-box"><div class="highlight-title">✅ Como corrigir</div><p>Cada item do pedido vira sua <strong>própria linha</strong>. A chave deixa de ser só <code>pedido_id</code> e passa a ser a combinação <code>(pedido_id, produto)</code> — nosso primeiro exemplo de <strong>chave composta</strong> da aula.</p></div>
+      <div class="warn-box"><p>⚠️ Repetir a coluna (ex: <code>pizza_1, pizza_2, pizza_3</code>) <strong>também</strong> viola a 1FN — o problema não é ter uma lista numa célula só, é qualquer forma de "grupo repetitivo" escondido na estrutura da tabela.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 2FN ============ -->
+  <section class="section" id="s-2fn">
+    <div class="section-eyebrow">Regra 2 de 6</div>
+    <div class="section-title">2️⃣ Segunda Forma Normal (2FN): use a chave inteira</div>
+    <p class="section-desc">A 2FN só entra em jogo quando a chave é <strong>composta</strong> (mais de uma coluna). A regra: toda coluna que não é chave precisa depender da <strong>chave inteira</strong> — nunca de só um pedaço dela (isso é a "dependência parcial" que vimos há pouco).</p>
+
+    <div class="table-block">
+      <div class="table-name">🧾 Itens_Pedido — logo depois da 1FN, ainda com dependência parcial</div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>pedido_id</th><th>produto</th><th>categoria</th><th>preço_cobrado</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">1001</td><td class="cell-key">Calabresa</td><td class="cell-dup">Tradicional</td><td>R$ 42,00</td></tr>
+            <tr><td class="cell-key">1001</td><td class="cell-key">Mussarela</td><td class="cell-dup">Tradicional</td><td>R$ 38,00</td></tr>
+            <tr><td class="cell-key">1002</td><td class="cell-key">Calabresa</td><td class="cell-dup">Tradicional</td><td>R$ 42,00</td></tr>
+            <tr><td class="cell-key">1002</td><td class="cell-key">Quatro Queijos</td><td>Especial</td><td>R$ 52,00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-caption">Chave = (pedido_id, produto). Mas <code>categoria</code> só depende de <code>produto</code> — repare que "Calabresa" sempre traz "Tradicional" junto, não importa o pedido.</div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">A "seta" da dependência parcial</div>
+      <div class="kv-list">
+        <div class="kv-pair highlight"><span class="kv-key">produto</span><span class="kv-arrow">➜</span><span class="kv-value">categoria &nbsp;<span style="color:var(--accent-red);font-size:11px;">(usa só metade da chave!)</span></span></div>
+        <div class="kv-pair"><span class="kv-key">(pedido_id, produto)</span><span class="kv-arrow">➜</span><span class="kv-value">preço_cobrado &nbsp;<span style="color:var(--accent-green);font-size:11px;">(usa a chave inteira ✓)</span></span></div>
+      </div>
+    </div>
+
+    <div class="wizard-multi">
+      <div class="table-block">
+        <div class="table-name">🍕 Produtos <span class="chip" style="margin-left:6px;">nova tabela</span></div>
+        <table class="data-table">
+          <thead><tr><th>produto</th><th>categoria</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">Calabresa</td><td class="cell-new">Tradicional</td></tr>
+            <tr><td class="cell-key">Mussarela</td><td class="cell-new">Tradicional</td></tr>
+            <tr><td class="cell-key">Quatro Queijos</td><td class="cell-new">Especial</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-block">
+        <div class="table-name">🧾 Itens_Pedido <span class="chip" style="margin-left:6px;">enxugada</span></div>
+        <table class="data-table">
+          <thead><tr><th>pedido_id</th><th>produto (FK)</th><th>preço_cobrado</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">1001</td><td class="cell-key">Calabresa</td><td>R$ 42,00</td></tr>
+            <tr><td class="cell-key">1001</td><td class="cell-key">Mussarela</td><td>R$ 38,00</td></tr>
+            <tr><td class="cell-key">1002</td><td class="cell-key">Calabresa</td><td>R$ 42,00</td></tr>
+            <tr><td class="cell-key">1002</td><td class="cell-key">Quatro Queijos</td><td>R$ 52,00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Repare que "Tradicional" era repetido a cada vez que "Calabresa" aparecia. Agora existe <strong>uma única vez</strong>, na tabela Produtos — se um dia a categoria mudar, é uma edição só, não uma caça ao tesouro pela tabela inteira.</p></div>
+  </section>
+
+  <!-- ============ 3FN ============ -->
+  <section class="section" id="s-3fn">
+    <div class="section-eyebrow">Regra 3 de 6</div>
+    <div class="section-title">3️⃣ Terceira Forma Normal (3FN): sem atalhos escondidos</div>
+    <p class="section-desc">A 3FN exige que toda coluna que não é chave dependa <strong>diretamente</strong> da chave — nunca "por tabela", passando por outra coluna que também não é chave (a dependência transitiva que vimos antes).</p>
+
+    <div class="table-block">
+      <div class="table-name">🧾 Pedidos — ainda com dependência transitiva</div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>pedido_id</th><th>cliente_id</th><th>cliente_nome</th><th>cep</th><th>cidade</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">1001</td><td>C-01</td><td class="cell-dup">Ana Ribeiro</td><td class="cell-dup">01310-100</td><td class="cell-dup">São Paulo</td></tr>
+            <tr><td class="cell-key">1002</td><td>C-01</td><td class="cell-dup">Ana Ribeiro</td><td class="cell-dup">01310-100</td><td class="cell-dup">São Paulo</td></tr>
+            <tr><td class="cell-key">1003</td><td>C-02</td><td>Bruno Alves</td><td>80010-000</td><td>Curitiba</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-caption"><code>pedido_id → cliente_id → cliente_nome/cep/cidade</code> — um caminho indireto de duas etapas, não uma dependência direta da chave.</div>
+    </div>
+
+    <div class="wizard-multi">
+      <div class="table-block">
+        <div class="table-name">🧾 Pedidos <span class="chip" style="margin-left:6px;">enxugada</span></div>
+        <table class="data-table">
+          <thead><tr><th>pedido_id</th><th>cliente_id (FK)</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">1001</td><td>C-01</td></tr>
+            <tr><td class="cell-key">1002</td><td>C-01</td></tr>
+            <tr><td class="cell-key">1003</td><td>C-02</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-block">
+        <div class="table-name">🙋 Clientes <span class="chip" style="margin-left:6px;">nova tabela</span></div>
+        <table class="data-table">
+          <thead><tr><th>cliente_id</th><th>nome</th><th>cep</th><th>cidade</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">C-01</td><td class="cell-new">Ana Ribeiro</td><td class="cell-new">01310-100</td><td class="cell-new">São Paulo</td></tr>
+            <tr><td class="cell-key">C-02</td><td class="cell-new">Bruno Alves</td><td class="cell-new">80010-000</td><td class="cell-new">Curitiba</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="highlight-box"><div class="highlight-title">O truque para achar dependência transitiva</div><p>Pergunte: "essa coluna descreve o <strong>pedido</strong>, ou descreve o <strong>cliente</strong>?" Nome, CEP e cidade descrevem o cliente — não importa qual pedido você olhe, elas são sempre as mesmas para aquele cliente. Isso é o sinal de que elas pertencem a outra tabela.</p></div>
+  </section>
+
+  <!-- ============ WIZARD PASSO A PASSO ============ -->
+  <section class="section" id="s-wizard">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🧙 Normalizando do zero, passo a passo</div>
+    <p class="section-desc">Agora vamos juntar tudo: comece pela tabela mais bagunçada possível — um único extrato de pedidos da pizzaria — e clique em cada botão para ver, ao vivo, as caixinhas se separando até chegar na 3ª Forma Normal.</p>
+
+    <div class="interactive-panel">
+      <div class="wizard-steps">
+        <button class="player-btn primary" id="wizBtn0" onclick="setWizardStep(0)">🧸 Bagunçado</button>
+        <button class="player-btn" id="wizBtn1" onclick="setWizardStep(1)">1️⃣ Aplicar 1FN</button>
+        <button class="player-btn" id="wizBtn2" onclick="setWizardStep(2)">2️⃣ Aplicar 2FN</button>
+        <button class="player-btn" id="wizBtn3" onclick="setWizardStep(3)">3️⃣ Aplicar 3FN</button>
+      </div>
+      <div class="anatomy-detail" id="wizardExplain" style="margin-bottom:16px;">
+        <div class="ad-title">Passo 0 — a bagunça original</div>
+        <div class="ad-text">Uma linha por pedido. A coluna <code>itens</code> guarda vários produtos amontoados (viola 1FN), e os dados do cliente se repetem a cada pedido novo (viola 3FN).</div>
+      </div>
+      <div class="wizard-tables" id="wizardTables"></div>
+    </div>
+  </section>
+
+  <!-- ============ BCNF ============ -->
+  <section class="section" id="s-bcnf">
+    <div class="section-eyebrow">Regra 4 de 6 — a Prima Rigorosa da 3FN</div>
+    <div class="section-title">🚧 Forma Normal de Boyce-Codd (BCNF)</div>
+    <p class="section-desc">A BCNF aparece num caso especial: quando existe <strong>mais de uma chave candidata</strong> e uma coluna que não é a chave inteira ainda assim "manda" no valor de outra. A regra fica simples: <strong>todo determinante precisa ser uma chave candidata.</strong></p>
+
+    <div class="table-block">
+      <div class="table-name">🎓 Monitorias — cada curso tem só um monitor, cada monitor cuida de um só curso</div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>aluno</th><th>curso</th><th>monitor</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">Ana</td><td class="cell-key">Banco de Dados</td><td class="cell-dup">Rafael</td></tr>
+            <tr><td class="cell-key">Bruno</td><td class="cell-key">Banco de Dados</td><td class="cell-dup">Rafael</td></tr>
+            <tr><td class="cell-key">Ana</td><td class="cell-key">Estatística</td><td>Camila</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-caption">Chaves candidatas: <code>(aluno, curso)</code> ou <code>(aluno, monitor)</code>. Mas <code>curso → monitor</code> e <code>curso</code> sozinho não é chave candidata — é isso que a BCNF proíbe, mesmo essa tabela já estando em 3FN.</div>
+    </div>
+
+    <div class="wizard-multi">
+      <div class="table-block">
+        <div class="table-name">🎓 Curso_Monitor <span class="chip" style="margin-left:6px;">nova tabela</span></div>
+        <table class="data-table">
+          <thead><tr><th>curso</th><th>monitor</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">Banco de Dados</td><td class="cell-new">Rafael</td></tr>
+            <tr><td class="cell-key">Estatística</td><td class="cell-new">Camila</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-block">
+        <div class="table-name">🎓 Matrícula <span class="chip" style="margin-left:6px;">enxugada</span></div>
+        <table class="data-table">
+          <thead><tr><th>aluno</th><th>curso (FK)</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">Ana</td><td>Banco de Dados</td></tr>
+            <tr><td class="cell-key">Bruno</td><td>Banco de Dados</td></tr>
+            <tr><td class="cell-key">Ana</td><td>Estatística</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Diferença na prática entre 3FN e BCNF: a 3FN só se importa com colunas <strong>não-primas</strong> (que não fazem parte de nenhuma chave). A BCNF é mais rígida porque também olha para colunas que <em>fazem</em> parte de alguma chave candidata, como <code>monitor</code> aqui — por isso quase todo banco em BCNF também está em 3FN, mas o contrário nem sempre é verdade.</p></div>
+  </section>
+
+  <!-- ============ 4FN ============ -->
+  <section class="section" id="s-4fn">
+    <div class="section-eyebrow">Regra 5 de 6 — Duas Listas Que Não Se Misturam</div>
+    <div class="section-title">🎈 Quarta Forma Normal (4FN): listas independentes multiplicam demais</div>
+    <p class="section-desc">Imagine um professor que dá aula de <strong>vários assuntos</strong> e fala <strong>vários idiomas</strong> — mas os assuntos e os idiomas não têm nenhuma relação entre si. Se você tentar guardar os dois numa tabela só, é obrigado a criar uma linha para <strong>cada combinação</strong>, mesmo que ela não signifique nada.</p>
+
+    <div class="table-block">
+      <div class="table-name">👨‍🏫 Professor_Assunto_Idioma — combinações inventadas que não existem de verdade</div>
+      <div class="table-scroll">
+        <table class="data-table">
+          <thead><tr><th>professor</th><th>disciplina</th><th>idioma</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">Rafael</td><td>Banco de Dados</td><td>Português</td></tr>
+            <tr><td class="cell-key">Rafael</td><td class="cell-dup">Banco de Dados</td><td class="cell-dup">Inglês</td></tr>
+            <tr><td class="cell-key">Rafael</td><td class="cell-dup">Estatística</td><td class="cell-dup">Português</td></tr>
+            <tr><td class="cell-key">Rafael</td><td>Estatística</td><td>Inglês</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-caption">Rafael dá 2 disciplinas e fala 2 idiomas — mas isso vira <strong>4 linhas</strong> (2×2) sem nenhuma delas trazer informação nova sobre "disciplina + idioma juntos".</div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">A explosão de combinações (produto cartesiano)</div>
+      <div class="cart-grid" style="grid-template-columns:repeat(3,1fr);max-width:420px;">
+        <div class="cart-cell head"></div>
+        <div class="cart-cell head">Português</div>
+        <div class="cart-cell head">Inglês</div>
+        <div class="cart-cell head">Banco de Dados</div>
+        <div class="cart-cell combo">linha 1</div>
+        <div class="cart-cell combo">linha 2</div>
+        <div class="cart-cell head">Estatística</div>
+        <div class="cart-cell combo">linha 3</div>
+        <div class="cart-cell combo">linha 4</div>
+      </div>
+      <div class="section-desc" style="font-size:12px;margin-top:12px;">💡 Se o Rafael passar a dar <strong>3</strong> disciplinas e falar <strong>3</strong> idiomas, a tabela pularia para <strong>9 linhas</strong> — crescimento multiplicativo, não somado. Esse é o sintoma clássico de uma <strong>dependência multivalorada</strong>.</div>
+    </div>
+
+    <div class="wizard-multi">
+      <div class="table-block">
+        <div class="table-name">👨‍🏫 Professor_Disciplina</div>
+        <table class="data-table">
+          <thead><tr><th>professor</th><th>disciplina</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">Rafael</td><td class="cell-new">Banco de Dados</td></tr>
+            <tr><td class="cell-key">Rafael</td><td class="cell-new">Estatística</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-block">
+        <div class="table-name">👨‍🏫 Professor_Idioma</div>
+        <table class="data-table">
+          <thead><tr><th>professor</th><th>idioma</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-key">Rafael</td><td class="cell-new">Português</td></tr>
+            <tr><td class="cell-key">Rafael</td><td class="cell-new">Inglês</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="ok-box"><p>✅ Separadas, viram <strong>2 + 2 = 4 linhas</strong> em vez de 2×2 = 4 numa tabela só que <em>parecia</em> igual, mas escondia uma combinação artificial. Com 3 disciplinas e 3 idiomas, o total sobe para <strong>3 + 3 = 6</strong> linhas — soma, não multiplicação.</p></div>
+  </section>
+
+  <!-- ============ 5FN ============ -->
+  <section class="section" id="s-5fn">
+    <div class="section-eyebrow">Regra 6 de 6 — A Mais Rara do Dia a Dia</div>
+    <div class="section-title">🧩 Quinta Forma Normal (5FN): só existe se juntando as 3 pontas</div>
+    <p class="section-desc">A 5FN cuida de um caso raro e sutil: quando uma tabela de 3 (ou mais) colunas só pode ser <strong>reconstruída corretamente</strong> juntando três tabelas menores e duas a duas — juntar apenas duas delas gera combinações erradas, "fantasmas" que não existem na realidade.</p>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🏭 Fornecedor</div><div class="card-text">Vende <strong>Produto</strong> X<br>Atua no <strong>Projeto</strong> Y</div></div>
+      <div class="card"><div class="card-title">📦 Produto</div><div class="card-text">É usado no <strong>Projeto</strong> Y<br>É vendido pelo <strong>Fornecedor</strong> X</div></div>
+      <div class="card"><div class="card-title">🏗️ Projeto</div><div class="card-text">Usa o <strong>Produto</strong> X<br>Recebe do <strong>Fornecedor</strong> Y</div></div>
+    </div>
+    <div class="info-box"><p>💡 Na prática, times de dados raramente desenham pensando na 5FN de propósito — ela costuma "acontecer sozinha" quando você já aplicou 1FN, 2FN, 3FN e BCNF com cuidado. Vale conhecer o nome para reconhecer o padrão quando aparecer, mas não é um passo manual do dia a dia como os anteriores.</p></div>
+  </section>
+
+  <!-- ============ DIAGRAMA ANINHADO ============ -->
+  <section class="section" id="s-hierarquia">
+    <div class="section-eyebrow">O Panorama Completo</div>
+    <div class="section-title">🪆 Uma forma normal mora dentro da outra</div>
+    <p class="section-desc">As formas normais são <strong>cumulativas</strong>: para estar na 3FN, uma tabela precisa primeiro respeitar a 2FN e a 1FN. É como bonecas russas — cada regra nova mora dentro da anterior, mais apertada. Clique em cada camada.</p>
+    <div class="interactive-panel">
+      <div class="nf-nest" id="nfNest"></div>
+      <div class="anatomy-detail" id="nfNestDetail">
+        <div class="ad-title">👆 Clique em uma camada da boneca russa</div>
+        <div class="ad-text">De fora para dentro, cada forma normal exige tudo da anterior, mais uma regra nova.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUANDO NÃO NORMALIZAR ============ -->
+  <section class="section" id="s-denormalizar">
+    <div class="section-eyebrow">Trade-offs</div>
+    <div class="section-title">⚖️ Quando vale a pena "desarrumar" de propósito</div>
+    <p class="section-desc">Normalizar demais tem um custo: cada caixinha nova é uma tabela a mais para juntar (<code>JOIN</code>) na hora de consultar. Sistemas que <strong>lêem muito e escrevem pouco</strong> — como painéis de BI — às vezes preferem tabelas mais largas e um pouco redundantes, de propósito, para responder perguntas mais rápido.</p>
+    <div class="grid-2">
+      <div class="ok-box"><div class="highlight-title">✅ Normalize forte quando</div><p>O sistema grava e atualiza dados o tempo todo (OLTP: carrinho de compra, cadastro, financeiro) — aqui, evitar inconsistência vale mais do que economizar um JOIN.</p></div>
+      <div class="warn-box"><p><strong style="color:var(--accent-red);text-transform:uppercase;font-size:12px;letter-spacing:.5px;">⚠️ Considere desnormalizar quando</strong><br>O sistema é majoritariamente de <strong>leitura</strong> e análise (OLAP: data warehouse, dashboards) — modelos como <em>star schema</em> ou <em>Data Vault</em> aceitam alguma redundância controlada em troca de consultas mais simples e rápidas para quem consome os dados.</p></div>
+    </div>
+    <div class="highlight-box"><div class="highlight-title">A régua certa</div><p>Normalização não é uma medalha a ser maximizada — é uma ferramenta. A pergunta certa nunca é "até que forma normal eu cheguei", e sim <strong>"esse nível de redundância está me protegendo de inconsistência, ou só me atrapalhando na consulta"?</strong></p></div>
+  </section>
+
+  <!-- ============ TABELA RESUMO ============ -->
+  <section class="section" id="s-resumo">
+    <div class="section-eyebrow">Tudo Junto</div>
+    <div class="section-title">📋 Tabela-resumo: qual regra resolve qual problema</div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Forma</th><th>Exige</th><th>Problema que resolve</th><th>Sintoma no mundo real</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--accent-red);">1FN</strong></td><td>Valores atômicos, sem listas na célula</td><td>Grupos repetitivos</td><td>Célula com "Calabresa, Mussarela"</td></tr>
+          <tr><td><strong style="color:var(--accent-yellow);">2FN</strong></td><td>1FN + sem dependência parcial</td><td>Coluna depende de só um pedaço da chave composta</td><td><code>categoria</code> repetida a cada linha do mesmo produto</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">3FN</strong></td><td>2FN + sem dependência transitiva</td><td>Coluna depende de outra coluna não-chave</td><td>Nome do cliente repetido a cada pedido novo</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">BCNF</strong></td><td>3FN + todo determinante é chave candidata</td><td>Dependência escondida mesmo com chaves candidatas múltiplas</td><td><code>curso → monitor</code> quando curso não é chave sozinho</td></tr>
+          <tr><td><strong style="color:var(--accent);">4FN</strong></td><td>BCNF + sem dependências multivaloradas independentes</td><td>Duas listas sem relação, multiplicadas numa tabela só</td><td>Disciplinas × Idiomas crescendo combinado</td></tr>
+          <tr><td><strong style="color:var(--accent-green);">5FN</strong></td><td>4FN + sem dependências de junção</td><td>Tabela só reconstruível juntando 3+ tabelas menores</td><td>Fornecedor/Produto/Projeto (caso raro)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="interactive-panel" style="margin-top:4px;">
+      <div class="panel-label">📊 Redundância antes vs. depois de normalizar (linhas repetidas na nossa tabela de pedidos)</div>
+      <div class="barchart" id="barChart"></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Formas Normais</span>
+    <span>
+      Fontes: <a href="https://dl.acm.org/doi/10.1145/362384.362685" target="_blank" rel="noopener">Codd, 1970 — A Relational Model of Data</a> ·
+      Conceitos clássicos de modelagem relacional
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-porque', icon:'🧸', label:'Por que Normalizar'},
+  {id:'s-chaves', icon:'🔑', label:'Chaves'},
+  {id:'s-dependencia', icon:'➡️', label:'Dep. Funcional'},
+  {id:'s-1fn', icon:'1️⃣', label:'1FN'},
+  {id:'s-2fn', icon:'2️⃣', label:'2FN'},
+  {id:'s-3fn', icon:'3️⃣', label:'3FN'},
+  {id:'s-wizard', icon:'🧙', label:'Passo a Passo'},
+  {id:'s-bcnf', icon:'🚧', label:'BCNF'},
+  {id:'s-4fn', icon:'🎈', label:'4FN'},
+  {id:'s-5fn', icon:'🧩', label:'5FN'},
+  {id:'s-hierarquia', icon:'🪆', label:'Panorama'},
+  {id:'s-denormalizar', icon:'⚖️', label:'Trade-offs'},
+  {id:'s-resumo', icon:'📋', label:'Resumo'},
+  {id:'s-quiz', icon:'🧠', label:'Quiz'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== ANOMALY TABLE (base, não normalizada) ===================== */
+function renderAnomalyTable(){
+  document.getElementById('anomalyTable').innerHTML = `
+    <thead><tr><th>pedido_id</th><th>cliente_nome</th><th>telefone</th><th>cidade</th><th>pizza</th></tr></thead>
+    <tbody>
+      <tr><td>1001</td><td class="cell-dup">Ana Ribeiro</td><td class="cell-dup">11 90000-0000</td><td class="cell-dup">São Paulo</td><td>Calabresa</td></tr>
+      <tr><td>1002</td><td class="cell-dup">Ana Ribeiro</td><td class="cell-dup">11 90000-0000</td><td class="cell-dup">São Paulo</td><td>Mussarela</td></tr>
+      <tr><td>1003</td><td class="cell-dup">Ana Ribeiro</td><td class="cell-dup">11 90000-0000</td><td class="cell-dup">São Paulo</td><td>Quatro Queijos</td></tr>
+      <tr><td>1004</td><td>Bruno Alves</td><td>41 98888-1234</td><td>Curitiba</td><td>Calabresa</td></tr>
+    </tbody>`;
+}
+renderAnomalyTable();
+
+/* ===================== ANOMALY UPDATE DEMO ===================== */
+function renderAnomalyUpdate(){
+  const novo = document.getElementById('anomalyPhoneInput').value || '11 90000-0000';
+  const rows = [
+    {ped:1001, tel: novo, missed:false},
+    {ped:1002, tel:'11 90000-0000', missed:true},
+    {ped:1003, tel:'11 90000-0000', missed:true},
+    {ped:1004, tel:'41 98888-1234', missed:false, other:true},
+  ];
+  document.getElementById('anomalyUpdateTable').innerHTML = `
+    <thead><tr><th>pedido_id</th><th>cliente_nome</th><th>telefone</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td>${r.ped}</td><td>${r.other?'Bruno Alves':'Ana Ribeiro'}</td><td class="${r.missed?'cell-dup':''}">${r.tel}</td></tr>`).join('')}</tbody>`;
+  const missedCount = rows.filter(r => r.missed).length;
+  document.getElementById('anomalyMissed').textContent = missedCount;
+  document.getElementById('anomalyRisk').textContent = missedCount > 0 ? '⚠️ Dado contraditório' : '✅ Tudo igual';
+}
+renderAnomalyUpdate();
+
+/* ===================== KEYS ANATOMY ===================== */
+const keysInfo = {
+  candidata: {t:'🗝️ Chave Candidata', d:'Qualquer coluna (ou grupo de colunas) que, sozinha, já identifica uma linha sem ambiguidade. Um cliente pode ter várias chaves candidatas ao mesmo tempo — CPF, e-mail, cliente_id — todas igualmente capazes de identificá-lo.'},
+  primaria: {t:'👑 Chave Primária', d:'Entre todas as chaves candidatas, a que o time escolhe oficialmente para representar a linha no banco. Normalmente escolhida por ser estável, curta e nunca mudar de valor (por isso cliente_id costuma ganhar de CPF ou e-mail).'},
+  composta: {t:'🧩 Chave Composta', d:'Quando nenhuma coluna sozinha identifica a linha, mas a combinação de duas ou mais colunas sim. Aparece o tempo todo em tabelas de "associação", como Itens_Pedido, onde só (pedido_id + produto_id) juntos identificam uma linha.'},
+};
+function pickKey(id){
+  document.querySelectorAll('#keysWrap .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = keysInfo[id];
+  if(!info) return;
+  document.querySelector(`#keysWrap [data-id="${id}"]`).classList.add('active');
+  document.getElementById('keysDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== DEPENDÊNCIA FUNCIONAL DEMO ===================== */
+const fdPairs = [
+  {k:'cep', v:'cidade, estado', d:'Todo CEP pertence a uma única cidade e um único estado — não existe CEP que sirva para São Paulo e Curitiba ao mesmo tempo. Por isso <code>cep → cidade, estado</code>.'},
+  {k:'produto', v:'categoria, preço_base', d:'Sabendo qual produto é (ex: "Calabresa"), você já sabe sua categoria e preço de tabela — isso não muda de pedido para pedido.'},
+  {k:'(pedido_id, produto)', v:'preço_cobrado', d:'O preço realmente cobrado numa pizza pode variar por promoção — só faz sentido perguntando "qual produto, em qual pedido", por isso precisa da chave composta inteira.'},
+  {k:'cliente_id', v:'nome, cep', d:'Cada cliente tem um nome e um CEP fixos — não importa quantos pedidos ele faça, essa informação não muda de pedido para pedido.'},
+];
+function renderFdList(){
+  document.getElementById('fdList').innerHTML = fdPairs.map((p,i) => `
+    <div class="kv-pair" data-i="${i}" onclick="pickFd(${i})">
+      <span class="kv-key">${p.k}</span><span class="kv-arrow">➜</span><span class="kv-value">${p.v}</span>
+    </div>`).join('');
+}
+function pickFd(i){
+  document.querySelectorAll('#fdList .kv-pair').forEach(el => el.classList.remove('highlight'));
+  document.querySelector(`#fdList [data-i="${i}"]`).classList.add('highlight');
+  const p = fdPairs[i];
+  document.getElementById('fdDetail').innerHTML = `<div class="ad-title">${p.k} ➜ ${p.v}</div><div class="ad-text">${p.d}</div>`;
+}
+renderFdList();
+
+/* ===================== 1FN TOGGLE ===================== */
+function set1fnView(atomic){
+  document.getElementById('btn1fnNo').classList.toggle('active', !atomic);
+  document.getElementById('btn1fnYes').classList.toggle('active', atomic);
+  if(!atomic){
+    document.getElementById('fn1Table').innerHTML = `
+      <thead><tr><th>pedido_id</th><th>cliente</th><th>pizzas (célula com vários valores)</th></tr></thead>
+      <tbody>
+        <tr><td>1001</td><td>Ana Ribeiro</td><td class="cell-dup">Calabresa, Mussarela</td></tr>
+        <tr><td>1002</td><td>Bruno Alves</td><td class="cell-dup">Quatro Queijos</td></tr>
+        <tr><td>1003</td><td>Ana Ribeiro</td><td class="cell-dup">Calabresa, Portuguesa, Frango</td></tr>
+      </tbody>`;
+    document.getElementById('fn1Multi').textContent = '3 valores numa célula só';
+    document.getElementById('fn1Search').textContent = '❌ Precisa "quebrar texto"';
+  } else {
+    document.getElementById('fn1Table').innerHTML = `
+      <thead><tr><th>pedido_id</th><th>cliente</th><th>produto (1 por linha)</th></tr></thead>
+      <tbody>
+        <tr><td class="cell-key">1001</td><td>Ana Ribeiro</td><td class="cell-new">Calabresa</td></tr>
+        <tr><td class="cell-key">1001</td><td>Ana Ribeiro</td><td class="cell-new">Mussarela</td></tr>
+        <tr><td class="cell-key">1002</td><td>Bruno Alves</td><td class="cell-new">Quatro Queijos</td></tr>
+        <tr><td class="cell-key">1003</td><td>Ana Ribeiro</td><td class="cell-new">Calabresa</td></tr>
+        <tr><td class="cell-key">1003</td><td>Ana Ribeiro</td><td class="cell-new">Portuguesa</td></tr>
+        <tr><td class="cell-key">1003</td><td>Ana Ribeiro</td><td class="cell-new">Frango</td></tr>
+      </tbody>`;
+    document.getElementById('fn1Multi').textContent = '1 valor por célula';
+    document.getElementById('fn1Search').textContent = '✅ Um simples WHERE';
+  }
+}
+set1fnView(false);
+
+/* ===================== WIZARD PASSO A PASSO ===================== */
+const wizardExplainText = [
+  {t:'Passo 0 — a bagunça original', d:'Uma linha por pedido. A coluna <code>itens</code> guarda vários produtos amontoados (viola 1FN), e os dados do cliente se repetem a cada pedido novo (viola 3FN).'},
+  {t:'Passo 1 — 1FN aplicada', d:'Cada item do pedido agora é uma linha própria. A chave passou a ser <code>(pedido_id, produto)</code> — mas repare que <code>categoria</code> e os dados do cliente ainda se repetem demais.'},
+  {t:'Passo 2 — 2FN aplicada', d:'<code>categoria</code> dependia só de <code>produto</code> (metade da chave) — foi para sua própria tabela. Os dados do cliente ainda estão "grudados" em Pedidos, mas isso é problema da 3FN.'},
+  {t:'Passo 3 — 3FN aplicada', d:'<code>nome, cep, cidade</code> dependiam de <code>cliente_id</code>, não diretamente de <code>pedido_id</code> — viraram a tabela Clientes. Resultado final: 4 caixinhas limpas, sem nenhuma redundância.'},
+];
+function tableHtml(name, chip, headers, rows){
+  return `<div class="table-block">
+    <div class="table-name">${name}${chip?`<span class="chip" style="margin-left:6px;">${chip}</span>`:''}</div>
+    <div class="table-scroll"><table class="data-table">
+      <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${r.map(c=>`<td class="${c.cls||''}">${c.v}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></div>
+  </div>`;
+}
+function td(v, cls){ return {v, cls}; }
+function renderWizard(step){
+  const el = document.getElementById('wizardTables');
+  if(step === 0){
+    el.innerHTML = tableHtml('🧾 Pedidos_Bruto', null,
+      ['pedido_id','cliente_id','cliente_nome','cep','cidade','itens'],
+      [
+        [td(1001),td('C-01'),td('Ana Ribeiro','cell-dup'),td('01310-100','cell-dup'),td('São Paulo','cell-dup'),td('Calabresa (R$42), Mussarela (R$38)','cell-dup')],
+        [td(1002),td('C-01'),td('Ana Ribeiro','cell-dup'),td('01310-100','cell-dup'),td('São Paulo','cell-dup'),td('Quatro Queijos (R$52)')],
+        [td(1003),td('C-02'),td('Bruno Alves'),td('80010-000'),td('Curitiba'),td('Calabresa (R$42)')],
+      ]);
+  } else if(step === 1){
+    el.innerHTML = tableHtml('🧾 Pedidos_Item (1FN: itens quebrados em linhas)', '1FN',
+      ['pedido_id','cliente_id','cliente_nome','cep','cidade','produto','categoria','preço'],
+      [
+        [td(1001,'cell-key'),td('C-01'),td('Ana Ribeiro','cell-dup'),td('01310-100','cell-dup'),td('São Paulo','cell-dup'),td('Calabresa','cell-key'),td('Tradicional','cell-dup'),td('R$ 42,00')],
+        [td(1001,'cell-key'),td('C-01'),td('Ana Ribeiro','cell-dup'),td('01310-100','cell-dup'),td('São Paulo','cell-dup'),td('Mussarela','cell-key'),td('Tradicional','cell-dup'),td('R$ 38,00')],
+        [td(1002,'cell-key'),td('C-01'),td('Ana Ribeiro','cell-dup'),td('01310-100','cell-dup'),td('São Paulo','cell-dup'),td('Quatro Queijos','cell-key'),td('Especial'),td('R$ 52,00')],
+        [td(1003,'cell-key'),td('C-02'),td('Bruno Alves'),td('80010-000'),td('Curitiba'),td('Calabresa','cell-key'),td('Tradicional','cell-dup'),td('R$ 42,00')],
+      ]);
+  } else if(step === 2){
+    el.innerHTML =
+      tableHtml('🍕 Produtos', 'nova', ['produto','categoria'],
+        [[td('Calabresa','cell-key'),td('Tradicional','cell-new')],
+         [td('Mussarela','cell-key'),td('Tradicional','cell-new')],
+         [td('Quatro Queijos','cell-key'),td('Especial','cell-new')]]) +
+      tableHtml('🧾 Pedidos_Item', '2FN', ['pedido_id','cliente_id','cliente_nome','cep','cidade','produto (FK)','preço'],
+        [[td(1001,'cell-key'),td('C-01'),td('Ana Ribeiro','cell-dup'),td('01310-100','cell-dup'),td('São Paulo','cell-dup'),td('Calabresa','cell-key'),td('R$ 42,00')],
+         [td(1001,'cell-key'),td('C-01'),td('Ana Ribeiro','cell-dup'),td('01310-100','cell-dup'),td('São Paulo','cell-dup'),td('Mussarela','cell-key'),td('R$ 38,00')],
+         [td(1002,'cell-key'),td('C-01'),td('Ana Ribeiro','cell-dup'),td('01310-100','cell-dup'),td('São Paulo','cell-dup'),td('Quatro Queijos','cell-key'),td('R$ 52,00')],
+         [td(1003,'cell-key'),td('C-02'),td('Bruno Alves'),td('80010-000'),td('Curitiba'),td('Calabresa','cell-key'),td('R$ 42,00')]]);
+  } else {
+    el.innerHTML =
+      tableHtml('🙋 Clientes', 'nova', ['cliente_id','nome','cep','cidade'],
+        [[td('C-01','cell-key'),td('Ana Ribeiro','cell-new'),td('01310-100','cell-new'),td('São Paulo','cell-new')],
+         [td('C-02','cell-key'),td('Bruno Alves','cell-new'),td('80010-000','cell-new'),td('Curitiba','cell-new')]]) +
+      tableHtml('🍕 Produtos', null, ['produto','categoria'],
+        [[td('Calabresa','cell-key'),td('Tradicional')],
+         [td('Mussarela','cell-key'),td('Tradicional')],
+         [td('Quatro Queijos','cell-key'),td('Especial')]]) +
+      tableHtml('🧾 Pedidos', '3FN', ['pedido_id','cliente_id (FK)'],
+        [[td(1001,'cell-key'),td('C-01')],[td(1002,'cell-key'),td('C-01')],[td(1003,'cell-key'),td('C-02')]]) +
+      tableHtml('🧾 Pedido_Itens', '3FN', ['pedido_id (FK)','produto (FK)','preço'],
+        [[td(1001,'cell-key'),td('Calabresa','cell-key'),td('R$ 42,00')],
+         [td(1001,'cell-key'),td('Mussarela','cell-key'),td('R$ 38,00')],
+         [td(1002,'cell-key'),td('Quatro Queijos','cell-key'),td('R$ 52,00')],
+         [td(1003,'cell-key'),td('Calabresa','cell-key'),td('R$ 42,00')]]);
+  }
+}
+function setWizardStep(step){
+  [0,1,2,3].forEach(i => document.getElementById('wizBtn'+i).classList.toggle('primary', i===step));
+  document.getElementById('wizardExplain').innerHTML = `<div class="ad-title">${wizardExplainText[step].t}</div><div class="ad-text">${wizardExplainText[step].d}</div>`;
+  renderWizard(step);
+}
+setWizardStep(0);
+
+/* ===================== NESTED FORMS DIAGRAM ===================== */
+const nfLayers = [
+  {id:'nf5', cls:'nf-5', label:'5ª Forma Normal', sub:'sem dependências de junção', t:'🧩 5FN', d:'A camada mais interna: nenhuma tabela pode ser reconstruída de forma equivocada juntando pedaços menores. Rara no dia a dia — costuma "vir de graça" quando as regras anteriores já foram bem aplicadas.'},
+  {id:'nf4', cls:'nf-4', label:'4ª Forma Normal', sub:'sem dependências multivaloradas independentes', t:'🎈 4FN', d:'Proíbe misturar duas "listas" sem relação (como disciplinas e idiomas de um professor) na mesma tabela, o que criaria combinações artificiais.'},
+  {id:'nfbcnf', cls:'nf-bcnf', label:'Boyce-Codd (BCNF)', sub:'todo determinante é chave candidata', t:'🚧 BCNF', d:'Versão mais rígida da 3FN: cobre também os casos onde uma coluna que faz parte de alguma chave candidata ainda assim determina outra.'},
+  {id:'nf3', cls:'nf-3', label:'3ª Forma Normal', sub:'sem dependência transitiva', t:'3️⃣ 3FN', d:'Nenhuma coluna não-chave pode depender de outra coluna não-chave. Cliente_nome não pode "morar" na tabela de Pedidos.'},
+  {id:'nf2', cls:'nf-2', label:'2ª Forma Normal', sub:'sem dependência parcial', t:'2️⃣ 2FN', d:'Com chave composta, toda coluna precisa depender da chave inteira, nunca de só um pedaço dela.'},
+  {id:'nf1', cls:'nf-1', label:'1ª Forma Normal', sub:'valores atômicos', t:'1️⃣ 1FN', d:'A camada mais externa e a base de tudo: cada célula guarda um único valor, sem listas escondidas.'},
+];
+function renderNfNest(){
+  document.getElementById('nfNest').innerHTML = nfLayers.map(l => `
+    <div class="nf-box ${l.cls}" data-id="${l.id}" onclick="pickNfLayer('${l.id}')">
+      <div class="nf-box-title">${l.label}</div>
+      <div class="nf-box-sub">${l.sub}</div>
+    </div>`).join('');
+}
+function pickNfLayer(id){
+  document.querySelectorAll('.nf-box').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+  const l = nfLayers.find(x => x.id === id);
+  document.getElementById('nfNestDetail').innerHTML = `<div class="ad-title">${l.t} — ${l.label}</div><div class="ad-text">${l.d}</div>`;
+}
+renderNfNest();
+
+/* ===================== BAR CHART (redundância) ===================== */
+function renderBarChart(){
+  const data = [
+    {label:'Sem normalizar (dados repetidos)', val:11, color:'var(--accent-red)'},
+    {label:'Normalizado (1FN→3FN)', val:0, color:'var(--accent-green)'},
+  ];
+  const max = 12;
+  document.getElementById('barChart').innerHTML = data.map(d => `
+    <div class="barchart-col">
+      <div class="barchart-bar" style="height:${Math.max(6, d.val/max*150)}px;background:${d.color};">
+        <span class="bb-val">${d.val}</span>
+      </div>
+      <div class="barchart-label">${d.label}</div>
+    </div>`).join('');
+}
+renderBarChart();
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'A 1ª Forma Normal exige que cada célula da tabela tenha um único valor atômico.', a:true, e:'Verdadeiro. Uma célula com "Calabresa, Mussarela" ou colunas repetidas como pizza_1/pizza_2 violam a 1FN.'},
+  {q:'A 2ª Forma Normal só é relevante quando a chave primária é composta (mais de uma coluna).', a:true, e:'Verdadeiro. Se a chave já é uma coluna só, não existe "pedaço da chave" para depender parcialmente — a tabela já está automaticamente em 2FN.'},
+  {q:'Dependência transitiva é quando uma coluna não-chave depende de outra coluna não-chave.', a:true, e:'Verdadeiro. Ex: cliente_id → cep → cidade. A 3ª Forma Normal existe justamente para eliminar esse tipo de "atalho" escondido.'},
+  {q:'Toda tabela que está na 3ª Forma Normal automaticamente está na BCNF.', a:false, e:'Falso. É o contrário: toda tabela em BCNF está em 3FN, mas o exemplo do Curso/Monitor mostra uma tabela em 3FN que ainda viola a BCNF.'},
+  {q:'A 4ª Forma Normal resolve o problema de duas listas independentes crescendo de forma multiplicada na mesma tabela.', a:true, e:'Verdadeiro. É o caso do professor com várias disciplinas e vários idiomas — juntar as duas listas cria combinações artificiais (produto cartesiano).'},
+  {q:'Uma chave candidata só pode existir uma por tabela.', a:false, e:'Falso. Uma tabela pode ter várias chaves candidatas ao mesmo tempo (ex: CPF e e-mail do cliente); apenas uma delas é escolhida como chave primária.'},
+  {q:'Desnormalizar uma tabela de propósito é sempre um erro de modelagem.', a:false, e:'Falso. Em sistemas majoritariamente de leitura (como data warehouses e dashboards), aceitar redundância controlada — como em star schemas — pode ser a escolha certa para simplificar e acelerar consultas.'},
+  {q:'Um atributo "primo" (prime) é qualquer coluna que faz parte de pelo menos uma chave candidata.', a:true, e:'Verdadeiro. Essa distinção entre atributos primos e não-primos é o que diferencia as regras exatas da 3FN e da BCNF.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

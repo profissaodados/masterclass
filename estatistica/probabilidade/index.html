@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Probabilidade explicada do zero, com dados, moedas, roletas, urnas, diagramas de Venn, árvores de probabilidade, Teorema de Bayes e muitas demos visuais interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Probabilidade do Jeito Fácil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-scoop-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);padding:16px;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.hero-scoop{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;text-align:center;font-size:22px;padding:10px 0;display:flex;align-items:center;justify-content:center;}
+.hero-eq{grid-column:1/-1;text-align:center;font-family:'Roboto Mono',monospace;font-size:13px;color:var(--accent);font-weight:700;padding-top:6px;border-top:1px dashed var(--border-color);margin-top:2px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn:disabled{opacity:.35;cursor:not-allowed;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+
+/* ---- CHIPS / INDEXED ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.indexed-list{display:flex;gap:8px;flex-wrap:wrap;}
+.idx-box{min-width:44px;padding:8px 12px;border-radius:6px;background:var(--bg-elevated);border:1.5px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--text-primary);font-family:'Roboto Mono',monospace;cursor:pointer;transition:.15s;}
+.idx-box.on{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- DECISION FLOW (reused for classification) ---- */
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.arranjo{border-color:var(--accent-blue);}
+.decision-branch.combinacao{border-color:var(--accent-green);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- PROB METER (scale 0 to 1) ---- */
+.meter-wrap{padding:10px 4px 4px;}
+.meter-track{position:relative;height:14px;border-radius:8px;background:linear-gradient(90deg,var(--accent-red),var(--accent-yellow) 50%,var(--accent-green));margin:30px 0 10px;}
+.meter-thumb{position:absolute;top:50%;width:26px;height:26px;border-radius:50%;background:var(--bg-panel);border:3px solid var(--text-primary);transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;font-size:14px;transition:left .15s;box-shadow:0 2px 10px rgba(0,0,0,.4);}
+.meter-labels{display:flex;justify-content:space-between;font-size:10.5px;color:var(--text-disabled);}
+.meter-face{text-align:center;font-size:40px;margin-bottom:6px;transition:.15s;}
+.meter-callouts{display:flex;justify-content:space-between;margin-top:26px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.meter-callouts span{flex:1;}
+
+/* ---- DICE (CSS pip-drawn, no font-glyph dependency) ---- */
+.dice-display{text-align:center;line-height:1;transition:transform .2s;}
+.pipdice{background:#eef1f5;border-radius:10px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;padding:8px;box-shadow:0 3px 10px rgba(0,0,0,.35);width:56px;height:56px;}
+.pipdice.sm{width:30px;height:30px;padding:4px;gap:2px;border-radius:6px;}
+.pipdice.big{width:96px;height:96px;padding:14px;gap:5px;border-radius:16px;}
+.pipdice .pip{border-radius:50%;background:transparent;}
+.pipdice .pip.on{background:#1d1e24;}
+.dice-placeholder{width:96px;height:96px;border-radius:16px;background:var(--bg-elevated);border:2px dashed var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:34px;color:var(--text-disabled);margin:0 auto;}
+.dice-history{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:14px;}
+.dice-history-item{font-size:22px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:4px 10px;}
+.dice-history-item.hit{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- COIN ---- */
+.coin-wrap{display:flex;justify-content:center;padding:16px 0 6px;perspective:700px;}
+.coin{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-weight:800;font-family:'Roboto Mono',monospace;background:radial-gradient(circle at 35% 30%,#ffe38a,#e8b339 60%,#a9791f);color:#3a2a05;border:3px solid #fff3c4;box-shadow:0 8px 22px rgba(232,179,57,.35);}
+.coin-face-emoji{font-size:30px;}
+.coin-face-label{font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+.coin.flipping{animation:coinFlip .7s ease-in-out;}
+@keyframes coinFlip{0%{transform:rotateY(0) scale(1);}45%{transform:rotateY(720deg) scale(1.18);}100%{transform:rotateY(1440deg) scale(1);}}
+.freq-history{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:12px;max-width:100%;}
+.freq-chip{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;}
+.freq-chip.h{background:rgba(232,179,57,.22);color:var(--accent-yellow);border:1px solid rgba(232,179,57,.4);}
+.freq-chip.t{background:rgba(54,162,239,.18);color:var(--accent-blue);border:1px solid rgba(54,162,239,.4);}
+
+/* ---- ROLETA ---- */
+.roleta-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0;}
+.roleta-pointer{font-size:26px;margin-bottom:-16px;z-index:2;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));}
+.roleta-disc-wrap{position:relative;width:230px;height:230px;}
+.roleta-disc{width:230px;height:230px;border-radius:50%;transition:transform 3.2s cubic-bezier(.13,.72,.14,1.01);border:4px solid var(--bg-elevated);display:block;}
+.roleta-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:var(--bg-panel);border:2px solid var(--border-strong);}
+
+/* ---- VENN ---- */
+.venn-wrap{display:flex;justify-content:center;padding:6px 0;}
+.venn-count{font-family:'Roboto Mono',monospace;font-weight:800;font-size:15px;}
+
+/* ---- URNA ---- */
+.urn-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;}
+.urn-box{width:100%;max-width:280px;min-height:90px;background:var(--bg-elevated);border:2px dashed var(--border-strong);border-radius:0 0 18px 18px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:6px;padding:14px 10px;font-size:26px;}
+.urn-drawn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;min-height:38px;}
+.urn-drawn-chip{font-size:15px;background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:6px;padding:6px 12px;font-family:'Roboto Mono',monospace;}
+
+/* ---- PROBABILITY TREE (nested) ---- */
+.ptree{display:flex;flex-direction:column;gap:10px;}
+.ptree-s1{border:1.5px solid var(--border-color);border-radius:8px;padding:12px 16px;background:var(--bg-elevated);}
+.ptree-s1-head{font-weight:700;font-size:13px;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;}
+.ptree-s1-head .p{color:var(--accent);font-family:'Roboto Mono',monospace;}
+.ptree-s2{margin-left:18px;padding-left:16px;border-left:2px dashed var(--border-strong);display:flex;flex-direction:column;gap:6px;}
+.ptree-s2-row{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--text-secondary);background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:7px 12px;flex-wrap:wrap;}
+.ptree-joint{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;flex-shrink:0;}
+.ptree-total{text-align:center;margin-top:2px;font-size:11.5px;color:var(--text-disabled);}
+
+/* ---- BAYES GRID ---- */
+.bayes-wrap{display:flex;gap:24px;flex-wrap:wrap;align-items:center;justify-content:center;}
+.bayes-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;width:280px;flex-shrink:0;}
+.bayes-cell{aspect-ratio:1;border-radius:3px;}
+.bayes-legend{display:flex;flex-direction:column;gap:8px;font-size:12px;min-width:220px;}
+.bayes-legend-item{display:flex;align-items:center;gap:8px;}
+.bayes-swatch{width:14px;height:14px;border-radius:3px;flex-shrink:0;}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+  .bayes-wrap{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Probabilidade</h1><span>A matemática de medir a chance de algo acontecer</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">15</div><div class="hstat-label">Conceitos</div></div>
+      <div class="hstat"><div class="hstat-num">P(A)</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">12</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do dado até o Teorema de Bayes</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>A matemática de descobrir <em>quão provável</em> algo é</h2>
+      <p>Probabilidade é a parte da matemática que responde: <strong>"qual é a chance disso acontecer?"</strong> Ela está em todo lugar: na previsão do tempo, no resultado de um jogo de dados, na chance de um exame dar positivo, ou no sorteio da loteria. Nesta aula vamos construir cada ideia com exemplos bem visuais — dados, moedas, roletas, urnas com bolinhas — até chegar em ferramentas de verdade, como o Teorema de Bayes e as distribuições Binomial e Normal.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Chance e Acaso</span>
+        <span class="badge badge-green">De 0 a 1</span>
+        <span class="badge badge-blue">Eventos e Espaço Amostral</span>
+        <span class="badge badge-purple">Base da Estatística</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-scoop-grid">
+        <div class="hero-scoop"><div class="pipdice sm"><div class="pip on"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div></div></div>
+        <div class="hero-scoop"><div class="pipdice sm"><div class="pip on"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip on"></div></div></div>
+        <div class="hero-scoop"><div class="pipdice sm"><div class="pip on"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip on"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip on"></div></div></div>
+        <div class="hero-scoop"><div class="pipdice sm"><div class="pip on"></div><div class="pip"></div><div class="pip on"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip on"></div><div class="pip"></div><div class="pip on"></div></div></div>
+        <div class="hero-scoop"><div class="pipdice sm"><div class="pip on"></div><div class="pip"></div><div class="pip on"></div><div class="pip"></div><div class="pip on"></div><div class="pip"></div><div class="pip on"></div><div class="pip"></div><div class="pip on"></div></div></div>
+        <div class="hero-scoop"><div class="pipdice sm"><div class="pip on"></div><div class="pip"></div><div class="pip on"></div><div class="pip on"></div><div class="pip"></div><div class="pip on"></div><div class="pip on"></div><div class="pip"></div><div class="pip on"></div></div></div>
+        <div class="hero-eq">1 face favorável ÷ 6 faces possíveis = 1/6</div>
+      </div>
+      <div class="hero-visual-caption">É só isso que "probabilidade" quer dizer — role a página e jogue o dado você mesmo!</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🎲 O que é Probabilidade?</div>
+    <p class="section-desc">
+      Toda vez que alguém diz <strong>"70% de chance de chuva"</strong> ou <strong>"tenho quase certeza que vou ganhar"</strong>, está usando probabilidade sem perceber. Probabilidade é só um <strong>número entre 0 e 1</strong> (ou entre 0% e 100%) que mede o quão provável é um evento acontecer: <code style="color:var(--accent);">0</code> significa <em>impossível</em>, <code style="color:var(--accent);">1</code> significa <em>certeza absoluta</em>, e tudo no meio é uma chance parcial.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste o controle e sinta a escala de 0 (impossível) a 1 (certeza)</div>
+      <div class="meter-face" id="meterFace">🤔</div>
+      <div class="meter-wrap">
+        <input type="range" id="meterSlider" min="0" max="100" step="1" value="50" oninput="renderMeter()">
+        <div class="meter-track">
+          <div class="meter-thumb" id="meterThumb" style="left:50%;">😐</div>
+        </div>
+        <div class="meter-labels"><span>0.0 — impossível</span><span>0.5 — meio a meio</span><span>1.0 — certeza</span></div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Probabilidade escolhida</span><span class="rv" id="meterValue">0.50 (50%)</span></div>
+        <div><span class="rl">Exemplo parecido</span><span class="rv" id="meterExample" style="font-size:14px;">Cara ou coroa numa moeda</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Probabilidade nunca é negativa e nunca passa de 1 (ou 100%). Se somarmos a chance de <strong>todos</strong> os resultados possíveis de um experimento, o total é sempre exatamente <code>1</code> — algum resultado sempre acontece. Essa regra vai aparecer em quase toda seção desta aula.</p>
+    </div>
+  </section>
+
+  <!-- ============ ESPAÇO AMOSTRAL ============ -->
+  <section class="section" id="s-espaco">
+    <div class="section-eyebrow">O Conjunto de Tudo Que Pode Acontecer</div>
+    <div class="section-title">🗂️ Espaço Amostral e Eventos</div>
+    <p class="section-desc">
+      O <strong>espaço amostral</strong> (representado por <code style="color:var(--accent);">Ω</code>) é a lista de <strong>todos</strong> os resultados possíveis de um experimento. Um <strong>evento</strong> é só um pedacinho desse conjunto — um grupo de resultados que nos interessa, como "tirar um número par" no dado. Role o dado, escolha um evento clicando nas faces, e veja se o resultado sorteado "cai dentro" do evento escolhido.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique nas faces para montar um evento (ex.: números pares) e depois role o dado</div>
+      <div class="panel-label" style="margin-bottom:8px;">Ω = espaço amostral do dado</div>
+      <div class="indexed-list" id="eventFaces"></div>
+      <div class="dice-display" id="espacoDiceFace" style="margin-top:18px;"><div class="dice-placeholder">?</div></div>
+      <div style="display:flex;justify-content:center;margin-top:6px;">
+        <button class="player-btn primary" onclick="rollEspacoDice()">🎲 Rolar o dado</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Evento escolhido</span><span class="rv" id="eventSetLabel" style="font-size:15px;">{ }</span></div>
+        <div><span class="rl">P(evento)</span><span class="rv" id="eventProb">0/6</span></div>
+        <div><span class="rl">Resultado sorteado</span><span class="rv" id="espacoResult">—</span></div>
+      </div>
+      <div class="section-desc" id="espacoVerdict" style="text-align:center;font-size:12.5px;margin-top:4px;"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Cada resultado dentro do evento é chamado de <strong>caso favorável</strong>. O espaço amostral inteiro é o <strong>total de casos possíveis</strong>. Guarde esses dois nomes — eles são a base da fórmula da próxima seção.</p>
+    </div>
+  </section>
+
+  <!-- ============ PROBABILIDADE CLÁSSICA ============ -->
+  <section class="section" id="s-classica">
+    <div class="section-eyebrow">A Fórmula Mais Importante da Aula</div>
+    <div class="section-title">🎡 Probabilidade Clássica: casos favoráveis ÷ casos possíveis</div>
+    <p class="section-desc">
+      Quando todos os resultados têm a <strong>mesma chance</strong> de acontecer (como fatias iguais de uma roleta), a probabilidade de um evento é simplesmente:
+      <code style="color:var(--accent);">P(A) = número de casos favoráveis ÷ número de casos possíveis</code>.
+      Monte sua própria roleta mudando quantas fatias cada cor tem, gire, e veja a fórmula se ajustar sozinha.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Monte a roleta (fatias por cor) e gire</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🔴 Fatias vermelhas</span><span class="ctrl-v" id="roletaRedVal">3</span></div>
+          <input type="range" id="roletaRed" min="1" max="6" step="1" value="3" oninput="renderRoleta()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🔵 Fatias azuis</span><span class="ctrl-v" id="roletaBlueVal">2</span></div>
+          <input type="range" id="roletaBlue" min="1" max="6" step="1" value="2" oninput="renderRoleta()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 Fatias verdes</span><span class="ctrl-v" id="roletaGreenVal">1</span></div>
+          <input type="range" id="roletaGreen" min="0" max="6" step="1" value="1" oninput="renderRoleta()">
+        </div>
+      </div>
+      <div class="roleta-wrap">
+        <div class="roleta-pointer">🔻</div>
+        <div class="roleta-disc-wrap">
+          <canvas id="roletaCanvas" class="roleta-disc" width="230" height="230"></canvas>
+          <div class="roleta-center">🎯</div>
+        </div>
+        <button class="player-btn primary" onclick="spinRoleta()">🌀 Girar a roleta</button>
+        <div class="section-desc" id="roletaResult" style="text-align:center;font-size:13px;"></div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card c-red"><div class="stat-card-label">P(vermelho)</div><div class="stat-card-value" id="roletaPRed">3/6</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">P(azul)</div><div class="stat-card-value" id="roletaPBlue">2/6</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">P(verde)</div><div class="stat-card-value" id="roletaPGreen">1/6</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Se você somar P(vermelho) + P(azul) + P(verde), o resultado é sempre <strong>1</strong> — porque a roleta inteira representa "todos os casos possíveis", e algum resultado sempre vai acontecer quando você gira.</p>
+    </div>
+  </section>
+
+  <!-- ============ FREQUÊNCIA RELATIVA / LGN ============ -->
+  <section class="section" id="s-frequencia">
+    <div class="section-eyebrow">Quando a Prática Confirma a Teoria</div>
+    <div class="section-title">🪙 Frequência Relativa e a Lei dos Grandes Números</div>
+    <p class="section-desc">
+      Uma moeda "justa" tem <code style="color:var(--accent);">P(cara) = 0,5</code>. Mas se você jogar a moeda só <strong>4 vezes</strong>, é bem possível sair 3 caras e 1 coroa — não deu exatamente 50%! A <strong>Lei dos Grandes Números</strong> diz que, conforme você repete o experimento <strong>muitas e muitas vezes</strong>, a <strong>frequência relativa</strong> (proporção observada) vai se aproximando cada vez mais da probabilidade teórica.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Jogue a moeda e observe a proporção de caras se estabilizar perto de 0,5</div>
+      <div class="coin-wrap">
+        <div class="coin" id="coinEl"><span class="coin-face-emoji" id="coinEmoji">🪙</span><span class="coin-face-label" id="coinLabel">?</span></div>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;">
+        <button class="player-btn primary" onclick="flipCoin(1)">🪙 Jogar 1 vez</button>
+        <button class="player-btn" onclick="flipCoin(10)">🪙 Jogar 10 vezes</button>
+        <button class="player-btn" onclick="flipCoin(100)">🪙 Jogar 100 vezes</button>
+        <button class="player-btn" onclick="resetCoin()">⏹ Reiniciar</button>
+      </div>
+      <div class="canvas-wrap" style="margin-top:16px;"><canvas id="coinCanvas" height="170"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">A linha tracejada é a probabilidade teórica (0,5). A linha ciana é a frequência relativa de caras observada até agora.</div>
+      <div class="result-display">
+        <div><span class="rl">Jogadas totais</span><span class="rv" id="coinTotal">0</span></div>
+        <div><span class="rl">Caras / Coroas</span><span class="rv" id="coinCounts">0 / 0</span></div>
+        <div><span class="rl">Frequência relativa de cara</span><span class="rv" id="coinFreq">—</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum: "a moeda está devendo"</div>
+      <p>Se saíram 5 caras seguidas, a próxima jogada <strong>continua</strong> tendo 50% de chance de ser coroa — a moeda não "lembra" do passado. A Lei dos Grandes Números fala sobre a média de <strong>muitas</strong> jogadas, não sobre compensar jogadas já feitas.</p>
+    </div>
+  </section>
+
+  <!-- ============ VENN: UNIÃO E INTERSEÇÃO ============ -->
+  <section class="section" id="s-venn">
+    <div class="section-eyebrow">Combinando Dois Eventos</div>
+    <div class="section-title">🍫 União e Interseção: quando dois eventos se encontram</div>
+    <p class="section-desc">
+      Imagine uma turma de 30 alunos. Alguns gostam de chocolate, alguns de morango, e alguns gostam <strong>dos dois</strong>. Para saber quantos gostam de <strong>pelo menos um</strong> dos sabores (a <strong>união</strong>, símbolo <code style="color:var(--accent);">∪</code>), não basta somar os dois grupos — isso contaria quem gosta dos dois <strong>duas vezes</strong>! A fórmula correta desconta essa sobreposição (a <strong>interseção</strong>, símbolo <code style="color:var(--accent);">∩</code>):
+      <code style="color:var(--accent);">P(A∪B) = P(A) + P(B) − P(A∩B)</code>
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste quantos alunos gostam de cada sabor (turma de 30 alunos)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🍫 Só gostam de chocolate</span><span class="ctrl-v" id="vennAOnlyVal">10</span></div>
+          <input type="range" id="vennAOnly" min="0" max="20" step="1" value="10" oninput="renderVenn()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🍓 Só gostam de morango</span><span class="ctrl-v" id="vennBOnlyVal">8</span></div>
+          <input type="range" id="vennBOnly" min="0" max="20" step="1" value="8" oninput="renderVenn()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🍫🍓 Gostam dos dois</span><span class="ctrl-v" id="vennBothVal">5</span></div>
+          <input type="range" id="vennBoth" min="0" max="20" step="1" value="5" oninput="renderVenn()">
+        </div>
+      </div>
+      <div class="venn-wrap"><svg id="vennSvg" width="360" height="220" viewBox="0 0 360 220"></svg></div>
+      <div class="stat-cards">
+        <div class="stat-card"><div class="stat-card-label">Não gosta de nenhum</div><div class="stat-card-value" id="vennNone">7</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">P(A ∪ B) — pelo menos um</div><div class="stat-card-value" id="vennUnion">23/30</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">P(A ∩ B) — os dois</div><div class="stat-card-value" id="vennInter">5/30</div></div>
+      </div>
+      <div class="card-formula" id="vennFormula" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Caso especial: eventos mutuamente exclusivos</div>
+      <p>Se você arrastar "gostam dos dois" até <strong>0</strong>, os dois círculos param de se sobrepor — isso significa que os eventos são <strong>mutuamente exclusivos</strong> (não podem acontecer juntos, como tirar "par" e "ímpar" no mesmo dado). Nesse caso a fórmula simplifica para <code>P(A∪B) = P(A) + P(B)</code>, sem precisar subtrair nada.</p>
+    </div>
+  </section>
+
+  <!-- ============ PROBABILIDADE CONDICIONAL ============ -->
+  <section class="section" id="s-condicional">
+    <div class="section-eyebrow">Quando Uma Informação Muda o Jogo</div>
+    <div class="section-title">🏺 Probabilidade Condicional: a urna que se lembra</div>
+    <p class="section-desc">
+      Uma urna tem 5 bolas vermelhas 🔴 e 3 azuis 🔵 (8 no total, sem reposição — cada bola sorteada <strong>sai</strong> da urna). Antes de sortear, <code style="color:var(--accent);">P(🔴) = 5/8</code>. Mas <strong>depois</strong> de saber que a primeira bola foi vermelha, a urna mudou: sobraram só 7 bolas, sendo 4 vermelhas. A chance da <strong>segunda</strong> bola ser vermelha, <strong>dado que</strong> a primeira já saiu vermelha, é escrita <code style="color:var(--accent);">P(B|A)</code> e vale <code style="color:var(--accent);">4/7</code> — diferente do valor original!
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Sorteie a 1ª bola e veja como a urna (e as chances) mudam para a 2ª</div>
+      <div class="urn-wrap">
+        <div class="urn-box" id="urnBox"></div>
+        <div class="urn-drawn-row" id="urnDrawnRow"></div>
+        <div class="btn-toggle-row">
+          <button class="player-btn primary" id="urnDraw1Btn" onclick="urnDraw()">🖐️ Sortear bola</button>
+          <button class="player-btn" onclick="resetUrn()">⏹ Reiniciar urna</button>
+        </div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">P(1ª = 🔴) antes de sortear</span><span class="rv" id="urnPBefore">5/8</span></div>
+        <div><span class="rl">P(2ª = 🔴 | 1ª = X) agora</span><span class="rv" id="urnPAfter">—</span></div>
+      </div>
+      <div class="card-formula">P(B|A) = P(A ∩ B) / P(A) — "a chance de B, sabendo que A já aconteceu"</div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Sempre que uma informação nova <strong>restringe</strong> o espaço amostral (como "já sei que a 1ª bola foi vermelha"), estamos calculando uma probabilidade condicional. A barra vertical <code>|</code> se lê "dado que".</p>
+    </div>
+  </section>
+
+  <!-- ============ INDEPENDÊNCIA ============ -->
+  <section class="section" id="s-independencia">
+    <div class="section-eyebrow">Quando Um Evento Não Afeta o Outro</div>
+    <div class="section-title">🔀 Independência de Eventos</div>
+    <p class="section-desc">
+      Dois eventos são <strong>independentes</strong> quando o resultado de um <strong>não muda em nada</strong> a chance do outro. Compare lado a lado: sortear bolas <strong>com reposição</strong> (devolvendo a bola sorteada antes de tirar a próxima) versus <strong>sem reposição</strong> (como na urna anterior). Só no primeiro caso a chance da 2ª bola continua igual, não importa o que saiu na 1ª — por isso dizemos que, com reposição, os sorteios são <strong>independentes</strong>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Mesma urna (5🔴 + 3🔵) — compare os dois modos</div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">🔁 Com reposição (independente)</div>
+          <div class="card-text">A bola sorteada <strong>volta</strong> pra urna antes do próximo sorteio. A urna nunca muda.</div>
+          <div class="card-formula">P(2ª=🔴 | 1ª=🔴) = 5/8 = P(2ª=🔴)</div>
+          <div class="card-text">A condição não muda nada — os eventos são <strong>independentes</strong>: <code>P(A∩B) = P(A) × P(B)</code> = 5/8 × 5/8 = <strong>25/64 ≈ 39,1%</strong></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🚫 Sem reposição (dependente)</div>
+          <div class="card-text">A bola sorteada <strong>não volta</strong>. A urna fica com uma bola a menos e a proporção muda.</div>
+          <div class="card-formula">P(2ª=🔴 | 1ª=🔴) = 4/7 ≠ P(2ª=🔴)=5/8</div>
+          <div class="card-text">A condição muda o resultado — os eventos são <strong>dependentes</strong>: <code>P(A∩B) = P(A) × P(B|A)</code> = 5/8 × 4/7 = <strong>20/56 ≈ 35,7%</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">O teste da independência</div>
+      <p>Para checar se A e B são independentes, compare <code>P(B|A)</code> com <code>P(B)</code>. Se forem <strong>iguais</strong>, são independentes. Se forem <strong>diferentes</strong>, são dependentes — o conhecimento de A alterou a chance de B.</p>
+    </div>
+  </section>
+
+  <!-- ============ ÁRVORE DE PROBABILIDADE ============ -->
+  <section class="section" id="s-arvore">
+    <div class="section-eyebrow">Visualizando Etapas em Sequência</div>
+    <div class="section-title">🌳 Árvore de Probabilidade e Regra da Multiplicação</div>
+    <p class="section-desc">
+      Quando um problema tem <strong>etapas em sequência</strong> (primeiro isso, depois aquilo), uma <strong>árvore de probabilidade</strong> ajuda a enxergar tudo. Cada galho tem uma probabilidade, e para achar a chance de um <strong>caminho completo</strong> (um galho seguido de outro), <strong>multiplicamos</strong> as probabilidades ao longo do caminho — essa é a <strong>Regra da Multiplicação</strong>: <code style="color:var(--accent);">P(A∩B) = P(A) × P(B|A)</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Exemplo: previsão do tempo e atraso no ônibus — ajuste as chances</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>☔ P(chove)</span><span class="ctrl-v" id="treeRainVal">30%</span></div>
+          <input type="range" id="treeRain" min="0" max="100" step="5" value="30" oninput="renderTree()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🚌 P(atraso | chove)</span><span class="ctrl-v" id="treeDelayRainVal">60%</span></div>
+          <input type="range" id="treeDelayRain" min="0" max="100" step="5" value="60" oninput="renderTree()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🚌 P(atraso | não chove)</span><span class="ctrl-v" id="treeDelaySunVal">20%</span></div>
+          <input type="range" id="treeDelaySun" min="0" max="100" step="5" value="20" oninput="renderTree()">
+        </div>
+      </div>
+      <div class="ptree" id="treeWrap"></div>
+      <div class="ptree-total" id="treeTotal"></div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Confira sempre</div>
+      <p>Some as probabilidades de <strong>todos os caminhos finais</strong> da árvore (as 4 "folhas") — o resultado deve dar exatamente <strong>1</strong>. Se não der, alguma probabilidade da árvore está errada.</p>
+    </div>
+  </section>
+
+  <!-- ============ TEOREMA DE BAYES ============ -->
+  <section class="section" id="s-bayes">
+    <div class="section-eyebrow">Invertendo a Pergunta</div>
+    <div class="section-title">🩺 Teorema de Bayes: o exame médico</div>
+    <p class="section-desc">
+      Um exame "deu positivo" — mas qual é a chance de a pessoa <strong>realmente</strong> estar doente? Essa pergunta é diferente de "qual é a chance do exame dar positivo se a pessoa está doente" (isso é a <strong>sensibilidade</strong> do exame). O <strong>Teorema de Bayes</strong> nos deixa <strong>inverter</strong> a condição: <code style="color:var(--accent);">P(doente|positivo) = P(positivo|doente) × P(doente) / P(positivo)</code>. A forma mais fácil de enxergar isso é contando pessoas de verdade num grupo de 100.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste os parâmetros do exame e da doença (grupo de 100 pessoas)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🦠 Prevalência da doença</span><span class="ctrl-v" id="bayesPrevVal">5%</span></div>
+          <input type="range" id="bayesPrev" min="1" max="50" step="1" value="5" oninput="renderBayes()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✅ Sensibilidade (acerta doente)</span><span class="ctrl-v" id="bayesSensVal">90%</span></div>
+          <input type="range" id="bayesSens" min="50" max="100" step="1" value="90" oninput="renderBayes()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✅ Especificidade (acerta sadio)</span><span class="ctrl-v" id="bayesSpecVal">90%</span></div>
+          <input type="range" id="bayesSpec" min="50" max="100" step="1" value="90" oninput="renderBayes()">
+        </div>
+      </div>
+      <div class="bayes-wrap">
+        <div class="bayes-grid" id="bayesGrid"></div>
+        <div class="bayes-legend" id="bayesLegend"></div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Positivos verdadeiros (doente + positivo)</span><span class="rv" id="bayesTP">4</span></div>
+        <div><span class="rl">Positivos falsos (sadio + positivo)</span><span class="rv" id="bayesFP">10</span></div>
+        <div><span class="rl">P(doente | positivo)</span><span class="rv" id="bayesResult">28,6%</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">O resultado surpreendente</div>
+      <p>Mesmo com um exame de 90% de acerto, se a doença é <strong>rara</strong> (baixa prevalência), a maioria dos "positivos" pode ser <strong>falso positivo</strong> — simplesmente porque existem muito mais pessoas sadias sendo testadas do que doentes. É por isso que exames raros costumam ser repetidos antes de confirmar um diagnóstico.</p>
+    </div>
+  </section>
+
+  <!-- ============ DISTRIBUIÇÃO BINOMIAL ============ -->
+  <section class="section" id="s-binomial">
+    <div class="section-eyebrow">Contando Sucessos em Repetições</div>
+    <div class="section-title">📊 Distribuição Binomial: quantos acertos em n tentativas?</div>
+    <p class="section-desc">
+      Imagine um jogador de basquete arremessando <strong>n</strong> vezes, cada arremesso com a mesma chance <strong>p</strong> de acertar, independente dos outros. A <strong>Distribuição Binomial</strong> calcula a probabilidade de ele acertar exatamente <strong>k</strong> vezes: <code style="color:var(--accent);">P(X=k) = C(n,k) × p<sup>k</sup> × (1−p)<sup>(n−k)</sup></code> — repare que <code>C(n,k)</code> é a mesma combinação da Análise Combinatória!
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o número de arremessos (n) e a chance de acerto (p)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🏀 Número de arremessos (n)</span><span class="ctrl-v" id="binNVal">10</span></div>
+          <input type="range" id="binN" min="1" max="20" step="1" value="10" oninput="renderBinomial()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 Chance de acerto (p)</span><span class="ctrl-v" id="binPVal">50%</span></div>
+          <input type="range" id="binP" min="5" max="95" step="5" value="50" oninput="renderBinomial()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="binCanvas" height="200"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Cada barra é P(X=k) — a chance de acertar exatamente k arremessos em n tentativas.</div>
+      <div class="result-display">
+        <div><span class="rl">Média esperada (n×p)</span><span class="rv" id="binMean">5,0 acertos</span></div>
+        <div><span class="rl">k mais provável</span><span class="rv" id="binMode">5 acertos</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Toda distribuição binomial precisa de 3 ingredientes: (1) um número <strong>fixo</strong> de tentativas <code>n</code>, (2) cada tentativa só pode dar "sucesso" ou "fracasso", e (3) a chance de sucesso <code>p</code> é a <strong>mesma</strong> em todas as tentativas e elas são <strong>independentes</strong> entre si.</p>
+    </div>
+  </section>
+
+  <!-- ============ DISTRIBUIÇÃO NORMAL ============ -->
+  <section class="section" id="s-normal">
+    <div class="section-eyebrow">O Sininho Que Aparece Em Toda Parte</div>
+    <div class="section-title">🔔 Distribuição Normal: a curva em forma de sino</div>
+    <p class="section-desc">
+      Quando somamos <strong>muitas coisas pequenas e aleatórias</strong> (como a altura de milhares de pessoas, ou o resultado de uma binomial com n bem grande), o resultado tende a formar essa curva em forma de sino, chamada <strong>Distribuição Normal</strong>. Ela é descrita por só dois números: a <strong>média (μ)</strong>, que define o centro, e o <strong>desvio padrão (σ)</strong>, que define o quão "espalhada" ela é.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste a média e o desvio padrão, e veja a regra empírica 68-95-99,7%</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>μ (média)</span><span class="ctrl-v" id="normMeanVal">100</span></div>
+          <input type="range" id="normMean" min="50" max="150" step="1" value="100" oninput="renderNormal()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>σ (desvio padrão)</span><span class="ctrl-v" id="normStdVal">15</span></div>
+          <input type="range" id="normStd" min="5" max="30" step="1" value="15" oninput="renderNormal()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle active" id="sigmaBtn1" onclick="setSigmaShade(1)">±1σ (≈68%)</button>
+        <button class="btn-toggle" id="sigmaBtn2" onclick="setSigmaShade(2)">±2σ (≈95%)</button>
+        <button class="btn-toggle" id="sigmaBtn3" onclick="setSigmaShade(3)">±3σ (≈99,7%)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="normCanvas" height="220"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">Faixa sombreada</span><span class="rv" id="normRange">85 a 115</span></div>
+        <div><span class="rl">% de dados nessa faixa</span><span class="rv" id="normPct">≈68%</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Regra empírica (68-95-99,7)</div>
+      <p>Em qualquer distribuição Normal: cerca de <strong>68%</strong> dos dados ficam entre μ−σ e μ+σ; <strong>95%</strong> entre μ−2σ e μ+2σ; e <strong>99,7%</strong> entre μ−3σ e μ+3σ. Isso vale sempre — não importa quais sejam os valores de μ e σ.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela">
+    <div class="section-eyebrow">A Chuva de Fórmulas, Organizada</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todos os conceitos desta aula reunidos num só lugar, com quando usar cada um.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🎲 Probabilidade Clássica</div>
+        <div class="card-formula">P(A) = favoráveis / possíveis</div>
+        <div class="card-text">Quando todos os resultados têm a mesma chance. Base de tudo nesta aula.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🍫 Regra da Soma (União)</div>
+        <div class="card-formula">P(A∪B) = P(A)+P(B)−P(A∩B)</div>
+        <div class="card-text">Chance de "A ou B" acontecer. Se forem mutuamente exclusivos, some direto (sem subtrair nada).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏺 Probabilidade Condicional</div>
+        <div class="card-formula">P(B|A) = P(A∩B) / P(A)</div>
+        <div class="card-text">Chance de B, sabendo que A já aconteceu. A informação nova "restringe" o espaço amostral.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌳 Regra da Multiplicação</div>
+        <div class="card-formula">P(A∩B) = P(A) × P(B|A)</div>
+        <div class="card-text">Chance de "A e B" em sequência. Multiplique os galhos da árvore de probabilidade.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔀 Independência</div>
+        <div class="card-formula">P(A∩B) = P(A) × P(B)</div>
+        <div class="card-text">Só vale quando P(B|A) = P(B) — ou seja, A não muda em nada a chance de B.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🩺 Teorema de Bayes</div>
+        <div class="card-formula">P(A|B) = P(B|A)·P(A) / P(B)</div>
+        <div class="card-text">Inverte a condição: descobre P(A|B) a partir de P(B|A). Ideal para exames e diagnósticos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏀 Distribuição Binomial</div>
+        <div class="card-formula">P(X=k)=C(n,k)pᵏ(1−p)ⁿ⁻ᵏ</div>
+        <div class="card-text">Número de sucessos em n tentativas independentes, cada uma com chance p.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 Distribuição Normal</div>
+        <div class="card-formula">Regra 68-95-99,7</div>
+        <div class="card-text">Curva de sino definida por μ (centro) e σ (espalhamento). Aparece ao somar muitos eventos pequenos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">♾️ Lei dos Grandes Números</div>
+        <div class="card-formula">freq. relativa → P(A) quando n→∞</div>
+        <div class="card-text">Com poucas repetições o resultado observado pode variar bastante; com muitas, se aproxima do valor teórico.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">✅ Boas práticas: como não se confundir</div>
+
+    <div class="decision-flow">
+      <div class="decision-q">O que sair primeiro muda a chance do que sai depois?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">✅ Sim, muda</div>
+          <div class="decision-result">➡️ Os eventos são <strong>dependentes</strong> — use Probabilidade Condicional: P(B|A)</div>
+          <div class="decision-example">Ex.: sortear cartas ou bolas sem devolver ao baralho/urna</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">❌ Não, não muda</div>
+          <div class="decision-result">➡️ Os eventos são <strong>independentes</strong> — use P(A∩B) = P(A) × P(B)</div>
+          <div class="decision-example">Ex.: jogar moeda duas vezes, sortear com reposição</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">1️⃣ P(A|B) ≠ P(B|A)</div>
+        <div class="card-text">"Chance de chover dado que está nublado" é diferente de "chance de estar nublado dado que choveu". Sempre confira qual é a informação conhecida e qual é a pergunta.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ "E" multiplica, "OU" soma (com cuidado)</div>
+        <div class="card-text">P(A e B) costuma envolver multiplicação. P(A ou B) costuma envolver soma — mas lembre de subtrair a interseção se os eventos puderem acontecer juntos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Confira se a soma dá 1</div>
+        <div class="card-text">Some as probabilidades de todos os resultados possíveis (todas as fatias da roleta, todas as folhas da árvore). Se não der 1, tem erro na conta.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1: confundir P(positivo|doente) com P(doente|positivo)</div>
+      <p>Um exame com 90% de sensibilidade <strong>não</strong> significa que 90% dos resultados positivos são de gente doente. Como vimos na seção de Bayes, isso depende também de quantas pessoas realmente têm a doença (a prevalência).</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2: achar que o acaso "se corrige sozinho"</div>
+      <p>Depois de 5 caras seguidas, muita gente acha que "agora vem coroa". Cada jogada de moeda é independente da anterior — a chance continua 50/50, sempre.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Antes de escolher uma fórmula, escreva em palavras o que você quer calcular: "chance de A", "chance de A e B", "chance de A dado que B já aconteceu"? A frase em português quase sempre aponta a fórmula certa.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Probabilidade</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function factorial(n){ let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function comb(n,k){ if(k<0||k>n) return 0; k=Math.min(k,n-k); let r=1; for(let i=0;i<k;i++) r = r*(n-i)/(i+1); return Math.round(r); }
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function pct(x,d=1){ return (x*100).toFixed(d).replace('.',',')+'%'; }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🎲', label:'O que é'},
+  {id:'s-espaco', icon:'🗂️', label:'Espaço Amostral'},
+  {id:'s-classica', icon:'🎡', label:'Prob. Clássica'},
+  {id:'s-frequencia', icon:'🪙', label:'Freq. Relativa'},
+  {id:'s-venn', icon:'🍫', label:'União/Interseção'},
+  {id:'s-condicional', icon:'🏺', label:'Condicional'},
+  {id:'s-independencia', icon:'🔀', label:'Independência'},
+  {id:'s-arvore', icon:'🌳', label:'Árvore de Prob.'},
+  {id:'s-bayes', icon:'🩺', label:'Bayes'},
+  {id:'s-binomial', icon:'📊', label:'Binomial'},
+  {id:'s-normal', icon:'🔔', label:'Normal'},
+  {id:'s-tabela', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== MEDIDOR DE PROBABILIDADE ===================== */
+const meterExamples = [
+  {max:2, face:'😱', text:'Sol nascer no oeste amanhã'},
+  {max:15, face:'😬', text:'Tirar 6 num dado, de primeira'},
+  {max:35, face:'🤨', text:'Chover forte num dia de sol'},
+  {max:65, face:'🤔', text:'Cara ou coroa numa moeda'},
+  {max:85, face:'🙂', text:'Tirar uma carta vermelha do baralho'},
+  {max:98, face:'😄', text:'Nascer o dia depois da noite'},
+  {max:101, face:'✅', text:'Um dado (comum) cair numa face de 1 a 6'},
+];
+function renderMeter(){
+  const v = +document.getElementById('meterSlider').value;
+  document.getElementById('meterThumb').style.left = v+'%';
+  const ex = meterExamples.find(m=>v<=m.max);
+  document.getElementById('meterFace').textContent = ex.face;
+  document.getElementById('meterThumb').textContent = v<50?'😕':(v>50?'😀':'😐');
+  document.getElementById('meterValue').textContent = (v/100).toFixed(2)+' ('+v+'%)';
+  document.getElementById('meterExample').textContent = ex.text;
+}
+
+/* ===================== ESPAÇO AMOSTRAL (dado) ===================== */
+const PIP_MAP = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function pipDiceHTML(n, cls){
+  const on = new Set(PIP_MAP[n]||[]);
+  let cells='';
+  for(let i=0;i<9;i++) cells += `<div class="pip ${on.has(i)?'on':''}"></div>`;
+  return `<div class="pipdice ${cls||''}">${cells}</div>`;
+}
+let chosenEvent = new Set();
+function toggleEventFace(n){
+  if(chosenEvent.has(n)) chosenEvent.delete(n); else chosenEvent.add(n);
+  renderEventFaces();
+}
+function renderEventFaces(){
+  const wrap = document.getElementById('eventFaces');
+  wrap.innerHTML = [1,2,3,4,5,6].map(n=>`<div class="idx-box ${chosenEvent.has(n)?'on':''}" onclick="toggleEventFace(${n})">${pipDiceHTML(n,'sm')}</div>`).join('');
+  const arr = [...chosenEvent].sort((a,b)=>a-b);
+  document.getElementById('eventSetLabel').textContent = '{ '+arr.join(', ')+' }';
+  document.getElementById('eventProb').textContent = arr.length+'/6';
+}
+let espacoLast = null;
+function rollEspacoDice(){
+  const n = 1+Math.floor(Math.random()*6);
+  espacoLast = n;
+  document.getElementById('espacoDiceFace').innerHTML = pipDiceHTML(n,'big');
+  document.getElementById('espacoResult').textContent = n;
+  const inEvent = chosenEvent.has(n);
+  document.getElementById('espacoVerdict').innerHTML = chosenEvent.size===0
+    ? 'Escolha um evento clicando nas faces acima antes de rolar.'
+    : (inEvent ? `✅ O resultado <strong>${n}</strong> está dentro do evento escolhido!` : `❌ O resultado <strong>${n}</strong> não está no evento escolhido.`);
+}
+
+/* ===================== ROLETA ===================== */
+let roletaRotation = 0;
+function renderRoleta(){
+  const r = +document.getElementById('roletaRed').value;
+  const b = +document.getElementById('roletaBlue').value;
+  const g = +document.getElementById('roletaGreen').value;
+  document.getElementById('roletaRedVal').textContent = r;
+  document.getElementById('roletaBlueVal').textContent = b;
+  document.getElementById('roletaGreenVal').textContent = g;
+  const total = r+b+g;
+  document.getElementById('roletaPRed').textContent = `${r}/${total}`;
+  document.getElementById('roletaPBlue').textContent = `${b}/${total}`;
+  document.getElementById('roletaPGreen').textContent = `${g}/${total}`;
+  drawRoleta(r,b,g);
+}
+function drawRoleta(r,b,g){
+  const canvas = document.getElementById('roletaCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const cx=w/2, cy=h/2, R=w/2-4;
+  ctx.clearRect(0,0,w,h);
+  const total = r+b+g;
+  const slices = [];
+  for(let i=0;i<r;i++) slices.push('#f86b63');
+  for(let i=0;i<b;i++) slices.push('#36a2ef');
+  for(let i=0;i<g;i++) slices.push('#7dded8');
+  const anglePer = (2*Math.PI)/total;
+  let start = -Math.PI/2;
+  slices.forEach(color=>{
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,R,start,start+anglePer);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#111216';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    start += anglePer;
+  });
+}
+function spinRoleta(){
+  const r = +document.getElementById('roletaRed').value;
+  const b = +document.getElementById('roletaBlue').value;
+  const g = +document.getElementById('roletaGreen').value;
+  const total = r+b+g;
+  const extraSpins = 5+Math.floor(Math.random()*3);
+  const finalOffset = Math.random()*360;
+  roletaRotation += extraSpins*360 + finalOffset;
+  const canvas = document.getElementById('roletaCanvas');
+  canvas.style.transform = `rotate(${roletaRotation}deg)`;
+  const normalized = (360 - (roletaRotation % 360)) % 360;
+  const sliceDeg = 360/total;
+  const idx = Math.floor(normalized/sliceDeg);
+  let color, name;
+  if(idx < r){ color='#f86b63'; name='🔴 Vermelho'; }
+  else if(idx < r+b){ color='#36a2ef'; name='🔵 Azul'; }
+  else { color='#7dded8'; name='🟢 Verde'; }
+  setTimeout(()=>{
+    document.getElementById('roletaResult').innerHTML = `Caiu em: <strong style="color:${color};">${name}</strong>`;
+  }, 3200);
+}
+
+/* ===================== MOEDA / LGN ===================== */
+let coinHeads=0, coinTails=0, coinHistory=[];
+function flipCoin(times){
+  for(let i=0;i<times;i++){
+    const isHeads = Math.random()<0.5;
+    if(isHeads) coinHeads++; else coinTails++;
+    coinHistory.push(isHeads);
+  }
+  const last = coinHistory[coinHistory.length-1];
+  const coinEl = document.getElementById('coinEl');
+  document.getElementById('coinEmoji').textContent = last ? '👑' : '🪙';
+  document.getElementById('coinLabel').textContent = last ? 'CARA' : 'COROA';
+  coinEl.classList.remove('flipping'); void coinEl.offsetWidth; coinEl.classList.add('flipping');
+  updateCoinStats();
+}
+function resetCoin(){
+  coinHeads=0; coinTails=0; coinHistory=[];
+  document.getElementById('coinEmoji').textContent='🪙';
+  document.getElementById('coinLabel').textContent='?';
+  updateCoinStats();
+}
+function updateCoinStats(){
+  const total = coinHeads+coinTails;
+  document.getElementById('coinTotal').textContent = fmt(total);
+  document.getElementById('coinCounts').textContent = `${fmt(coinHeads)} / ${fmt(coinTails)}`;
+  document.getElementById('coinFreq').textContent = total? pct(coinHeads/total,2) : '—';
+  drawCoinChart();
+}
+function drawCoinChart(){
+  const canvas = document.getElementById('coinCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=36, PR=10, PT=14, PB=24;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  // axes
+  ctx.strokeStyle='rgba(152,162,179,.25)';
+  ctx.lineWidth=1;
+  ctx.font='10px Roboto Mono';
+  ctx.fillStyle='#98a2b3';
+  ctx.textAlign='right';
+  [0,0.25,0.5,0.75,1].forEach(v=>{
+    const y = PT + plotH*(1-v);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke();
+    ctx.fillText(v.toFixed(2), PL-6, y+3);
+  });
+  // theoretical line
+  ctx.strokeStyle='rgba(232,179,57,.8)';
+  ctx.setLineDash([5,4]);
+  const y5 = PT+plotH*0.5;
+  ctx.beginPath(); ctx.moveTo(PL,y5); ctx.lineTo(w-PR,y5); ctx.stroke();
+  ctx.setLineDash([]);
+  if(coinHistory.length===0){
+    ctx.fillStyle='#515761'; ctx.textAlign='center'; ctx.font='12px Inter';
+    ctx.fillText('Jogue a moeda para começar o gráfico', w/2, h/2);
+    return;
+  }
+  // running frequency line
+  ctx.strokeStyle='#06b6d4';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  let heads=0;
+  const n = coinHistory.length;
+  coinHistory.forEach((isHeads,i)=>{
+    if(isHeads) heads++;
+    const freq = heads/(i+1);
+    const x = PL + (n<=1?plotW:plotW*(i/(n-1)));
+    const y = PT + plotH*(1-freq);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Inter'; ctx.textAlign='left';
+  ctx.fillText('jogadas: '+n, PL, h-6);
+}
+
+/* ===================== VENN ===================== */
+function renderVenn(){
+  const aOnly = +document.getElementById('vennAOnly').value;
+  const bOnly = +document.getElementById('vennBOnly').value;
+  const both = +document.getElementById('vennBoth').value;
+  document.getElementById('vennAOnlyVal').textContent = aOnly;
+  document.getElementById('vennBOnlyVal').textContent = bOnly;
+  document.getElementById('vennBothVal').textContent = both;
+  const TOTAL = 30;
+  const used = aOnly+bOnly+both;
+  const none = Math.max(0, TOTAL-used);
+  document.getElementById('vennNone').textContent = none;
+  const union = aOnly+bOnly+both;
+  document.getElementById('vennUnion').textContent = `${union}/${TOTAL}`;
+  document.getElementById('vennInter').textContent = `${both}/${TOTAL}`;
+  const pA = ((aOnly+both)/TOTAL).toFixed(2);
+  const pB = ((bOnly+both)/TOTAL).toFixed(2);
+  const pBoth = (both/TOTAL).toFixed(2);
+  const pUnion = (union/TOTAL).toFixed(2);
+  document.getElementById('vennFormula').innerHTML = `P(A∪B) = P(A) + P(B) − P(A∩B) = ${pA} + ${pB} − ${pBoth} = <strong style="color:var(--accent);">${pUnion}</strong>`;
+
+  const svg = document.getElementById('vennSvg');
+  const overlapping = both>0;
+  const cxA = overlapping? 140:110, cxB = overlapping? 220:250;
+  svg.innerHTML = `
+    <circle cx="${cxA}" cy="110" r="85" fill="rgba(6,182,212,.28)" stroke="#06b6d4" stroke-width="2"/>
+    <circle cx="${cxB}" cy="110" r="85" fill="rgba(196,154,255,.28)" stroke="#c49aff" stroke-width="2"/>
+    <text x="${cxA-55}" y="45" fill="#06b6d4" font-size="13" font-weight="700" font-family="Inter">🍫 Chocolate</text>
+    <text x="${cxB+10}" y="45" fill="#c49aff" font-size="13" font-weight="700" font-family="Inter">🍓 Morango</text>
+    <text x="${cxA-40}" y="115" fill="#dfe5ef" font-size="18" font-weight="800" font-family="Roboto Mono">${aOnly}</text>
+    <text x="${cxB+25}" y="115" fill="#dfe5ef" font-size="18" font-weight="800" font-family="Roboto Mono">${bOnly}</text>
+    <text x="${(cxA+cxB)/2-8}" y="115" fill="#dfe5ef" font-size="18" font-weight="800" font-family="Roboto Mono">${both}</text>
+    <text x="10" y="210" fill="#98a2b3" font-size="11" font-family="Inter">Fora dos dois círculos: ${none} alunos não gostam de nenhum</text>
+  `;
+}
+
+/* ===================== URNA (condicional) ===================== */
+let urnRed=5, urnBlue=3, urnDrawSequence=[];
+function resetUrn(){
+  urnRed=5; urnBlue=3; urnDrawSequence=[];
+  renderUrn();
+  document.getElementById('urnDraw1Btn').disabled=false;
+  document.getElementById('urnDraw1Btn').textContent='🖐️ Sortear bola';
+  document.getElementById('urnPAfter').textContent='—';
+}
+function renderUrn(){
+  const box = document.getElementById('urnBox');
+  let balls = '';
+  for(let i=0;i<urnRed;i++) balls += '🔴';
+  for(let i=0;i<urnBlue;i++) balls += '🔵';
+  box.textContent = balls || '(urna vazia)';
+  document.getElementById('urnDrawnRow').innerHTML = urnDrawSequence.map((c,i)=>`<div class="urn-drawn-chip">${i+1}ª: ${c==='R'?'🔴 vermelha':'🔵 azul'}</div>`).join('');
+  const totalStart = 8;
+  document.getElementById('urnPBefore').textContent = `5/${totalStart}`;
+}
+function urnDraw(){
+  const total = urnRed+urnBlue;
+  if(total<=0) return;
+  const isRed = Math.random() < urnRed/total;
+  if(isRed) urnRed--; else urnBlue--;
+  urnDrawSequence.push(isRed?'R':'B');
+  renderUrn();
+  const remaining = urnRed+urnBlue;
+  if(urnDrawSequence.length===1){
+    document.getElementById('urnDraw1Btn').textContent = '🖐️ Sortear próxima bola';
+    if(remaining>0){
+      document.getElementById('urnPAfter').textContent = `${urnRed}/${remaining} (1ª foi ${isRed?'🔴':'🔵'})`;
+    }
+  }
+  if(remaining<=0){
+    document.getElementById('urnDraw1Btn').disabled=true;
+  }
+}
+
+/* ===================== ÁRVORE DE PROBABILIDADE ===================== */
+function renderTree(){
+  const pRain = +document.getElementById('treeRain').value/100;
+  const pDelayRain = +document.getElementById('treeDelayRain').value/100;
+  const pDelaySun = +document.getElementById('treeDelaySun').value/100;
+  document.getElementById('treeRainVal').textContent = pct(pRain,0);
+  document.getElementById('treeDelayRainVal').textContent = pct(pDelayRain,0);
+  document.getElementById('treeDelaySunVal').textContent = pct(pDelaySun,0);
+
+  const branches = [
+    {label:'☔ Chove', p:pRain, children:[
+      {label:'🚌 Atraso', p:pDelayRain},
+      {label:'✅ Sem atraso', p:1-pDelayRain},
+    ]},
+    {label:'☀️ Não chove', p:1-pRain, children:[
+      {label:'🚌 Atraso', p:pDelaySun},
+      {label:'✅ Sem atraso', p:1-pDelaySun},
+    ]},
+  ];
+  let sum=0;
+  const html = branches.map(b=>{
+    const rows = b.children.map(c=>{
+      const joint = b.p*c.p;
+      sum += joint;
+      return `<div class="ptree-s2-row"><span>${c.label} (${pct(c.p,0)})</span><span class="ptree-joint">${pct(b.p,0)} × ${pct(c.p,0)} = ${pct(joint,1)}</span></div>`;
+    }).join('');
+    return `<div class="ptree-s1">
+      <div class="ptree-s1-head"><span>${b.label}</span><span class="p">${pct(b.p,0)}</span></div>
+      <div class="ptree-s2">${rows}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('treeWrap').innerHTML = html;
+  document.getElementById('treeTotal').textContent = `Soma de todos os caminhos (folhas): ${pct(sum,1)} ✅`;
+}
+
+/* ===================== TEOREMA DE BAYES ===================== */
+function renderBayes(){
+  const prev = +document.getElementById('bayesPrev').value/100;
+  const sens = +document.getElementById('bayesSens').value/100;
+  const spec = +document.getElementById('bayesSpec').value/100;
+  document.getElementById('bayesPrevVal').textContent = pct(prev,0);
+  document.getElementById('bayesSensVal').textContent = pct(sens,0);
+  document.getElementById('bayesSpecVal').textContent = pct(spec,0);
+
+  const N=100;
+  const sick = Math.round(N*prev);
+  const healthy = N-sick;
+  const TP = Math.round(sick*sens);
+  const FN = sick-TP;
+  const FP = Math.round(healthy*(1-spec));
+  const TN = healthy-FP;
+
+  document.getElementById('bayesTP').textContent = TP;
+  document.getElementById('bayesFP').textContent = FP;
+  const pDoentePositivo = (TP+FP)>0 ? TP/(TP+FP) : 0;
+  document.getElementById('bayesResult').textContent = pct(pDoentePositivo,1);
+
+  // build cell list: TP, FN, FP, TN counts -> 100 cells
+  let cells = [];
+  for(let i=0;i<TP;i++) cells.push({c:'#f86b63', t:'TP'});
+  for(let i=0;i<FN;i++) cells.push({c:'#e8b339', t:'FN'});
+  for(let i=0;i<FP;i++) cells.push({c:'#c49aff', t:'FP'});
+  for(let i=0;i<TN;i++) cells.push({c:'#25262e', t:'TN'});
+  while(cells.length<100) cells.push({c:'#25262e', t:'TN'});
+  cells = cells.slice(0,100);
+  document.getElementById('bayesGrid').innerHTML = cells.map(c=>`<div class="bayes-cell" style="background:${c.c};" title="${c.t}"></div>`).join('');
+  document.getElementById('bayesLegend').innerHTML = `
+    <div class="bayes-legend-item"><span class="bayes-swatch" style="background:#f86b63;"></span> Doente + Positivo (verdadeiro positivo): <strong>${TP}</strong></div>
+    <div class="bayes-legend-item"><span class="bayes-swatch" style="background:#e8b339;"></span> Doente + Negativo (falso negativo): <strong>${FN}</strong></div>
+    <div class="bayes-legend-item"><span class="bayes-swatch" style="background:#c49aff;"></span> Sadio + Positivo (falso positivo): <strong>${FP}</strong></div>
+    <div class="bayes-legend-item"><span class="bayes-swatch" style="background:#25262e;border:1px solid #535966;"></span> Sadio + Negativo (verdadeiro negativo): <strong>${TN}</strong></div>
+  `;
+}
+
+/* ===================== DISTRIBUIÇÃO BINOMIAL ===================== */
+function binomialPmf(n,k,p){ return comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k); }
+function renderBinomial(){
+  const n = +document.getElementById('binN').value;
+  const p = +document.getElementById('binP').value/100;
+  document.getElementById('binNVal').textContent = n;
+  document.getElementById('binPVal').textContent = pct(p,0);
+  const mean = n*p;
+  document.getElementById('binMean').textContent = mean.toFixed(1).replace('.',',')+' acertos';
+  let maxP=-1, mode=0;
+  const values=[];
+  for(let k=0;k<=n;k++){
+    const v = binomialPmf(n,k,p);
+    values.push(v);
+    if(v>maxP){ maxP=v; mode=k; }
+  }
+  document.getElementById('binMode').textContent = mode+' acertos';
+  drawBinomialChart(values, mode);
+}
+function drawBinomialChart(values, mode){
+  const canvas = document.getElementById('binCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length-1;
+  const maxV = Math.max(...values);
+  const PB=24, PT=10;
+  const barW = w/values.length;
+  values.forEach((v,k)=>{
+    const barH = maxV>0 ? (v/maxV)*(h-PB-PT) : 0;
+    const x = k*barW + barW*0.15;
+    const bw = barW*0.7;
+    const y = h-PB-barH;
+    ctx.fillStyle = k===mode ? '#06b6d4' : 'rgba(6,182,212,.35)';
+    roundRectPath(ctx,x,y,bw,barH,3);
+    ctx.fill();
+    if(n<=20){
+      ctx.fillStyle = '#98a2b3';
+      ctx.font='9px Roboto Mono';
+      ctx.textAlign='center';
+      ctx.fillText(k, x+bw/2, h-8);
+    }
+  });
+}
+
+/* ===================== DISTRIBUIÇÃO NORMAL ===================== */
+let sigmaShade = 1;
+function setSigmaShade(s){
+  sigmaShade = s;
+  [1,2,3].forEach(i=>document.getElementById('sigmaBtn'+i).classList.toggle('active', i===s));
+  renderNormal();
+}
+function renderNormal(){
+  const mean = +document.getElementById('normMean').value;
+  const std = +document.getElementById('normStd').value;
+  document.getElementById('normMeanVal').textContent = mean;
+  document.getElementById('normStdVal').textContent = std;
+  const lo = mean-sigmaShade*std, hi = mean+sigmaShade*std;
+  document.getElementById('normRange').textContent = `${lo} a ${hi}`;
+  const pctMap = {1:'≈68%',2:'≈95%',3:'≈99,7%'};
+  document.getElementById('normPct').textContent = pctMap[sigmaShade];
+  drawNormalChart(mean,std,sigmaShade);
+}
+function gaussian(x,mean,std){ return Math.exp(-0.5*Math.pow((x-mean)/std,2))/(std*Math.sqrt(2*Math.PI)); }
+function drawNormalChart(mean,std,shade){
+  const canvas = document.getElementById('normCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PB=26, PT=14, PL=10, PR=10;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const xMin = mean-4*std, xMax = mean+4*std;
+  const maxY = gaussian(mean,mean,std);
+  function toX(x){ return PL + plotW*(x-xMin)/(xMax-xMin); }
+  function toY(y){ return PT + plotH*(1-y/maxY); }
+  // shaded area
+  const lo = mean-shade*std, hi = mean+shade*std;
+  ctx.beginPath();
+  ctx.moveTo(toX(lo), toY(0));
+  for(let x=lo; x<=hi; x+=(hi-lo)/80){
+    ctx.lineTo(toX(x), toY(gaussian(x,mean,std)));
+  }
+  ctx.lineTo(toX(hi), toY(0));
+  ctx.closePath();
+  ctx.fillStyle='rgba(6,182,212,.25)';
+  ctx.fill();
+  // curve
+  ctx.beginPath();
+  for(let i=0;i<=160;i++){
+    const x = xMin + (xMax-xMin)*i/160;
+    const y = gaussian(x,mean,std);
+    const px=toX(x), py=toY(y);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.strokeStyle='#06b6d4';
+  ctx.lineWidth=2.2;
+  ctx.stroke();
+  // baseline + mean line
+  ctx.strokeStyle='rgba(152,162,179,.3)';
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PL,toY(0)); ctx.lineTo(w-PR,toY(0)); ctx.stroke();
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(toX(mean),toY(0)); ctx.lineTo(toX(mean),toY(maxY)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('μ='+mean, toX(mean), h-8);
+  [-3,-2,-1,1,2,3].forEach(k=>{
+    const x = mean+k*std;
+    ctx.fillText((k>0?'+':'')+k+'σ', toX(x), h-8);
+  });
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Um dado honesto é lançado uma vez. Qual a probabilidade de sair um número maior que 4?',
+   a:'Casos favoráveis: {5, 6} → 2 casos. Casos possíveis: {1,2,3,4,5,6} → 6 casos. <strong>P = 2/6 = 1/3 ≈ 33,3%</strong>.'},
+  {q:'Uma moeda é lançada 3 vezes seguidas. Qual a probabilidade de sair cara nas 3 vezes?',
+   a:'Cada lançamento é independente, com P(cara)=1/2. Pela regra da multiplicação: <strong>P = 1/2 × 1/2 × 1/2 = 1/8 = 12,5%</strong>.'},
+  {q:'Numa turma, 60% dos alunos gostam de matemática, 40% gostam de português, e 25% gostam das duas. Qual a chance de um aluno gostar de pelo menos uma das duas?',
+   a:'Regra da soma: <strong>P(M∪P) = P(M) + P(P) − P(M∩P) = 0,60 + 0,40 − 0,25 = 0,75 = 75%</strong>.'},
+  {q:'De um baralho de 52 cartas, uma carta é sacada e não devolvida. Sabendo que a 1ª carta foi um Rei, qual a chance da 2ª carta também ser um Rei?',
+   a:'Depois de tirar 1 Rei, sobram 3 Reis em 51 cartas: <strong>P(2º Rei | 1º Rei) = 3/51 = 1/17 ≈ 5,9%</strong> — repare que sem essa condição seria 4/52.'},
+  {q:'Um exame de covid tem 95% de sensibilidade e 90% de especificidade. Em uma população onde 2% têm a doença, qual a chance de quem testou positivo estar realmente doente?',
+   a:'Em 1000 pessoas: 20 doentes (19 positivos verdadeiros), 980 sadios (98 falsos positivos). <strong>P(doente|positivo) = 19/(19+98) ≈ 16,2%</strong> — mesmo com um exame bom, a doença rara faz a maioria dos positivos serem falsos.'},
+  {q:'Uma fábrica produz peças com 5% de defeito. Se 10 peças são escolhidas ao acaso, qual a chance de exatamente 2 serem defeituosas?',
+   a:'Distribuição Binomial com n=10, p=0,05, k=2: <strong>P(X=2) = C(10,2) × 0,05² × 0,95⁸ ≈ 45 × 0,0025 × 0,663 ≈ 7,5%</strong>.'},
+  {q:'As alturas de uma população seguem uma Normal com média 170cm e desvio padrão 10cm. Que porcentagem das pessoas mede entre 160cm e 180cm?',
+   a:'160 e 180 são exatamente μ−1σ e μ+1σ. Pela regra empírica: <strong>≈68%</strong> das pessoas estão nessa faixa.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'A soma das probabilidades de todos os resultados possíveis de um experimento é sempre 1.', a:true,
+   explain:'Isso é uma propriedade fundamental: como algum resultado sempre acontece, somar as chances de todos os resultados do espaço amostral dá exatamente 1 (ou 100%).'},
+  {q:'Se uma moeda deu cara 5 vezes seguidas, a chance da próxima jogada dar coroa é maior que 50%.', a:false,
+   explain:'Cada jogada é independente — a moeda não "lembra" do passado. A chance continua sendo 50/50, não importa o histórico.'},
+  {q:'P(A|B) e P(B|A) são sempre o mesmo valor.', a:false,
+   explain:'Só são iguais em casos especiais. Em geral, "chance de A dado B" e "chance de B dado A" são perguntas diferentes — é justamente essa diferença que o Teorema de Bayes ajuda a resolver.'},
+  {q:'Se dois eventos são mutuamente exclusivos, P(A∪B) = P(A) + P(B).', a:true,
+   explain:'Como eventos mutuamente exclusivos não podem acontecer juntos, P(A∩B)=0, e a fórmula geral P(A∪B)=P(A)+P(B)−P(A∩B) simplifica para uma soma direta.'},
+  {q:'Sortear cartas de um baralho sem devolvê-las gera eventos independentes.', a:false,
+   explain:'Sem devolver as cartas, o baralho muda a cada sorteio — isso torna os eventos dependentes. Para independência, seria preciso devolver a carta (com reposição).'},
+  {q:'Um exame com alta sensibilidade e especificidade sempre garante que um resultado positivo significa doença.', a:false,
+   explain:'Como mostra o Teorema de Bayes, se a doença é rara (baixa prevalência), muitos positivos podem ser falsos positivos, mesmo com um exame de boa qualidade.'},
+  {q:'Na Distribuição Binomial, cada tentativa precisa ter a mesma probabilidade de sucesso e ser independente das demais.', a:true,
+   explain:'Esses são justamente os requisitos de um experimento binomial: número fixo de tentativas, resultado binário (sucesso/fracasso), probabilidade constante e independência entre tentativas.'},
+  {q:'Na Distribuição Normal, cerca de 95% dos dados ficam a até 1 desvio padrão da média.', a:false,
+   explain:'A regra empírica diz que ≈68% dos dados ficam a até 1 desvio padrão (±1σ), ≈95% a até 2 desvios padrão (±2σ), e ≈99,7% a até 3 desvios padrão (±3σ).'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+renderMeter();
+renderEventFaces();
+renderRoleta();
+resetCoin();
+renderVenn();
+resetUrn();
+renderTree();
+renderBayes();
+renderBinomial();
+renderNormal();
+buildProblems();
+buildQuiz();
+window.addEventListener('resize', ()=>{ drawCoinChart(); renderBinomial(); renderNormal(); });
+</script>
+</body>
+</html>

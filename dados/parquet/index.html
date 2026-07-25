@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: o formato de arquivo Parquet por dentro. Anatomia do arquivo, row groups, encodings, compressão, predicate pushdown e mais, com demos interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Formato Parquet por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:210px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- BLOOM FILTER DEMO ---- */
+.bloom-bits{display:flex;gap:5px;flex-wrap:wrap;}
+.bloom-bit{width:28px;height:28px;border-radius:5px;background:var(--bg-elevated);border:1.5px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;transition:.2s;}
+.bloom-bit.set{background:rgba(6,182,212,.20);border-color:var(--accent);color:var(--accent);font-weight:700;}
+.bloom-bit.hit{box-shadow:0 0 0 2px var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-skip td{opacity:.35;text-decoration:line-through;}
+.data-table td.cell-hit{background:rgba(6,182,212,.22);color:var(--accent);font-weight:700;border-radius:4px;}
+
+/* ---- KV LIST ---- */
+.kv-list{display:flex;flex-direction:column;gap:8px;}
+.kv-pair{display:flex;align-items:center;gap:12px;transition:.2s;}
+.kv-key{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--accent-blue);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:12.5px;min-width:120px;text-align:center;flex-shrink:0;}
+.kv-arrow{color:var(--text-disabled);font-size:16px;flex-shrink:0;}
+.kv-value{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-primary);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:12.5px;flex:1;transition:.2s;}
+.kv-pair.highlight .kv-key{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.kv-pair.highlight .kv-value{border-color:var(--accent);background:rgba(6,182,212,.10);color:var(--accent);}
+
+/* ---- INDEXED LIST (dictionary indices) ---- */
+.indexed-list{display:flex;gap:8px;flex-wrap:wrap;}
+.indexed-item{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.indexed-item .idx-badge{font-size:10px;font-family:'Roboto Mono',monospace;color:var(--text-disabled);}
+.indexed-item .idx-box{min-width:44px;height:36px;padding:0 10px;border-radius:6px;background:var(--bg-elevated);border:1.5px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-primary);font-family:'Roboto Mono',monospace;transition:.2s;}
+.indexed-item.hi .idx-box{border-color:var(--accent);background:rgba(6,182,212,.16);color:var(--accent);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- PHYSICAL LAYOUT (static row/col banded illustration) ---- */
+.phys-table{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;}
+.phys-cell{padding:7px 5px;border-radius:4px;font-size:10.5px;text-align:center;font-family:'Roboto Mono',monospace;color:var(--text-primary);}
+.phys-head{background:transparent!important;color:var(--text-disabled);font-size:9px;text-transform:uppercase;letter-spacing:.5px;font-family:'Inter',sans-serif;font-weight:700;}
+
+/* ---- ROW GROUP NARRATIVE (skip-overlay demo) ---- */
+.rg-narrative-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.rg-block{border:1.5px solid var(--border-color);border-radius:8px;padding:12px;background:var(--bg-elevated);position:relative;overflow:hidden;transition:.3s;}
+.rg-block.match{border-color:var(--accent);box-shadow:0 0 0 1px rgba(6,182,212,.25);}
+.rg-block.pruned{opacity:.4;}
+.rg-block-title{font-size:10.5px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.rg-mini-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+.rg-mini-table td{padding:5px 6px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.rg-mini-table tr:last-child td{border-bottom:none;}
+.rg-overlay{position:absolute;inset:0;background:rgba(17,18,22,.62);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;opacity:0;transform:scale(.85);transition:.35s;pointer-events:none;}
+.rg-overlay.show{opacity:1;transform:scale(1);}
+.rg-overlay-badge{background:var(--accent-red);color:var(--bg-main);font-weight:800;font-size:11px;padding:4px 12px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;}
+.rg-overlay-text{font-size:10.5px;color:var(--text-secondary);text-align:center;padding:0 10px;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- ROW/COLUMN STORE DEMO ---- */
+.rc-table{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px;}
+.rc-cell{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:9px 6px;text-align:center;font-size:11.5px;color:var(--text-secondary);font-family:'Roboto Mono',monospace;transition:.18s;}
+.rc-cell.head{background:transparent;border:none;color:var(--text-disabled);font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;font-family:'Inter',sans-serif;font-weight:700;}
+.rc-cell.scanned{border-color:var(--accent);background:rgba(6,182,212,.20);color:var(--accent);font-weight:700;}
+.rc-cell.skipped{opacity:.25;}
+.rc-cell.target{border-color:var(--accent-green);background:rgba(125,222,216,.20);color:var(--accent-green);font-weight:800;}
+
+/* ---- ANATOMY DIAGRAM ---- */
+.anatomy-wrap{position:relative;}
+#anatomySvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;position:relative;z-index:1;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-magic{text-align:center;background:rgba(6,182,212,.14);color:var(--accent);font-family:'Roboto Mono',monospace;font-weight:700;font-size:11.5px;padding:8px;border-radius:5px;margin-bottom:10px;letter-spacing:1px;cursor:pointer;border:1.5px solid transparent;transition:.15s;}
+.pq-magic:hover{border-color:var(--accent-blue);}
+.pq-magic.active{border-color:var(--accent);background:rgba(6,182,212,.24);box-shadow:0 0 0 1px rgba(6,182,212,.25);}
+
+/* ---- BYTE VIEWER (Magic Number zoom) ---- */
+.byte-row{display:flex;gap:8px;flex-wrap:wrap;}
+.byte-box{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:7px;padding:10px 16px;min-width:58px;transition:.2s;}
+.byte-idx{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;}
+.byte-hex{font-family:'Roboto Mono',monospace;font-size:14px;font-weight:800;color:var(--accent);}
+.byte-char{font-family:'Roboto Mono',monospace;font-size:12px;color:var(--text-secondary);}
+.byte-arrow{align-self:center;font-size:16px;color:var(--text-disabled);}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.pq-nested{margin-left:14px;border-left:2px solid var(--border-color);padding-left:12px;margin-top:7px;margin-bottom:7px;}
+.pq-page{font-size:10.5px;padding:6px 10px;}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- PARTITION TREE ---- */
+.tree{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:2;color:var(--text-secondary);}
+.tree .t0{color:var(--text-primary);font-weight:700;}
+.tree .t1{padding-left:22px;color:var(--accent-blue);}
+.tree .t2{padding-left:44px;color:var(--accent-purple);}
+.tree .t3{padding-left:66px;color:var(--text-secondary);}
+.tree .t3 .fname{color:var(--accent-green);}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+  #anatomySvg{display:none;}
+  .rc-table{grid-template-columns:repeat(5,minmax(0,1fr));}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Formato Parquet</h1><span>O arquivo colunar por trás do Big Data</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2013</div><div class="hstat-label">Origem</div></div>
+      <div class="hstat"><div class="hstat-num">15</div><div class="hstat-label">Demos</div></div>
+      <div class="hstat"><div class="hstat-num">Thrift</div><div class="hstat-label">Metadados</div></div>
+      <div class="hstat"><div class="hstat-num">~40min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito ao arquivo por dentro</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>O arquivo que ensinou o Big Data a <em>ler só o que importa</em></h2>
+      <p>Parquet é um formato de armazenamento <strong>colunar</strong>, binário e open-source, criado em 2013 por engenheiros do Twitter e da Cloudera e inspirado no paper <em>Dremel</em>, do Google. Hoje é o formato de fato para dados analíticos em data lakes e lakehouses — usado por Spark, Trino, DuckDB, BigQuery, Snowflake, Athena e praticamente todo motor de consulta moderno. Nesta aula, vamos abrir o arquivo por dentro: bytes, metadados, encodings e as técnicas que fazem uma consulta ler megabytes em vez de gigabytes.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Armazenamento Colunar</span>
+        <span class="badge badge-green">Compressão Agressiva</span>
+        <span class="badge badge-blue">Schema Embutido</span>
+        <span class="badge badge-purple">Splittable</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">PAR1</div>
+        <div class="fc-body">
+          <div class="fc-row">Row Group 0<br><span style="font-size:9.5px;opacity:.7;">Column Chunks → Pages</span></div>
+          <div class="fc-row">Row Group 1<br><span style="font-size:9.5px;opacity:.7;">Column Chunks → Pages</span></div>
+        </div>
+        <div class="fc-foot">FileMetaData (Thrift) + PAR1</div>
+      </div>
+      <div class="file-chip-caption">Estrutura simplificada de um arquivo .parquet</div>
+    </div>
+  </section>
+
+  <!-- ============ POR QUE COLUNAR ============ -->
+  <section class="section" id="s-colunar">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🗂️ Por que armazenamento colunar?</div>
+    <p class="section-desc">
+      Formatos tradicionais como CSV, JSON e bancos transacionais guardam os dados <strong>linha a linha</strong>: todos os campos de um registro ficam fisicamente juntos. Isso é ótimo para gravar ou buscar <em>um registro inteiro</em> (OLTP), mas péssimo para perguntas analíticas que tocam poucas colunas em milhões de linhas. O Parquet vira essa lógica de cabeça para baixo: guarda <strong>cada coluna separadamente e de forma contígua</strong>, para que o motor de consulta leia só as colunas que a query realmente pede. Vamos acompanhar essa mesma tabela de vendas do início ao fim da aula.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📄 Row-Store — bytes de uma linha ficam juntos</div>
+        <div class="phys-table">
+          <div class="phys-cell phys-head">Produto</div><div class="phys-cell phys-head">Cliente</div><div class="phys-cell phys-head">País</div><div class="phys-cell phys-head">Data</div><div class="phys-cell phys-head">Vendas</div>
+          <div class="phys-cell" style="background:rgba(6,182,212,.22);">Bola</div><div class="phys-cell" style="background:rgba(6,182,212,.22);">João Silva</div><div class="phys-cell" style="background:rgba(6,182,212,.22);">Brasil</div><div class="phys-cell" style="background:rgba(6,182,212,.22);">01/01</div><div class="phys-cell" style="background:rgba(6,182,212,.22);">100</div>
+          <div class="phys-cell" style="background:rgba(125,222,216,.22);">Camiseta</div><div class="phys-cell" style="background:rgba(125,222,216,.22);">João Silva</div><div class="phys-cell" style="background:rgba(125,222,216,.22);">Brasil</div><div class="phys-cell" style="background:rgba(125,222,216,.22);">02/01</div><div class="phys-cell" style="background:rgba(125,222,216,.22);">200</div>
+          <div class="phys-cell" style="background:rgba(54,162,239,.22);">Meia</div><div class="phys-cell" style="background:rgba(54,162,239,.22);">Maria Costa</div><div class="phys-cell" style="background:rgba(54,162,239,.22);">Portugal</div><div class="phys-cell" style="background:rgba(54,162,239,.22);">01/01</div><div class="phys-cell" style="background:rgba(54,162,239,.22);">300</div>
+          <div class="phys-cell" style="background:rgba(196,154,255,.22);">Meia</div><div class="phys-cell" style="background:rgba(196,154,255,.22);">Antônio Souza</div><div class="phys-cell" style="background:rgba(196,154,255,.22);">Brasil</div><div class="phys-cell" style="background:rgba(196,154,255,.22);">03/01</div><div class="phys-cell" style="background:rgba(196,154,255,.22);">100</div>
+        </div>
+        <div class="card-text" style="margin-top:10px;">Cada faixa de cor é <strong>uma linha inteira</strong> — todos os 5 campos ficam lado a lado no disco. Para ler só <code>Produto</code> e <code>Vendas</code>, o motor é forçado a passar por cima de <code>Cliente</code>, <code>País</code> e <code>Data</code> em cada linha.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Column-Store — bytes de uma coluna ficam juntos</div>
+        <div class="phys-table">
+          <div class="phys-cell phys-head">Produto</div><div class="phys-cell phys-head">Cliente</div><div class="phys-cell phys-head">País</div><div class="phys-cell phys-head">Data</div><div class="phys-cell phys-head">Vendas</div>
+          <div class="phys-cell" style="background:rgba(6,182,212,.30);">Bola</div><div class="phys-cell" style="background:rgba(125,222,216,.30);">João Silva</div><div class="phys-cell" style="background:rgba(54,162,239,.30);">Brasil</div><div class="phys-cell" style="background:rgba(196,154,255,.30);">01/01</div><div class="phys-cell" style="background:rgba(248,107,99,.30);">100</div>
+          <div class="phys-cell" style="background:rgba(6,182,212,.22);">Camiseta</div><div class="phys-cell" style="background:rgba(125,222,216,.22);">João Silva</div><div class="phys-cell" style="background:rgba(54,162,239,.22);">Brasil</div><div class="phys-cell" style="background:rgba(196,154,255,.22);">02/01</div><div class="phys-cell" style="background:rgba(248,107,99,.22);">200</div>
+          <div class="phys-cell" style="background:rgba(6,182,212,.16);">Meia</div><div class="phys-cell" style="background:rgba(125,222,216,.16);">Maria Costa</div><div class="phys-cell" style="background:rgba(54,162,239,.16);">Portugal</div><div class="phys-cell" style="background:rgba(196,154,255,.16);">01/01</div><div class="phys-cell" style="background:rgba(248,107,99,.16);">300</div>
+          <div class="phys-cell" style="background:rgba(6,182,212,.10);">Meia</div><div class="phys-cell" style="background:rgba(125,222,216,.10);">Antônio Souza</div><div class="phys-cell" style="background:rgba(54,162,239,.10);">Brasil</div><div class="phys-cell" style="background:rgba(196,154,255,.10);">03/01</div><div class="phys-cell" style="background:rgba(248,107,99,.10);">100</div>
+        </div>
+        <div class="card-text" style="margin-top:10px;">Agora cada <strong>coluna</strong> é um bloco contíguo próprio (mesma cor na vertical). O motor abre só o bloco de <code>Produto</code> e o de <code>Vendas</code> e nem toca nos outros três blocos.</div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: rode a mesma consulta em Row-Store e Column-Store</div>
+      <div class="ctrl-row" style="margin-bottom:10px;">
+        <div class="ctrl-g">
+          <div class="ctrl-l">Modelo de armazenamento</div>
+          <div class="btn-toggle-row">
+            <button class="btn-toggle active" id="btnRow" onclick="setStoreMode('row')">Row-Store</button>
+            <button class="btn-toggle" id="btnCol" onclick="setStoreMode('col')">Column-Store</button>
+          </div>
+        </div>
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Consulta simulada</div>
+          <div class="chip" style="font-size:12px;">SELECT vendas FROM tabela WHERE produto = 'Camiseta'</div>
+        </div>
+      </div>
+      <div class="rc-table" id="rcHeader"></div>
+      <div id="rcRows"></div>
+      <div class="player-controls" style="display:flex;gap:8px;margin-top:14px;">
+        <button class="player-btn primary" onclick="runScan()">▶ Executar consulta</button>
+        <button class="player-btn" onclick="resetScan()">⏹ Resetar</button>
+      </div>
+      <div class="result-display" id="scanResult">
+        <div><span class="rl">Células lidas</span><span class="rv" id="rvCells">0 / 30</span></div>
+        <div><span class="rl">Bytes lidos (aprox.)</span><span class="rv" id="rvBytes">0 B</span></div>
+        <div><span class="rl">Economia vs. row-store</span><span class="rv" id="rvSaving">—</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">O toque extra do Parquet: Row Groups</div>
+      <p>O Parquet não é <em>puramente</em> colunar — ele é <strong>híbrido</strong>. O arquivo é dividido horizontalmente em <strong>row groups</strong> (grupos de linhas) e, dentro de cada row group, os dados são armazenados por coluna. Isso combina o melhor dos dois mundos: leitura de coluna dentro de cada grupo, e a possibilidade de <strong>pular row groups inteiros</strong> usando estatísticas — o assunto da seção de Predicate Pushdown mais abaixo.</p>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMIA ============ -->
+  <section class="section" id="s-anatomia">
+    <div class="section-eyebrow">Estrutura Física</div>
+    <div class="section-title">🔬 Anatomia de um arquivo .parquet</div>
+    <p class="section-desc">
+      Um arquivo Parquet é dividido em duas grandes partes: os <strong>dados</strong> (organizados em row groups → column chunks → pages) e o <strong>rodapé</strong> (footer), que guarda todos os metadados. Clique nas caixas abaixo — a mesma lógica do diagrama oficial da Apache — para entender como cada pedaço se conecta.
+    </p>
+
+    <div class="interactive-panel anatomy-wrap" id="anatomyWrap">
+      <svg id="anatomySvg"></svg>
+      <div class="anatomy-grid">
+        <!-- FILE -->
+        <div class="pq-box" id="box-file">
+          <div class="pq-box-label">📁 File</div>
+          <div class="pq-magic" data-id="magicstart" onclick="pickAnatomy('magicstart')">Magic Number (4 bytes): "PAR1"</div>
+
+          <div class="pq-clickable" data-id="rg0" onclick="pickAnatomy('rg0')">Row Group 0</div>
+          <div class="pq-nested" id="rg0-nested">
+            <div class="pq-clickable" data-id="cola" onclick="pickAnatomy('cola')">Column a</div>
+            <div class="pq-nested">
+              <div class="pq-clickable pq-page" data-id="page0" onclick="pickAnatomy('page0')">Page 0 — header · rep. levels · def. levels · values</div>
+              <div class="pq-clickable pq-page" data-id="page1" onclick="pickAnatomy('page1')" style="opacity:.75;">Page 1</div>
+            </div>
+            <div class="pq-clickable" data-id="colb" onclick="pickAnatomy('colb')">Column b</div>
+          </div>
+          <div class="pq-clickable" data-id="rg1" onclick="pickAnatomy('rg1')">Row Group 1</div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="pq-box" id="box-footer">
+          <div class="pq-box-label">🗄️ Footer</div>
+          <div class="pq-clickable" data-id="filemeta" onclick="pickAnatomy('filemeta')">FileMetaData (Thrift Compact Protocol)</div>
+          <div class="pq-nested">
+            <div class="pq-clickable" data-id="schema" onclick="pickAnatomy('schema')" style="font-size:11px;">Version · Schema · key/value extra</div>
+            <div class="pq-clickable" data-id="rg0meta" onclick="pickAnatomy('rg0meta')">Row Group 0 meta data</div>
+            <div class="pq-nested">
+              <div class="pq-clickable" data-id="colameta" onclick="pickAnatomy('colameta')" style="font-size:11px;">Column a: type · encodings · offsets · sizes · stats</div>
+              <div class="pq-clickable" data-id="colbmeta" onclick="pickAnatomy('colbmeta')" style="font-size:11px;">Column b meta data</div>
+            </div>
+            <div class="pq-clickable" data-id="rg1meta" onclick="pickAnatomy('rg1meta')">Row Group 1 meta data</div>
+          </div>
+          <div class="pq-magic" style="margin-top:8px;" data-id="magicend" onclick="pickAnatomy('magicend')">Footer length (4 bytes) + Magic Number "PAR1"</div>
+        </div>
+      </div>
+
+      <div class="anatomy-detail" id="anatomyDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Cada elemento do arquivo tem um par correspondente no footer. É assim que um leitor sabe, sem escanear o arquivo inteiro, exatamente em que byte cada coluna começa.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Repare que o <strong>footer fica no final do arquivo</strong>, não no início. Isso permite que o Parquet seja escrito em <em>single pass</em> (o gravador não sabe os tamanhos finais das colunas até terminar de escrever os dados). Um leitor então: (1) lê os últimos 8 bytes do arquivo — 4 bytes de "tamanho do footer" + 4 bytes do magic number <code style="color:var(--accent);">"PAR1"</code>; (2) volta esse tamanho a partir do final e decodifica o <code style="color:var(--accent);">FileMetaData</code> em Thrift; (3) só então sabe exatamente quais offsets ler para cada coluna que a query pediu.</p>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">🔬 Zoom: o que é exatamente o Magic Number "PAR1"?</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnMagicStart" onclick="pickAnatomy('magicstart')">📍 Início do arquivo (byte 0)</button>
+        <button class="btn-toggle" id="btnMagicEnd" onclick="pickAnatomy('magicend')">📍 Final do arquivo (últimos 4 bytes)</button>
+      </div>
+      <div class="byte-row" id="byteRow"></div>
+      <div class="section-desc" style="font-size:12px;margin-top:8px;" id="byteContextLabel"></div>
+
+      <div class="grid-2" style="margin-top:18px;">
+        <div class="card">
+          <div class="card-title">🔤 Por que bytes ASCII legíveis?</div>
+          <div class="card-text">"PAR1" não é uma sequência binária arbitrária — são 4 bytes que correspondem literalmente aos caracteres <code>P</code> (0x50), <code>A</code> (0x41), <code>R</code> (0x52) e <code>1</code> (0x31). Usar uma assinatura em texto plano é uma convenção comum entre formatos de arquivo: o PNG começa com <code>\x89PNG</code>, o GIF com <code>GIF89a</code>, o ZIP com <code>PK\x03\x04</code>. Qualquer pessoa consegue enxergar a assinatura só abrindo o arquivo num editor hexadecimal (<code>xxd</code>, <code>hexdump</code>), sem precisar de nenhuma ferramenta especializada.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">🎭 Por que ele aparece duas vezes?</div>
+          <div class="card-text">No <strong>início</strong>, funciona como etiqueta de identidade — o mesmo princípio usado por utilitários de detecção de tipo de arquivo (como o comando <code>file</code> do Unix), permitindo reconhecer o formato sem interpretar mais nada. No <strong>final</strong>, o papel é mais crítico: como o footer só é escrito depois de todos os dados, a presença do "PAR1" final confirma que a gravação terminou por completo — é uma checagem de integridade embutida no próprio formato.</div>
+        </div>
+      </div>
+
+      <div class="highlight-box" style="margin-top:16px;">
+        <div class="highlight-title">O que acontece se o "PAR1" final estiver faltando?</div>
+        <p>Se a escrita do arquivo for interrompida no meio — queda de energia, falha de rede, job cancelado — o footer e o magic number final simplesmente não chegam a ser gravados. Um leitor que tenta abrir esse arquivo lê os últimos 4 bytes, percebe que <strong>não</strong> são "PAR1" e rejeita o arquivo imediatamente como corrompido/incompleto, em vez de tentar interpretar dados parciais e devolver um resultado errado silenciosamente. Todo esse mecanismo de segurança custa apenas <strong>8 bytes</strong> (2 × 4) do arquivo inteiro — praticamente de graça.</p>
+      </div>
+
+      <div class="ctrl-l" style="margin-top:16px;margin-bottom:6px;">Algoritmo de leitura, passo a passo</div>
+      <div class="code-block" style="white-space:pre;">
+<span class="code-lang">pseudo-código</span><span class="cm"># 1. vai direto para o final do arquivo, sem escanear nada</span>
+seek(fim_do_arquivo - 8)
+
+<span class="cm"># 2. lê os últimos 4 bytes e confere a assinatura</span>
+magic_final <span class="kw">=</span> read(<span class="num">4</span>)
+<span class="kw">assert</span> magic_final <span class="kw">==</span> <span class="st">b"PAR1"</span>   <span class="cm"># senão: arquivo corrompido/incompleto</span>
+
+<span class="cm"># 3. lê os 4 bytes anteriores: tamanho do footer (little-endian)</span>
+footer_length <span class="kw">=</span> read_uint32_le()
+
+<span class="cm"># 4. recua exatamente até o início do FileMetaData</span>
+seek(fim_do_arquivo <span class="kw">-</span> <span class="num">8</span> <span class="kw">-</span> footer_length)
+file_meta_data <span class="kw">=</span> thrift_decode(read(footer_length))</div>
+    </div>
+  </section>
+
+  <!-- ============ ROW GROUPS / PAGES ============ -->
+  <section class="section" id="s-rowgroups">
+    <div class="section-eyebrow">Hierarquia Interna</div>
+    <div class="section-title">🧱 Row Groups, Column Chunks e Pages</div>
+    <p class="section-desc">O arquivo tem três níveis de granularidade, do maior para o menor. Entender essa hierarquia é a chave para entender paralelismo, compressão e pruning no Parquet.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">1️⃣ Row Group</div>
+        <div class="card-text">Uma fatia <strong>horizontal</strong> do dataset — um conjunto de linhas. Cada row group contém um <em>column chunk</em> para cada coluna do schema. É a unidade de <strong>paralelismo</strong>: cada task do Spark, por exemplo, normalmente processa um ou mais row groups inteiros. Tamanho típico recomendado: <strong>128 MB a 1 GB</strong>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Column Chunk</div>
+        <div class="card-text">Dentro de um row group, é o bloco <strong>contíguo</strong> de todos os valores de uma única coluna. É a unidade de leitura por coluna — o motor abre exatamente os column chunks das colunas usadas na query, ignorando o resto.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Page</div>
+        <div class="card-text">A menor unidade de armazenamento. Cada column chunk é dividido em páginas (tipicamente ~1 MB) — <strong>data pages</strong> (valores), <strong>dictionary pages</strong> (tabela de valores únicos) e páginas de índice. Encoding e compressão são aplicados <em>por página</em>.</div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Calculadora: dimensione a hierarquia do seu próprio dataset</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Tamanho do dataset</span><span class="ctrl-v" id="hcDatasetVal">10 GB</span></div>
+          <input type="range" id="hcDataset" min="1" max="500" step="1" value="10" oninput="updateHierarchyCalc()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Tamanho do row group</span><span class="ctrl-v" id="hcRgVal">512 MB</span></div>
+          <input type="range" id="hcRg" min="64" max="1024" step="64" value="512" oninput="updateHierarchyCalc()">
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Número de colunas</span><span class="ctrl-v" id="hcColsVal">8</span></div>
+          <input type="range" id="hcCols" min="1" max="40" step="1" value="8" oninput="updateHierarchyCalc()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Tamanho da page</span><span class="ctrl-v" id="hcPageVal">1024 KB</span></div>
+          <input type="range" id="hcPage" min="128" max="4096" step="128" value="1024" oninput="updateHierarchyCalc()">
+        </div>
+      </div>
+
+      <div class="canvas-wrap"><canvas id="hierarchyCanvas" height="130"></canvas></div>
+      <div class="section-desc" style="font-size:12px;text-align:center;margin-top:4px;">Escala ilustrativa (o canvas limita a quantidade de blocos desenhados; os números reais estão nos cartões abaixo).</div>
+
+      <div class="stat-cards" style="grid-template-columns:repeat(4,1fr);margin-top:14px;" id="hcStats"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📄 Data Page</div>
+        <div class="card-text">Contém os valores de fato: <code>page header</code> (Thrift) + repetition levels + definition levels + os valores codificados/comprimidos. Existem duas versões — <strong>DataPage V1</strong> (tudo comprimido junto) e <strong>DataPage V2</strong> (separa levels dos valores, permitindo pular a descompressão dos levels e habilitando os índices de página da próxima seção).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📖 Dictionary Page</div>
+        <div class="card-text">Quando a coluna usa Dictionary Encoding, a <strong>primeira página</strong> do column chunk é especial: guarda a tabela de valores únicos (o dicionário). As data pages seguintes armazenam só os índices inteiros que apontam para essa tabela — é o que vimos na demo da seção de Encodings.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ METADADOS ============ -->
+  <section class="section" id="s-metadados">
+    <div class="section-eyebrow">O Cérebro do Arquivo</div>
+    <div class="section-title">🗄️ Metadados e o Footer (FileMetaData)</div>
+    <p class="section-desc">Todo o "conhecimento" sobre o arquivo — schema, quantas linhas, onde cada coluna começa, estatísticas — vive em uma estrutura Thrift chamada <strong>FileMetaData</strong>, escrita uma única vez no footer. Um leitor sempre lê o footer <em>primeiro</em>, antes de tocar em qualquer dado.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📋 No nível do arquivo</div>
+        <div class="card-text">
+          <ul style="padding-left:16px;line-height:1.9;">
+            <li><code>version</code> — versão do formato Parquet</li>
+            <li><code>schema</code> — lista pré-ordenada de <code>SchemaElement</code> (tipos físicos e lógicos)</li>
+            <li><code>num_rows</code> — total de linhas do arquivo</li>
+            <li><code>row_groups[]</code> — metadados de cada row group</li>
+            <li><code>key_value_metadata</code> — pares chave/valor customizados (ex: metadados do Pandas)</li>
+            <li><code>created_by</code> — ferramenta que escreveu o arquivo</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 No nível de cada column chunk</div>
+        <div class="card-text">
+          <ul style="padding-left:16px;line-height:1.9;">
+            <li><code>type</code> / <code>path_in_schema</code> — tipo e caminho da coluna</li>
+            <li><code>encodings[]</code> — encodings usados (PLAIN, RLE, DICTIONARY...)</li>
+            <li><code>codec</code> — compressão aplicada (Snappy, Zstd, Gzip...)</li>
+            <li><code>num_values</code> — quantidade de valores</li>
+            <li><code>data_page_offset</code> / <code>dictionary_page_offset</code> — onde começar a ler</li>
+            <li><code>total_compressed_size</code> / <code>total_uncompressed_size</code></li>
+            <li><code>statistics</code> — min, max, null_count, distinct_count</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa na prática</div>
+      <p>Como cada column chunk conhece seu <em>offset</em> exato no arquivo, um mecanismo de leitura pode fazer <strong>seeks diretos</strong> — sem escanear sequencialmente. É o que permite a um motor de consulta ler só 2 de 50 colunas de um arquivo de 10 GB tocando apenas nos bytes daquelas 2 colunas.</p>
+    </div>
+  </section>
+
+  <!-- ============ ENCODINGS ============ -->
+  <section class="section" id="s-encodings">
+    <div class="section-eyebrow">Compactando Valores</div>
+    <div class="section-title">🧬 Encodings: a primeira camada de compactação</div>
+    <p class="section-desc">Antes mesmo de aplicar um codec de compressão genérico (Snappy, Gzip...), o Parquet já reescreve os valores de forma mais compacta usando <strong>encodings</strong> especializados por padrão de dados. As duas mais importantes:</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: Dictionary Encoding</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Coluna "produto" (valores separados por vírgula)</div>
+          <input type="text" id="dictInput" value="Bola,Camiseta,Meia,Meia,Camiseta,Meia,Camiseta,Bola" oninput="renderDict()">
+        </div>
+      </div>
+      <div class="ctrl-l" style="margin-top:4px;">Dicionário construído (valor único → índice)</div>
+      <div class="kv-list" id="dictTable" style="margin-bottom:14px;"></div>
+      <div class="ctrl-l">Coluna reescrita como índices inteiros</div>
+      <div class="indexed-list" id="dictIndices"></div>
+      <div class="result-display">
+        <div><span class="rl">Original (aprox.)</span><span class="rv" id="dictBefore">—</span></div>
+        <div><span class="rl">Com dicionário (aprox.)</span><span class="rv" id="dictAfter">—</span></div>
+        <div><span class="rl">Redução</span><span class="rv" id="dictSaving">—</span></div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: RLE + Bit-Packing (Run-Length Encoding)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Sequência de valores repetidos (ex: status ativo/inativo)</div>
+          <input type="text" id="rleInput" value="1,1,1,1,1,1,0,0,0,1,1,1,1,1,1,1,0,0" oninput="renderRLE()">
+        </div>
+      </div>
+      <div class="ctrl-l" style="margin-top:4px;">Sequência original</div>
+      <div class="indexed-list" id="rleRaw" style="margin-bottom:14px;"></div>
+      <div class="ctrl-l">Comprimida em pares (valor, repetições)</div>
+      <div class="kv-list" id="rleRuns"></div>
+      <div class="result-display">
+        <div><span class="rl">Valores originais</span><span class="rv" id="rleBefore">—</span></div>
+        <div><span class="rl">Pares (run-length)</span><span class="rv" id="rleAfter">—</span></div>
+        <div><span class="rl">Redução</span><span class="rv" id="rleSaving">—</span></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔢 Delta Encoding</div><div class="card-text">Para inteiros ordenados ou quase-ordenados (ex: timestamps, IDs sequenciais), armazena apenas a <strong>diferença</strong> entre valores consecutivos — números muito menores para compactar. Variantes: <code>DELTA_BINARY_PACKED</code>, <code>DELTA_BYTE_ARRAY</code>.</div></div>
+      <div class="card"><div class="card-title">✂️ Byte Stream Split</div><div class="card-text">Para <code>FLOAT</code>/<code>DOUBLE</code>, separa os bytes de mesma posição de todos os valores em streams distintos antes de comprimir — floats reais têm mais redundância byte a byte do que parece, e essa técnica revela isso ao compressor.</div></div>
+      <div class="card"><div class="card-title">📐 PLAIN</div><div class="card-text">O encoding "sem truque": valores em sequência, tamanho fixo por tipo. É o fallback usado quando nenhum encoding especializado compensa — e a base sobre a qual o codec de compressão genérico ainda atua.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPRESSÃO ============ -->
+  <section class="section" id="s-compressao">
+    <div class="section-eyebrow">Segunda Camada</div>
+    <div class="section-title">🗜️ Compressão: codecs por cima dos encodings</div>
+    <p class="section-desc">Depois do encoding, cada <strong>página</strong> ainda passa por um codec de compressão genérico. A escolha do codec troca <strong>velocidade por taxa de compressão</strong> — não existe um vencedor universal.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Compare os codecs (tamanho e velocidade ilustrativos)</div>
+      <div class="btn-toggle-row" id="codecButtons" style="margin-bottom:14px;"></div>
+      <div class="canvas-wrap"><canvas id="codecCanvas" height="180"></canvas></div>
+      <div class="anatomy-detail" style="border-color:var(--border-color);margin-top:14px;" id="codecDetail"></div>
+    </div>
+  </section>
+
+  <!-- ============ PRUNING ============ -->
+  <section class="section" id="s-pruning">
+    <div class="section-eyebrow">A Mágica da Performance</div>
+    <div class="section-title">🎯 Estatísticas e Predicate Pushdown</div>
+    <p class="section-desc">Cada column chunk guarda <code>min</code>, <code>max</code> e <code>null_count</code> no footer. Antes de ler um único byte de dado, o motor de consulta compara o filtro da query com essas estatísticas — se não houver interseção possível, o <strong>row group inteiro é pulado</strong>. Isso se chama <strong>predicate pushdown</strong> (ou row group / page pruning).</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: filtre <code style="color:var(--accent);">WHERE valor &gt;= X</code> e veja quais row groups seriam pulados</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Filtro: valor ≥</span><span class="ctrl-v" id="pruneVal">500</span></div>
+          <input type="range" id="pruneSlider" min="0" max="1000" step="10" value="500" oninput="renderPrune()">
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Row Group</th><th>min(valor)</th><th>max(valor)</th><th>Linhas</th><th>Resultado</th></tr></thead>
+        <tbody id="pruneBody"></tbody>
+      </table>
+      <div class="result-display">
+        <div><span class="rl">Row groups lidos</span><span class="rv" id="pruneRead">4 / 4</span></div>
+        <div><span class="rl">Row groups pulados</span><span class="rv" id="pruneSkip">0</span></div>
+        <div><span class="rl">I/O economizado</span><span class="rv" id="pruneSaving">0%</span></div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Isso funciona em duas granularidades: <strong>row group</strong> (estatística grosseira, sempre presente) e <strong>página</strong> (estatística fina, opcional — próxima seção). Quanto mais os dados estiverem <em>ordenados fisicamente</em> pela coluna filtrada, mais eficaz o pruning — daí a prática comum de ordenar (<code>ORDER BY</code> / <code>Z-ORDER</code>) antes de gravar em Parquet.</p></div>
+
+    <p class="section-desc">O exemplo acima usa uma coluna numérica com <code>min</code>/<code>max</code>. Mas o mesmo mecanismo vale para <strong>igualdade em colunas de texto</strong> — voltando à nossa tabela de vendas (<code>produto</code>), veja o que acontece quando o arquivo tem 3 row groups e a query filtra <code>produto = 'Camiseta'</code>:</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: filtro de igualdade sobre o case de vendas</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle" id="btnNarrativeFilter" onclick="toggleNarrativeFilter()">🔍 Aplicar filtro: produto = 'Camiseta'</button>
+      </div>
+      <div class="rg-narrative-row" id="rgNarrativeRow"></div>
+      <div class="stat-cards" id="rgNarrativeStats"></div>
+    </div>
+  </section>
+
+  <!-- ============ INDEXES / BLOOM ============ -->
+  <section class="section" id="s-indexes">
+    <div class="section-eyebrow">Recursos Avançados</div>
+    <div class="section-title">🔎 Column Index, Offset Index e Bloom Filter</div>
+    <p class="section-desc">O formato evoluiu para permitir pruning ainda mais fino do que "o row group inteiro". Estes três recursos são opcionais (nem todo arquivo/escritor os inclui), mas quando presentes reduzem drasticamente o I/O.</p>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📇 Column Index</div>
+        <div class="card-text">Guarda <code>min</code>/<code>max</code>/<code>null_count</code> <strong>por página</strong>, não só por row group. Permite pular páginas individuais dentro de um column chunk sem descartar o row group inteiro — pruning de granularidade fina.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📍 Offset Index</div>
+        <div class="card-text">Guarda o offset de byte e o tamanho de cada página (a estrutura <code>PageLocation</code>: offset, tamanho comprimido, primeira linha). Combinado com o Column Index, o leitor sabe <em>exatamente</em> quais bytes buscar (seek) para pegar só as páginas relevantes — sem decodificar as demais.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌸 Bloom Filter</div>
+        <div class="card-text">Estrutura probabilística por column chunk que responde "este valor <strong>certamente não está aqui</strong>" com custo baixíssimo. Essencial para colunas de alta cardinalidade (IDs, UUIDs, e-mails) em filtros de <strong>igualdade</strong>, onde min/max não ajuda muito.</div>
+      </div>
+    </div>
+
+    <p class="section-desc">O Column Index resolve um problema real: um <strong>row group inteiro</strong> pode ter um intervalo min/max muito amplo (e por isso nunca ser descartado sozinho), mesmo que a maioria das <em>páginas</em> dentro dele não tenha chance nenhuma de conter o valor buscado. Veja com uma coluna <code>preco</code> cujo row group vai de 10 a 980 — bem largo demais para qualquer pruning por row group:</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: pruning de <em>página</em> dentro de um único row group</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Filtro: preco ≥</span><span class="ctrl-v" id="pageIdxVal">700</span></div>
+          <input type="range" id="pageIdxSlider" min="0" max="1000" step="10" value="700" oninput="renderPageIndex()">
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Página (dentro do Column Chunk)</th><th>min(preco)</th><th>max(preco)</th><th>Resultado</th></tr></thead>
+        <tbody id="pageIdxBody"></tbody>
+      </table>
+      <div class="result-display">
+        <div><span class="rl">Row group (sem Column Index)</span><span class="rv" id="pageIdxRgOnly">5 / 5 páginas lidas</span></div>
+        <div><span class="rl">Com Column Index</span><span class="rv" id="pageIdxRead">0 / 5</span></div>
+        <div><span class="rl">Economia extra</span><span class="rv" id="pageIdxSaving">0%</span></div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Sozinho, o row group (min=10, max=980) <strong>sempre</strong> seria marcado como "pode ter match" — ele nunca é descartado por estatística de row group. É só descendo ao nível de <strong>página</strong>, com o Column Index, que o motor consegue pular parte do trabalho mesmo sem descartar o row group inteiro. O Offset Index é o que torna isso possível na prática: sem ele, o leitor saberia <em>quais</em> páginas pular, mas não <em>onde</em> elas começam no arquivo.</p></div>
+
+    <p class="section-desc">Já min/max não ajuda em nada para uma pergunta como <code>WHERE user_id = 'user_247'</code> — o valor pode estar em qualquer lugar dentro do intervalo. É exatamente aí que entra o <strong>Bloom Filter</strong>: uma estrutura de bits que testa pertencimento de forma probabilística.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: um Bloom Filter de verdade, rodando no seu navegador</div>
+      <div class="section-desc" style="margin-bottom:10px;font-size:12.5px;">4 valores foram inseridos neste filtro de demonstração (array de 24 bits, 3 funções hash): <span class="chip">user_193</span> <span class="chip">user_502</span> <span class="chip">user_881</span> <span class="chip">user_247</span></div>
+      <div class="bloom-bits" id="bloomBitsRow"></div>
+      <div class="ctrl-row" style="margin-top:16px;">
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Testar um valor</div>
+          <input type="text" id="bloomInput" value="user_193" oninput="checkBloom()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="margin-top:6px;margin-bottom:4px;">
+        <button class="btn-toggle" onclick="document.getElementById('bloomInput').value='user_193'; checkBloom();">user_193 (está no filtro)</button>
+        <button class="btn-toggle" onclick="document.getElementById('bloomInput').value='user_999'; checkBloom();">user_999 (nunca inserido)</button>
+        <button class="btn-toggle" onclick="document.getElementById('bloomInput').value='user_007'; checkBloom();">user_007 (falso positivo real)</button>
+      </div>
+      <div id="bloomResult"></div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Mecanismo</th><th>Granularidade</th><th>Melhor para</th><th>Sempre presente?</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Estatísticas do Row Group</strong></td><td>Row group inteiro</td><td>Filtros de intervalo (<code>&gt;</code>, <code>&lt;</code>, <code>BETWEEN</code>)</td><td>✅ Sempre</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Column Index</strong></td><td>Página</td><td>Filtros de intervalo, com granularidade fina</td><td>Opcional (comum)</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Offset Index</strong></td><td>Localização da página</td><td>Dá o byte exato para o Column Index funcionar</td><td>Junto com o Column Index</td></tr>
+          <tr><td><strong style="color:var(--accent);">Bloom Filter</strong></td><td>Column chunk inteiro</td><td>Igualdade (<code>=</code>) em colunas de alta cardinalidade</td><td>Opcional, sob demanda</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ DADOS ANINHADOS ============ -->
+  <section class="section" id="s-aninhados">
+    <div class="section-eyebrow">O Truque do Dremel</div>
+    <div class="section-title">🪆 Dados aninhados: repetition &amp; definition levels</div>
+    <p class="section-desc">Como guardar uma coluna que é, na verdade, uma <strong>lista</strong> (várias ocorrências por registro, algumas nulas) em formato colunar? O Parquet resolve isso com a técnica do paper <em>Dremel</em>: cada valor ganha um <strong>repetition level</strong> (em qual posição da lista ele reinicia) e um <strong>definition level</strong> (até que ponto do caminho aninhado o valor está de fato preenchido).</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📦 Exemplo: pessoas e telefones</div>
+        <div class="card-text">
+          <code>Ana: [11-1111, 11-2222]</code><br>
+          <code>Bruno: []</code> <span style="color:var(--text-disabled);">(sem telefone)</span><br>
+          <code>Carla: [21-3333]</code>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧩 Por que isso é poderoso</div>
+        <div class="card-text">A coluna <code>telefones</code> é achatada em uma única sequência física de valores + níveis — sem precisar duplicar <code>nome</code> para cada telefone, e sem quebrar o armazenamento colunar mesmo com listas e nulos aninhados.</div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>Valor</th><th>Definition Level</th><th>Repetition Level</th><th>Leitura</th></tr></thead>
+      <tbody>
+        <tr><td>11-1111</td><td>1</td><td>0</td><td>Primeiro telefone de um novo registro (Ana)</td></tr>
+        <tr><td>11-2222</td><td>1</td><td>1</td><td>Continuação da mesma lista (ainda Ana)</td></tr>
+        <tr><td><em style="color:var(--text-disabled);">null</em></td><td>0</td><td>0</td><td>Novo registro sem nenhum telefone (Bruno)</td></tr>
+        <tr><td>21-3333</td><td>1</td><td>0</td><td>Novo registro, primeiro telefone (Carla)</td></tr>
+      </tbody>
+    </table>
+    <div class="info-box"><p>💡 Você não precisa calcular esses níveis manualmente — bibliotecas como PyArrow, Spark e Pandas fazem isso por você ao gravar <code>struct</code>, <code>list</code> e <code>map</code>. O importante para a aula é entender <strong>por que</strong> tipos aninhados em Parquet não "quebram" a leitura colunar.</p></div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">⚖️ Parquet vs. CSV vs. JSON vs. Avro vs. ORC</div>
+    <p class="section-desc">Nenhum formato vence em tudo — a escolha depende do padrão de acesso (linha vs. coluna, streaming vs. analítico).</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Formato</th><th>Modelo</th><th>Compressão</th><th>Schema embutido</th><th>Splittable</th><th>Legível por humano</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">CSV</strong></td><td>Linha (texto)</td><td>Nenhuma nativa</td><td>Não</td><td>Sim (mas ingênuo)</td><td>✅ Sim</td><td>Troca simples, planilhas</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">JSON</strong></td><td>Linha (texto)</td><td>Nenhuma nativa</td><td>Parcial (implícito)</td><td>Depende</td><td>✅ Sim</td><td>APIs, dados semi-estruturados</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Avro</strong></td><td>Linha (binário)</td><td>Boa</td><td>Sim (evolutivo)</td><td>Sim</td><td>❌ Não</td><td>Streaming, escrita intensiva (Kafka)</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">ORC</strong></td><td>Coluna (binário)</td><td>Muito boa</td><td>Sim</td><td>Sim</td><td>❌ Não</td><td>Ecossistema Hive/Hadoop</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Parquet</strong></td><td>Coluna (binário)</td><td>Muito boa</td><td>Sim</td><td>Sim</td><td>❌ Não</td><td>Analítico geral, data lakes/lakehouses</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="canvas-wrap"><canvas id="sizeCanvas" height="140"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Tamanho relativo ilustrativo do mesmo dataset analítico em cada formato (baseline CSV = 100).</div>
+  </section>
+
+  <!-- ============ CÓDIGO ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🐍 Parquet na prática</div>
+    <p class="section-desc">Do dia a dia com pandas e Spark até espiar os metadados que acabamos de estudar, diretamente com PyArrow.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Pandas — ler e escrever</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> pandas <span class="kw">as</span> pd
+
+df = pd.read_csv(<span class="st">"vendas.csv"</span>)
+df.to_parquet(<span class="st">"vendas.parquet"</span>, compression=<span class="st">"zstd"</span>)
+
+<span class="cm"># leitura só das colunas necessárias</span>
+df2 = pd.read_parquet(<span class="st">"vendas.parquet"</span>, columns=[<span class="st">"categoria"</span>, <span class="st">"valor"</span>])</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">DuckDB — SQL direto no arquivo</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> categoria, <span class="fn">SUM</span>(valor)
+<span class="kw">FROM</span> <span class="st">'vendas.parquet'</span>
+<span class="kw">WHERE</span> valor &gt;= <span class="num">500</span>
+<span class="kw">GROUP BY</span> categoria;
+
+<span class="cm">-- funciona até com glob de vários arquivos</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="st">'dados/ano=*/*.parquet'</span>;</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">PySpark — escrita particionada</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>(df.write
+  .partitionBy(<span class="st">"ano"</span>, <span class="st">"mes"</span>)
+  .option(<span class="st">"compression"</span>, <span class="st">"snappy"</span>)
+  .parquet(<span class="st">"s3://bucket/vendas/"</span>))
+
+spark.read.parquet(<span class="st">"s3://bucket/vendas/"</span>) \
+  .filter(<span class="st">"ano = 2024"</span>)</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">PyArrow — inspecionando o footer</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> pyarrow.parquet <span class="kw">as</span> pq
+
+pf = pq.ParquetFile(<span class="st">"vendas.parquet"</span>)
+<span class="fn">print</span>(pf.metadata.num_row_groups)
+<span class="fn">print</span>(pf.schema)
+
+rg0 = pf.metadata.row_group(<span class="num">0</span>)
+col = rg0.column(<span class="num">0</span>)
+<span class="fn">print</span>(col.statistics.min, col.statistics.max)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PARTICIONAMENTO ============ -->
+  <section class="section" id="s-particionamento">
+    <div class="section-eyebrow">Organização em Disco</div>
+    <div class="section-title">🗃️ Particionamento (Hive-style)</div>
+    <p class="section-desc">O pruning por estatísticas acontece <em>dentro</em> de um arquivo. Antes disso, dá para evitar abrir arquivos inteiros organizando o dataset em <strong>pastas por valor de coluna</strong> — o padrão que Spark, Hive e a maioria dos data lakes usam.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="tree">
+          <div class="t0">vendas/</div>
+          <div class="t1">ano=2023/</div>
+          <div class="t2">mes=12/<span></span></div>
+          <div class="t3"><span class="fname">part-0000.parquet</span></div>
+          <div class="t1">ano=2024/</div>
+          <div class="t2">mes=01/</div>
+          <div class="t3"><span class="fname">part-0000.parquet</span></div>
+          <div class="t2">mes=02/</div>
+          <div class="t3"><span class="fname">part-0000.parquet</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Duas camadas de pruning combinadas</div>
+        <div class="card-text">Uma query com <code>WHERE ano = 2024 AND mes = 1</code> primeiro elimina pastas inteiras <strong>sem abrir nenhum arquivo</strong> (partition pruning no sistema de arquivos) e, dentro dos arquivos restantes, ainda aplica o predicate pushdown por estatísticas de row group. É por isso que pipelines bem desenhados combinam as duas técnicas.</div>
+      </div>
+    </div>
+    <div class="warn-box"><p>⚠️ Particionar demais (ex: por <code>cliente_id</code>, com milhões de valores únicos) gera o <strong>problema dos arquivos pequenos</strong>: milhares de arquivos minúsculos, cada um com overhead de metadados desproporcional ao dado real. Particione por colunas de baixa/média cardinalidade e com padrão de filtro real (data, região, categoria).</p></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas práticas e o Lakehouse</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📏 Tamanho de arquivo e row group</div>
+        <div class="card-text">Mire em arquivos de <strong>algumas centenas de MB a ~1 GB</strong>. Arquivos pequenos demais multiplicam overhead de metadados e desperdiçam o benefício do formato colunar; arquivos grandes demais prejudicam paralelismo. Compacte arquivos pequenos periodicamente.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗜️ Escolha de codec</div>
+        <div class="card-text"><strong>Snappy</strong> é o padrão histórico (rápido, compressão moderada). <strong>Zstd</strong> tornou-se a escolha moderna recomendada — melhor taxa de compressão com velocidade próxima do Snappy. <strong>Gzip</strong> comprime mais, mas é mais lento para ler.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Ordene o que você filtra</div>
+        <div class="card-text">Ordenar (ou usar <code>Z-ORDER</code>) os dados pela coluna mais filtrada antes de gravar concentra valores parecidos no mesmo row group — o que maximiza a eficácia do predicate pushdown (min/max mais "apertados").</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏛️ Delta Lake, Iceberg e Hudi</div>
+        <div class="card-text">Parquet não tem transações, versionamento ou DELETE/UPDATE nativos. Formatos de tabela como <strong>Delta Lake</strong>, <strong>Apache Iceberg</strong> e <strong>Apache Hudi</strong> adicionam um log de transações <em>por cima</em> de arquivos Parquet — trazendo ACID, time travel e schema evolution: a base do conceito de <strong>Lakehouse</strong>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Formato Parquet</span>
+    <span>
+      Fontes: <a href="https://parquet.apache.org/docs/file-format/" target="_blank" rel="noopener">Apache Parquet Docs</a> ·
+      <a href="https://data-mozart.com/parquet-file-format-everything-you-need-to-know/" target="_blank" rel="noopener">Data Mozart</a> ·
+      <a href="https://www.datacamp.com/pt/tutorial/apache-parquet" target="_blank" rel="noopener">DataCamp</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-colunar', icon:'🗂️', label:'Por que Colunar'},
+  {id:'s-anatomia', icon:'🔬', label:'Anatomia'},
+  {id:'s-rowgroups', icon:'🧱', label:'Row Groups'},
+  {id:'s-metadados', icon:'🗄️', label:'Metadados'},
+  {id:'s-encodings', icon:'🧬', label:'Encodings'},
+  {id:'s-compressao', icon:'🗜️', label:'Compressão'},
+  {id:'s-pruning', icon:'🎯', label:'Pushdown'},
+  {id:'s-indexes', icon:'🔎', label:'Índices'},
+  {id:'s-aninhados', icon:'🪆', label:'Aninhados'},
+  {id:'s-comparacao', icon:'⚖️', label:'Comparação'},
+  {id:'s-codigo', icon:'🐍', label:'Na Prática'},
+  {id:'s-particionamento', icon:'🗃️', label:'Partições'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== ROW vs COLUMN STORE DEMO ===================== */
+const rcCols = ['produto','cliente','país','data','vendas'];
+const rcData = [
+  ['Bola','João Silva','Brasil','01/01','100'],
+  ['Camiseta','João Silva','Brasil','02/01','200'],
+  ['Meia','Maria Costa','Portugal','01/01','300'],
+  ['Meia','Antônio Souza','Brasil','03/01','100'],
+  ['Camiseta','Maria Costa','Portugal','02/01','500'],
+  ['Meia','João Silva','Brasil','05/01','200'],
+];
+let storeMode = 'row';
+function buildRcTable(){
+  const header = document.getElementById('rcHeader');
+  header.innerHTML = rcCols.map(c => `<div class="rc-cell head">${c}</div>`).join('');
+  const rowsWrap = document.getElementById('rcRows');
+  rowsWrap.innerHTML = rcData.map((row,ri) => `
+    <div class="rc-table" data-row="${ri}">
+      ${row.map((v,ci) => `<div class="rc-cell" data-row="${ri}" data-col="${ci}">${v}</div>`).join('')}
+    </div>`).join('');
+}
+function setStoreMode(mode){
+  storeMode = mode;
+  document.getElementById('btnRow').classList.toggle('active', mode==='row');
+  document.getElementById('btnCol').classList.toggle('active', mode==='col');
+  resetScan();
+}
+function resetScan(){
+  document.querySelectorAll('.rc-cell').forEach(c => c.classList.remove('scanned','skipped','target'));
+  document.getElementById('rvCells').textContent = '0 / 30';
+  document.getElementById('rvBytes').textContent = '0 B';
+  document.getElementById('rvSaving').textContent = '—';
+}
+function runScan(){
+  resetScan();
+  const targetCols = [0,4]; // produto, vendas
+  let cellsRead = 0;
+  const totalCells = rcCols.length * rcData.length;
+  const BYTES_PER_CELL = 8;
+  if(storeMode === 'row'){
+    document.querySelectorAll('.rc-cell:not(.head)').forEach(c => {
+      const ci = +c.dataset.col;
+      c.classList.add(targetCols.includes(ci) ? 'target' : 'scanned');
+      cellsRead++;
+    });
+  } else {
+    document.querySelectorAll('.rc-cell:not(.head)').forEach(c => {
+      const ci = +c.dataset.col;
+      if(targetCols.includes(ci)){ c.classList.add('target'); cellsRead++; }
+      else c.classList.add('skipped');
+    });
+  }
+  document.getElementById('rvCells').textContent = `${cellsRead} / ${totalCells}`;
+  document.getElementById('rvBytes').textContent = `${cellsRead * BYTES_PER_CELL} B`;
+  const rowBytes = totalCells * BYTES_PER_CELL;
+  const saved = Math.round((1 - (cellsRead*BYTES_PER_CELL)/rowBytes) * 100);
+  document.getElementById('rvSaving').textContent = storeMode === 'row' ? '0% (linha de base)' : `${saved}% menos I/O`;
+}
+buildRcTable();
+
+/* ===================== ANATOMY DIAGRAM ===================== */
+const anatomyInfo = {
+  rg0: {t:'Row Group 0', d:'Fatia horizontal do dataset. Contém um column chunk para cada coluna do schema — aqui, "a" e "b". É a unidade que um leitor pode pular inteira via predicate pushdown, e a unidade de paralelismo entre tasks.', link:'rg0meta'},
+  rg1: {t:'Row Group 1', d:'Um segundo grupo de linhas, independente do Row Group 0 — com seus próprios column chunks e sua própria entrada de metadados no footer.', link:'rg1meta'},
+  cola: {t:'Column "a" — Column Chunk', d:'Todos os valores da coluna "a" dentro deste row group, armazenados de forma contígua e dividida em páginas.', link:'colameta'},
+  colb: {t:'Column "b" — Column Chunk', d:'Todos os valores da coluna "b" dentro deste row group — fisicamente separada da coluna "a", por isso o motor pode ler uma sem tocar na outra.', link:'colbmeta'},
+  page0: {t:'Page 0', d:'A menor unidade de armazenamento: page header (Thrift) + repetition levels + definition levels + os valores propriamente ditos, já codificados e comprimidos.', link:'colameta'},
+  page1: {t:'Page 1', d:'Mais uma página da mesma coluna — cada column chunk é fatiado em várias páginas (tipicamente ~1MB) para permitir leitura incremental.', link:null},
+  filemeta: {t:'FileMetaData', d:'A estrutura raiz de metadados, serializada em Thrift Compact Protocol. Guarda schema, versão, número de linhas e a lista de metadados de cada row group.'},
+  schema: {t:'Version, Schema e extras', d:'A versão do formato, o schema completo (tipos físicos e lógicos de cada coluna) e pares chave/valor extras definidos por quem escreveu o arquivo (ex: metadados do Pandas).'},
+  rg0meta: {t:'Row Group 0 meta data', d:'Estatísticas e localização de cada column chunk do Row Group 0 — é o que permite ao leitor decidir, sem abrir o row group, se ele deve ou não ser lido.', link:'rg0'},
+  rg1meta: {t:'Row Group 1 meta data', d:'O mesmo tipo de informação, para o Row Group 1.', link:'rg1'},
+  colameta: {t:'Column "a" meta data', d:'type, path, encodings, codec, num_values, offset da primeira data page, offset da dictionary page, tamanho comprimido/descomprimido e estatísticas (min/max/null_count).', link:'cola'},
+  colbmeta: {t:'Column "b" meta data', d:'Os mesmos campos, para a coluna "b".', link:'colb'},
+  magicstart: {t:'Magic Number — início do arquivo', d:'Os 4 primeiros bytes do arquivo: os caracteres ASCII "P", "A", "R", "1". Funcionam como uma assinatura de identidade — qualquer ferramenta reconhece que é um arquivo Parquet sem interpretar mais nada. Veja o detalhamento byte a byte logo abaixo do diagrama.', link:'magicend'},
+  magicend: {t:'Magic Number — final do arquivo', d:'Os mesmos 4 bytes "PAR1" repetidos no final, logo depois do footer_length. Aqui eles têm um papel mais crítico: confirmam que a escrita do arquivo terminou por completo, funcionando como uma checagem de integridade.', link:'magicstart'},
+};
+function pickAnatomy(id){
+  document.querySelectorAll('.pq-clickable, .pq-magic').forEach(el => el.classList.remove('active'));
+  const info = anatomyInfo[id];
+  if(!info) return;
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(el => el.classList.add('active'));
+  if(info.link) document.querySelectorAll(`[data-id="${info.link}"]`).forEach(el => el.classList.add('active'));
+  document.getElementById('anatomyDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+  drawConnectors(id, info.link);
+  if(id === 'magicstart' || id === 'magicend') updateByteContext(id);
+}
+function rectRel(el, wrap){
+  const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+  return {x: r.left - w.left, y: r.top - w.top, w: r.width, h: r.height};
+}
+function drawConnectors(id, linkId){
+  const svg = document.getElementById('anatomySvg');
+  const wrap = document.getElementById('anatomyWrap');
+  svg.innerHTML = '';
+  if(window.innerWidth <= 960 || !linkId) return;
+  const a = document.querySelector(`[data-id="${id}"]`);
+  const b = document.querySelector(`[data-id="${linkId}"]`);
+  if(!a || !b) return;
+  const ra = rectRel(a, wrap), rb = rectRel(b, wrap);
+  const isFileSide = ra.x < rb.x;
+  const x1 = isFileSide ? ra.x + ra.w : ra.x;
+  const y1 = ra.y + ra.h/2;
+  const x2 = isFileSide ? rb.x : rb.x + rb.w;
+  const y2 = rb.y + rb.h/2;
+  const mx = (x1+x2)/2;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+  path.setAttribute('stroke', '#06b6d4');
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('opacity', '0.85');
+  svg.appendChild(path);
+  [ [x1,y1], [x2,y2] ].forEach(([cx,cy]) => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', 3.5);
+    c.setAttribute('fill', '#06b6d4');
+    svg.appendChild(c);
+  });
+}
+window.addEventListener('resize', () => { const active = document.querySelector('.pq-clickable.active, .pq-magic.active'); if(active) drawConnectors(active.dataset.id, anatomyInfo[active.dataset.id]?.link); });
+
+/* ===================== MAGIC NUMBER BYTE VIEWER ===================== */
+function buildByteViewer(id){
+  const bytes = [['0x50',"P"],['0x41',"A"],['0x52',"R"],['0x31',"1"]];
+  const isEnd = id === 'magicend';
+  document.getElementById('byteRow').innerHTML = bytes.map((b,i) => `
+    <div class="byte-box">
+      <div class="byte-idx">${isEnd ? 'N−' + (4-i) : 'byte ' + i}</div>
+      <div class="byte-hex">${b[0]}</div>
+      <div class="byte-char">'${b[1]}'</div>
+    </div>${i < 3 ? '<span class="byte-arrow">·</span>' : ''}`).join('');
+  document.getElementById('byteContextLabel').textContent = isEnd
+    ? 'Posição: os 4 últimos bytes do arquivo (N = tamanho total em bytes), logo após os 4 bytes de footer_length.'
+    : 'Posição: os 4 primeiros bytes do arquivo — antes de qualquer row group ou dado.';
+}
+function updateByteContext(id){
+  document.getElementById('btnMagicStart').classList.toggle('active', id === 'magicstart');
+  document.getElementById('btnMagicEnd').classList.toggle('active', id === 'magicend');
+  buildByteViewer(id);
+}
+buildByteViewer('magicstart');
+
+/* ===================== HIERARCHY CANVAS + CALCULATOR ===================== */
+let hcLastChunks = 4, hcLastPages = 3, hcLastRgLabel = 'Row Group (ex: 512 MB)';
+function drawHierarchy(chunkCount, pageCount, rgLabel){
+  chunkCount = Math.max(1, Math.min(chunkCount ?? hcLastChunks, 8));
+  pageCount = Math.max(1, Math.min(pageCount ?? hcLastPages, 8));
+  rgLabel = rgLabel ?? hcLastRgLabel;
+  hcLastChunks = chunkCount; hcLastPages = pageCount; hcLastRgLabel = rgLabel;
+
+  const cv = document.getElementById('hierarchyCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 130;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  ctx.font = '11px Inter, sans-serif';
+  // Row group big bar
+  ctx.fillStyle = 'rgba(6,182,212,.16)'; ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 1.5;
+  roundRect(ctx, 10, 14, w-20, 26, 5); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#06b6d4'; ctx.fillText(rgLabel, 18, 31);
+  // column chunks
+  const gap=8, chunkW = (w-20-(chunkCount-1)*gap)/chunkCount;
+  for(let i=0;i<chunkCount;i++){
+    const x = 10 + i*(chunkW+gap);
+    ctx.fillStyle = 'rgba(54,162,239,.16)'; ctx.strokeStyle = '#36a2ef';
+    roundRect(ctx, x, 54, chunkW, 24, 5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#36a2ef'; ctx.font = '10px Inter, sans-serif';
+    ctx.fillText(chunkW > 70 ? 'Column Chunk' : 'Col.', x+6, 70);
+  }
+  // pages under first chunk
+  const pw = (chunkW-(pageCount-1)*4)/pageCount;
+  for(let i=0;i<pageCount;i++){
+    const x = 10 + i*(pw+4);
+    ctx.fillStyle = 'rgba(125,222,216,.18)'; ctx.strokeStyle = '#7dded8';
+    roundRect(ctx, x, 92, pw, 20, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#7dded8'; ctx.font = '9.5px Inter, sans-serif';
+    if(pw > 24) ctx.fillText('Page', x+6, 106);
+  }
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function updateHierarchyCalc(){
+  const datasetGB = +document.getElementById('hcDataset').value;
+  const rgMB = +document.getElementById('hcRg').value;
+  const cols = +document.getElementById('hcCols').value;
+  const pageKB = +document.getElementById('hcPage').value;
+  document.getElementById('hcDatasetVal').textContent = datasetGB + ' GB';
+  document.getElementById('hcRgVal').textContent = rgMB + ' MB';
+  document.getElementById('hcColsVal').textContent = cols;
+  document.getElementById('hcPageVal').textContent = pageKB + ' KB';
+
+  const datasetMB = datasetGB * 1024;
+  const numRowGroups = Math.max(1, Math.ceil(datasetMB / rgMB));
+  const chunkMB = rgMB / cols;
+  const pagesPerChunk = Math.max(1, Math.ceil((chunkMB*1024) / pageKB));
+  const totalChunks = numRowGroups * cols;
+  const totalPages = totalChunks * pagesPerChunk;
+
+  document.getElementById('hcStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Row Groups</div><div class="stat-card-value">${numRowGroups.toLocaleString('pt-BR')}</div></div>
+    <div class="stat-card"><div class="stat-card-label">Column Chunks totais</div><div class="stat-card-value">${totalChunks.toLocaleString('pt-BR')}</div></div>
+    <div class="stat-card"><div class="stat-card-label">Páginas / Column Chunk</div><div class="stat-card-value">${pagesPerChunk.toLocaleString('pt-BR')}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Páginas totais</div><div class="stat-card-value">${totalPages.toLocaleString('pt-BR')}</div></div>
+  `;
+  drawHierarchy(cols, pagesPerChunk, `Row Group (${rgMB} MB, ${cols} colunas)`);
+}
+updateHierarchyCalc();
+window.addEventListener('resize', () => drawHierarchy());
+
+/* ===================== DICTIONARY ENCODING DEMO ===================== */
+function renderDict(){
+  const raw = document.getElementById('dictInput').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const dict = [];
+  const idxOf = {};
+  raw.forEach(v => { if(!(v in idxOf)){ idxOf[v] = dict.length; dict.push(v); } });
+  document.getElementById('dictTable').innerHTML = dict.map((v,i) => `
+    <div class="kv-pair"><div class="kv-key">${i}</div><div class="kv-arrow">→</div><div class="kv-value">${v}</div></div>
+  `).join('');
+  document.getElementById('dictIndices').innerHTML = raw.map(v => `
+    <div class="indexed-item hi"><div class="idx-box">${idxOf[v]}</div></div>
+  `).join('');
+  const avgLen = raw.reduce((s,v)=>s+v.length,0)/raw.length || 0;
+  const beforeBytes = raw.reduce((s,v)=>s+v.length,0);
+  const afterBytes = dict.reduce((s,v)=>s+v.length,0) + raw.length*1; // 1 byte por índice (aprox, até 255 valores)
+  document.getElementById('dictBefore').textContent = beforeBytes + ' B';
+  document.getElementById('dictAfter').textContent = afterBytes + ' B';
+  const saving = beforeBytes > 0 ? Math.round((1-afterBytes/beforeBytes)*100) : 0;
+  document.getElementById('dictSaving').textContent = saving + '%';
+}
+renderDict();
+
+/* ===================== RLE DEMO ===================== */
+function renderRLE(){
+  const raw = document.getElementById('rleInput').value.split(',').map(s=>s.trim()).filter(Boolean);
+  document.getElementById('rleRaw').innerHTML = raw.map(v => `<div class="indexed-item"><div class="idx-box">${v}</div></div>`).join('');
+  const runs = [];
+  raw.forEach(v => {
+    if(runs.length && runs[runs.length-1].v === v) runs[runs.length-1].c++;
+    else runs.push({v, c:1});
+  });
+  document.getElementById('rleRuns').innerHTML = runs.map(r => `
+    <div class="kv-pair highlight"><div class="kv-key">valor ${r.v}</div><div class="kv-arrow">×</div><div class="kv-value">${r.c}x</div></div>
+  `).join('');
+  document.getElementById('rleBefore').textContent = raw.length;
+  document.getElementById('rleAfter').textContent = runs.length;
+  const saving = raw.length > 0 ? Math.round((1-runs.length/raw.length)*100) : 0;
+  document.getElementById('rleSaving').textContent = saving + '%';
+}
+renderRLE();
+
+/* ===================== CODEC COMPARISON CANVAS ===================== */
+const codecs = [
+  {name:'Uncompressed', size:100, speed:100, note:'Sem compressão — baseline de tamanho e velocidade máxima de leitura/escrita, mas maior custo de I/O e armazenamento.'},
+  {name:'Snappy', size:55, speed:92, note:'Padrão histórico do ecossistema Hadoop/Spark. Compressão modesta, mas extremamente rápida — prioriza velocidade.'},
+  {name:'Gzip', size:35, speed:45, note:'Compressão bem mais agressiva que Snappy, porém mais lenta para ler e escrever. Bom para arquivamento frio.'},
+  {name:'Zstd', size:38, speed:80, note:'Escolha moderna recomendada: taxa de compressão próxima do Gzip com velocidade próxima do Snappy. Ajustável por nível.'},
+  {name:'LZ4', size:58, speed:96, note:'Foco quase total em velocidade, com compressão similar ao Snappy. Ótimo para pipelines sensíveis a latência.'},
+];
+let codecIdx = 3;
+function buildCodecButtons(){
+  document.getElementById('codecButtons').innerHTML = codecs.map((c,i) => `<button class="btn-toggle ${i===codecIdx?'active':''}" onclick="setCodec(${i})">${c.name}</button>`).join('');
+}
+function setCodec(i){ codecIdx = i; buildCodecButtons(); drawCodecCanvas(); }
+function drawCodecCanvas(){
+  const cv = document.getElementById('codecCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 180;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 90, padR = 20, padTop = 10, barH = 22, gap = 14;
+  const maxVal = 100;
+  codecs.forEach((c,i) => {
+    const y = padTop + i*(barH+gap);
+    const active = i === codecIdx;
+    ctx.font = '11px Inter, sans-serif';
+    ctx.fillStyle = active ? '#06b6d4' : '#98a2b3';
+    ctx.fillText(c.name, 4, y+barH*0.65);
+    const trackW = w - padL - padR;
+    ctx.fillStyle = 'rgba(255,255,255,.05)';
+    roundRect(ctx, padL, y, trackW, barH, 5); ctx.fill();
+    const barW = trackW * (c.size/maxVal);
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    if(active){ grad.addColorStop(0,'#06b6d4'); grad.addColorStop(1,'#7dded8'); }
+    else { grad.addColorStop(0,'#343741'); grad.addColorStop(1,'#535966'); }
+    ctx.fillStyle = grad;
+    roundRect(ctx, padL, y, barW, barH, 5); ctx.fill();
+    ctx.fillStyle = active ? '#111216' : '#dfe5ef';
+    ctx.font = '10.5px Roboto Mono, monospace';
+    ctx.fillText(c.size + '% tamanho', padL+8, y+barH*0.65);
+  });
+}
+function updateCodecDetail(){
+  document.getElementById('codecDetail').innerHTML = `<div class="ad-title" style="color:var(--accent);">${codecs[codecIdx].name}</div><div class="ad-text">${codecs[codecIdx].note} Velocidade relativa ilustrativa: ${codecs[codecIdx].speed}/100.</div>`;
+}
+const _origSetCodec = setCodec;
+setCodec = function(i){ _origSetCodec(i); updateCodecDetail(); };
+buildCodecButtons(); drawCodecCanvas(); updateCodecDetail();
+window.addEventListener('resize', drawCodecCanvas);
+
+/* ===================== PRUNING DEMO ===================== */
+const rowGroups = [
+  {name:'Row Group 0', min:10, max:480, rows:'1.2M'},
+  {name:'Row Group 1', min:450, max:900, rows:'980K'},
+  {name:'Row Group 2', min:5, max:120, rows:'1.5M'},
+  {name:'Row Group 3', min:600, max:999, rows:'1.1M'},
+];
+function renderPrune(){
+  const filter = +document.getElementById('pruneSlider').value;
+  document.getElementById('pruneVal').textContent = filter;
+  let read = 0;
+  const rows = rowGroups.map(rg => {
+    const canMatch = rg.max >= filter;
+    if(canMatch) read++;
+    return `<tr class="${canMatch ? 'row-scan' : 'row-skip'}">
+      <td>${rg.name}</td><td>${rg.min}</td><td>${rg.max}</td><td>${rg.rows}</td>
+      <td>${canMatch ? '✅ Lido (pode ter match)' : '⏭️ Pulado (max &lt; filtro)'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('pruneBody').innerHTML = rows;
+  document.getElementById('pruneRead').textContent = `${read} / ${rowGroups.length}`;
+  document.getElementById('pruneSkip').textContent = rowGroups.length - read;
+  document.getElementById('pruneSaving').textContent = Math.round((1-read/rowGroups.length)*100) + '%';
+}
+renderPrune();
+
+/* ===================== ROW GROUP NARRATIVE (skip-overlay) ===================== */
+const narrativeGroups = [
+  {name:'Row Group 0', rows:[['Bola','João Silva','Brasil','100'],['Camiseta','João Silva','Brasil','200']]},
+  {name:'Row Group 1', rows:[['Meia','Maria Costa','Portugal','300'],['Meia','Antônio Souza','Brasil','100']]},
+  {name:'Row Group 2', rows:[['Camiseta','Maria Costa','Portugal','500'],['Meia','João Silva','Brasil','200']]},
+];
+let narrativeFilterActive = false;
+function toggleNarrativeFilter(){
+  narrativeFilterActive = !narrativeFilterActive;
+  renderNarrative();
+}
+function renderNarrative(){
+  const btn = document.getElementById('btnNarrativeFilter');
+  btn.classList.toggle('active', narrativeFilterActive);
+  btn.textContent = narrativeFilterActive ? "✕ Remover filtro: produto = 'Camiseta'" : "🔍 Aplicar filtro: produto = 'Camiseta'";
+
+  let scanned = 0;
+  document.getElementById('rgNarrativeRow').innerHTML = narrativeGroups.map(rg => {
+    const hasMatch = rg.rows.some(r => r[0] === 'Camiseta');
+    const isPruned = narrativeFilterActive && !hasMatch;
+    if(!isPruned) scanned++;
+    const cls = !narrativeFilterActive ? '' : (hasMatch ? 'match' : 'pruned');
+    const tableRows = rg.rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>R$ ${r[3]}</td></tr>`).join('');
+    return `<div class="rg-block ${cls}">
+      <div class="rg-block-title">${rg.name}</div>
+      <table class="rg-mini-table"><tbody>${tableRows}</tbody></table>
+      <div class="rg-overlay ${isPruned ? 'show' : ''}">
+        <div class="rg-overlay-badge">🚫 Pulado</div>
+        <div class="rg-overlay-text">nenhuma linha aqui é "Camiseta"</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const total = narrativeGroups.length;
+  const pruned = narrativeFilterActive ? total - scanned : 0;
+  const saving = narrativeFilterActive ? Math.round((pruned/total)*100) : 0;
+  document.getElementById('rgNarrativeStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Escaneados</div><div class="stat-card-value">${narrativeFilterActive ? scanned : total} / ${total}</div></div>
+    <div class="stat-card c-red"><div class="stat-card-label">Pulados</div><div class="stat-card-value">${pruned}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">I/O economizado</div><div class="stat-card-value">${saving}%</div></div>
+  `;
+}
+renderNarrative();
+
+/* ===================== PAGE-LEVEL PRUNING (Column Index) DEMO ===================== */
+const idxPages = [
+  {name:'Página 0', min:10, max:150},
+  {name:'Página 1', min:140, max:300},
+  {name:'Página 2', min:290, max:620},
+  {name:'Página 3', min:600, max:910},
+  {name:'Página 4', min:895, max:980},
+];
+function renderPageIndex(){
+  const filter = +document.getElementById('pageIdxSlider').value;
+  document.getElementById('pageIdxVal').textContent = filter;
+  let read = 0;
+  const rows = idxPages.map(p => {
+    const canMatch = p.max >= filter;
+    if(canMatch) read++;
+    return `<tr class="${canMatch ? 'row-scan' : 'row-skip'}">
+      <td>${p.name}</td><td>${p.min}</td><td>${p.max}</td>
+      <td>${canMatch ? '✅ Lida (pode ter match)' : '⏭️ Pulada via Column Index'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('pageIdxBody').innerHTML = rows;
+  document.getElementById('pageIdxRead').textContent = `${read} / ${idxPages.length}`;
+  document.getElementById('pageIdxSaving').textContent = Math.round((1 - read/idxPages.length) * 100) + '%';
+}
+renderPageIndex();
+
+/* ===================== BLOOM FILTER DEMO ===================== */
+const bloomSize = 24;
+const bloomInserted = ['user_193','user_502','user_881','user_247'];
+function bloomHash(str, seed){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i) + seed*17) >>> 0; }
+  return h % bloomSize;
+}
+const bloomBits = new Array(bloomSize).fill(false);
+bloomInserted.forEach(v => [1,2,3].forEach(s => bloomBits[bloomHash(v,s)] = true));
+
+function renderBloomBits(highlight){
+  document.getElementById('bloomBitsRow').innerHTML = bloomBits.map((set,i) => `
+    <div class="bloom-bit ${set ? 'set' : ''} ${highlight && highlight.includes(i) ? 'hit' : ''}">${i}</div>
+  `).join('');
+}
+function checkBloom(){
+  const val = document.getElementById('bloomInput').value.trim();
+  const resultBox = document.getElementById('bloomResult');
+  if(!val){ renderBloomBits(); resultBox.innerHTML = ''; return; }
+  const positions = [1,2,3].map(s => bloomHash(val, s));
+  renderBloomBits(positions);
+  const allSet = positions.every(p => bloomBits[p]);
+  const isMember = bloomInserted.includes(val);
+  if(allSet){
+    resultBox.className = 'highlight-box';
+    resultBox.innerHTML = `<div class="highlight-title">🔶 Pode estar presente</div><p>As posições testadas (${positions.join(', ')}) já estavam todas ligadas — o Bloom Filter <strong>não descarta</strong> esta página/row group; o motor precisa abrir os dados de verdade para confirmar.${!isMember ? ' <strong>Repare:</strong> "'+val+'" nunca foi inserido neste filtro — isso é um <em>falso positivo</em> real, causado por colisão de hash com outros valores. Bloom Filters aceitam esse tipo de erro raro em troca de um tamanho minúsculo, mas <strong>nunca</strong> erram no sentido contrário.' : ''}</p>`;
+  } else {
+    resultBox.className = 'ok-box';
+    resultBox.innerHTML = `<div class="highlight-title">✅ Definitivamente NÃO está presente</div><p>Ao menos uma das posições testadas (${positions.join(', ')}) está desligada — isso <strong>garante</strong> que "${val}" não está aqui. O motor pula a leitura com 100% de certeza: um Bloom Filter <strong>nunca</strong> produz falso negativo.</p>`;
+  }
+}
+checkBloom();
+
+/* ===================== SIZE COMPARISON CANVAS ===================== */
+function drawSizeCanvas(){
+  const cv = document.getElementById('sizeCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 140;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'CSV', val:100, color:'#98a2b3'},
+    {name:'JSON', val:135, color:'#f86b63'},
+    {name:'Avro', val:45, color:'#36a2ef'},
+    {name:'ORC', val:24, color:'#c49aff'},
+    {name:'Parquet', val:26, color:'#06b6d4'},
+  ];
+  const padB = 26, padTop=14, barGap=18;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = 140;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, barH, 5); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='11px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText(d.val, x+barW/2, y-6);
+    ctx.fillStyle = '#98a2b3'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText(d.name, x+barW/2, h-8);
+    ctx.textAlign='left';
+  });
+}
+drawSizeCanvas();
+window.addEventListener('resize', drawSizeCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O Parquet é um formato orientado a linhas, como o CSV.', a:false, e:'Falso. O Parquet é orientado a colunas — cada coluna é armazenada de forma contígua, dentro de cada row group.'},
+  {q:'O footer (metadados) fica no final do arquivo, não no início.', a:true, e:'Verdadeiro. Isso permite escrita em single-pass: o gravador só sabe os tamanhos finais das colunas depois de escrever todos os dados.'},
+  {q:'Predicate pushdown permite pular row groups inteiros sem ler seus dados.', a:true, e:'Verdadeiro. Comparando o filtro da query com min/max guardados no footer, o motor decide antes de tocar nos bytes de dado.'},
+  {q:'Dictionary Encoding funciona melhor em colunas de baixa cardinalidade (poucos valores distintos).', a:true, e:'Verdadeiro. Quanto menos valores únicos e mais repetição, maior o ganho — cada valor repetido vira apenas um pequeno índice inteiro.'},
+  {q:'Bloom Filters substituem completamente a necessidade de min/max statistics.', a:false, e:'Falso. Eles são complementares: min/max é ótimo para filtros de intervalo (&gt;, &lt;, BETWEEN); Bloom Filter ajuda especificamente em igualdade sobre colunas de alta cardinalidade.'},
+  {q:'Um arquivo Parquet nativo já suporta UPDATE e DELETE transacionais.', a:false, e:'Falso. Isso é responsabilidade de formatos de tabela construídos por cima do Parquet, como Delta Lake, Apache Iceberg e Apache Hudi.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

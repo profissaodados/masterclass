@@ -1,0 +1,1526 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Regressão Logística explicada do zero, com curva sigmoide, odds, log-loss, matriz de confusão, curva ROC e muitas demos visuais interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Regressão Logística do Jeito Fácil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-chart-box{width:100%;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);padding:14px;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+.canvas-wrap.drag canvas{cursor:grab;}
+.canvas-wrap.drag canvas:active{cursor:grabbing;}
+
+/* ---- LEGEND ---- */
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-secondary);}
+.legend-swatch{width:14px;height:4px;border-radius:2px;flex-shrink:0;}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.drag-hint{font-size:11.5px;color:var(--text-disabled);text-align:center;margin-top:6px;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-cards.four{grid-template-columns:repeat(4,1fr);}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-yellow{border-top-color:var(--accent-yellow);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- FLOW / PIPELINE DIAGRAM ---- */
+.mreg-diagram{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;padding:10px 0;}
+.mreg-inputs{display:flex;flex-direction:column;gap:10px;}
+.mreg-chip{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--text-primary);padding:10px 16px;border-radius:8px;font-size:12.5px;font-weight:600;min-width:170px;text-align:center;}
+.mreg-arrow{font-size:22px;color:var(--border-strong);padding:0 18px;}
+.mreg-output{background:rgba(6,182,212,.10);border:2px solid var(--accent);color:var(--accent);padding:16px 22px;border-radius:8px;font-size:14px;font-weight:800;text-align:center;min-width:170px;}
+.flow-stage{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.flow-box{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--text-primary);padding:12px 14px;border-radius:8px;font-size:12px;font-weight:600;text-align:center;min-width:120px;}
+.flow-box.final{background:rgba(6,182,212,.12);border-color:var(--accent);color:var(--accent);font-weight:800;}
+.flow-caption{font-size:9.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;text-align:center;}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- CONFUSION MATRIX ---- */
+.cm-wrap{display:grid;grid-template-columns:120px 1fr 1fr;gap:6px;margin-top:16px;max-width:520px;margin-left:auto;margin-right:auto;}
+.cm-corner{}
+.cm-head{font-size:10px;text-transform:uppercase;color:var(--text-secondary);text-align:center;font-weight:700;display:flex;align-items:center;justify-content:center;letter-spacing:.5px;}
+.cm-rowlabel{font-size:10px;text-transform:uppercase;color:var(--text-secondary);font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;letter-spacing:.5px;}
+.cm-cell{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:6px;padding:12px 6px;text-align:center;}
+.cm-cell.tp{border-color:var(--accent-green);}
+.cm-cell.tn{border-color:var(--accent-blue);}
+.cm-cell.fp{border-color:var(--accent-red);}
+.cm-cell.fn{border-color:var(--accent-yellow);}
+.cm-cell-val{font-size:22px;font-weight:800;font-family:'Roboto Mono',monospace;}
+.cm-cell-label{font-size:9px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
+
+/* ---- GAUGE (odds bars) ---- */
+.gauge-wrap{display:flex;flex-direction:column;gap:10px;margin-top:16px;}
+.gauge-item{display:flex;align-items:center;gap:10px;}
+.gauge-label{font-size:11px;color:var(--text-secondary);width:120px;flex-shrink:0;text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
+.gauge-track{flex:1;height:24px;background:var(--bg-elevated);border-radius:6px;overflow:hidden;border:1px solid var(--border-color);}
+.gauge-fill{height:100%;transition:width .1s;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:700;font-family:'Roboto Mono',monospace;color:#111216;white-space:nowrap;}
+.gauge-fill.yes{background:var(--accent-green);}
+.gauge-fill.no{background:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .stat-cards,.stat-cards.four{grid-template-columns:1fr 1fr;}
+  .mreg-diagram{flex-direction:column;}
+  .mreg-arrow{padding:8px 0;transform:rotate(90deg);}
+  .cm-wrap{grid-template-columns:80px 1fr 1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Regressão Logística</h1><span>Ensinando o computador a responder SIM ou NÃO</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">p=σ(z)</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">11</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">S</div><div class="hstat-label">A curva-estrela</div></div>
+      <div class="hstat"><div class="hstat-num">~60min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do "sim ou não" até prever probabilidades de verdade</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>A técnica que transforma números em <em>SIM ou NÃO</em></h2>
+      <p>Regressão Logística é a ferramenta que responde perguntas do tipo: <strong>"dado o que eu sei, qual a CHANCE disso acontecer?"</strong> Esse aluno vai passar na prova? Esse e-mail é spam? Esse cliente vai cancelar a assinatura? Diferente da regressão linear (que prevê um número qualquer), aqui a resposta é sempre uma <strong>probabilidade entre 0% e 100%</strong>, calculada por uma curva mágica em forma de "S". Nesta aula vamos construir essa curva do zero, brincando com pontinhos e controles, até entender exatamente como ela decide.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Classificação</span>
+        <span class="badge badge-green">Curva Sigmoide</span>
+        <span class="badge badge-blue">Probabilidade</span>
+        <span class="badge badge-purple">Base do Machine Learning</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-chart-box">
+        <div class="canvas-wrap" style="background:transparent;border:none;padding:0;"><canvas id="heroCanvas" height="200"></canvas></div>
+      </div>
+      <div class="hero-visual-caption">Cada carinha é um aluno: 😢 não passou, 😄 passou. A curva "S" mostra a chance de passar conforme as horas de estudo aumentam. Role a página e mexa você mesmo!</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">📊 O que é Regressão Logística?</div>
+    <p class="section-desc">
+      Imagine uma turma de alunos outra vez: cada um estudou um número de horas, mas agora a "nota" virou só duas opções — <strong>passou (1)</strong> ou <strong>não passou (0)</strong>. Se marcarmos cada aluno num gráfico (horas no eixo de baixo, resultado 0 ou 1 no eixo de lado), os pontos vão formar duas fileiras: uma embaixo (não passou) e uma em cima (passou). A Regressão Logística desenha uma <strong>curva em forma de "S"</strong> por cima desses pontos, que representa a <em>probabilidade</em> de passar para cada quantidade de horas estudadas.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste qualquer bolinha 🔵 na horizontal, ou clique nela para trocar o resultado (passou/não passou)</div>
+      <div class="canvas-wrap drag"><canvas id="introCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#f86b63;"></span> Não passou (0)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#7dded8;"></span> Passou (1)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> Curva "S" (probabilidade estimada)</div>
+      </div>
+      <div class="drag-hint">👆 Arraste um ponto na horizontal para mudar as horas, ou dê um clique rápido nele para alternar entre passou/não passou — a curva se refaz sozinha, ao vivo.</div>
+      <div style="display:flex;justify-content:center;margin-top:10px;">
+        <button class="player-btn" onclick="regenIntro()">🎲 Sortear nova turma</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Equação atual</span><span class="rv" id="introEq">p = 1 / (1 + e^-(b0 + b1·horas))</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>A curva nunca "acerta" todo mundo perfeitamente — sempre existe algum aluno que estudou pouco e passou, ou estudou muito e não passou. O que a curva faz é estimar a <strong>probabilidade</strong> mais razoável para cada quantidade de horas, com base no padrão geral da turma. É uma aposta bem calculada, não uma certeza.</p>
+    </div>
+  </section>
+
+  <!-- ============ POR QUE NÃO A RETA ============ -->
+  <section class="section" id="s-porque">
+    <div class="section-eyebrow">O Problema Que a Sigmoide Resolve</div>
+    <div class="section-title">🚫 Por que não usar simplesmente uma reta?</div>
+    <p class="section-desc">
+      Se o resultado é só 0 ou 1, por que não usar a boa e velha <strong>regressão linear</strong> que já conhecemos? O problema é que uma reta pode crescer <strong>sem limite</strong> — e uma probabilidade não pode. Uma reta pode prever que a "chance de passar" de alguém é <code>1.4</code> (140%??) ou <code>−0.3</code> (−30%??), o que não faz nenhum sentido. Compare as duas abordagens abaixo, no mesmo conjunto de alunos.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Alterne entre as duas abordagens no mesmo grupo de alunos</div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle" id="cmpBtn-linear" onclick="setCompareMode('linear')">📏 Regressão Linear (errado aqui)</button>
+        <button class="btn-toggle active" id="cmpBtn-logistic" onclick="setCompareMode('logistic')">🌀 Regressão Logística (certo)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="compareCanvas" height="280"></canvas></div>
+      <div class="section-desc" id="compareExplain" style="text-align:center;font-size:12.5px;margin-top:8px;"></div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">O defeito fatal da reta aqui</div>
+      <p>Repare que a reta ultrapassa a faixa entre 0 e 1 — para horas baixas ela mergulha abaixo de zero, e para horas altas ela sobe acima de 1. Uma "probabilidade negativa" ou "probabilidade de 140%" simplesmente não existe. A curva sigmoide, por outro lado, é <strong>matematicamente presa</strong> entre 0 e 1, não importa o quão extremo seja o valor de entrada.</p>
+    </div>
+  </section>
+
+  <!-- ============ SIGMOIDE ============ -->
+  <section class="section" id="s-sigmoide">
+    <div class="section-eyebrow">A Estrela da Aula</div>
+    <div class="section-title">🌀 A Função Sigmoide: o elástico que espreme qualquer número entre 0 e 1</div>
+    <p class="section-desc">
+      Pense na função sigmoide como um <strong>elástico mágico</strong>: não importa o número que você jogue nela — muito grande, muito pequeno, positivo ou negativo — ela sempre devolve um valor entre 0 e 1. Números bem negativos viram algo pertinho de 0. Números bem positivos viram algo pertinho de 1. E o número zero vira exatamente <strong>0.5</strong> (a curva é perfeitamente simétrica ali). É essa propriedade que transforma qualquer combinação de variáveis numa probabilidade válida.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste o controle de z e veja o ponto passear pela curva "S"</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>z (a combinação linear "crua", antes da sigmoide)</span><span class="ctrl-v" id="sigZVal">0.0</span></div>
+          <input type="range" id="sigZ" min="-10" max="10" step="0.1" value="0" oninput="renderSigmoid()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="sigmoidCanvas" height="260"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">z</span><span class="rv" id="sigZOut">0.0</span></div>
+        <div><span class="rl">σ(z) = 1 / (1 + e⁻ᶻ)</span><span class="rv" id="sigPOut">0.500</span></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">⬅️ z bem negativo</div>
+        <div class="card-text">Ex.: <code>z = −8</code> → σ(z) ≈ <code>0.0003</code>. A curva "achata" no chão — probabilidade quase zero.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 z = 0</div>
+        <div class="card-text">σ(0) = <code>0.5</code> exatamente. Esse é o ponto de maior incerteza: 50% de chance para cada lado.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">➡️ z bem positivo</div>
+        <div class="card-text">Ex.: <code>z = 8</code> → σ(z) ≈ <code>0.9997</code>. A curva "achata" no teto — probabilidade quase 100%.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COEFICIENTES ============ -->
+  <section class="section" id="s-coeficientes">
+    <div class="section-eyebrow">Ajustando a Curva aos Dados</div>
+    <div class="section-title">🎚️ Coeficientes: como b0 e b1 esculpem a curva "S"</div>
+    <p class="section-desc">
+      Assim como na regressão linear, quem "desenha" a curva são os coeficientes: <strong>z = b0 + b1 · x</strong>. O <strong>intercepto (b0)</strong> desliza a curva para a esquerda ou direita (mudando onde ela cruza os 50%). A <strong>inclinação (b1)</strong> controla o quão "íngreme" é a subida — quanto maior o b1, mais rápido a curva sai de 0% e vai para 100%; se b1 for negativo, a curva desce em vez de subir. Tente ajustar os dois manualmente para encaixar a curva nos dados, ou deixe o computador achar o melhor ajuste.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Brinque com b0 e b1 até a curva "abraçar" bem os pontos</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Intercepto — b0</span><span class="ctrl-v" id="coefB0Val">-4.0</span></div>
+          <input type="range" id="coefB0" min="-12" max="4" step="0.2" value="-4" oninput="renderCoef()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Inclinação — b1</span><span class="ctrl-v" id="coefB1Val">0.8</span></div>
+          <input type="range" id="coefB1" min="-2" max="3" step="0.1" value="0.8" oninput="renderCoef()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="coefCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#f86b63;"></span> Não passou (0)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#7dded8;"></span> Passou (1)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> Sua curva</div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:12px;">
+        <button class="player-btn primary" onclick="snapToMLE()">🤖 Deixar o computador achar a melhor curva (MLE)</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Log-Loss da sua curva (menor = melhor)</span><span class="rv" id="coefLoss">—</span></div>
+        <div><span class="rl">Melhor Log-Loss possível</span><span class="rv" id="coefBestLoss">—</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🎯 Intercepto (b0)</div>
+        <div class="card-text">Desloca a curva. Um b0 mais negativo empurra a curva para a direita (é preciso mais horas para chegar em 50% de chance). Um b0 mais positivo empurra para a esquerda.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🚀 Inclinação (b1)</div>
+        <div class="card-text">Controla a "velocidade" da transição. b1 grande = curva quase um degrau (decisão muito nítida). b1 pequeno = curva bem suave (transição gradual, muita incerteza no meio).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ODDS E LOG-ODDS ============ -->
+  <section class="section" id="s-odds">
+    <div class="section-eyebrow">O Outro Jeito de Falar de Chance</div>
+    <div class="section-title">⚖️ Odds (chances) e Log-odds (logito)</div>
+    <p class="section-desc">
+      Além da probabilidade, existe outro jeito muito comum de falar sobre chance: as <strong>odds</strong> (ou "chances", como se fala em apostas). Se a probabilidade de chover é 75%, dizemos que as odds são <strong>3 para 1</strong> — é 3 vezes mais provável chover do que não chover. A fórmula é <code>odds = p / (1−p)</code>. E o <strong>log-odds</strong> (ou <strong>logito</strong>) é simplesmente o logaritmo natural dessas odds — e é exatamente esse valor que a regressão logística trata como se fosse "a reta" por trás da curva: <code>logito(p) = b0 + b1·x</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste a probabilidade e veja as odds e o log-odds mudarem</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Probabilidade (p)</span><span class="ctrl-v" id="oddsPVal">75%</span></div>
+          <input type="range" id="oddsP" min="1" max="99" step="1" value="75" oninput="renderOdds()">
+        </div>
+      </div>
+      <div class="gauge-wrap">
+        <div class="gauge-item">
+          <div class="gauge-label">Chance de SIM</div>
+          <div class="gauge-track"><div class="gauge-fill yes" id="oddsBarYes" style="width:75%;">75%</div></div>
+        </div>
+        <div class="gauge-item">
+          <div class="gauge-label">Chance de NÃO</div>
+          <div class="gauge-track"><div class="gauge-fill no" id="oddsBarNo" style="width:25%;">25%</div></div>
+        </div>
+      </div>
+      <div class="canvas-wrap" style="margin-top:14px;"><canvas id="logitCanvas" height="140"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Probabilidade (p)</div><div class="stat-card-value" id="oddsPOut">0.75</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Odds = p/(1−p)</div><div class="stat-card-value" id="oddsOut">3.00</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Log-odds = ln(odds)</div><div class="stat-card-value" id="logitOut">1.10</div></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Por que a regressão logística usa log-odds em vez de probabilidade direto? Porque a probabilidade é presa entre 0 e 1 (difícil de modelar com uma reta), mas o <strong>log-odds pode ser qualquer número</strong>, de −∞ a +∞ — exatamente como uma reta comum. A sigmoide é, matematicamente, só o caminho de volta: de log-odds para probabilidade.</p>
+    </div>
+  </section>
+
+  <!-- ============ PIPELINE ============ -->
+  <section class="section" id="s-pipeline">
+    <div class="section-eyebrow">Juntando Todas as Peças</div>
+    <div class="section-title">🔀 O caminho completo: de "x" até a decisão final</div>
+    <p class="section-desc">
+      Agora que conhecemos cada peça, vamos ver o caminho inteiro que um dado percorre dentro de uma regressão logística, do início ao fim.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="mreg-diagram">
+        <div class="flow-stage">
+          <div class="flow-box">📚 x = horas de estudo</div>
+          <div class="flow-caption">Entrada</div>
+        </div>
+        <div class="mreg-arrow">➜</div>
+        <div class="flow-stage">
+          <div class="flow-box">z = b0 + b1·x</div>
+          <div class="flow-caption">Combinação linear</div>
+        </div>
+        <div class="mreg-arrow">➜</div>
+        <div class="flow-stage">
+          <div class="flow-box">σ(z) = 1/(1+e⁻ᶻ)</div>
+          <div class="flow-caption">Função sigmoide</div>
+        </div>
+        <div class="mreg-arrow">➜</div>
+        <div class="flow-stage">
+          <div class="flow-box final">p = 82% de chance</div>
+          <div class="flow-caption">Probabilidade</div>
+        </div>
+        <div class="mreg-arrow">➜</div>
+        <div class="flow-stage">
+          <div class="flow-box final">✅ Classe = "Passou"</div>
+          <div class="flow-caption">Decisão (p ≥ 50%?)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Resumindo em uma frase</div>
+      <p>A regressão logística pega seus dados, soma tudo numa reta escondida (z), espreme essa reta na curva sigmoide para virar uma probabilidade, e por fim compara essa probabilidade com um <strong>limiar de decisão</strong> (geralmente 50%) para dar a resposta final: SIM ou NÃO.</p>
+    </div>
+  </section>
+
+  <!-- ============ LIMIAR E MATRIZ DE CONFUSÃO ============ -->
+  <section class="section" id="s-threshold">
+    <div class="section-eyebrow">Da Probabilidade à Decisão</div>
+    <div class="section-title">🎯 Limiar de decisão e Matriz de Confusão</div>
+    <p class="section-desc">
+      A curva te dá uma probabilidade, mas no fim você precisa decidir: <strong>SIM ou NÃO?</strong> Isso é feito com um <strong>limiar (threshold)</strong> — o mais comum é 50%, mas ele pode ser mudado. Toda decisão pode dar certo ou errado de duas formas diferentes, e isso é organizado numa <strong>matriz de confusão</strong>: Verdadeiro Positivo (acertou o "sim"), Verdadeiro Negativo (acertou o "não"), Falso Positivo (disse "sim" e era "não") e Falso Negativo (disse "não" e era "sim").
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste o limiar de decisão e veja os alunos mudarem de categoria</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Limiar de decisão (threshold)</span><span class="ctrl-v" id="thrVal">50%</span></div>
+          <input type="range" id="thrSlider" min="5" max="95" step="1" value="50" oninput="renderThreshold()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="thresholdCanvas" height="260"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#7dded8;"></span> Verdadeiro Positivo (VP)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#36a2ef;"></span> Verdadeiro Negativo (VN)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#f86b63;"></span> Falso Positivo (FP)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#e8b339;"></span> Falso Negativo (FN)</div>
+      </div>
+
+      <div class="cm-wrap">
+        <div class="cm-corner"></div>
+        <div class="cm-head">Previsto: Passou</div>
+        <div class="cm-head">Previsto: Não Passou</div>
+        <div class="cm-rowlabel">Real: Passou</div>
+        <div class="cm-cell tp"><div class="cm-cell-val" id="cmTP">—</div><div class="cm-cell-label">Verdadeiro Positivo</div></div>
+        <div class="cm-cell fn"><div class="cm-cell-val" id="cmFN">—</div><div class="cm-cell-label">Falso Negativo</div></div>
+        <div class="cm-rowlabel">Real: Não Passou</div>
+        <div class="cm-cell fp"><div class="cm-cell-val" id="cmFP">—</div><div class="cm-cell-label">Falso Positivo</div></div>
+        <div class="cm-cell tn"><div class="cm-cell-val" id="cmTN">—</div><div class="cm-cell-label">Verdadeiro Negativo</div></div>
+      </div>
+
+      <div class="stat-cards four">
+        <div class="stat-card c-blue"><div class="stat-card-label">Acurácia</div><div class="stat-card-value" id="metAcc">—</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Precisão</div><div class="stat-card-value" id="metPrec">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Recall (Sensibilidade)</div><div class="stat-card-value" id="metRec">—</div></div>
+        <div class="stat-card c-yellow"><div class="stat-card-label">F1-Score</div><div class="stat-card-value" id="metF1">—</div></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📈 Precisão</div>
+        <div class="card-text">Das vezes que o modelo disse "vai passar", quantas realmente passaram? Importante quando um <strong>falso positivo</strong> é caro (ex.: aprovar um empréstimo que vira calote).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔎 Recall</div>
+        <div class="card-text">Dos alunos que realmente passaram, quantos o modelo conseguiu identificar? Importante quando um <strong>falso negativo</strong> é caro (ex.: não detectar uma doença que existe).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LOG-LOSS ============ -->
+  <section class="section" id="s-logloss">
+    <div class="section-eyebrow">Como Medir o Quão Errada Está uma Previsão</div>
+    <div class="section-title">📉 Log-Loss: a régua que pune previsões confiantes e erradas</div>
+    <p class="section-desc">
+      Como a regressão logística escolhe a "melhor" curva? Ela usa uma régua chamada <strong>Log-Loss</strong> (perda logarítmica). A ideia: se o resultado real era <strong>SIM</strong> e o modelo disse "tenho 99% de certeza que é NÃO", o erro deveria ser <strong>enorme</strong> — muito maior do que se o modelo tivesse dito apenas "51% de chance de ser NÃO". O Log-Loss faz exatamente isso: pune bem pouco os erros "inseguros", e pune <strong>violentamente</strong> os erros feitos com muita confiança.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha o resultado real e arraste a previsão do modelo — veja a perda disparar quando ele erra com confiança</div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle active" id="llBtn-1" onclick="setLogLossActual(1)">✅ Resultado real: PASSOU (y=1)</button>
+        <button class="btn-toggle" id="llBtn-0" onclick="setLogLossActual(0)">❌ Resultado real: NÃO PASSOU (y=0)</button>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Previsão do modelo (p̂ = probabilidade de "passou")</span><span class="ctrl-v" id="llPVal">70%</span></div>
+          <input type="range" id="llP" min="1" max="99" step="1" value="70" oninput="renderLogLoss()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="logLossCanvas" height="240"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:#7dded8;"></span> Perda se o real for PASSOU</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#f86b63;"></span> Perda se o real for NÃO PASSOU</div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Previsão do modelo</span><span class="rv" id="llPredOut">0.70</span></div>
+        <div><span class="rl">Log-Loss desta previsão</span><span class="rv" id="llLossOut">0.357</span></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 A fórmula é <code>Log-Loss = −[y·ln(p̂) + (1−y)·ln(1−p̂)]</code>. Quando y=1, só o termo <code>−ln(p̂)</code> importa: se p̂ estiver perto de 1, a perda é quase zero; se p̂ estiver perto de 0, a perda dispara para o infinito. A regressão logística ajusta b0 e b1 exatamente para deixar a <strong>média dessa perda, em todos os pontos, a menor possível</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ============ MÁXIMA VEROSSIMILHANÇA ============ -->
+  <section class="section" id="s-mle">
+    <div class="section-eyebrow">Como a "Melhor" Curva é Escolhida</div>
+    <div class="section-title">🏆 Máxima Verossimilhança (MLE): a competição entre curvas</div>
+    <p class="section-desc">
+      Diferente da regressão linear (que tem uma fórmula direta), a regressão logística encontra a melhor curva através de uma espécie de <strong>competição</strong>: testa-se várias curvas candidatas, calcula-se o Log-Loss médio de cada uma no conjunto de dados inteiro, e vence a curva com o <strong>menor Log-Loss médio</strong> (ou, dito de outro jeito, a de <strong>maior verossimilhança</strong> — a mais "plausível" dado o que observamos). Compare três curvas candidatas abaixo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada curva candidata e veja qual "explica" melhor os dados reais</div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle" id="mleBtn-bad" onclick="setMleCandidate('bad')">😵 Curva Ruim</button>
+        <button class="btn-toggle" id="mleBtn-medium" onclick="setMleCandidate('medium')">😐 Curva Mediana</button>
+        <button class="btn-toggle active" id="mleBtn-best" onclick="setMleCandidate('best')">🏆 Curva Ótima (MLE)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="mleCanvas" height="260"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">Log-Loss médio desta curva</span><span class="rv" id="mleLossOut">—</span></div>
+        <div><span class="rl">Veredito</span><span class="rv" id="mleVerdictOut" style="font-size:14px;">—</span></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Conexão com o botão "🤖" de antes</div>
+      <p>O botão "Deixar o computador achar a melhor curva" que você usou na seção de coeficientes faz exatamente essa busca — só que, em vez de testar 3 curvas, um algoritmo (como o método de Newton-Raphson) testa e ajusta as curvas repetidamente, de forma bem mais inteligente que tentativa e erro, até convergir na curva de menor Log-Loss possível.</p>
+    </div>
+  </section>
+
+  <!-- ============ CURVA ROC ============ -->
+  <section class="section" id="s-roc">
+    <div class="section-eyebrow">Avaliando o Modelo em Todos os Limiares</div>
+    <div class="section-title">📈 Curva ROC e AUC: o quão bem o modelo separa as classes</div>
+    <p class="section-desc">
+      Em vez de travar num único limiar de decisão, a <strong>Curva ROC</strong> mostra o desempenho do modelo em <strong>todos os limiares possíveis</strong> ao mesmo tempo. Ela compara a <strong>Taxa de Verdadeiros Positivos</strong> (recall) contra a <strong>Taxa de Falsos Positivos</strong>, conforme o limiar desliza de 100% até 0%. Quanto mais a curva "abraça" o canto superior esquerdo, melhor o modelo separa quem passou de quem não passou. A área sob essa curva — a <strong>AUC</strong> — resume tudo isso num único número entre 0.5 (modelo aleatório) e 1.0 (separação perfeita).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Mexa no limiar e veja o ponto correspondente andar pela curva ROC</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Limiar de decisão</span><span class="ctrl-v" id="rocThrVal">50%</span></div>
+          <input type="range" id="rocThrSlider" min="2" max="98" step="1" value="50" oninput="renderRoc()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="rocCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> Curva ROC do nosso modelo</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#535966;border-top:1px dashed #535966;background:transparent;height:0;"></span> Modelo aleatório (referência)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#e8b339;"></span> Limiar escolhido acima</div>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Área sob a curva (AUC)</span><span class="rv" id="rocAucOut">—</span></div>
+        <div><span class="rl">Taxa de Falso Positivo neste limiar</span><span class="rv" id="rocFprOut">—</span></div>
+        <div><span class="rl">Taxa de Verdadeiro Positivo (recall) neste limiar</span><span class="rv" id="rocTprOut">—</span></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🟢 AUC perto de 1.0</div>
+        <div class="card-text">O modelo separa muito bem quem é "sim" de quem é "não" — quase sem sobreposição entre as classes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🟡 AUC perto de 0.7-0.8</div>
+        <div class="card-text">Separação razoável: o modelo ajuda bastante, mas ainda há confusão entre as classes em alguns pontos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔴 AUC perto de 0.5</div>
+        <div class="card-text">O modelo não é melhor do que jogar uma moeda — a curva fica em cima da diagonal de referência.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REGRESSÃO LOGÍSTICA MÚLTIPLA ============ -->
+  <section class="section" id="s-multipla">
+    <div class="section-eyebrow">E Se Tiver Mais de Uma Variável?</div>
+    <div class="section-title">🧩 Regressão Logística Múltipla</div>
+    <p class="section-desc">
+      Assim como na regressão linear, quase sempre existe <strong>mais de um fator</strong> influenciando a probabilidade de algo acontecer. A chance de um cliente cancelar uma assinatura não depende só do tempo de uso — depende também de quantas reclamações ele já fez, da idade dele, e por aí vai. A <strong>Regressão Logística Múltipla</strong> generaliza a ideia: soma-se todas as variáveis (cada uma com seu próprio coeficiente) dentro do z, e só então aplica-se a sigmoide.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Várias variáveis entram, uma única probabilidade sai</div>
+      <div class="mreg-diagram">
+        <div class="mreg-inputs">
+          <div class="mreg-chip">📅 Tempo de uso (meses)</div>
+          <div class="mreg-chip">📣 Número de reclamações</div>
+          <div class="mreg-chip">🎂 Idade do cliente</div>
+        </div>
+        <div class="mreg-arrow">➜</div>
+        <div class="mreg-output">🚪 Probabilidade de cancelar</div>
+      </div>
+      <div class="card-formula" style="margin-top:6px;">p = σ(b0 + b1·tempo_uso + b2·reclamações + b3·idade)</div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Cada coeficiente agora afeta o <strong>log-odds</strong> daquela variável, mantendo as outras fixas — ex.: se b2 for positivo, cada reclamação extra aumenta o log-odds (e portanto a probabilidade) de cancelamento, com tempo de uso e idade constantes.</div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Uma forma prática de interpretar um coeficiente múltiplo: <code>e^b</code> é o <strong>odds ratio</strong> daquela variável. Se <code>b2 = 0.4</code>, então <code>e^0.4 ≈ 1.49</code> — cada reclamação extra multiplica as odds de cancelamento por aproximadamente 1.49 (um aumento de ~49%), tudo o mais constante.</p>
+    </div>
+  </section>
+
+  <!-- ============ CLASSES DESBALANCEADAS ============ -->
+  <section class="section" id="s-desbalanceamento">
+    <div class="section-eyebrow">Uma Armadilha Comum</div>
+    <div class="section-title">⚠️ Classes desbalanceadas: quando a acurácia mente</div>
+    <p class="section-desc">
+      Imagine um modelo para detectar <strong>fraude</strong> em transações, onde só 5% das transações são realmente fraudulentas. Um modelo "preguiçoso" que simplesmente <strong>sempre responde "não é fraude"</strong> já acerta 95% das vezes! A acurácia parece ótima, mas o modelo é completamente inútil — ele nunca detecta nenhuma fraude de verdade. Isso se chama <strong>desbalanceamento de classes</strong>, e é uma das pegadinhas mais comuns ao avaliar classificadores.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Compare um conjunto de dados balanceado com um bem desbalanceado</div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle active" id="imbBtn-balanced" onclick="setImbalance('balanced')">⚖️ Balanceado (50/50)</button>
+        <button class="btn-toggle" id="imbBtn-imbalanced" onclick="setImbalance('imbalanced')">🚨 Desbalanceado (Fraude, ~5%)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="imbalanceCanvas" height="140"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#36a2ef;"></span> Transação normal</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#f86b63;"></span> Transação fraudulenta</div>
+      </div>
+      <div class="section-desc" style="text-align:center;font-size:12.5px;margin-top:8px;">Modelo "preguiçoso" que sempre responde "não é fraude", neste conjunto:</div>
+      <div class="stat-cards four">
+        <div class="stat-card c-blue"><div class="stat-card-label">Acurácia</div><div class="stat-card-value" id="imbAcc">—</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Precisão (fraude)</div><div class="stat-card-value" id="imbPrec">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Recall (fraude)</div><div class="stat-card-value" id="imbRec">—</div></div>
+        <div class="stat-card c-yellow"><div class="stat-card-label">Fraudes detectadas</div><div class="stat-card-value" id="imbDetected">—</div></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">A lição</div>
+      <p>Em problemas desbalanceados, <strong>nunca confie só na acurácia</strong>. Olhe sempre para o recall (será que estamos pegando os casos raros que importam?) e a precisão, e considere ajustar o limiar de decisão ou balancear os dados de treino.</p>
+    </div>
+  </section>
+
+  <!-- ============ PRESSUPOSTOS ============ -->
+  <section class="section" id="s-pressupostos">
+    <div class="section-eyebrow">Antes de Confiar no Modelo</div>
+    <div class="section-title">🔍 Cuidados e pressupostos da regressão logística</div>
+    <p class="section-desc">A regressão logística é poderosa, mas funciona bem de verdade só quando algumas condições são respeitadas.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">1️⃣ Linearidade no logito</div>
+        <div class="card-text">Não é a probabilidade que precisa ser linear em x — é o <strong>log-odds</strong>. Se essa relação for muito distorcida, pode ser preciso transformar variáveis ou usar termos não-lineares.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Independência das observações</div>
+        <div class="card-text">O resultado de um caso não deveria influenciar o de outro. Isso é violado, por exemplo, em dados repetidos da mesma pessoa ao longo do tempo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Pouca multicolinearidade</div>
+        <div class="card-text">Se duas variáveis explicativas são quase a mesma coisa (ex.: "idade" e "ano de nascimento"), os coeficientes ficam instáveis e difíceis de interpretar.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">4️⃣ Tamanho de amostra suficiente</div>
+        <div class="card-text">Com poucos casos da classe minoritária, as estimativas dos coeficientes ficam pouco confiáveis — é preciso um número razoável de exemplos de cada classe.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela-formulas">
+    <div class="section-eyebrow">A Chuva de Fórmulas, Organizada</div>
+    <div class="section-title">📋 Tabela-resumo: as fórmulas desta aula</div>
+    <p class="section-desc">Todas as peças reunidas num só lugar.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🌀 Função Sigmoide</div>
+        <div class="card-formula">p = σ(z) = 1 / (1 + e⁻ᶻ)</div>
+        <div class="card-text">Transforma qualquer número real (z) numa probabilidade entre 0 e 1.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Combinação linear</div>
+        <div class="card-formula">z = b0 + b1·x1 + b2·x2 + ...</div>
+        <div class="card-text">A "reta escondida" — pode ser qualquer número, positivo ou negativo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚖️ Odds</div>
+        <div class="card-formula">odds = p / (1−p)</div>
+        <div class="card-text">Quantas vezes mais provável é o "sim" comparado ao "não".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔁 Log-odds (logito)</div>
+        <div class="card-formula">logito(p) = ln( p / (1−p) ) = z</div>
+        <div class="card-text">O elo entre a probabilidade e a combinação linear — é isso que a regressão logística modela como reta.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📉 Log-Loss (por exemplo)</div>
+        <div class="card-formula">L = −[y·ln(p̂) + (1−y)·ln(1−p̂)]</div>
+        <div class="card-text">O que a Máxima Verossimilhança minimiza (em média) para achar b0 e b1.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧮 Métricas de classificação</div>
+        <div class="card-formula">Acc, Precisão, Recall, F1</div>
+        <div class="card-text">Calculadas a partir da matriz de confusão (VP, VN, FP, FN) para um limiar escolhido.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando o Modelo</div>
+    <div class="section-title">✅ Boas práticas: usando a regressão logística com responsabilidade</div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">1️⃣ Escolha o limiar pensando no problema</div>
+        <div class="card-text">50% não é sagrado. Em diagnóstico médico, talvez valha a pena baixar o limiar para capturar mais casos reais (mais recall), mesmo aceitando mais falsos alarmes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Nunca avalie só pela acurácia</div>
+        <div class="card-text">Principalmente com classes desbalanceadas, olhe sempre precisão, recall, F1 e a curva ROC/AUC antes de confiar no modelo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Interprete coeficientes com odds ratio</div>
+        <div class="card-text">Calcule <code>e^b</code> para entender o efeito de cada variável em termos de "quantas vezes" as odds mudam — é mais intuitivo do que o coeficiente cru.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1</div>
+      <p>Usar acurácia como única métrica em problemas com classes desbalanceadas (fraude, doenças raras, cancelamento raro). Um modelo "preguiçoso" pode parecer ótimo e ser completamente inútil.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2</div>
+      <p>Interpretar a saída da regressão logística como se fosse uma certeza absoluta. É sempre uma <strong>probabilidade estimada</strong> — e mesmo um modelo bom vai errar uma fração dos casos.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Sempre olhe a curva ROC e a AUC além da acurácia num único limiar — elas mostram como o modelo se comporta em <em>todos</em> os cenários de decisão possíveis, não só no padrão de 50%.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Regressão Logística</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers gerais ===================== */
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function fmt2(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmt3(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}); }
+function fmtPct(n){ return (n*100).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0}) + '%'; }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function mean(arr){ return arr.reduce((s,v)=>s+v,0)/arr.length; }
+function sigmoid(z){ return 1/(1+Math.exp(-z)); }
+function logit(p){ return Math.log(p/(1-p)); }
+function scaleMaker(xMin,xMax,yMin,yMax,w,h,pad){
+  const ix = pad.l, iw = w-pad.l-pad.r;
+  const iy = pad.t, ih = h-pad.t-pad.b;
+  return {
+    x: v => ix + (v-xMin)/(xMax-xMin) * iw,
+    y: v => iy + ih - (v-yMin)/(yMax-yMin) * ih,
+    xInv: px => xMin + (px-ix)/iw * (xMax-xMin),
+    yInv: py => yMin + (iy+ih-py)/ih * (yMax-yMin),
+    pad, ix, iy, iw, ih
+  };
+}
+function drawGrid(ctx,w,h,sc,xMin,xMax,yMin,yMax,xStep,yStep,xLabel,yLabel){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = 'rgba(83,89,102,.25)';
+  ctx.fillStyle = '#98a2b3';
+  ctx.font = '10px Roboto Mono';
+  ctx.lineWidth = 1;
+  for(let v=Math.ceil(xMin/xStep)*xStep; v<=xMax; v+=xStep){
+    const px = sc.x(v);
+    ctx.beginPath(); ctx.moveTo(px, sc.iy); ctx.lineTo(px, sc.iy+sc.ih); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillText(fmt2(v).replace(/,00$/,''), px, sc.iy+sc.ih+14);
+  }
+  for(let v=Math.ceil(yMin/yStep)*yStep; v<=yMax; v+=yStep){
+    const py = sc.y(v);
+    ctx.beginPath(); ctx.moveTo(sc.ix, py); ctx.lineTo(sc.ix+sc.iw, py); ctx.stroke();
+    ctx.textAlign='right'; ctx.fillText(fmt2(v).replace(/,00$/,''), sc.ix-6, py+3);
+  }
+  ctx.strokeStyle = 'rgba(223,229,239,.4)';
+  ctx.beginPath(); ctx.moveTo(sc.ix, sc.iy); ctx.lineTo(sc.ix, sc.iy+sc.ih); ctx.lineTo(sc.ix+sc.iw, sc.iy+sc.ih); ctx.stroke();
+  if(xLabel){ ctx.textAlign='center'; ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.fillText(xLabel, sc.ix+sc.iw/2, h-2); }
+  if(yLabel){ ctx.save(); ctx.translate(11,sc.iy+sc.ih/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center'; ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.fillText(yLabel,0,0); ctx.restore(); }
+}
+function drawRegLine(ctx,sc,a,b,xMin,xMax,color,dashed){
+  ctx.save();
+  if(dashed) ctx.setLineDash([6,5]);
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(sc.x(xMin), sc.y(a+b*xMin));
+  ctx.lineTo(sc.x(xMax), sc.y(a+b*xMax));
+  ctx.stroke();
+  ctx.restore();
+}
+function drawSigmoidCurve(ctx,sc,b0,b1,xMin,xMax,color,dashed,steps){
+  steps = steps||120;
+  ctx.save();
+  if(dashed) ctx.setLineDash([6,5]);
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for(let i=0;i<=steps;i++){
+    const x = xMin + (xMax-xMin)*i/steps;
+    const p = sigmoid(b0+b1*x);
+    const px = sc.x(x), py = sc.y(p);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+function drawPts(ctx,sc,points,color,r,activeIdx){
+  points.forEach((p,i)=>{
+    ctx.beginPath();
+    ctx.arc(sc.x(p.x), sc.y(p.y), i===activeIdx? r+2 : r, 0, Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = i===activeIdx? 1 : 0.92;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+}
+function drawClassPts(ctx,sc,points,colorFor,r,activeIdx){
+  points.forEach((p,i)=>{
+    ctx.beginPath();
+    ctx.arc(sc.x(p.x), sc.y(p.y), i===activeIdx? r+2 : r, 0, Math.PI*2);
+    ctx.fillStyle = colorFor(p,i);
+    ctx.globalAlpha = i===activeIdx? 1 : 0.92;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+}
+/* Newton-Raphson (IRLS) para regressão logística com 1 variável */
+function fitLogistic(points, iters){
+  iters = iters||30;
+  let b0=0, b1=0;
+  for(let it=0; it<iters; it++){
+    let g0=0,g1=0, h00=0,h01=0,h11=0;
+    for(const p of points){
+      const z = b0+b1*p.x;
+      const pr = sigmoid(z);
+      const w = pr*(1-pr);
+      const err = p.y-pr;
+      g0 += err; g1 += err*p.x;
+      h00 += w; h01 += w*p.x; h11 += w*p.x*p.x;
+    }
+    const det = h00*h11 - h01*h01;
+    if(Math.abs(det) < 1e-9) break;
+    const d0 = (g0*h11 - g1*h01)/det;
+    const d1 = (h00*g1 - h01*g0)/det;
+    b0 += d0; b1 += d1;
+    if(Math.abs(d0)<1e-7 && Math.abs(d1)<1e-7) break;
+  }
+  return {b0,b1};
+}
+function avgLogLoss(points,b0,b1){
+  const eps = 1e-9;
+  let s=0;
+  points.forEach(p=>{
+    const pr = Math.min(1-eps, Math.max(eps, sigmoid(b0+b1*p.x)));
+    s += -(p.y*Math.log(pr) + (1-p.y)*Math.log(1-pr));
+  });
+  return s/points.length;
+}
+function confusionStats(points,b0,b1,thr){
+  let tp=0,fp=0,tn=0,fn=0;
+  points.forEach(p=>{
+    const pr = sigmoid(b0+b1*p.x);
+    const pred = pr>=thr ? 1:0;
+    if(pred===1 && p.y===1) tp++;
+    else if(pred===1 && p.y===0) fp++;
+    else if(pred===0 && p.y===0) tn++;
+    else fn++;
+  });
+  const n = points.length;
+  const acc = (tp+tn)/n;
+  const prec = (tp+fp)? tp/(tp+fp) : 0;
+  const rec = (tp+fn)? tp/(tp+fn) : 0;
+  const f1 = (prec+rec)? 2*prec*rec/(prec+rec) : 0;
+  return {tp,fp,tn,fn,acc,prec,rec,f1};
+}
+function rocCurveData(points,b0,b1){
+  const P = points.filter(p=>p.y===1).length;
+  const N = points.length-P;
+  const roc = [];
+  for(let t=1; t>=0; t-=0.02){
+    let tp=0, fp=0;
+    points.forEach(p=>{
+      const pr = sigmoid(b0+b1*p.x);
+      if(pr>=t){ if(p.y===1) tp++; else fp++; }
+    });
+    roc.push({fpr: N? fp/N:0, tpr: P? tp/P:0, t});
+  }
+  return roc;
+}
+function aucOf(roc){
+  const sorted = [...roc].sort((a,b)=>a.fpr-b.fpr);
+  let auc=0;
+  for(let i=1;i<sorted.length;i++){
+    const dx = sorted[i].fpr-sorted[i-1].fpr;
+    const avgY = (sorted[i].tpr+sorted[i-1].tpr)/2;
+    auc += dx*avgY;
+  }
+  return auc;
+}
+window.addEventListener('resize', ()=>{ renderAll(); });
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'📊', label:'O que é'},
+  {id:'s-porque', icon:'🚫', label:'Por que não Reta'},
+  {id:'s-sigmoide', icon:'🌀', label:'Sigmoide'},
+  {id:'s-coeficientes', icon:'🎚️', label:'Coeficientes'},
+  {id:'s-odds', icon:'⚖️', label:'Odds e Logito'},
+  {id:'s-pipeline', icon:'🔀', label:'Pipeline'},
+  {id:'s-threshold', icon:'🎯', label:'Limiar & Confusão'},
+  {id:'s-logloss', icon:'📉', label:'Log-Loss'},
+  {id:'s-mle', icon:'🏆', label:'Máx. Verossimilhança'},
+  {id:'s-roc', icon:'📈', label:'Curva ROC'},
+  {id:'s-multipla', icon:'🧩', label:'Reg. Múltipla'},
+  {id:'s-desbalanceamento', icon:'⚠️', label:'Desbalanceamento'},
+  {id:'s-pressupostos', icon:'🔍', label:'Cuidados'},
+  {id:'s-tabela-formulas', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== DATASET PRINCIPAL (horas de estudo x passou) ===================== */
+const mainPoints = [
+  {x:0.5,y:0},{x:1,y:0},{x:1.5,y:0},{x:2,y:0},{x:2.5,y:0},{x:3,y:0},{x:3.3,y:1},{x:3.8,y:0},
+  {x:4.2,y:1},{x:4.6,y:0},{x:5,y:1},{x:5.4,y:0},{x:5.8,y:1},{x:6.2,y:1},{x:6.6,y:0},{x:7,y:1},
+  {x:7.5,y:1},{x:8,y:1},{x:8.5,y:1},{x:9,y:1},{x:9.5,y:1},{x:10,y:1}
+];
+const mainFit = fitLogistic(mainPoints);
+
+/* ===================== HERO CANVAS (estático) ===================== */
+function drawHero(){
+  const cv = document.getElementById('heroCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,10,-0.08,1.08,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,0,1,2,0.5,'Horas de estudo','Probabilidade de passar');
+  drawSigmoidCurve(ctx,sc,mainFit.b0,mainFit.b1,0,10,'#06b6d4',false);
+  mainPoints.forEach(p=>{
+    ctx.font='15px Inter'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(p.y===1?'😄':'😢', sc.x(p.x), sc.y(p.y));
+  });
+}
+drawHero();
+
+/* ===================== SEÇÃO: O QUE É (scatter arrastável em x + toggle de classe) ===================== */
+let introPoints = mainPoints.map(p=>({x:p.x,y:p.y}));
+let introDrag = -1;
+function drawIntro(){
+  const cv = document.getElementById('introCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,10,-0.1,1.1,w,h,{l:34,r:14,t:14,b:26});
+  cv.__sc = sc;
+  drawGrid(ctx,w,h,sc,0,10,0,1,2,0.5,'Horas de estudo','Passou (1) / Não passou (0)');
+  const fit = fitLogistic(introPoints);
+  drawSigmoidCurve(ctx,sc,fit.b0,fit.b1,0,10,'#06b6d4',false);
+  drawClassPts(ctx,sc,introPoints,(p)=> p.y===1 ? '#7dded8':'#f86b63', 6, introDrag);
+  document.getElementById('introEq').textContent = `p = 1 / (1 + e^-(${fmt2(fit.b0)} + ${fmt2(fit.b1)}·horas))`;
+}
+function attachIntroInteraction(){
+  const cv = document.getElementById('introCanvas');
+  let dragIdx = -1, downTime=0, downPt=null, moved=false;
+  function posFromEvent(e){
+    const rect = cv.getBoundingClientRect();
+    const clientX = e.touches? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches? e.touches[0].clientY : e.clientY;
+    return {px:(clientX-rect.left)*(cv.width/rect.width), py:(clientY-rect.top)*(cv.height/rect.height)};
+  }
+  function findNearest(px,py){
+    const sc = cv.__sc;
+    let best=-1, bestD=18;
+    introPoints.forEach((p,i)=>{
+      const d = Math.hypot(sc.x(p.x)-px, sc.y(p.y)-py);
+      if(d<bestD){ bestD=d; best=i; }
+    });
+    return best;
+  }
+  function down(e){
+    const {px,py} = posFromEvent(e);
+    dragIdx = findNearest(px,py);
+    moved = false;
+    downTime = Date.now();
+    if(dragIdx>-1) e.preventDefault();
+  }
+  function move(e){
+    if(dragIdx===-1) return;
+    const {px,py} = posFromEvent(e);
+    const sc = cv.__sc;
+    let x = sc.xInv(px);
+    x = Math.min(10, Math.max(0, x));
+    introPoints[dragIdx].x = x;
+    moved = true;
+    drawIntro();
+    e.preventDefault();
+  }
+  function up(){
+    if(dragIdx>-1 && !moved && Date.now()-downTime < 400){
+      introPoints[dragIdx].y = introPoints[dragIdx].y===1 ? 0 : 1;
+      drawIntro();
+    }
+    dragIdx=-1;
+  }
+  cv.addEventListener('mousedown', down);
+  cv.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', up);
+  cv.addEventListener('touchstart', down, {passive:false});
+  cv.addEventListener('touchmove', move, {passive:false});
+  window.addEventListener('touchend', up);
+}
+function regenIntro(){
+  introPoints = mainPoints.map(p=>({x: Math.min(10,Math.max(0, p.x + (Math.random()*2-1)*0.8)), y: Math.random()<0.15 ? 1-p.y : p.y}));
+  drawIntro();
+}
+attachIntroInteraction();
+
+/* ===================== SEÇÃO: POR QUE NÃO A RETA ===================== */
+let compareMode = 'logistic';
+function setCompareMode(mode){
+  compareMode = mode;
+  document.getElementById('cmpBtn-linear').classList.toggle('active', mode==='linear');
+  document.getElementById('cmpBtn-logistic').classList.toggle('active', mode==='logistic');
+  renderCompare();
+}
+function computeOLS(points){
+  const n = points.length;
+  const xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+  const xbar = mean(xs), ybar = mean(ys);
+  let num=0, den=0;
+  for(let i=0;i<n;i++){ num += (xs[i]-xbar)*(ys[i]-ybar); den += (xs[i]-xbar)*(xs[i]-xbar); }
+  const b = den===0? 0 : num/den;
+  const a = ybar - b*xbar;
+  return {a,b};
+}
+function renderCompare(){
+  const cv = document.getElementById('compareCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,10,-0.5,1.5,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,-0.4,1.4,2,0.2,'Horas de estudo','"Probabilidade" prevista');
+  // faixa proibida
+  ctx.fillStyle = 'rgba(248,107,99,.08)';
+  ctx.fillRect(sc.ix, sc.iy, sc.iw, sc.y(1)-sc.iy);
+  ctx.fillRect(sc.ix, sc.y(0), sc.iw, sc.iy+sc.ih-sc.y(0));
+  ctx.strokeStyle='rgba(232,179,57,.6)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(sc.ix,sc.y(1)); ctx.lineTo(sc.ix+sc.iw,sc.y(1)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sc.ix,sc.y(0)); ctx.lineTo(sc.ix+sc.iw,sc.y(0)); ctx.stroke();
+  ctx.setLineDash([]);
+  if(compareMode==='linear'){
+    const {a,b} = computeOLS(mainPoints);
+    drawRegLine(ctx,sc,a,b,0,10,'#f86b63',false);
+  } else {
+    drawSigmoidCurve(ctx,sc,mainFit.b0,mainFit.b1,0,10,'#06b6d4',false);
+  }
+  drawClassPts(ctx,sc,mainPoints,(p)=> p.y===1 ? '#7dded8':'#f86b63', 5, -1);
+  document.getElementById('compareExplain').textContent = compareMode==='linear'
+    ? 'Repare a reta vermelha mergulhando abaixo de 0 (à esquerda) e subindo acima de 1 (à direita) — a área sombreada mostra a região "impossível" para uma probabilidade.'
+    : 'A curva sigmoide fica sempre confortavelmente entre 0 e 1, não importa o quão extremo seja o valor de x.';
+}
+
+/* ===================== SEÇÃO: SIGMOIDE ===================== */
+function renderSigmoid(){
+  const z = +document.getElementById('sigZ').value;
+  const p = sigmoid(z);
+  document.getElementById('sigZVal').textContent = fmt2(z);
+  document.getElementById('sigZOut').textContent = fmt2(z);
+  document.getElementById('sigPOut').textContent = fmt3(p);
+  const cv = document.getElementById('sigmoidCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(-10,10,-0.05,1.05,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,-10,10,0,1,2,0.25,'z','σ(z)');
+  drawSigmoidCurve(ctx,sc,0,1,-10,10,'#06b6d4',false);
+  ctx.strokeStyle='rgba(232,179,57,.6)'; ctx.setLineDash([4,4]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(sc.x(z),sc.iy); ctx.lineTo(sc.x(z),sc.y(p)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sc.ix,sc.y(p)); ctx.lineTo(sc.x(z),sc.y(p)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(sc.x(z), sc.y(p), 7, 0, Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+/* ===================== SEÇÃO: COEFICIENTES ===================== */
+function renderCoef(){
+  const b0 = +document.getElementById('coefB0').value;
+  const b1 = +document.getElementById('coefB1').value;
+  document.getElementById('coefB0Val').textContent = fmt2(b0);
+  document.getElementById('coefB1Val').textContent = fmt2(b1);
+  const cv = document.getElementById('coefCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,10,-0.1,1.1,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,0,1,2,0.5,'Horas de estudo','Passou (1) / Não passou (0)');
+  drawSigmoidCurve(ctx,sc,b0,b1,0,10,'#06b6d4',false);
+  drawClassPts(ctx,sc,mainPoints,(p)=> p.y===1 ? '#7dded8':'#f86b63', 5, -1);
+  const loss = avgLogLoss(mainPoints,b0,b1);
+  const bestLoss = avgLogLoss(mainPoints,mainFit.b0,mainFit.b1);
+  document.getElementById('coefLoss').textContent = fmt3(loss);
+  document.getElementById('coefBestLoss').textContent = fmt3(bestLoss);
+}
+function snapToMLE(){
+  document.getElementById('coefB0').value = Math.min(4,Math.max(-12,mainFit.b0)).toFixed(1);
+  document.getElementById('coefB1').value = Math.min(3,Math.max(-2,mainFit.b1)).toFixed(1);
+  renderCoef();
+}
+
+/* ===================== SEÇÃO: ODDS E LOG-ODDS ===================== */
+function renderOdds(){
+  const pPct = +document.getElementById('oddsP').value;
+  const p = pPct/100;
+  const odds = p/(1-p);
+  const lg = logit(p);
+  document.getElementById('oddsPVal').textContent = pPct+'%';
+  document.getElementById('oddsBarYes').style.width = pPct+'%';
+  document.getElementById('oddsBarYes').textContent = pPct+'%';
+  document.getElementById('oddsBarNo').style.width = (100-pPct)+'%';
+  document.getElementById('oddsBarNo').textContent = (100-pPct)+'%';
+  document.getElementById('oddsPOut').textContent = fmt2(p);
+  document.getElementById('oddsOut').textContent = fmt2(odds);
+  document.getElementById('logitOut').textContent = fmt2(lg);
+  const cv = document.getElementById('logitCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(-6,6,0,1,w,h,{l:34,r:14,t:10,b:26});
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = 'rgba(83,89,102,.25)'; ctx.lineWidth=1; ctx.font='10px Roboto Mono'; ctx.fillStyle='#98a2b3';
+  for(let v=-6; v<=6; v+=2){
+    const px = sc.x(v);
+    ctx.beginPath(); ctx.moveTo(px, sc.iy); ctx.lineTo(px, sc.iy+sc.ih); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillText(v, px, sc.iy+sc.ih+14);
+  }
+  ctx.strokeStyle='rgba(223,229,239,.4)'; ctx.beginPath(); ctx.moveTo(sc.ix, sc.iy+sc.ih/2); ctx.lineTo(sc.ix+sc.iw, sc.iy+sc.ih/2); ctx.stroke();
+  ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.textAlign='center';
+  ctx.fillText('log-odds (logito)', sc.ix+sc.iw/2, sc.iy-2);
+  const clampedLg = Math.max(-6,Math.min(6,lg));
+  ctx.beginPath(); ctx.arc(sc.x(clampedLg), sc.iy+sc.ih/2, 7, 0, Math.PI*2); ctx.fillStyle='#c49aff'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+/* ===================== SEÇÃO: LIMIAR & MATRIZ DE CONFUSÃO ===================== */
+function renderThreshold(){
+  const thrPct = +document.getElementById('thrSlider').value;
+  const thr = thrPct/100;
+  document.getElementById('thrVal').textContent = thrPct+'%';
+  const cv = document.getElementById('thresholdCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,10,-0.1,1.1,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,0,1,2,0.5,'Horas de estudo','Probabilidade prevista');
+  ctx.strokeStyle='rgba(232,179,57,.7)'; ctx.setLineDash([5,4]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(sc.ix,sc.y(thr)); ctx.lineTo(sc.ix+sc.iw,sc.y(thr)); ctx.stroke();
+  ctx.setLineDash([]);
+  drawSigmoidCurve(ctx,sc,mainFit.b0,mainFit.b1,0,10,'#06b6d4',false);
+  drawClassPts(ctx,sc,mainPoints,(p)=>{
+    const pr = sigmoid(mainFit.b0+mainFit.b1*p.x);
+    const pred = pr>=thr?1:0;
+    if(pred===1&&p.y===1) return '#7dded8';
+    if(pred===1&&p.y===0) return '#f86b63';
+    if(pred===0&&p.y===0) return '#36a2ef';
+    return '#e8b339';
+  }, 6, -1);
+  const st = confusionStats(mainPoints, mainFit.b0, mainFit.b1, thr);
+  document.getElementById('cmTP').textContent = st.tp;
+  document.getElementById('cmFN').textContent = st.fn;
+  document.getElementById('cmFP').textContent = st.fp;
+  document.getElementById('cmTN').textContent = st.tn;
+  document.getElementById('metAcc').textContent = fmtPct(st.acc);
+  document.getElementById('metPrec').textContent = fmtPct(st.prec);
+  document.getElementById('metRec').textContent = fmtPct(st.rec);
+  document.getElementById('metF1').textContent = fmtPct(st.f1);
+}
+
+/* ===================== SEÇÃO: LOG-LOSS ===================== */
+let logLossActual = 1;
+function setLogLossActual(y){
+  logLossActual = y;
+  document.getElementById('llBtn-1').classList.toggle('active', y===1);
+  document.getElementById('llBtn-0').classList.toggle('active', y===0);
+  renderLogLoss();
+}
+function renderLogLoss(){
+  const pPct = +document.getElementById('llP').value;
+  const p = pPct/100;
+  document.getElementById('llPVal').textContent = pPct+'%';
+  document.getElementById('llPredOut').textContent = fmt2(p);
+  const eps=1e-9;
+  const pc = Math.min(1-eps,Math.max(eps,p));
+  const loss = logLossActual===1 ? -Math.log(pc) : -Math.log(1-pc);
+  document.getElementById('llLossOut').textContent = fmt3(loss);
+  const cv = document.getElementById('logLossCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,1,0,5,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,1,0,5,0.2,1,'Previsão do modelo (p̂)','Log-Loss');
+  // curva y=1: -ln(p)
+  ctx.save();
+  ctx.strokeStyle = logLossActual===1 ? '#7dded8' : 'rgba(125,222,216,.35)';
+  ctx.lineWidth = logLossActual===1 ? 2.5 : 1.5;
+  ctx.beginPath();
+  for(let i=1;i<=99;i++){ const x=i/100; const y=Math.min(5,-Math.log(x)); const px=sc.x(x),py=sc.y(y); if(i===1) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  ctx.stroke();
+  ctx.restore();
+  // curva y=0: -ln(1-p)
+  ctx.save();
+  ctx.strokeStyle = logLossActual===0 ? '#f86b63' : 'rgba(248,107,99,.35)';
+  ctx.lineWidth = logLossActual===0 ? 2.5 : 1.5;
+  ctx.beginPath();
+  for(let i=1;i<=99;i++){ const x=i/100; const y=Math.min(5,-Math.log(1-x)); const px=sc.x(x),py=sc.y(y); if(i===1) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  ctx.stroke();
+  ctx.restore();
+  const markerY = Math.min(5,loss);
+  ctx.beginPath(); ctx.arc(sc.x(p), sc.y(markerY), 7, 0, Math.PI*2);
+  ctx.fillStyle = logLossActual===1 ? '#7dded8' : '#f86b63'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+/* ===================== SEÇÃO: MÁXIMA VEROSSIMILHANÇA ===================== */
+const mleCandidates = {
+  bad: {b0:-1, b1:0.05},
+  medium: {b0:-3, b1:0.35},
+  best: mainFit
+};
+let currentMle = 'best';
+function setMleCandidate(k){
+  currentMle = k;
+  ['bad','medium','best'].forEach(key=>document.getElementById('mleBtn-'+key).classList.toggle('active', key===k));
+  renderMle();
+}
+function renderMle(){
+  const cand = mleCandidates[currentMle];
+  const cv = document.getElementById('mleCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,10,-0.1,1.1,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,0,1,2,0.5,'Horas de estudo','Probabilidade prevista');
+  drawSigmoidCurve(ctx,sc,cand.b0,cand.b1,0,10,'#06b6d4',false);
+  drawClassPts(ctx,sc,mainPoints,(p)=> p.y===1 ? '#7dded8':'#f86b63', 5, -1);
+  const loss = avgLogLoss(mainPoints, cand.b0, cand.b1);
+  document.getElementById('mleLossOut').textContent = fmt3(loss);
+  const verdict = currentMle==='best' ? '🏆 Menor Log-Loss — a curva vencedora (MLE)!' : currentMle==='medium' ? '😐 Log-Loss maior que o ideal — dá pra melhorar' : '😵 Log-Loss bem alto — curva ruim, ignora o padrão dos dados';
+  document.getElementById('mleVerdictOut').textContent = verdict;
+}
+
+/* ===================== SEÇÃO: CURVA ROC ===================== */
+const rocData = rocCurveData(mainPoints, mainFit.b0, mainFit.b1);
+const rocAuc = aucOf(rocData);
+function renderRoc(){
+  const thrPct = +document.getElementById('rocThrSlider').value;
+  const thr = thrPct/100;
+  document.getElementById('rocThrVal').textContent = thrPct+'%';
+  const cv = document.getElementById('rocCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,1,0,1,w,h,{l:38,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,1,0,1,0.2,0.2,'Taxa de Falso Positivo (FPR)','Taxa de Verdadeiro Positivo (TPR)');
+  ctx.save(); ctx.strokeStyle='rgba(83,89,102,.6)'; ctx.setLineDash([5,4]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(sc.x(0),sc.y(0)); ctx.lineTo(sc.x(1),sc.y(1)); ctx.stroke();
+  ctx.restore();
+  ctx.save(); ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  rocData.forEach((pt,i)=>{ const px=sc.x(pt.fpr), py=sc.y(pt.tpr); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); });
+  ctx.stroke();
+  ctx.restore();
+  let closest = rocData[0];
+  rocData.forEach(pt=>{ if(Math.abs(pt.t-thr) < Math.abs(closest.t-thr)) closest = pt; });
+  ctx.beginPath(); ctx.arc(sc.x(closest.fpr), sc.y(closest.tpr), 7, 0, Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  document.getElementById('rocAucOut').textContent = fmt3(rocAuc);
+  document.getElementById('rocFprOut').textContent = fmtPct(closest.fpr);
+  document.getElementById('rocTprOut').textContent = fmtPct(closest.tpr);
+}
+
+/* ===================== SEÇÃO: CLASSES DESBALANCEADAS ===================== */
+function genImbalancePoints(mode){
+  const pts = [];
+  if(mode==='balanced'){
+    for(let i=0;i<20;i++) pts.push({y:0});
+    for(let i=0;i<20;i++) pts.push({y:1});
+  } else {
+    for(let i=0;i<38;i++) pts.push({y:0});
+    for(let i=0;i<2;i++) pts.push({y:1});
+  }
+  return pts.map((p,i)=>({...p, x:i}));
+}
+let imbalanceMode = 'balanced';
+function setImbalance(mode){
+  imbalanceMode = mode;
+  document.getElementById('imbBtn-balanced').classList.toggle('active', mode==='balanced');
+  document.getElementById('imbBtn-imbalanced').classList.toggle('active', mode==='imbalanced');
+  renderImbalance();
+}
+function renderImbalance(){
+  const pts = genImbalancePoints(imbalanceMode);
+  const n = pts.length;
+  const cols = 20;
+  const cv = document.getElementById('imbalanceCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  ctx.clearRect(0,0,w,h);
+  const padX=20, padY=20;
+  const cellW = (w-padX*2)/cols;
+  const rows = Math.ceil(n/cols);
+  const cellH = Math.min(30,(h-padY*2)/rows);
+  pts.forEach((p,i)=>{
+    const col = i%cols, row = Math.floor(i/cols);
+    const cx = padX + col*cellW + cellW/2;
+    const cy = padY + row*cellH + cellH/2;
+    ctx.beginPath(); ctx.arc(cx,cy,7,0,Math.PI*2);
+    ctx.fillStyle = p.y===1 ? '#f86b63' : '#36a2ef';
+    ctx.fill();
+    ctx.strokeStyle='#111216'; ctx.lineWidth=1.2; ctx.stroke();
+  });
+  const positives = pts.filter(p=>p.y===1).length;
+  const negatives = n-positives;
+  // modelo "preguiçoso": sempre prevê 0 (não é fraude)
+  const tp=0, fn=positives, tn=negatives, fp=0;
+  const acc = tn/n;
+  const prec = 0;
+  const rec = 0;
+  document.getElementById('imbAcc').textContent = fmtPct(acc);
+  document.getElementById('imbPrec').textContent = (positives===0? '—' : fmtPct(prec));
+  document.getElementById('imbRec').textContent = (positives===0? '—' : fmtPct(rec));
+  document.getElementById('imbDetected').textContent = `0 de ${positives}`;
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Um modelo de admissão em faculdade tem b0 = −4 e b1 = 0.8 para "horas de estudo semanais". Qual a probabilidade prevista de aprovação para quem estuda 6 horas?',
+   a:'z = −4 + 0.8×6 = −4+4.8 = 0.8. p = σ(0.8) = 1/(1+e⁻⁰·⁸) ≈ <strong>0.69, ou 69%</strong> de chance de aprovação.'},
+  {q:'Um modelo estima odds de 4 para 1 a favor de um cliente renovar o contrato. Qual é a probabilidade correspondente?',
+   a:'odds = p/(1−p) = 4 → p = 4(1−p) → p = 4−4p → 5p=4 → <strong>p = 0.8, ou 80%</strong> de chance de renovar.'},
+  {q:'Uma clínica prefere baixar o limiar de decisão de 50% para 30% num teste de doença. O que acontece com o recall e a precisão?',
+   a:'Baixar o limiar faz o modelo "dizer sim" com mais facilidade: o <strong>recall tende a subir</strong> (captura mais casos reais da doença), mas a <strong>precisão tende a cair</strong> (mais falsos positivos entram junto).'},
+  {q:'Um modelo de detecção de fraude tem 99% de acurácia, mas recall de apenas 2%. Isso é motivo de comemoração?',
+   a:'Não! Com fraude sendo rara (classe desbalanceada), 99% de acurácia é fácil de conseguir só chutando "não é fraude" sempre. Um recall de 2% mostra que o modelo <strong>quase nunca detecta fraudes de verdade</strong> — é essencialmente inútil para o propósito.'},
+  {q:'Um coeficiente de "número de reclamações" na previsão de cancelamento é b = 0.4. Qual o odds ratio, e o que ele significa?',
+   a:'odds ratio = e^0.4 ≈ <strong>1.49</strong>. Cada reclamação extra multiplica as odds de cancelamento por aproximadamente 1.49 (aumento de ~49%), mantendo as outras variáveis constantes.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'A regressão logística prevê diretamente um número contínuo qualquer, assim como a regressão linear.', a:false,
+   explain:'A regressão logística prevê uma PROBABILIDADE, sempre entre 0 e 1, usando a curva sigmoide — não um número qualquer sem limites.'},
+  {q:'A função sigmoide sempre devolve um valor entre 0 e 1, não importa o valor de entrada.', a:true,
+   explain:'Essa é exatamente a propriedade que torna a sigmoide útil: qualquer número real vira uma probabilidade válida.'},
+  {q:'Log-odds (logito) igual a zero corresponde a uma probabilidade de 50%.', a:true,
+   explain:'σ(0) = 0.5, então logito = 0 é o ponto de máxima incerteza — exatamente meio a meio entre as duas classes.'},
+  {q:'O Log-Loss pune igualmente um erro "inseguro" (p̂=51%) e um erro "confiante" (p̂=99%) na direção errada.', a:false,
+   explain:'O Log-Loss pune muito mais forte os erros confiantes. Errar dizendo 99% de certeza gera uma perda muito maior do que errar com apenas 51%.'},
+  {q:'Em problemas com classes muito desbalanceadas, a acurácia sozinha pode enganar sobre a qualidade do modelo.', a:true,
+   explain:'Um modelo "preguiçoso" pode ter acurácia altíssima só por prever sempre a classe majoritária, mesmo sendo inútil para detectar a classe rara que realmente importa.'},
+  {q:'A curva ROC mostra o desempenho do modelo considerando apenas um único limiar de decisão fixo.', a:false,
+   explain:'A curva ROC mostra o desempenho em TODOS os limiares possíveis simultaneamente — por isso ela resume o comportamento geral do classificador.'},
+  {q:'Um AUC de 0.5 na curva ROC indica que o modelo separa as classes tão bem quanto uma moeda jogada ao acaso.', a:true,
+   explain:'AUC = 0.5 corresponde à diagonal da curva ROC — o modelo não tem poder discriminativo algum além do acaso.'},
+  {q:'Na regressão logística múltipla, o odds ratio de uma variável é calculado como e elevado ao coeficiente daquela variável.', a:true,
+   explain:'exp(b) converte o efeito no log-odds de volta para um multiplicador nas odds — essa é a interpretação prática mais usada.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT / RENDER ALL ===================== */
+function renderAll(){
+  drawHero();
+  drawIntro();
+  renderCompare();
+  renderSigmoid();
+  renderCoef();
+  renderOdds();
+  renderThreshold();
+  renderLogLoss();
+  renderMle();
+  renderRoc();
+  renderImbalance();
+}
+drawIntro();
+setCompareMode('logistic');
+renderSigmoid();
+renderCoef();
+renderOdds();
+renderThreshold();
+setLogLossActual(1);
+setMleCandidate('best');
+renderRoc();
+setImbalance('balanced');
+buildProblems();
+buildQuiz();
+</script>
+</body>
+</html>

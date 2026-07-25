@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Variáveis Aleatórias explicadas do zero, como se fosse para uma criança, com dados, moedas, rifas, balanças de equilíbrio e muitos gráficos e demos visuais interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Variáveis Aleatórias Explicadas com Desenhos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+.hero-map-grid{display:flex;flex-direction:column;gap:10px;width:280px;}
+.hero-map-card{display:flex;align-items:center;gap:10px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.hero-map-exp{flex:1;font-size:20px;text-align:center;line-height:1.35;}
+.hero-map-exp span{display:block;font-size:10px;color:var(--text-secondary);font-family:'Inter',sans-serif;margin-top:2px;}
+.hero-map-arrow{font-size:15px;color:var(--text-disabled);flex-shrink:0;}
+.hero-map-x{font-family:'Roboto Mono',monospace;font-weight:800;color:var(--accent);font-size:15px;min-width:64px;text-align:center;flex-shrink:0;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn:disabled{opacity:.35;cursor:not-allowed;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- DECISION FLOW ---- */
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.arranjo{border-color:var(--accent-blue);}
+.decision-branch.combinacao{border-color:var(--accent-purple);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- DICE (CSS pip-drawn) ---- */
+.dice-display{text-align:center;line-height:1;}
+.pipdice{background:#eef1f5;border-radius:10px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:3px;padding:8px;box-shadow:0 3px 10px rgba(0,0,0,.35);width:56px;height:56px;}
+.pipdice.big{width:84px;height:84px;padding:12px;gap:4px;border-radius:14px;}
+.pipdice .pip{border-radius:50%;background:transparent;}
+.pipdice .pip.on{background:#1d1e24;}
+.dice-placeholder{width:84px;height:84px;border-radius:14px;background:var(--bg-elevated);border:2px dashed var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:30px;color:var(--text-disabled);}
+
+/* ---- COIN ---- */
+.coin-wrap{display:flex;justify-content:center;gap:14px;padding:16px 0 6px;perspective:700px;flex-wrap:wrap;}
+.coin{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-weight:800;font-family:'Roboto Mono',monospace;background:radial-gradient(circle at 35% 30%,#ffe38a,#e8b339 60%,#a9791f);color:#3a2a05;border:3px solid #fff3c4;box-shadow:0 8px 22px rgba(232,179,57,.35);}
+.coin.sm{width:70px;height:70px;border-width:2px;}
+.coin.sm .coin-face-emoji{font-size:20px;}
+.coin.sm .coin-face-label{font-size:8px;}
+.coin-face-emoji{font-size:30px;}
+.coin-face-label{font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+.coin.flipping{animation:coinFlip .7s ease-in-out;}
+@keyframes coinFlip{0%{transform:rotateY(0) scale(1);}45%{transform:rotateY(720deg) scale(1.18);}100%{transform:rotateY(1440deg) scale(1);}}
+
+/* ---- RV HISTORY (intro) ---- */
+.rv-history{display:flex;flex-direction:column;gap:6px;margin-top:14px;max-width:420px;margin-left:auto;margin-right:auto;}
+.rv-history-row{display:flex;justify-content:space-between;align-items:center;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--text-secondary);gap:10px;}
+.rv-history-x{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;flex-shrink:0;}
+.rv-empty{text-align:center;font-size:12px;color:var(--text-disabled);padding:10px;}
+
+/* ---- CLASSIFY EXERCISE ---- */
+.classify-card{cursor:pointer;transition:.15s;}
+.classify-card:hover{border-color:var(--border-strong);}
+.classify-answer{display:none;}
+.classify-card.revealed .classify-answer{display:block;}
+.classify-card.revealed{border-color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Variáveis Aleatórias</h1><span>Transformando o acaso em números que a gente consegue somar e comparar</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">15</div><div class="hstat-label">Conceitos</div></div>
+      <div class="hstat"><div class="hstat-num">E(X)</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">11</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~65min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do "o que é" até as distribuições famosas</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Toda vez que o acaso vira <em>um número</em>, existe uma Variável Aleatória</h2>
+      <p>Quando você joga uma moeda, o resultado é "cara" ou "coroa" — não é um número. Mas se você perguntar <strong>"quantas caras saíram?"</strong>, aí sim aparece um número! Uma <strong>Variável Aleatória</strong> (letra <code style="color:var(--accent);">X</code>) é exatamente essa regra: uma máquina que pega o resultado de um sorteio e devolve um número. Com números na mão, a gente pode somar, tirar média, comparar e até prever o que vai acontecer no longo prazo. Nesta aula vamos construir essa ideia do zero, com muitos desenhos e gráficos, até chegar nas distribuições mais famosas da estatística: Binomial, Poisson e Normal.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">De Resultado a Número</span>
+        <span class="badge badge-blue">Discreta</span>
+        <span class="badge badge-purple">Contínua</span>
+        <span class="badge badge-green">E(X) e Var(X)</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-map-grid">
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🪙🪙🪙<span>Cara, Coroa, Cara</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X = 2</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🎲🎲<span>Soma dos 2 dados</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X = 9</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🚌<span>Tempo esperando o ônibus</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X = 4,3 min</div>
+        </div>
+      </div>
+      <div class="hero-visual-caption">Um "resultado do acaso" entra, um número sai — é só isso que uma variável aleatória faz!</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🔢 O que é uma Variável Aleatória?</div>
+    <p class="section-desc">
+      Imagine jogar uma moeda <strong>3 vezes</strong>. Cada jogada dá "cara" ou "coroa" — isso ainda não é um número. Mas se definirmos <code style="color:var(--accent);">X = número de caras</code>, toda vez que jogarmos as 3 moedas vamos obter um número: <code style="color:var(--accent);">0, 1, 2</code> ou <code style="color:var(--accent);">3</code>. Essa "receita" que transforma o resultado aleatório em número é a <strong>variável aleatória</strong>. Jogue as moedas abaixo e veja a mágica acontecer.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique para jogar 3 moedas e ver o valor de X = número de caras</div>
+      <div class="coin-wrap">
+        <div class="coin sm" id="introCoin0"><span class="coin-face-emoji">❓</span><span class="coin-face-label">?</span></div>
+        <div class="coin sm" id="introCoin1"><span class="coin-face-emoji">❓</span><span class="coin-face-label">?</span></div>
+        <div class="coin sm" id="introCoin2"><span class="coin-face-emoji">❓</span><span class="coin-face-label">?</span></div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:10px;">
+        <button class="player-btn primary" onclick="introFlip()">🪙 Jogar as 3 moedas</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Valor da variável aleatória</span><span class="rv" id="introXResult">X = ?</span></div>
+      </div>
+      <div class="rv-history" id="introHistory"><div class="rv-empty">Jogue as moedas para começar o histórico de resultados</div></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Repare que resultados <strong>diferentes</strong> podem virar o <strong>mesmo número</strong>: "Cara, Coroa, Cara" e "Coroa, Cara, Cara" são sequências diferentes, mas as duas dão <code>X = 2</code>. A variável aleatória não se importa com os detalhes do resultado — só com o número que interessa para o seu problema.</p>
+    </div>
+  </section>
+
+  <!-- ============ DISCRETA VS CONTÍNUA ============ -->
+  <section class="section" id="s-tipos">
+    <div class="section-eyebrow">A Primeira Grande Divisão</div>
+    <div class="section-title">🧩 Variável Discreta vs. Variável Contínua</div>
+    <p class="section-desc">
+      Toda variável aleatória se encaixa em uma de duas famílias. Se você consegue <strong>listar</strong> os valores possíveis um por um — <code style="color:var(--accent-blue);">0, 1, 2, 3...</code> — ela é <strong>discreta</strong>. Se os valores podem ser <strong>qualquer número dentro de um intervalo</strong> (sem "pulos"), como <code style="color:var(--accent-purple);">1,732cm</code> ou <code style="color:var(--accent-purple);">4,58 segundos</code>, ela é <strong>contínua</strong>.
+    </p>
+
+    <div class="decision-flow">
+      <div class="decision-q">Dá para contar os valores possíveis, um de cada vez, como 1, 2, 3...?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">✅ Sim, é uma lista contável</div>
+          <div class="decision-result">➡️ Variável <strong>Discreta</strong></div>
+          <div class="decision-example">Ex.: número de caras, resultado do dado, número de filhos, quantidade de ligações por hora.</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">❌ Não, preenche um intervalo inteiro</div>
+          <div class="decision-result">➡️ Variável <strong>Contínua</strong></div>
+          <div class="decision-example">Ex.: altura, peso, tempo de espera, temperatura — sempre podem ter mais uma casa decimal.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada exemplo para descobrir se é discreta ou contínua</div>
+      <div class="grid-4" id="classifyGrid"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Truque rápido: se a resposta pudesse ser "3,4827..." e ainda fazer sentido, é <strong>contínua</strong>. Se a resposta só pode ser um número "inteiro" de itens contados (0 ligação, 1 ligação, 2 ligações...), é <strong>discreta</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ============ DISTRIBUIÇÃO DE PROBABILIDADE (PMF) ============ -->
+  <section class="section" id="s-pmf">
+    <div class="section-eyebrow">O Retrato Completo de Uma Variável Discreta</div>
+    <div class="section-title">🎲 Distribuição de Probabilidade (PMF)</div>
+    <p class="section-desc">
+      A <strong>Distribuição de Probabilidade</strong> (ou <em>PMF</em>, de "função de massa de probabilidade") é a lista de <strong>todos</strong> os valores que X pode assumir, junto com a chance de cada um. Vamos usar o clássico <strong>soma de dois dados</strong>: X pode ir de 2 a 12, mas nem todos os valores têm a mesma chance — 7 é o mais comum porque existem <strong>6 combinações diferentes</strong> de dados que somam 7!
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Role os dois dados várias vezes e veja as barras se aproximarem da teoria</div>
+      <div style="display:flex;justify-content:center;gap:18px;">
+        <div class="dice-display" id="diceDisplay1"><div class="dice-placeholder">?</div></div>
+        <div class="dice-display" id="diceDisplay2"><div class="dice-placeholder">?</div></div>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-top:14px;">
+        <button class="player-btn primary" onclick="rollDiceSum(1)">🎲 Rolar 1 vez</button>
+        <button class="player-btn" onclick="rollDiceSum(20)">🎲 Rolar 20 vezes</button>
+        <button class="player-btn" onclick="rollDiceSum(200)">🎲 Rolar 200 vezes</button>
+        <button class="player-btn" onclick="resetDiceSum()">⏹ Reiniciar</button>
+      </div>
+      <div class="canvas-wrap" style="margin-top:16px;"><canvas id="diceSumCanvas" height="200"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">🩶 Barra cinza clara = probabilidade teórica P(X=k). 🔵 Barra ciano = frequência observada até agora nas suas rolagens.</div>
+      <div class="result-display">
+        <div><span class="rl">Última soma sorteada</span><span class="rv" id="diceSumResult">—</span></div>
+        <div><span class="rl">Rolagens totais</span><span class="rv" id="diceSumTotal">0</span></div>
+      </div>
+      <div style="overflow-x:auto;margin-top:16px;">
+        <table class="data-table" id="diceSumTable"></table>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A regra de ouro da PMF</div>
+      <p>Some as probabilidades P(X=k) de <strong>todos</strong> os valores possíveis (2 até 12) e o resultado é sempre exatamente <code>1</code>. Cada barrinha é uma "fatia" desse total — nenhuma probabilidade pode ser negativa, e juntas elas preenchem 100% dos casos.</p>
+    </div>
+  </section>
+
+  <!-- ============ FUNÇÃO DE DISTRIBUIÇÃO ACUMULADA (CDF) ============ -->
+  <section class="section" id="s-cdf">
+    <div class="section-eyebrow">Somando a Probabilidade Aos Poucos</div>
+    <div class="section-title">📶 Função de Distribuição Acumulada (CDF)</div>
+    <p class="section-desc">
+      Às vezes a pergunta não é "qual a chance de X ser exatamente 2?", mas <strong>"qual a chance de X ser 2 ou menos?"</strong>. Essa é a <strong>Função Acumulada</strong>, escrita <code style="color:var(--accent);">F(x) = P(X ≤ x)</code>. Usando o exemplo de <strong>número de caras em 3 lançamentos de moeda</strong> (X pode ser 0, 1, 2 ou 3), arraste o controle e veja o "degrau" da função acumulada.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste para escolher um valor de x e veja F(x) = P(X ≤ x)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Valor de x</span><span class="ctrl-v" id="cdfSliderVal">1.50</span></div>
+          <input type="range" id="cdfSlider" min="-0.5" max="3.5" step="0.05" value="1.5" oninput="renderCdf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="cdfCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">A linha ciana em degraus é F(x). As barrinhas roxas embaixo mostram a PMF de cada valor de X — repare que cada "salto" da escada tem exatamente a altura da barrinha correspondente!</div>
+      <div class="result-display">
+        <div><span class="rl">F(x) = P(X ≤ x)</span><span class="rv" id="cdfResult">0.500</span></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>A função acumulada <strong>nunca diminui</strong> — ela só sobe ou fica igual conforme x cresce. Ela começa em <code>0</code> (bem à esquerda) e termina em <code>1</code> (bem à direita), porque em algum momento já somamos <strong>toda</strong> a probabilidade.</p>
+    </div>
+  </section>
+
+  <!-- ============ VALOR ESPERADO ============ -->
+  <section class="section" id="s-esperanca">
+    <div class="section-eyebrow">O "Centro de Gravidade" de uma Variável Aleatória</div>
+    <div class="section-title">⚖️ Valor Esperado E(X): a balança do acaso</div>
+    <p class="section-desc">
+      O <strong>Valor Esperado</strong> <code style="color:var(--accent);">E(X)</code> é a média de X se você repetisse o experimento <strong>muitas e muitas vezes</strong>. A forma mais fácil de enxergar é imaginar uma <strong>balança</strong>: cada valor possível de X é um peso pendurado na posição certa, e o peso de cada um é a sua probabilidade. <code style="color:var(--accent);">E(X)</code> é exatamente o ponto onde essa balança fica equilibrada. Monte sua própria rifa e veja o ponto de equilíbrio se mexer!
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste a rifa (prêmio, custo do bilhete e chance de ganhar)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎁 Prêmio se ganhar</span><span class="ctrl-v" id="raffPrizeVal">R$ 50</span></div>
+          <input type="range" id="raffPrize" min="0" max="100" step="5" value="50" oninput="renderRaffle()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎟️ Custo do bilhete</span><span class="ctrl-v" id="raffCostVal">R$ 5</span></div>
+          <input type="range" id="raffCost" min="1" max="20" step="1" value="5" oninput="renderRaffle()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 Chance de ganhar</span><span class="ctrl-v" id="raffPVal">10%</span></div>
+          <input type="range" id="raffP" min="1" max="50" step="1" value="10" oninput="renderRaffle()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="raffCanvas" height="180"></canvas></div>
+      <div class="card-formula" id="raffFormula"></div>
+      <div class="result-display">
+        <div><span class="rl">E(X) — ganho médio por bilhete</span><span class="rv" id="raffResult">—</span></div>
+      </div>
+      <div class="section-desc" style="text-align:center;font-size:12.5px;" id="raffVerdict"></div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Cuidado: E(X) não precisa ser um valor possível!</div>
+      <p>No dado comum, <code>E(X) = 3,5</code> — mas nenhuma face do dado tem o número 3,5! O valor esperado é uma <strong>média de longo prazo</strong>, não uma previsão de um único resultado.</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIÂNCIA ============ -->
+  <section class="section" id="s-variancia">
+    <div class="section-eyebrow">O Quão "Espalhados" os Valores Estão</div>
+    <div class="section-title">📏 Variância e Desvio Padrão: medindo a inconstância</div>
+    <p class="section-desc">
+      Duas variáveis podem ter <strong>exatamente a mesma média</strong> e ainda assim serem bem diferentes. Imagine dois jogadores de basquete, ambos com média de <strong>8 pontos</strong> por jogo: o Jogador 🅰️ sempre faz exatamente 8, enquanto o Jogador 🅱️ é imprevisível — às vezes faz poucos pontos, às vezes faz muitos. A <strong>Variância</strong> <code style="color:var(--accent);">Var(X)</code> mede essa "inconstância": a média das distâncias ao quadrado entre cada valor e a média.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o quão longe da média (8) o Jogador 🅱️ costuma variar</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📐 Afastamento do Jogador 🅱️ (d)</span><span class="ctrl-v" id="varDVal">4</span></div>
+          <input type="range" id="varD" min="0" max="8" step="1" value="4" oninput="renderVarDemo()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="varCanvas" height="200"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-green"><div class="stat-card-label">Var(🅰️) — sempre 8 pontos</div><div class="stat-card-value" id="varAResult">0</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Var(🅱️) = d²</div><div class="stat-card-value" id="varBResult">16</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Desvio padrão σ(🅱️) = d</div><div class="stat-card-value" id="sdBResult">4</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que "ao quadrado"?</div>
+      <p>Repare como a Variância cresce muito mais rápido que o afastamento: se d dobra, a variância <strong>quadruplica</strong>! Por isso criamos o <strong>Desvio Padrão</strong> <code>σ = √Var(X)</code> — ele "desfaz" o quadrado e volta para a mesma unidade da variável original (pontos, reais, centímetros...), o que facilita muito a interpretação.</p>
+    </div>
+  </section>
+
+  <!-- ============ PROPRIEDADES ============ -->
+  <section class="section" id="s-propriedades">
+    <div class="section-eyebrow">O Que Acontece Se Transformarmos X?</div>
+    <div class="section-title">🔗 Propriedades de E(X) e Var(X): esticando e deslocando</div>
+    <p class="section-desc">
+      E se pegarmos os pontos do Jogador 🅱️ (valores <strong>4</strong> e <strong>12</strong>, média 8) e aplicarmos uma transformação, tipo <code style="color:var(--accent);">Y = a·X + b</code> — por exemplo, dobrar os pontos e dar um bônus fixo? Existem <strong>atalhos</strong> para calcular a nova média e a nova variância sem refazer a conta toda: <code style="color:var(--accent);">E(aX+b) = a·E(X) + b</code> e <code style="color:var(--accent);">Var(aX+b) = a²·Var(X)</code>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o multiplicador (a) e o bônus fixo (b) aplicados aos pontos do Jogador 🅱️</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✖️ Multiplicador (a)</span><span class="ctrl-v" id="transAVal">1</span></div>
+          <input type="range" id="transA" min="0.5" max="3" step="0.5" value="1" oninput="renderTransform()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>➕ Bônus fixo (b)</span><span class="ctrl-v" id="transBVal">0</span></div>
+          <input type="range" id="transB" min="-10" max="10" step="1" value="0" oninput="renderTransform()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="transCanvas" height="180"></canvas></div>
+      <div class="grid-2" style="margin-top:14px;">
+        <div class="card">
+          <div class="card-title">🧮 Calculando direto (com os novos valores)</div>
+          <div class="card-text">E(Y) = <span id="transEYdirect" class="ctrl-v">8.0</span> &nbsp;|&nbsp; Var(Y) = <span id="transVarYdirect" class="ctrl-v">16.0</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">⚡ Usando o atalho (fórmula)</div>
+          <div class="card-text">a·E(X)+b = <span id="transEYformula" class="ctrl-v">8.0</span> &nbsp;|&nbsp; a²·Var(X) = <span id="transVarYformula" class="ctrl-v">16.0</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Os dois jeitos de calcular <strong>sempre batem</strong>! Isso mostra que não precisamos recalcular tudo do zero sempre que só esticamos ou deslocamos uma variável — os atalhos economizam muito trabalho, especialmente quando X tem muitos valores possíveis.</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIÁVEL CONTÍNUA (PDF) ============ -->
+  <section class="section" id="s-continua">
+    <div class="section-eyebrow">Quando os Valores Não Têm "Pulos"</div>
+    <div class="section-title">🌊 Variável Contínua e Densidade de Probabilidade (PDF)</div>
+    <p class="section-desc">
+      Para variáveis contínuas não faz sentido falar em "barrinhas" separadas — em vez disso, usamos uma <strong>curva de densidade</strong> (PDF), e a probabilidade vira uma <strong>área</strong> embaixo da curva. Exemplo: o tempo de espera de um ônibus varia de forma <strong>uniforme</strong> entre 0 e 10 minutos — qualquer instante nesse intervalo é igualmente provável. Escolha um intervalo [a,b] e veja a área (= probabilidade) aparecer.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha o intervalo de tempo [a, b] entre 0 e 10 minutos</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🅰️ Início do intervalo (a)</span><span class="ctrl-v" id="uniAVal">3</span></div>
+          <input type="range" id="uniA" min="0" max="10" step="0.5" value="3" oninput="clampUniform('a')">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🅱️ Fim do intervalo (b)</span><span class="ctrl-v" id="uniBVal">7</span></div>
+          <input type="range" id="uniB" min="0" max="10" step="0.5" value="7" oninput="clampUniform('b')">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="uniCanvas" height="180"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">P(a ≤ X ≤ b) = área sombreada</span><span class="rv" id="uniResult">4/10 = 0.40 (40%)</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">A pegadinha das variáveis contínuas</div>
+      <p>Qual a chance do ônibus chegar em <strong>exatamente</strong> 4,0000000... minutos? A resposta é <code>0</code>! Numa variável contínua, um único ponto tem <strong>largura zero</strong>, então sua área (probabilidade) também é zero. Só faz sentido perguntar pela chance de X cair dentro de um <strong>intervalo</strong>, como fizemos acima.</p>
+    </div>
+  </section>
+
+  <!-- ============ BINOMIAL ============ -->
+  <section class="section" id="s-binomial">
+    <div class="section-eyebrow">Contando Sucessos em Repetições</div>
+    <div class="section-title">🏀 Distribuição Binomial: quantos acertos em n tentativas?</div>
+    <p class="section-desc">
+      A <strong>Binomial</strong> é uma variável discreta que conta quantos "sucessos" acontecem em <code style="color:var(--accent-blue);">n</code> tentativas independentes, cada uma com a mesma chance <code style="color:var(--accent-blue);">p</code> de sucesso — como um jogador de basquete arremessando várias vezes. A fórmula é <code style="color:var(--accent);">P(X=k) = C(n,k) × pᵏ × (1−p)ⁿ⁻ᵏ</code>, e ela junta tudo que já vimos: é uma PMF, tem E(X) e Var(X) calculáveis direto pela fórmula.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste o número de arremessos (n) e a chance de acerto (p)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🏀 Número de arremessos (n)</span><span class="ctrl-v" id="binNVal">10</span></div>
+          <input type="range" id="binN" min="1" max="20" step="1" value="10" oninput="renderBinomial()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🎯 Chance de acerto (p)</span><span class="ctrl-v" id="binPVal">50%</span></div>
+          <input type="range" id="binP" min="5" max="95" step="5" value="50" oninput="renderBinomial()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="binCanvas" height="200"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Cada barra é P(X=k) — a chance de acertar exatamente k arremessos em n tentativas.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">E(X) = n×p</div><div class="stat-card-value" id="binMean">5.0</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Var(X) = n×p×(1−p)</div><div class="stat-card-value" id="binVar">2.5</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">k mais provável</div><div class="stat-card-value" id="binMode">5</div></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Toda distribuição binomial precisa de 3 ingredientes: (1) um número <strong>fixo</strong> de tentativas <code>n</code>, (2) cada tentativa só pode dar "sucesso" ou "fracasso", e (3) a chance de sucesso <code>p</code> é a <strong>mesma</strong> em todas as tentativas e elas são <strong>independentes</strong> entre si.</p>
+    </div>
+  </section>
+
+  <!-- ============ POISSON ============ -->
+  <section class="section" id="s-poisson">
+    <div class="section-eyebrow">Contando Eventos Raros no Tempo</div>
+    <div class="section-title">☎️ Distribuição de Poisson: quantos eventos num intervalo?</div>
+    <p class="section-desc">
+      E se, em vez de "n tentativas", quisermos contar quantos eventos acontecem num <strong>intervalo de tempo</strong> — como o número de ligações que uma central recebe por minuto? A <strong>Distribuição de Poisson</strong> serve exatamente para isso, e só precisa de <strong>um parâmetro</strong>: <code style="color:var(--accent-blue);">λ</code> (lambda), a <strong>média de eventos</strong> por intervalo. A fórmula é <code style="color:var(--accent);">P(X=k) = e⁻λ × λᵏ / k!</code>
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste λ — o número médio de ligações recebidas por minuto</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📞 λ (ligações por minuto, em média)</span><span class="ctrl-v" id="poisLambdaVal">3</span></div>
+          <input type="range" id="poisLambda" min="0.5" max="15" step="0.5" value="3" oninput="renderPoisson()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="poisCanvas" height="200"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">Cada barra é P(X=k) — a chance de receber exatamente k ligações no minuto.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">E(X) = λ</div><div class="stat-card-value" id="poisMean">3.0</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Var(X) = λ</div><div class="stat-card-value" id="poisVar">3.0</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">σ = √λ</div><div class="stat-card-value" id="poisStd">1.73</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Curiosidade</div>
+      <p>Na Poisson, a <strong>média e a variância são sempre iguais</strong> — as duas valem λ! Isso é uma "assinatura" exclusiva dessa distribuição: se você perceber que a variância dos seus dados é bem diferente da média, provavelmente a Poisson não é o modelo certo.</p>
+    </div>
+  </section>
+
+  <!-- ============ NORMAL ============ -->
+  <section class="section" id="s-normal">
+    <div class="section-eyebrow">A Rainha das Distribuições Contínuas</div>
+    <div class="section-title">🔔 Distribuição Normal: a curva em forma de sino</div>
+    <p class="section-desc">
+      Quando somamos <strong>muitas coisas pequenas e aleatórias</strong> (como a altura de milhares de alunos, ou uma Binomial com n bem grande), o resultado tende a formar essa curva em forma de sino, chamada <strong>Distribuição Normal</strong>. Ela é descrita por só dois números: a <strong>média (μ)</strong>, que define o centro, e o <strong>desvio padrão (σ)</strong>, que define o quão "espalhada" ela é.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste a média e o desvio padrão, e veja a regra empírica 68-95-99,7%</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>μ (média das alturas, cm)</span><span class="ctrl-v" id="normMeanVal">170</span></div>
+          <input type="range" id="normMean" min="140" max="200" step="1" value="170" oninput="renderNormal()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>σ (desvio padrão, cm)</span><span class="ctrl-v" id="normStdVal">10</span></div>
+          <input type="range" id="normStd" min="2" max="25" step="1" value="10" oninput="renderNormal()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle active" id="sigmaBtn1" onclick="setSigmaShade(1)">±1σ (≈68%)</button>
+        <button class="btn-toggle" id="sigmaBtn2" onclick="setSigmaShade(2)">±2σ (≈95%)</button>
+        <button class="btn-toggle" id="sigmaBtn3" onclick="setSigmaShade(3)">±3σ (≈99,7%)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="normCanvas" height="220"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">Faixa sombreada</span><span class="rv" id="normRange">160 a 180</span></div>
+        <div><span class="rl">% de pessoas nessa faixa</span><span class="rv" id="normPct">≈68%</span></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Regra empírica (68-95-99,7)</div>
+      <p>Em qualquer distribuição Normal: cerca de <strong>68%</strong> dos dados ficam entre μ−σ e μ+σ; <strong>95%</strong> entre μ−2σ e μ+2σ; e <strong>99,7%</strong> entre μ−3σ e μ+3σ. Isso vale sempre — não importa quais sejam os valores de μ e σ.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela">
+    <div class="section-eyebrow">A Chuva de Fórmulas, Organizada</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todos os conceitos desta aula reunidos num só lugar, com quando usar cada um.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🔢 Variável Aleatória</div>
+        <div class="card-formula">X : Ω → ℝ</div>
+        <div class="card-text">Uma regra que transforma cada resultado de um experimento aleatório num número.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎲 Distribuição / PMF (discreta)</div>
+        <div class="card-formula">P(X=k), com ΣP(X=k) = 1</div>
+        <div class="card-text">A lista de todos os valores possíveis de X e a chance de cada um.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📶 Função Acumulada (CDF)</div>
+        <div class="card-formula">F(x) = P(X ≤ x)</div>
+        <div class="card-text">A chance de X ser até um certo valor. Nunca diminui; vai de 0 a 1.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚖️ Valor Esperado (discreta)</div>
+        <div class="card-formula">E(X) = Σ x·P(X=x)</div>
+        <div class="card-text">A média de X no longo prazo — o "ponto de equilíbrio" da distribuição.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Variância</div>
+        <div class="card-formula">Var(X) = E[(X−μ)²]</div>
+        <div class="card-text">O quão espalhados os valores estão em torno da média. σ = √Var(X).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔗 Transformação linear</div>
+        <div class="card-formula">E(aX+b)=aE(X)+b · Var(aX+b)=a²Var(X)</div>
+        <div class="card-text">Atalhos para recalcular média e variância depois de esticar/deslocar X.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌊 Densidade / PDF (contínua)</div>
+        <div class="card-formula">P(a≤X≤b) = área sob f(x)</div>
+        <div class="card-text">Para variáveis contínuas, probabilidade é área — e P(X=ponto exato)=0.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏀 Binomial</div>
+        <div class="card-formula">P(X=k)=C(n,k)pᵏ(1−p)ⁿ⁻ᵏ · E=np · Var=np(1−p)</div>
+        <div class="card-text">Número de sucessos em n tentativas independentes, cada uma com chance p.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">☎️ Poisson</div>
+        <div class="card-formula">P(X=k)=e⁻λλᵏ/k! · E=Var=λ</div>
+        <div class="card-text">Número de eventos raros num intervalo fixo de tempo/espaço.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 Normal</div>
+        <div class="card-formula">Regra 68-95-99,7</div>
+        <div class="card-text">Curva de sino definida por μ (centro) e σ (espalhamento). Contínua.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">✅ Boas práticas: como não se confundir</div>
+
+    <div class="decision-flow">
+      <div class="decision-q">Antes de calcular E(X) ou Var(X): os valores de X são uma lista contável ou um intervalo contínuo?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">✅ Lista contável (discreta)</div>
+          <div class="decision-result">➡️ Use <strong>somatório</strong>: E(X) = Σ x·P(X=x)</div>
+          <div class="decision-example">Ex.: número de caras, resultado do dado, número de sucessos numa Binomial</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">❌ Intervalo contínuo</div>
+          <div class="decision-result">➡️ Use a <strong>área sob a densidade</strong> (integral)</div>
+          <div class="decision-example">Ex.: altura, tempo de espera, temperatura</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">1️⃣ E(X) ≠ valor mais provável</div>
+        <div class="card-text">O valor esperado é uma média — ele não precisa ser um dos valores que X pode assumir (ex.: E(dado)=3,5), e não é necessariamente o valor de maior probabilidade (a moda).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Variância tem unidade ao quadrado</div>
+        <div class="card-text">Se X é medido em reais, Var(X) é "reais ao quadrado" — algo estranho de interpretar. Por isso usamos o desvio padrão σ, que volta para a unidade original.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Confira se a PMF soma 1</div>
+        <div class="card-text">Some as probabilidades de todos os valores possíveis de X. Se não der exatamente 1, tem erro na conta ou algum valor ficou de fora.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1: confundir "valor esperado" com "previsão do próximo resultado"</div>
+      <p>E(X)=3,5 no dado não significa que "vai sair 3,5" ou mesmo "vai sair 3 ou 4". É a média que aparece depois de <strong>muitas repetições</strong> — num único lançamento, qualquer face de 1 a 6 pode sair.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2: achar que "discreta" significa sempre "número inteiro"</div>
+      <p>Discreta significa <strong>contável</strong>, não necessariamente inteira. Uma variável que só pode valer 0,5 ou 1,5 ou 2,5 também é discreta, porque dá para listar os valores um por um.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Sempre que possível, <strong>desenhe</strong> a distribuição (barrinhas para PMF, curva para PDF). Visualizar o formato ajuda demais a entender onde está o centro (E(X)) e o quão espalhados os valores estão (Var(X)) antes mesmo de calcular qualquer fórmula.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer style="display:flex;justify-content:space-between;color:var(--text-disabled);font-size:11px;padding-top:10px;border-top:1px solid var(--border-color);">
+    <span>Profissão Dados — Variáveis Aleatórias</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function comb(n,k){ if(k<0||k>n) return 0; k=Math.min(k,n-k); let r=1; for(let i=0;i<k;i++) r = r*(n-i)/(i+1); return Math.round(r); }
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function pct(x,d=1){ return (x*100).toFixed(d).replace('.',',')+'%'; }
+function fmtMoney(v){ const s=v<0?'-':''; return s+'R$ '+Math.abs(v).toFixed(2).replace('.',','); }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🔢', label:'O que é'},
+  {id:'s-tipos', icon:'🧩', label:'Discreta/Contínua'},
+  {id:'s-pmf', icon:'🎲', label:'Distribuição (PMF)'},
+  {id:'s-cdf', icon:'📶', label:'Acumulada (CDF)'},
+  {id:'s-esperanca', icon:'⚖️', label:'Valor Esperado'},
+  {id:'s-variancia', icon:'📏', label:'Variância'},
+  {id:'s-propriedades', icon:'🔗', label:'Propriedades'},
+  {id:'s-continua', icon:'🌊', label:'V.A. Contínua'},
+  {id:'s-binomial', icon:'🏀', label:'Binomial'},
+  {id:'s-poisson', icon:'☎️', label:'Poisson'},
+  {id:'s-normal', icon:'🔔', label:'Normal'},
+  {id:'s-tabela', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== O QUE É (moedas + X) ===================== */
+let introHistory = [];
+function introFlip(){
+  const results = [Math.random()<0.5, Math.random()<0.5, Math.random()<0.5];
+  results.forEach((r,i)=>{
+    const el = document.getElementById('introCoin'+i);
+    el.classList.remove('flipping'); void el.offsetWidth; el.classList.add('flipping');
+    el.querySelector('.coin-face-emoji').textContent = r ? '👑' : '🪙';
+    el.querySelector('.coin-face-label').textContent = r ? 'CARA' : 'COROA';
+  });
+  const X = results.filter(Boolean).length;
+  document.getElementById('introXResult').textContent = 'X = '+X;
+  const seq = results.map(r=>r?'Cara':'Coroa').join(', ');
+  introHistory.unshift({seq, X});
+  if(introHistory.length>5) introHistory.pop();
+  document.getElementById('introHistory').innerHTML = introHistory.map(h=>
+    `<div class="rv-history-row"><span>${h.seq}</span><span class="rv-history-x">X = ${h.X}</span></div>`).join('');
+}
+
+/* ===================== DISCRETA VS CONTÍNUA ===================== */
+const classifyItems = [
+  {emoji:'🎲', label:'Resultado de um dado (1 a 6)', type:'D'},
+  {emoji:'👶', label:'Número de filhos numa família', type:'D'},
+  {emoji:'📞', label:'Número de ligações recebidas em 1 hora', type:'D'},
+  {emoji:'✅', label:'Número de acertos numa prova de 10 questões', type:'D'},
+  {emoji:'📏', label:'Altura de uma pessoa (cm)', type:'C'},
+  {emoji:'⏱️', label:'Tempo de espera na fila do banco (min)', type:'C'},
+  {emoji:'🌡️', label:'Temperatura de uma cidade (°C)', type:'C'},
+  {emoji:'⚖️', label:'Peso de um pacote de arroz (kg)', type:'C'},
+];
+function buildClassify(){
+  document.getElementById('classifyGrid').innerHTML = classifyItems.map(it => `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div style="font-size:26px;text-align:center;">${it.emoji}</div>
+      <div class="card-text" style="text-align:center;margin-top:6px;">${it.label}</div>
+      <div class="classify-answer" style="text-align:center;margin-top:10px;">
+        <span class="badge ${it.type==='D'?'badge-blue':'badge-purple'}">${it.type==='D'?'Discreta':'Contínua'}</span>
+      </div>
+    </div>`).join('');
+}
+
+/* ===================== PMF: SOMA DE DOIS DADOS ===================== */
+const PIP_MAP = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function pipDiceHTML(n, cls){
+  const on = new Set(PIP_MAP[n]||[]);
+  let cells='';
+  for(let i=0;i<9;i++) cells += `<div class="pip ${on.has(i)?'on':''}"></div>`;
+  return `<div class="pipdice ${cls||''}">${cells}</div>`;
+}
+const diceCombos = [1,2,3,4,5,6,5,4,3,2,1]; // sums 2..12
+let diceEmpirical = new Array(11).fill(0);
+let diceTotalRolls = 0;
+let diceLast = null;
+function rollDiceSum(times){
+  for(let i=0;i<times;i++){
+    const d1 = 1+Math.floor(Math.random()*6);
+    const d2 = 1+Math.floor(Math.random()*6);
+    diceLast = [d1,d2];
+    diceEmpirical[d1+d2-2]++;
+    diceTotalRolls++;
+  }
+  renderDiceSum();
+}
+function resetDiceSum(){
+  diceEmpirical = new Array(11).fill(0);
+  diceTotalRolls = 0;
+  diceLast = null;
+  renderDiceSum();
+}
+function renderDiceSum(){
+  document.getElementById('diceDisplay1').innerHTML = diceLast ? pipDiceHTML(diceLast[0],'big') : '<div class="dice-placeholder">?</div>';
+  document.getElementById('diceDisplay2').innerHTML = diceLast ? pipDiceHTML(diceLast[1],'big') : '<div class="dice-placeholder">?</div>';
+  document.getElementById('diceSumResult').textContent = diceLast ? (diceLast[0]+diceLast[1]) : '—';
+  document.getElementById('diceSumTotal').textContent = fmt(diceTotalRolls);
+  drawDiceSumChart();
+}
+function drawDiceSumChart(){
+  const canvas = document.getElementById('diceSumCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=14, PR=14, PT=14, PB=22;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const theoretical = diceCombos.map(c=>c/36);
+  const empiricalFreq = diceCombos.map((c,i)=> diceTotalRolls>0 ? diceEmpirical[i]/diceTotalRolls : 0);
+  const scaleMax = Math.max(...theoretical, ...empiricalFreq) * 1.2;
+  const n = 11;
+  const barW = plotW/n;
+  for(let i=0;i<n;i++){
+    const x = PL + i*barW;
+    const thH = (theoretical[i]/scaleMax)*plotH;
+    ctx.fillStyle = 'rgba(152,162,179,.25)';
+    roundRectPath(ctx, x+barW*0.10, PT+plotH-thH, barW*0.8, thH, 3);
+    ctx.fill();
+    const empH = (empiricalFreq[i]/scaleMax)*plotH;
+    if(empH>0){
+      ctx.fillStyle = 'rgba(6,182,212,.85)';
+      roundRectPath(ctx, x+barW*0.26, PT+plotH-empH, barW*0.48, empH, 3);
+      ctx.fill();
+    }
+    ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+    ctx.fillText(i+2, x+barW/2, h-6);
+  }
+  ctx.strokeStyle='rgba(152,162,179,.25)';
+  ctx.beginPath(); ctx.moveTo(PL,PT+plotH); ctx.lineTo(w-PR,PT+plotH); ctx.stroke();
+}
+function buildDiceSumTable(){
+  const rows = diceCombos.map((c,i)=>{
+    const k = i+2;
+    const p = c/36;
+    return `<tr><td>${k}</td><td>${c}/36</td><td>${p.toFixed(3)} (${pct(p,1)})</td></tr>`;
+  }).join('');
+  document.getElementById('diceSumTable').innerHTML = `
+    <thead><tr><th>Soma (k)</th><th>Combinações favoráveis</th><th>P(X=k)</th></tr></thead>
+    <tbody>${rows}</tbody>`;
+}
+
+/* ===================== CDF: CARAS EM 3 LANÇAMENTOS ===================== */
+const cdfPmf = [1/8,3/8,3/8,1/8];
+const cdfCum = [1/8,4/8,7/8,1];
+function renderCdf(){
+  const k = +document.getElementById('cdfSlider').value;
+  document.getElementById('cdfSliderVal').textContent = k.toFixed(2);
+  let Fk;
+  if(k<0) Fk = 0; else if(k>=3) Fk = 1; else Fk = cdfCum[Math.floor(k)];
+  document.getElementById('cdfResult').textContent = Fk.toFixed(3);
+  drawCdfChart(k, Fk);
+}
+function drawCdfChart(k, Fk){
+  const canvas = document.getElementById('cdfCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=34, PR=14, PT=14, PB=52;
+  const plotH = h-PT-PB, plotW = w-PL-PR;
+  const xMin=-0.7, xMax=3.7;
+  function toX(x){ return PL + plotW*(x-xMin)/(xMax-xMin); }
+  function toY(y){ return PT + plotH*(1-y); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  [0,0.25,0.5,0.75,1].forEach(v=>{
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke();
+    ctx.fillText(v.toFixed(2), PL-6, y+3);
+  });
+  const segs = [[xMin,0,0],[0,1,cdfCum[0]],[1,2,cdfCum[1]],[2,3,cdfCum[2]],[3,xMax,1]];
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2.4;
+  segs.forEach(([x0,x1,y])=>{
+    ctx.beginPath(); ctx.moveTo(toX(x0),toY(y)); ctx.lineTo(toX(x1),toY(y)); ctx.stroke();
+  });
+  [0,1,2,3].forEach((xj,i)=>{
+    const yBefore = i===0 ? 0 : cdfCum[i-1];
+    const yAfter = cdfCum[i];
+    ctx.beginPath(); ctx.arc(toX(xj), toY(yBefore), 4, 0, Math.PI*2);
+    ctx.fillStyle='#111216'; ctx.fill(); ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.arc(toX(xj), toY(yAfter), 4, 0, Math.PI*2);
+    ctx.fillStyle='#06b6d4'; ctx.fill();
+  });
+  const rugY = PT+plotH+16, rugMaxH=20;
+  const maxPmf = Math.max(...cdfPmf);
+  [0,1,2,3].forEach(kk=>{
+    const bh = (cdfPmf[kk]/maxPmf)*rugMaxH;
+    ctx.fillStyle='rgba(196,154,255,.55)';
+    roundRectPath(ctx, toX(kk)-10, rugY+rugMaxH-bh, 20, bh, 2);
+    ctx.fill();
+    ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+    ctx.fillText('k='+kk, toX(kk), rugY+rugMaxH+14);
+  });
+  const mx = toX(Math.max(xMin,Math.min(xMax,k)));
+  ctx.strokeStyle='#e8b339'; ctx.setLineDash([4,3]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(mx, toY(0)); ctx.lineTo(mx, toY(Fk)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PL, toY(Fk)); ctx.lineTo(mx, toY(Fk)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(mx, toY(Fk), 5, 0, Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill();
+}
+
+/* ===================== VALOR ESPERADO: RIFA / BALANÇA ===================== */
+function renderRaffle(){
+  const prize = +document.getElementById('raffPrize').value;
+  const p = +document.getElementById('raffP').value/100;
+  const cost = +document.getElementById('raffCost').value;
+  document.getElementById('raffPrizeVal').textContent = 'R$ '+prize;
+  document.getElementById('raffPVal').textContent = pct(p,0);
+  document.getElementById('raffCostVal').textContent = 'R$ '+cost;
+  const win = prize-cost, lose = -cost;
+  const E = p*win + (1-p)*lose;
+  const color = E>=0 ? 'var(--accent-green)' : 'var(--accent-red)';
+  document.getElementById('raffFormula').innerHTML = `E(X) = ${pct(p,0)}×(${fmtMoney(win)}) + ${pct(1-p,0)}×(${fmtMoney(lose)}) = <strong style="color:${color};">${fmtMoney(E)}</strong>`;
+  const raffResultEl = document.getElementById('raffResult');
+  raffResultEl.textContent = fmtMoney(E);
+  raffResultEl.style.color = color;
+  document.getElementById('raffVerdict').textContent = E>=0
+    ? `Em média, jogando muitas vezes, você ganha ${fmtMoney(E)} por bilhete — jogo raro e favorável a você!`
+    : `Em média, jogando muitas vezes, você perde ${fmtMoney(Math.abs(E))} por bilhete — é assim que quem organiza a rifa lucra.`;
+  drawBalance(win, lose, p, E);
+}
+function drawBalance(win, lose, p, E){
+  const canvas = document.getElementById('raffCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=30, PR=30;
+  const vMin = Math.min(win,lose,E,0)-8, vMax = Math.max(win,lose,E,0)+8;
+  function toX(v){ return PL + (w-PL-PR)*(v-vMin)/(vMax-vMin); }
+  const beamY = h*0.46;
+  const rWin = 9+Math.sqrt(Math.max(p,0.01))*24;
+  const rLose = 9+Math.sqrt(Math.max(1-p,0.01))*24;
+  const safeMargin = 46; // room for circle radius + money label
+  function clampX(x, r){ return Math.max(PL+r+safeMargin, Math.min(w-PR-r-safeMargin, x)); }
+  const cxWin = clampX(toX(win), rWin);
+  const cxLose = clampX(toX(lose), rLose);
+  const fx = clampX(toX(E), 0);
+  ctx.strokeStyle='rgba(152,162,179,.3)'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(toX(0), 22); ctx.lineTo(toX(0), h-26); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center'; ctx.fillText('R$ 0', toX(0), 16);
+  ctx.strokeStyle='#535966'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(toX(vMin+3), beamY); ctx.lineTo(toX(vMax-3), beamY); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cxWin, beamY-rWin*0.55, rWin, 0, Math.PI*2);
+  ctx.fillStyle='rgba(125,222,216,.85)'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cxLose, beamY-rLose*0.55, rLose, 0, Math.PI*2);
+  ctx.fillStyle='rgba(248,107,99,.85)'; ctx.fill(); ctx.stroke();
+  // money labels use a light halo + dark fill so they stay legible whether they sit over a
+  // (light) circle or spill onto the dark canvas background when the circle is small
+  ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center'; ctx.lineJoin='round';
+  ctx.lineWidth=4; ctx.strokeStyle='rgba(238,241,245,.95)';
+  ctx.strokeText(fmtMoney(win), cxWin, beamY-rWin*0.55+4);
+  ctx.strokeText(fmtMoney(lose), cxLose, beamY-rLose*0.55+4);
+  ctx.fillStyle='#111216';
+  ctx.fillText(fmtMoney(win), cxWin, beamY-rWin*0.55+4);
+  ctx.fillText(fmtMoney(lose), cxLose, beamY-rLose*0.55+4);
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Inter';
+  ctx.fillText('ganha: p='+pct(p,0), cxWin, beamY-rWin*1.15-8);
+  ctx.fillText('perde: p='+pct(1-p,0), cxLose, beamY-rLose*1.15-8);
+  const fy = beamY+12;
+  ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(fx-10,fy+16); ctx.lineTo(fx+10,fy+16); ctx.closePath();
+  ctx.fillStyle='#e8b339'; ctx.fill();
+  ctx.fillStyle='#e8b339'; ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('E(X) = '+fmtMoney(E), fx, fy+32);
+}
+
+/* ===================== VARIÂNCIA ===================== */
+function renderVarDemo(){
+  const d = +document.getElementById('varD').value;
+  document.getElementById('varDVal').textContent = d;
+  document.getElementById('varAResult').textContent = '0';
+  document.getElementById('varBResult').textContent = d*d;
+  document.getElementById('sdBResult').textContent = d;
+  drawVarChart(d);
+}
+function drawVarChart(d){
+  const canvas = document.getElementById('varCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=24, PR=24;
+  const vMin=8-11, vMax=8+11;
+  function toX(v){ return PL + (w-PL-PR)*(v-vMin)/(vMax-vMin); }
+  const lineY = h*0.62;
+  ctx.strokeStyle='rgba(152,162,179,.25)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PL,lineY); ctx.lineTo(w-PR,lineY); ctx.stroke();
+  ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+  for(let v=0; v<=16; v+=2){
+    const x = toX(v);
+    ctx.beginPath(); ctx.moveTo(x,lineY-4); ctx.lineTo(x,lineY+4); ctx.stroke();
+    ctx.fillText(v, x, lineY+18);
+  }
+  ctx.strokeStyle='#e8b339'; ctx.setLineDash([4,3]); ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(toX(8),18); ctx.lineTo(toX(8),lineY+4); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#e8b339'; ctx.font='bold 10px Roboto Mono'; ctx.textAlign='center'; ctx.fillText('média = 8', toX(8), 12);
+  const rowA = lineY-32;
+  ctx.beginPath(); ctx.arc(toX(8), rowA, 9, 0, Math.PI*2); ctx.fillStyle='#7dded8'; ctx.fill();
+  ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle='#dfe5ef'; ctx.font='10px Inter'; ctx.textAlign='left';
+  ctx.fillText('🅰️ sempre 8 pontos (Var=0)', toX(8)+16, rowA+4);
+  const rowB = lineY-72;
+  [8-d, 8+d].forEach(v=>{
+    ctx.strokeStyle='rgba(54,162,239,.5)'; ctx.setLineDash([3,3]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(toX(v), rowB+9); ctx.lineTo(toX(v), lineY); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(toX(v), rowB, 9, 0, Math.PI*2); ctx.fillStyle='#36a2ef'; ctx.fill();
+    ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+  ctx.fillStyle='#36a2ef'; ctx.font='10px Inter'; ctx.textAlign='center';
+  ctx.fillText('🅱️ 50% ganha '+(8-d)+' pts, 50% ganha '+(8+d)+' pts', toX(8), rowB-14);
+}
+
+/* ===================== PROPRIEDADES: TRANSFORMAÇÃO LINEAR ===================== */
+function renderTransform(){
+  const a = +document.getElementById('transA').value;
+  const b = +document.getElementById('transB').value;
+  document.getElementById('transAVal').textContent = a;
+  document.getElementById('transBVal').textContent = b;
+  const x1=4, x2=12, meanX=8, varX=16;
+  const y1 = a*x1+b, y2 = a*x2+b;
+  const meanYdirect = 0.5*y1+0.5*y2;
+  const meanYformula = a*meanX+b;
+  const varYdirect = 0.5*Math.pow(y1-meanYdirect,2)+0.5*Math.pow(y2-meanYdirect,2);
+  const varYformula = a*a*varX;
+  document.getElementById('transEYdirect').textContent = meanYdirect.toFixed(1);
+  document.getElementById('transEYformula').textContent = meanYformula.toFixed(1);
+  document.getElementById('transVarYdirect').textContent = varYdirect.toFixed(1);
+  document.getElementById('transVarYformula').textContent = varYformula.toFixed(1);
+  drawTransformChart(x1,x2,y1,y2,meanX,meanYdirect);
+}
+function drawTransformChart(x1,x2,y1,y2,meanX,meanY){
+  const canvas = document.getElementById('transCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=30, PR=30;
+  const allVals = [x1,x2,y1,y2,meanX,meanY];
+  const vMin = Math.min(...allVals)-4, vMax = Math.max(...allVals)+4;
+  function toX(v){ return PL + (w-PL-PR)*(v-vMin)/(vMax-vMin); }
+  const rowX = h*0.32, rowY = h*0.78;
+  ctx.strokeStyle='rgba(152,162,179,.25)'; ctx.lineWidth=1;
+  [rowX,rowY].forEach(y=>{ ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke(); });
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Inter'; ctx.textAlign='left';
+  ctx.fillText('X (original)', PL, rowX-16);
+  ctx.fillText('Y = a·X + b', PL, rowY-16);
+  function point(x,y,color,label){
+    ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+    ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#dfe5ef'; ctx.font='bold 10px Roboto Mono'; ctx.textAlign='center'; ctx.fillText(label, x, y-14);
+  }
+  point(toX(x1), rowX, '#36a2ef', x1);
+  point(toX(x2), rowX, '#36a2ef', x2);
+  point(toX(y1), rowY, '#c49aff', y1.toFixed(1));
+  point(toX(y2), rowY, '#c49aff', y2.toFixed(1));
+  ctx.strokeStyle='rgba(232,179,57,.7)'; ctx.setLineDash([3,3]); ctx.lineWidth=1.3;
+  ctx.beginPath(); ctx.moveTo(toX(x1),rowX+10); ctx.lineTo(toX(y1),rowY-10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(toX(x2),rowX+10); ctx.lineTo(toX(y2),rowY-10); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#e8b339'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('E(X)='+meanX, toX(meanX), rowX+22);
+  ctx.fillText('E(Y)='+meanY.toFixed(1), toX(meanY), rowY+22);
+}
+
+/* ===================== VARIÁVEL CONTÍNUA: UNIFORME ===================== */
+function clampUniform(changed){
+  let a = +document.getElementById('uniA').value;
+  let b = +document.getElementById('uniB').value;
+  if(changed==='a' && a>b){ b=a; document.getElementById('uniB').value=b; }
+  if(changed==='b' && b<a){ a=b; document.getElementById('uniA').value=a; }
+  renderUniform();
+}
+function renderUniform(){
+  const a = +document.getElementById('uniA').value;
+  const b = +document.getElementById('uniB').value;
+  document.getElementById('uniAVal').textContent = a;
+  document.getElementById('uniBVal').textContent = b;
+  const prob = (b-a)/10;
+  document.getElementById('uniResult').textContent = `${(b-a).toFixed(1)}/10 = ${prob.toFixed(2)} (${pct(prob,0)})`;
+  drawUniformChart(a,b);
+}
+function drawUniformChart(a,b){
+  const canvas = document.getElementById('uniCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=24, PR=24, PT=20, PB=30;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  function toX(x){ return PL + plotW*x/10; }
+  const density = 0.1;
+  const y0 = PT+plotH; // baseline
+  const yDensity = PT + plotH*(1-density/0.15);
+  // shaded region
+  ctx.fillStyle='rgba(196,154,255,.30)';
+  ctx.fillRect(toX(a), yDensity, toX(b)-toX(a), y0-yDensity);
+  // full density line
+  ctx.strokeStyle='#c49aff'; ctx.lineWidth=2.2;
+  ctx.beginPath(); ctx.moveTo(toX(0),yDensity); ctx.lineTo(toX(10),yDensity); ctx.stroke();
+  // vertical edges
+  ctx.strokeStyle='rgba(196,154,255,.6)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(toX(0),yDensity); ctx.lineTo(toX(0),y0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(toX(10),yDensity); ctx.lineTo(toX(10),y0); ctx.stroke();
+  // baseline
+  ctx.strokeStyle='rgba(152,162,179,.3)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PL,y0); ctx.lineTo(w-PR,y0); ctx.stroke();
+  // a,b markers
+  ctx.strokeStyle='#e8b339'; ctx.setLineDash([4,3]); ctx.lineWidth=1.3;
+  ctx.beginPath(); ctx.moveTo(toX(a),y0); ctx.lineTo(toX(a),yDensity); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(toX(b),y0); ctx.lineTo(toX(b),yDensity); ctx.stroke();
+  ctx.setLineDash([]);
+  // ticks 0..10
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+  for(let t=0;t<=10;t+=2){ ctx.fillText(t, toX(t), y0+16); }
+  ctx.fillStyle='#e8b339'; ctx.font='bold 10px Roboto Mono';
+  ctx.fillText('a='+a, toX(a), yDensity-8);
+  ctx.fillText('b='+b, toX(b), yDensity-8);
+}
+
+/* ===================== DISTRIBUIÇÃO BINOMIAL ===================== */
+function binomialPmf(n,k,p){ return comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k); }
+function renderBinomial(){
+  const n = +document.getElementById('binN').value;
+  const p = +document.getElementById('binP').value/100;
+  document.getElementById('binNVal').textContent = n;
+  document.getElementById('binPVal').textContent = pct(p,0);
+  const mean = n*p, variance = n*p*(1-p);
+  document.getElementById('binMean').textContent = mean.toFixed(1);
+  document.getElementById('binVar').textContent = variance.toFixed(1);
+  let maxP=-1, mode=0;
+  const values=[];
+  for(let k=0;k<=n;k++){
+    const v = binomialPmf(n,k,p);
+    values.push(v);
+    if(v>maxP){ maxP=v; mode=k; }
+  }
+  document.getElementById('binMode').textContent = mode;
+  drawBarChart('binCanvas', values, mode);
+}
+function drawBarChart(canvasId, values, highlightIndex){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = Math.max(...values);
+  const PB=22, PT=10;
+  const barW = w/n;
+  values.forEach((v,k)=>{
+    const barH = maxV>0 ? (v/maxV)*(h-PB-PT) : 0;
+    const x = k*barW + barW*0.15;
+    const bw = barW*0.7;
+    const y = h-PB-barH;
+    ctx.fillStyle = k===highlightIndex ? '#06b6d4' : 'rgba(6,182,212,.35)';
+    roundRectPath(ctx,x,y,bw,barH,3);
+    ctx.fill();
+    if(n<=26){
+      ctx.fillStyle = '#98a2b3';
+      ctx.font='9px Roboto Mono';
+      ctx.textAlign='center';
+      ctx.fillText(k, x+bw/2, h-8);
+    }
+  });
+}
+
+/* ===================== DISTRIBUIÇÃO DE POISSON ===================== */
+function poissonPmfArray(lambda, kmax){
+  const arr = []; let p = Math.exp(-lambda);
+  arr.push(p);
+  for(let k=1;k<=kmax;k++){ p = p*lambda/k; arr.push(p); }
+  return arr;
+}
+function renderPoisson(){
+  const lambda = +document.getElementById('poisLambda').value;
+  document.getElementById('poisLambdaVal').textContent = lambda;
+  const kmax = Math.max(10, Math.min(25, Math.ceil(lambda*3)+5));
+  const values = poissonPmfArray(lambda, kmax);
+  let maxP=-1, mode=0;
+  values.forEach((v,k)=>{ if(v>maxP){ maxP=v; mode=k; } });
+  document.getElementById('poisMean').textContent = lambda.toFixed(1);
+  document.getElementById('poisVar').textContent = lambda.toFixed(1);
+  document.getElementById('poisStd').textContent = Math.sqrt(lambda).toFixed(2);
+  drawBarChart('poisCanvas', values, mode);
+}
+
+/* ===================== DISTRIBUIÇÃO NORMAL ===================== */
+let sigmaShade = 1;
+function setSigmaShade(s){
+  sigmaShade = s;
+  [1,2,3].forEach(i=>document.getElementById('sigmaBtn'+i).classList.toggle('active', i===s));
+  renderNormal();
+}
+function renderNormal(){
+  const mean = +document.getElementById('normMean').value;
+  const std = +document.getElementById('normStd').value;
+  document.getElementById('normMeanVal').textContent = mean;
+  document.getElementById('normStdVal').textContent = std;
+  const lo = mean-sigmaShade*std, hi = mean+sigmaShade*std;
+  document.getElementById('normRange').textContent = `${lo} a ${hi}`;
+  const pctMap = {1:'≈68%',2:'≈95%',3:'≈99,7%'};
+  document.getElementById('normPct').textContent = pctMap[sigmaShade];
+  drawNormalChart(mean,std,sigmaShade);
+}
+function gaussian(x,mean,std){ return Math.exp(-0.5*Math.pow((x-mean)/std,2))/(std*Math.sqrt(2*Math.PI)); }
+function drawNormalChart(mean,std,shade){
+  const canvas = document.getElementById('normCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PB=26, PT=14, PL=10, PR=10;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const xMin = mean-4*std, xMax = mean+4*std;
+  const maxY = gaussian(mean,mean,std);
+  function toX(x){ return PL + plotW*(x-xMin)/(xMax-xMin); }
+  function toY(y){ return PT + plotH*(1-y/maxY); }
+  const lo = mean-shade*std, hi = mean+shade*std;
+  ctx.beginPath();
+  ctx.moveTo(toX(lo), toY(0));
+  for(let x=lo; x<=hi; x+=(hi-lo)/80){
+    ctx.lineTo(toX(x), toY(gaussian(x,mean,std)));
+  }
+  ctx.lineTo(toX(hi), toY(0));
+  ctx.closePath();
+  ctx.fillStyle='rgba(6,182,212,.25)';
+  ctx.fill();
+  ctx.beginPath();
+  for(let i=0;i<=160;i++){
+    const x = xMin + (xMax-xMin)*i/160;
+    const y = gaussian(x,mean,std);
+    const px=toX(x), py=toY(y);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.strokeStyle='#06b6d4';
+  ctx.lineWidth=2.2;
+  ctx.stroke();
+  ctx.strokeStyle='rgba(152,162,179,.3)';
+  ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(PL,toY(0)); ctx.lineTo(w-PR,toY(0)); ctx.stroke();
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(toX(mean),toY(0)); ctx.lineTo(toX(mean),toY(maxY)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#98a2b3'; ctx.font='10px Roboto Mono'; ctx.textAlign='center';
+  ctx.fillText('μ='+mean, toX(mean), h-8);
+  [-3,-2,-1,1,2,3].forEach(k=>{
+    const x = mean+k*std;
+    ctx.fillText((k>0?'+':'')+k+'σ', toX(x), h-8);
+  });
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Uma variável aleatória X representa o número de caras em 2 lançamentos de moeda. Quais são os valores possíveis de X e suas probabilidades?',
+   a:'X pode ser 0, 1 ou 2. Pela árvore de possibilidades (CC, CK, KC, KK, cada uma com 1/4 de chance): <strong>P(X=0)=1/4, P(X=1)=2/4=1/2, P(X=2)=1/4</strong>. Some tudo: 1/4+1/2+1/4=1 ✅.'},
+  {q:'Uma rifa custa R$4. Se você ganha, o prêmio é R$50 e a chance de ganhar é 5%. Vale a pena jogar, em média?',
+   a:'Ganho se vencer: 50−4=46. Perda se não vencer: −4. <strong>E(X) = 0,05×46 + 0,95×(−4) = 2,3 − 3,8 = −R$1,50</strong>. Em média, você perde R$1,50 por bilhete — não vale a pena jogar muitas vezes.'},
+  {q:'Um call center recebe em média 3 ligações por hora (Poisson, λ=3). Qual a chance de não receber nenhuma ligação numa hora (k=0)?',
+   a:'P(X=0) = e⁻³ × 3⁰/0! = e⁻³ ≈ <strong>4,98%</strong>. Mesmo com uma média de 3 por hora, existe uma chance pequena, mas real, de ficar sem nenhuma ligação.'},
+  {q:'Duas variáveis têm a mesma média (10 pontos), mas uma tem desvio padrão σ=1 e a outra σ=5. O que isso significa na prática?',
+   a:'As duas "acertam a média" no longo prazo, mas a de σ=1 é muito mais <strong>previsível</strong> (valores sempre pertinho de 10), enquanto a de σ=5 é muito mais <strong>inconstante</strong> (valores podem variar bastante para cima ou para baixo de 10 em cada observação).'},
+  {q:'"Número de mensagens de texto enviadas por uma pessoa em um dia" é uma variável discreta ou contínua?',
+   a:'É <strong>discreta</strong> — dá para contar 0, 1, 2, 3... mensagens. Não existe "2,7 mensagens", então os valores possíveis formam uma lista contável.'},
+  {q:'Se Y = 2X + 3 e sabemos que E(X) = 5, qual é o valor de E(Y)?',
+   a:'Usando a propriedade E(aX+b) = a·E(X) + b: <strong>E(Y) = 2×5 + 3 = 13</strong>. Não precisamos saber a distribuição completa de X, só o valor de E(X).'},
+  {q:'Numa distribuição Binomial com n=20 tentativas e p=0,25 de chance de sucesso, qual é o número esperado de sucessos?',
+   a:'E(X) = n×p = 20×0,25 = <strong>5 sucessos</strong> esperados, em média, a cada 20 tentativas.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Uma variável aleatória sempre assume valores entre 0 e 1.', a:false,
+   explain:'Isso é probabilidade, não o valor da variável! X pode assumir qualquer número (por exemplo, número de ligações, altura em cm, ganho em reais). Quem fica entre 0 e 1 é a probabilidade P(X=x), não X em si.'},
+  {q:'Se você consegue listar todos os valores possíveis de X um por um (1, 2, 3...), X é uma variável aleatória discreta.', a:true,
+   explain:'Exatamente essa é a definição prática de variável discreta — os valores possíveis formam uma lista contável, mesmo que infinita.'},
+  {q:'Numa variável contínua, a probabilidade de X ser exatamente igual a um único valor específico é sempre zero.', a:true,
+   explain:'Como a probabilidade é a área sob a curva de densidade, e um único ponto tem largura zero, sua área (e portanto sua probabilidade) também é zero.'},
+  {q:'A soma de todas as probabilidades P(X=k) numa distribuição discreta deve ser sempre igual a 1.', a:true,
+   explain:'Essa é a propriedade fundamental da PMF: como algum valor de X sempre vai acontecer, a soma das chances de todos os valores possíveis dá exatamente 1.'},
+  {q:'O valor esperado E(X) é sempre um dos valores que X pode realmente assumir.', a:false,
+   explain:'Não necessariamente! O exemplo clássico é o dado: E(X)=3,5, mas nenhuma face do dado mostra 3,5. E(X) é uma média de longo prazo, não uma previsão pontual.'},
+  {q:'Se Var(X) = 0, então X é uma constante — sempre assume o mesmo valor.', a:true,
+   explain:'Variância mede o espalhamento em torno da média. Se não há nenhum espalhamento (Var=0), todos os valores são idênticos à média — ou seja, X não varia.'},
+  {q:'Na Distribuição Binomial, aumentar o número de tentativas n sempre diminui a variância.', a:false,
+   explain:'Pelo contrário: Var(X) = n×p×(1−p) cresce conforme n aumenta (para p fixo). O que diminui é a variância relativa (proporcional), não a variância absoluta.'},
+  {q:'Na Distribuição de Poisson, a média e a variância são sempre iguais (ambas valem λ).', a:true,
+   explain:'Essa é uma característica exclusiva e famosa da Poisson: E(X) = Var(X) = λ, diferente da maioria das outras distribuições.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+buildClassify();
+resetDiceSum();
+buildDiceSumTable();
+renderCdf();
+renderRaffle();
+renderVarDemo();
+renderTransform();
+renderUniform();
+renderBinomial();
+renderPoisson();
+renderNormal();
+buildProblems();
+buildQuiz();
+window.addEventListener('resize', ()=>{
+  drawDiceSumChart();
+  renderCdf();
+  renderRaffle();
+  drawVarChart(+document.getElementById('varD').value);
+  renderTransform();
+  renderUniform();
+  renderBinomial();
+  renderPoisson();
+  renderNormal();
+});
+</script>
+</body>
+</html>

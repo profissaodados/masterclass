@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Slow Changing Dimension (SCD). Tipos 0 a 6 explicados com analogias simples, tabelas antes/depois, linha do tempo interativa e SQL na prática.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Slowly Changing Dimensions (SCD)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-row.old{opacity:.55;text-decoration:line-through;}
+.file-chip .fc-row.new{border-color:var(--accent-green);color:var(--accent-green);font-weight:700;text-decoration:none;opacity:1;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- DIMENSÃO x FATO — diagrama visual ---- */
+.dimfact-diagram{display:flex;gap:20px;align-items:stretch;margin-top:6px;}
+.dimfact-card{flex:0 0 230px;background:var(--bg-panel);border:2px solid var(--accent);border-radius:12px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.dimfact-tag{position:absolute;top:-11px;left:14px;background:var(--accent);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.dimfact-photo{font-size:36px;text-align:center;margin:6px 0 2px;}
+.dimfact-row{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:6px 10px;}
+.dimfact-row span{color:var(--text-secondary);}
+.dimfact-row strong{color:var(--text-primary);font-family:'Roboto Mono',monospace;font-weight:700;}
+.dimfact-caption{font-size:10.5px;color:var(--text-disabled);text-align:center;margin-top:4px;line-height:1.5;}
+.dimfact-log{flex:1;background:var(--bg-panel);border:1.5px dashed var(--border-strong);border-radius:12px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.dimfact-log-tag{position:absolute;top:-11px;left:14px;background:var(--accent-blue);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.dimfact-log-entry{display:flex;align-items:center;gap:10px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 12px;font-size:11.5px;color:var(--text-secondary);flex-wrap:wrap;margin-top:6px;}
+.dimfact-log-entry:first-of-type{margin-top:18px;}
+.dimfact-log-date{font-family:'Roboto Mono',monospace;color:var(--text-disabled);font-size:10.5px;background:var(--bg-main);padding:2px 7px;border-radius:4px;flex-shrink:0;}
+.dimfact-log-entry strong{color:var(--text-primary);}
+.dimfact-fk{margin-left:auto;font-family:'Roboto Mono',monospace;font-size:10px;color:var(--accent);background:rgba(6,182,212,.10);border:1px solid var(--accent);border-radius:10px;padding:2px 9px;white-space:nowrap;flex-shrink:0;}
+@media (max-width:960px){ .dimfact-diagram{flex-direction:column;} .dimfact-card{flex:none;} }
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-fade td{opacity:.55;}
+.cell-old{color:var(--accent-red);text-decoration:line-through;}
+.cell-new{color:var(--accent-green);font-weight:700;}
+.badge-current{background:rgba(125,222,216,.16);color:var(--accent-green);border:1px solid var(--accent-green);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.badge-expired{background:rgba(152,162,179,.10);color:var(--text-disabled);border:1px solid var(--border-color);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- SCRIPT STEP BADGE (sequência sem MERGE) ---- */
+.script-step{display:flex;align-items:center;gap:10px;margin:22px 0 6px;}
+.script-step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--bg-main);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Roboto Mono',monospace;}
+.script-step-label{font-size:13px;font-weight:700;color:var(--text-primary);}
+.script-step-sub{font-size:12px;color:var(--text-secondary);margin:2px 0 8px 36px;line-height:1.6;}
+
+/* ---- LIFELINE TIMELINE (simulador) ---- */
+.lifeline{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:8px 4px 4px;}
+.life-event{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:150px;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.life-dot-wrap{display:flex;align-items:center;width:100%;}
+.life-line{flex:1;height:2px;background:var(--border-color);}
+.life-line.first{visibility:hidden;}
+.life-dot{width:20px;height:20px;border-radius:50%;background:var(--bg-elevated);border:2.5px solid var(--border-strong);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:.15s;}
+.life-event.active .life-dot{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgba(6,182,212,.16);}
+.life-event.done .life-dot{background:var(--bg-highlight);border-color:var(--accent-green);color:var(--accent-green);}
+.life-icon{font-size:22px;}
+.life-label{font-size:11.5px;color:var(--text-secondary);text-align:center;font-weight:600;line-height:1.3;}
+.life-date{font-size:9.5px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;}
+.life-event.active .life-label{color:var(--accent);}
+.life-event:hover .life-label{color:var(--accent-blue);}
+
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
+.sim-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;}
+.sim-card-title{font-size:12.5px;font-weight:800;color:var(--text-primary);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.sim-card-sub{font-size:11px;color:var(--text-disabled);margin-bottom:10px;}
+.sim-mini-table{width:100%;border-collapse:collapse;font-size:11px;font-family:'Roboto Mono',monospace;}
+.sim-mini-table th{background:var(--bg-main);color:var(--text-disabled);padding:5px 7px;text-align:left;font-size:9px;text-transform:uppercase;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.sim-mini-table td{padding:5px 7px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.sim-mini-table tr:last-child td{border-bottom:none;}
+.sim-mini-table tr.is-current td{color:var(--text-primary);background:rgba(125,222,216,.08);}
+.sim-mini-table tr.just-added td{animation:popin .5s ease;}
+@keyframes popin{from{background:rgba(6,182,212,.35);}to{background:transparent;}}
+
+/* ---- DECISION CARDS ---- */
+.decision-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.decision-q{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.decision-arrow{font-size:11px;color:var(--text-disabled);text-align:center;}
+.decision-a{font-size:14px;font-weight:800;text-align:center;padding:8px;border-radius:6px;border:1px solid;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.sim-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Slowly Changing Dimensions</h1><span>Como guardar a história de algo que muda com o tempo</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">6</div><div class="hstat-label">Tipos de SCD</div></div>
+      <div class="hstat"><div class="hstat-num">Kimball</div><div class="hstat-label">Origem do conceito</div></div>
+      <div class="hstat"><div class="hstat-num">Tipo 2</div><div class="hstat-label">O mais usado</div></div>
+      <div class="hstat"><div class="hstat-num">~45min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Os dados <em>mudam</em>. A pergunta é: seu banco <em>lembra</em> disso?</h2>
+      <p><strong>Slowly Changing Dimension (SCD)</strong>, ou "Dimensão de Mudança Lenta", é o nome que se dá a um conjunto de técnicas de modelagem de dados para lidar com uma coisa muito simples: as características de uma pessoa, produto ou loja <em>mudam aos poucos</em> — um cliente muda de cidade, um produto muda de categoria, uma loja muda de gerente. A pergunta que toda equipe de dados precisa responder é: quando isso acontece, o que fazemos com o valor antigo? Jogamos fora, guardamos do lado, ou guardamos tudo? Catalogado por <strong>Ralph Kimball</strong>, o "pai" da modelagem dimensional, existem <em>6 tipos clássicos</em> de resposta — e é exatamente isso que vamos destrinchar hoje, com muita analogia simples e exemplo visual.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Tipo 0 — Congelado</span>
+        <span class="badge badge-red">Tipo 1 — Sobrescreve</span>
+        <span class="badge badge-green">Tipo 2 — Nova Linha</span>
+        <span class="badge badge-blue">Tipo 3 — Nova Coluna</span>
+        <span class="badge badge-purple">Tipo 4 — Histórico à Parte</span>
+        <span class="badge badge-yellow">Tipo 6 — Combo</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🧑 CLIENTE 101 — MARIA</div>
+        <div class="fc-body">
+          <div class="fc-row old">Cidade: Recife (antiga)</div>
+          <div class="fc-row new">Cidade: São Paulo (atual)</div>
+        </div>
+        <div class="fc-foot">O que fazemos com "Recife"?</div>
+      </div>
+      <div class="file-chip-caption">Essa pergunta, sobre qualquer atributo, é o coração da aula de hoje</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É UMA DIMENSÃO ============ -->
+  <section class="section" id="s-dimensao">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧒 Primeiro, o básico: o que é uma Dimensão?</div>
+    <p class="section-desc">
+      Imagine a ficha de matrícula de um aluno numa escola: nome, cidade, série, telefone dos pais. Essa ficha descreve <strong>quem</strong> é o aluno — ela é uma <strong>dimensão</strong>. Agora imagine o diário de classe, que registra <strong>o que aconteceu</strong>: "aluno X fez a prova de matemática e tirou 8,5 no dia 10/03". Isso é um <strong>fato</strong> — um evento que aconteceu em um instante e não muda mais depois de registrado. Um Data Warehouse é cheio dessas duas peças: <em>fatos</em> (compras, acessos, notas) e <em>dimensões</em> (clientes, produtos, lojas, alunos) que dão contexto a esses fatos.
+    </p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📇 Dimensão — o "perfil"</div>
+        <div class="card-text">Descreve <strong>quem, o quê, onde</strong>. Muda pouco e devagar — por isso o nome "<em>slowly</em> changing". Exemplo: <code>dim_cliente</code> com nome, cidade, categoria.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧾 Fato — o "evento"</div>
+        <div class="card-text">Descreve <strong>o que aconteceu, quando, quanto</strong>. Uma vez gravado, não muda mais. Exemplo: <code>fato_compra</code> com data, valor, referência ao cliente e ao produto.</div>
+      </div>
+    </div>
+    <div class="kid-box">
+      <div class="kid-emoji">🎒</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>A ficha de matrícula é tipo a "carteirinha" de uma pessoa — ela diz como a pessoa é <em>agora</em> (ou como foi em cada momento). O diário de classe é tipo um "diário de bordo" — cada página é um dia que já passou e ninguém mais mexe nela. O problema desta aula é: e quando a carteirinha muda? O que fazemos com a informação antiga dela?</p>
+      </div>
+    </div>
+
+    <p class="section-desc" style="font-size:12.5px;">Olha só como isso fica na prática: <strong>uma única carteirinha</strong> (a dimensão) e <strong>várias páginas de diário</strong> (os fatos), cada uma "amarrada" de volta na carteirinha pelo mesmo <code>id_aluno</code> — repare no chip verde-azulado em cada linha do diário apontando para o <strong>101</strong>, o mesmo número gravado na carteirinha ao lado.</p>
+    <div class="dimfact-diagram">
+      <div class="dimfact-card">
+        <span class="dimfact-tag">📇 dimensão — dim_aluno</span>
+        <div class="dimfact-photo">🧑‍🎓</div>
+        <div class="dimfact-row"><span>id_aluno</span><strong>101</strong></div>
+        <div class="dimfact-row"><span>nome</span><strong>Julia</strong></div>
+        <div class="dimfact-row"><span>cidade</span><strong>Recife</strong></div>
+        <div class="dimfact-row"><span>série</span><strong>8º ano</strong></div>
+        <div class="dimfact-caption">A "carteirinha" — 1 linha só, descreve QUEM ele é.<br>Muda pouco e devagar.</div>
+      </div>
+      <div class="dimfact-log">
+        <span class="dimfact-log-tag">🧾 fatos — fato_prova</span>
+        <div class="dimfact-log-entry"><span class="dimfact-log-date">10/03</span> Prova de Matemática — nota <strong>8,5</strong><span class="dimfact-fk">↩ id_aluno: 101</span></div>
+        <div class="dimfact-log-entry"><span class="dimfact-log-date">22/04</span> Prova de História — nota <strong>7,0</strong><span class="dimfact-fk">↩ id_aluno: 101</span></div>
+        <div class="dimfact-log-entry"><span class="dimfact-log-date">15/06</span> Prova de Ciências — nota <strong>9,0</strong><span class="dimfact-fk">↩ id_aluno: 101</span></div>
+        <div class="dimfact-caption">O "diário de bordo" — 1 página por evento, já virada.<br>Ninguém reescreve o passado.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ O PROBLEMA ============ -->
+  <section class="section" id="s-problema">
+    <div class="section-eyebrow">O Gatilho de Tudo</div>
+    <div class="section-title">❓ O problema: pessoas e coisas mudam</div>
+    <p class="section-desc">
+      Maria se cadastrou na loja em 2021, morando em <strong>Recife</strong>. Em 2022, ela se mudou para <strong>São Paulo</strong>. Se simplesmente sobrescrevermos a cidade dela na tabela de clientes, todo relatório histórico — inclusive compras feitas <em>enquanto ela morava em Recife</em> — passa a mostrar "São Paulo" quando cruzado com a dimensão. A história é <strong>reescrita silenciosamente</strong>, e ninguém percebe até um número não bater.
+    </p>
+    <p class="section-desc" style="font-size:12.5px;">Primeiro, os dados cadastrais de Maria de verdade — é essa mesma linha, na tabela <code>dim_cliente</code>, que vai ser sobrescrita quando ela se mudar:</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Momento</th><th>id_cliente</th><th>nome</th><th>cidade</th><th>telefone</th><th>categoria</th></tr></thead>
+        <tbody>
+          <tr><td>📝 Cadastro — 10/01/2021</td><td>101</td><td>Maria</td><td>Recife</td><td>81-9999-0001</td><td>Bronze</td></tr>
+          <tr class="row-scan"><td>🔄 Atualização — 15/06/2022</td><td>101</td><td>Maria</td><td class="cell-new">São Paulo</td><td>81-9999-0001</td><td>Bronze</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🗺️ Sem controle de mudança</div>
+        <div class="card-text">A compra de 2021 (feita em Recife) agora aparece ligada a "São Paulo" nos relatórios, porque a tabela de clientes só guarda o valor atual. O passado <strong>mentiu</strong> sem avisar.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Com controle de mudança (SCD)</div>
+        <div class="card-text">A compra de 2021 continua ligada a "Recife" (a cidade <em>na época</em>), e a compra de 2023 aparece ligada a "São Paulo". O histórico continua <strong>fiel</strong> ao que realmente aconteceu.</div>
+      </div>
+    </div>
+
+    <p class="section-desc" style="font-size:12.5px;">Agora veja o efeito nos relatórios de compra — a mesma lista de compras de Maria, cruzada com a dimensão de duas formas diferentes:</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;color:var(--accent-red);">❌ Sem SCD (sobrescrevendo a cidade)</div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>Data da compra</th><th>Cliente</th><th>Cidade no relatório</th></tr></thead>
+            <tbody>
+              <tr><td>15/03/2021</td><td>Maria</td><td class="cell-old">São Paulo ❌</td></tr>
+              <tr><td>02/09/2023</td><td>Maria</td><td class="cell-new">São Paulo ✅</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-text" style="margin-top:8px;">A compra de 2021 foi feita em Recife, mas o relatório mostra São Paulo — a única cidade que a tabela ainda lembra.</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;color:var(--accent-green);">✅ Com SCD Tipo 2 (cidade da época)</div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>Data da compra</th><th>Cliente</th><th>Cidade no relatório</th></tr></thead>
+            <tbody>
+              <tr><td>15/03/2021</td><td>Maria</td><td class="cell-new">Recife ✅</td></tr>
+              <tr><td>02/09/2023</td><td>Maria</td><td class="cell-new">São Paulo ✅</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-text" style="margin-top:8px;">Cada compra casa com a versão de <code>dim_cliente</code> que valia <em>naquela data</em> — o relatório continua fiel ao que aconteceu de verdade.</div>
+      </div>
+    </div>
+    <div class="warn-box"><p>⚠️ Esse é o problema que toda técnica de SCD tenta resolver — a única diferença entre os 6 tipos é <strong>quanto do passado</strong> cada um decide preservar, e <strong>como</strong>.</p></div>
+  </section>
+
+  <!-- ============ TIPO 0 ============ -->
+  <section class="section" id="s-tipo0">
+    <div class="section-eyebrow">Tipo 0 de 6</div>
+    <div class="section-title">🧊 SCD Tipo 0 — Congelado (Retain Original)</div>
+    <p class="section-desc">O valor é gravado uma vez e <strong>nunca mais muda</strong>, nem que o sistema de origem tente atualizar. É reservado para atributos que representam a "identidade de nascença" de um registro — o valor original importa mais do que o valor atual.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🎂</div>
+      <div><div class="highlight-title">Analogia</div><p>É como a <strong>data de nascimento</strong> de alguém: não importa quantos aniversários passem, ela nunca é reescrita. Ou como uma <strong>tatuagem</strong> — uma vez feita, fica.</p></div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Tentativa de mudança na origem</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>id_cliente</th><th>data_cadastro_original</th></tr></thead>
+        <tbody><tr><td>101</td><td>10/01/2021</td></tr></tbody></table></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Depois do UPDATE (tipo 0 ignora)</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>id_cliente</th><th>data_cadastro_original</th></tr></thead>
+        <tbody><tr class="row-scan"><td>101</td><td>10/01/2021 <span class="badge-current">mantido</span></td></tr></tbody></table></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Vantagem</div><div class="card-text">Simplicidade máxima — nenhuma linha nova, nenhuma coluna extra. O histórico é automático porque o valor <em>é</em> o histórico.</div></div>
+      <div class="card"><div class="card-title">⚠️ Limitação</div><div class="card-text">Não serve para atributos que realmente precisam refletir mudanças relevantes para o negócio — só para os que devem ficar "congelados" por definição.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ TIPO 1 ============ -->
+  <section class="section" id="s-tipo1">
+    <div class="section-eyebrow">Tipo 1 de 6</div>
+    <div class="section-title">✏️ SCD Tipo 1 — Sobrescrever (Overwrite)</div>
+    <p class="section-desc">A forma mais simples de lidar com mudança: quando o valor muda, faz-se um <code>UPDATE</code> e o valor antigo <strong>desaparece para sempre</strong>. A tabela sempre reflete a realidade mais atual, mas qualquer relatório que cruzar fatos antigos com essa dimensão vai "ver" o valor atual, não o valor da época.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧹</div>
+      <div><div class="highlight-title">Analogia</div><p>É como apagar o <strong>quadro-branco</strong> para escrever a informação nova por cima. O que estava escrito antes se foi — só existe o que está escrito <em>agora</em>.</p></div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Antes (Maria mora em Recife)</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>id_cliente</th><th>nome</th><th>cidade</th></tr></thead>
+        <tbody><tr><td>101</td><td>Maria</td><td>Recife</td></tr></tbody></table></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Depois do UPDATE (Recife some)</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>id_cliente</th><th>nome</th><th>cidade</th></tr></thead>
+        <tbody><tr class="row-scan"><td>101</td><td>Maria</td><td class="cell-new">São Paulo</td></tr></tbody></table></div>
+      </div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">UPDATE</span> dim_cliente
+<span class="kw">SET</span> cidade <span class="kw">=</span> <span class="st">'São Paulo'</span>
+<span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">101</span>;
+<span class="cm">-- "Recife" não existe mais em lugar nenhum desta tabela</span></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Vantagem</div><div class="card-text">Muito simples, tabela não cresce, ótimo para corrigir <strong>erros de cadastro</strong> (ex: nome digitado errado) — nesse caso, não faz sentido nenhum guardar o valor errado.</div></div>
+      <div class="card"><div class="card-title">⚠️ Limitação</div><div class="card-text">Perde o histórico por completo. Fatos antigos passam a ser cruzados com o valor <em>atual</em>, não com o valor <em>da época</em> — pode distorcer análises históricas.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ TIPO 2 ============ -->
+  <section class="section" id="s-tipo2">
+    <div class="section-eyebrow">Tipo 2 de 6 — o mais usado</div>
+    <div class="section-title">🕰️ SCD Tipo 2 — Nova Linha (Add New Row)</div>
+    <p class="section-desc">A técnica mais usada em Data Warehouses quando o histórico <em>importa de verdade</em>. Em vez de sobrescrever, cada mudança gera uma <strong>nova linha</strong> com os valores atualizados. A linha antiga não é apagada — ela é "fechada", ganhando uma data de término e deixando de ser a versão "atual". Cada linha tem sua própria <strong>chave substituta</strong> (surrogate key), diferente da chave natural do cliente, que permanece a mesma em todas as versões.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">📸</div>
+      <div><div class="highlight-title">Analogia</div><p>É como um <strong>álbum de fotos</strong>: a cada mudança importante, tira-se uma foto nova, mas as fotos antigas continuam guardadas no álbum, com a data em que foram tiradas. Ninguém rasga a foto de ontem só porque tirou uma foto hoje.</p></div>
+    </div>
+    <p class="section-desc">Três colunas de controle aparecem: <code>valid_from</code> (desde quando essa versão vale), <code>valid_to</code> (até quando valeu — ou "9999-12-31" se ainda vale) e <code>is_current</code> (um jeito rápido de achar a versão vigente sem comparar datas).</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>sk_cliente</th><th>id_cliente</th><th>nome</th><th>cidade</th><th>valid_from</th><th>valid_to</th><th>is_current</th></tr></thead>
+        <tbody>
+          <tr class="row-fade"><td>1001</td><td>101</td><td>Maria</td><td>Recife</td><td>10/01/2021</td><td>14/06/2022</td><td><span class="badge-expired">não</span></td></tr>
+          <tr class="row-scan"><td>1002</td><td>101</td><td>Maria</td><td class="cell-new">São Paulo</td><td>15/06/2022</td><td>9999-12-31</td><td><span class="badge-current">sim</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- 1. fecha a versão vigente</span>
+<span class="kw">UPDATE</span> dim_cliente
+<span class="kw">SET</span> valid_to <span class="kw">=</span> <span class="fn">CURRENT_DATE</span> <span class="kw">-</span> <span class="kw">INTERVAL</span> <span class="st">'1 day'</span>, is_current <span class="kw">=</span> <span class="kw">FALSE</span>
+<span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">101</span> <span class="kw">AND</span> is_current <span class="kw">=</span> <span class="kw">TRUE</span>;
+
+<span class="cm">-- 2. insere a nova versão como vigente</span>
+<span class="kw">INSERT INTO</span> dim_cliente (id_cliente, nome, cidade, valid_from, valid_to, is_current)
+<span class="kw">VALUES</span> (<span class="num">101</span>, <span class="st">'Maria'</span>, <span class="st">'São Paulo'</span>, <span class="fn">CURRENT_DATE</span>, <span class="st">'9999-12-31'</span>, <span class="kw">TRUE</span>);</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Vantagem</div><div class="card-text">Histórico <strong>fiel e completo</strong> — cada fato pode ser ligado à <code>sk_cliente</code> vigente na data em que ocorreu, preservando a "verdade da época" para sempre.</div></div>
+      <div class="card"><div class="card-title">⚠️ Limitação</div><div class="card-text">A tabela cresce a cada mudança, e as consultas do dia a dia precisam saber filtrar por <code>is_current = TRUE</code> (ou pela data certa) para não somar clientes duplicados.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ TIPO 3 ============ -->
+  <section class="section" id="s-tipo3">
+    <div class="section-eyebrow">Tipo 3 de 6</div>
+    <div class="section-title">📎 SCD Tipo 3 — Nova Coluna (Add New Attribute)</div>
+    <p class="section-desc">Guarda só <strong>um passo</strong> de histórico, numa coluna extra ao lado da atual — por exemplo, <code>cidade_atual</code> e <code>cidade_anterior</code>. A tabela não cresce em linhas, mas se o valor mudar de novo, a versão mais antiga é perdida — só sobra "atual" e "penúltima".</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🏷️</div>
+      <div><div class="highlight-title">Analogia</div><p>É como a etiqueta de <strong>"endereço anterior"</strong> colada do lado de uma carta redirecionada pelos Correios: você vê o endereço novo e o de onde ela veio, mas não vê o endereço de três mudanças atrás.</p></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>id_cliente</th><th>nome</th><th>cidade_anterior</th><th>cidade_atual</th><th>data_mudanca</th></tr></thead>
+        <tbody><tr class="row-scan"><td>101</td><td>Maria</td><td class="cell-old">Recife</td><td class="cell-new">São Paulo</td><td>15/06/2022</td></tr></tbody></table>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">UPDATE</span> dim_cliente
+<span class="kw">SET</span> cidade_anterior <span class="kw">=</span> cidade_atual,
+    cidade_atual <span class="kw">=</span> <span class="st">'São Paulo'</span>,
+    data_mudanca <span class="kw">=</span> <span class="fn">CURRENT_DATE</span>
+<span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">101</span>;</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Vantagem</div><div class="card-text">Útil quando o negócio só precisa comparar "de onde veio" com "para onde foi" — ex: analisar migração entre regiões — sem precisar do histórico completo.</div></div>
+      <div class="card"><div class="card-title">⚠️ Limitação</div><div class="card-text">Memória curta: uma segunda mudança sobrescreve a coluna "anterior" e a versão mais antiga desaparece de vez.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ TIPO 4 ============ -->
+  <section class="section" id="s-tipo4">
+    <div class="section-eyebrow">Tipo 4 de 6</div>
+    <div class="section-title">🗄️ SCD Tipo 4 — Tabela de Histórico Separada</div>
+    <p class="section-desc">Mantém a tabela de dimensão principal <strong>enxuta</strong>, só com o valor atual (como no Tipo 1), e desvia todo o histórico de mudanças para uma <strong>tabela separada</strong>, que só é consultada quando alguém realmente precisa auditar o passado.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🗄️</div>
+      <div><div class="highlight-title">Analogia</div><p>É como ter a <strong>ficha de cadastro atual</strong> na gaveta da frente do arquivo — rápida de achar — e um <strong>arquivo morto</strong> no porão guardando todas as versões antigas, que só é aberto quando alguém precisa investigar algo.</p></div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">dim_cliente (tabela atual — enxuta)</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>id_cliente</th><th>nome</th><th>cidade</th></tr></thead>
+        <tbody><tr class="row-scan"><td>101</td><td>Maria</td><td class="cell-new">São Paulo</td></tr></tbody></table></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">dim_cliente_historico (tabela à parte)</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>id_cliente</th><th>cidade</th><th>valid_from</th><th>valid_to</th></tr></thead>
+        <tbody><tr class="row-fade"><td>101</td><td class="cell-old">Recife</td><td>10/01/2021</td><td>14/06/2022</td></tr>
+        <tr><td>101</td><td>São Paulo</td><td>15/06/2022</td><td>—</td></tr></tbody></table></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Vantagem</div><div class="card-text">Consultas do dia a dia continuam rápidas (a tabela principal nunca cresce por causa de histórico), e o histórico completo continua disponível quando for preciso.</div></div>
+      <div class="card"><div class="card-title">⚠️ Limitação</div><div class="card-text">Precisa manter e sincronizar <strong>duas tabelas</strong> em vez de uma — mais peças móveis no pipeline de carga.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ TIPO 6 ============ -->
+  <section class="section" id="s-tipo6">
+    <div class="section-eyebrow">Tipo 6 de 6</div>
+    <div class="section-title">🍱 SCD Tipo 6 — Híbrido (1 + 2 + 3 = 6)</div>
+    <p class="section-desc">O nome é uma brincadeira dos próprios praticantes: <strong>Tipo 1 + Tipo 2 + Tipo 3 = Tipo 6</strong>. Ele combina as três técnicas numa única tabela: guarda histórico completo em novas linhas (como o Tipo 2), mas também mantém uma coluna com o <strong>valor sempre atual</strong>, que é sobrescrita em <em>todas</em> as linhas históricas daquele cliente (como o Tipo 1), além de uma coluna "valor anterior" (como o Tipo 3).</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🍱</div>
+      <div><div class="highlight-title">Analogia</div><p>É o <strong>combo do restaurante</strong>: pega um pouco de cada prato anterior e serve tudo junto — dá mais trabalho para montar, mas responde a qualquer pergunta que os pratos separados respondiam sozinhos.</p></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>sk_cliente</th><th>id_cliente</th><th>cidade_na_epoca</th><th>cidade_atual (em todas)</th><th>valid_from</th><th>valid_to</th><th>is_current</th></tr></thead>
+        <tbody>
+          <tr class="row-fade"><td>1001</td><td>101</td><td>Recife</td><td class="cell-new">São Paulo</td><td>10/01/2021</td><td>14/06/2022</td><td><span class="badge-expired">não</span></td></tr>
+          <tr class="row-scan"><td>1002</td><td>101</td><td>São Paulo</td><td class="cell-new">São Paulo</td><td>15/06/2022</td><td>9999-12-31</td><td><span class="badge-current">sim</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box"><p>💡 Repare que a coluna <code>cidade_atual</code> é <strong>igual em todas as linhas</strong> de Maria — inclusive na linha histórica — porque ela sempre reflete o presente, sobrescrita a cada mudança (efeito Tipo 1) em cima do histórico completo (efeito Tipo 2).</p></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Vantagem</div><div class="card-text">Extremamente flexível: responde tanto "qual era a cidade na época da compra" quanto "qual é a cidade atual do cliente que fez aquela compra", sem sair de uma tabela só.</div></div>
+      <div class="card"><div class="card-title">⚠️ Limitação</div><div class="card-text">É o mais complexo de manter — toda mudança precisa atualizar a coluna "atual" em <em>todas</em> as linhas antigas daquele cliente, não só inserir uma linha nova.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ SIMULADOR ============ -->
+  <section class="section" id="s-simulador">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">🎮 Simulador: a vida da Maria, cliente 101</div>
+    <p class="section-desc">Clique nos eventos da linha do tempo abaixo e veja, <strong>ao vivo</strong>, como cada tipo de SCD registraria a mesma história de Maria — do cadastro até hoje.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Linha do tempo de Maria — clique em um evento</div>
+      <div class="lifeline" id="lifeline"></div>
+
+      <div class="sim-grid">
+        <div class="sim-card">
+          <div class="sim-card-title">✏️ Tipo 1 — Sobrescrever</div>
+          <div class="sim-card-sub">1 linha, sempre o valor mais recente</div>
+          <div style="overflow-x:auto;"><table class="sim-mini-table" id="simType1"></table></div>
+        </div>
+        <div class="sim-card">
+          <div class="sim-card-title">🕰️ Tipo 2 — Nova linha</div>
+          <div class="sim-card-sub">Uma linha nova a cada mudança, histórico completo</div>
+          <div style="overflow-x:auto;"><table class="sim-mini-table" id="simType2"></table></div>
+        </div>
+        <div class="sim-card">
+          <div class="sim-card-title">📎 Tipo 3 — Nova coluna</div>
+          <div class="sim-card-sub">1 linha, só lembra do passo anterior</div>
+          <div style="overflow-x:auto;"><table class="sim-mini-table" id="simType3"></table></div>
+        </div>
+        <div class="sim-card">
+          <div class="sim-card-title">🗄️ Tipo 4 — Histórico à parte</div>
+          <div class="sim-card-sub">Tabela atual + tabela de histórico</div>
+          <div style="overflow-x:auto;"><table class="sim-mini-table" id="simType4"></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 Comparando os 6 tipos</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Tipo</th><th>Guarda histórico?</th><th>Cresce em linhas?</th><th>Cresce em colunas?</th><th>Complexidade</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">0 — Congelado</strong></td><td>Sim (é fixo)</td><td>Não</td><td>Não</td><td>Muito baixa</td><td>Atributos que nunca devem mudar (data de cadastro original)</td></tr>
+          <tr><td><strong style="color:var(--accent-red);">1 — Sobrescreve</strong></td><td>Não</td><td>Não</td><td>Não</td><td>Muito baixa</td><td>Correção de erros, atributos sem valor histórico</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">2 — Nova linha</strong></td><td>Sim, completo</td><td>Sim</td><td>Não (3 colunas de controle)</td><td>Média</td><td>Histórico precisa ser fiel para análises (o caso mais comum)</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">3 — Nova coluna</strong></td><td>Só 1 passo atrás</td><td>Não</td><td>Sim</td><td>Baixa</td><td>Comparar "de onde veio" com "para onde foi"</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">4 — Histórico à parte</strong></td><td>Sim, completo</td><td>Só na tabela de histórico</td><td>Não</td><td>Média-alta</td><td>Tabela principal precisa ficar sempre enxuta e rápida</td></tr>
+          <tr><td><strong style="color:var(--accent-yellow);">6 — Híbrido</strong></td><td>Sim, completo</td><td>Sim</td><td>Sim</td><td>Alta</td><td>Precisa responder "na época" e "hoje" ao mesmo tempo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Quantas linhas a tabela acumula, conforme o cliente muda de cidade?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Número de mudanças ao longo da vida do cliente</span><span class="ctrl-v" id="growVal">4</span></div>
+          <input type="range" id="growSlider" min="0" max="15" step="1" value="4" oninput="updateGrowth()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="growCanvas" height="150"></canvas></div>
+      <div class="stat-cards" id="growStats"></div>
+    </div>
+  </section>
+
+  <!-- ============ QUAL ESCOLHER ============ -->
+  <section class="section" id="s-escolha">
+    <div class="section-eyebrow">Guia de Decisão</div>
+    <div class="section-title">🧭 Qual tipo escolher?</div>
+    <p class="section-desc">Na prática, um mesmo <code>dim_cliente</code> pode misturar tipos diferentes: <code>data_cadastro_original</code> em Tipo 0, <code>nome</code> em Tipo 1 (corrige erro de digitação sem custo de histórico), <code>cidade</code> e <code>categoria</code> em Tipo 2 (importam para relatórios históricos). Use as perguntas abaixo, atributo por atributo.</p>
+    <div class="grid-3">
+      <div class="decision-card">
+        <div class="decision-q">"Esse valor <strong>nunca</strong> deveria mudar, é a identidade original do registro?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Tipo 0</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Não me importa o valor antigo — só quero corrigir/atualizar sem gerar lixo histórico?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-red);color:var(--accent-red);">Tipo 1</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Relatórios precisam refletir fielmente 'como era na época' de cada fato?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-green);color:var(--accent-green);">Tipo 2</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Só preciso comparar o valor de agora com o de uma mudança atrás?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">Tipo 3</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"A tabela principal precisa ficar pequena e rápida, mas ainda quero auditoria completa em outro lugar?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-purple);color:var(--accent-purple);">Tipo 4</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso responder 'na época' E 'hoje' na mesma consulta, sem joins extras?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-yellow);color:var(--accent-yellow);">Tipo 6</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SQL NA PRÁTICA ============ -->
+  <section class="section" id="s-sql">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">💻 Implementando SCD Tipo 2 com MERGE</div>
+    <p class="section-desc">Bancos modernos (Postgres 15+, DuckDB, Snowflake, BigQuery...) suportam <code>MERGE</code>, que resolve em um comando só o "fecha a antiga, abre a nova" que fizemos manualmente antes. É o jeito mais comum de implementar Tipo 2 num pipeline de carga incremental.</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">MERGE INTO</span> dim_cliente <span class="kw">AS</span> destino
+<span class="kw">USING</span> staging_cliente <span class="kw">AS</span> origem
+  <span class="kw">ON</span> destino.id_cliente <span class="kw">=</span> origem.id_cliente <span class="kw">AND</span> destino.is_current <span class="kw">=</span> <span class="kw">TRUE</span>
+
+<span class="cm">-- encontrou o cliente, mas a cidade mudou: fecha a versão antiga</span>
+<span class="kw">WHEN MATCHED AND</span> destino.cidade <span class="kw">!=</span> origem.cidade <span class="kw">THEN</span>
+  <span class="kw">UPDATE SET</span> valid_to <span class="kw">=</span> <span class="fn">CURRENT_DATE</span>, is_current <span class="kw">=</span> <span class="kw">FALSE</span>
+
+<span class="cm">-- cliente novo, nunca visto: insere primeira versão</span>
+<span class="kw">WHEN NOT MATCHED THEN</span>
+  <span class="kw">INSERT</span> (id_cliente, nome, cidade, valid_from, valid_to, is_current)
+  <span class="kw">VALUES</span> (origem.id_cliente, origem.nome, origem.cidade, <span class="fn">CURRENT_DATE</span>, <span class="st">'9999-12-31'</span>, <span class="kw">TRUE</span>);
+
+<span class="cm">-- depois do MERGE, um segundo INSERT abre a nova versão vigente</span>
+<span class="cm">-- para todo cliente cuja cidade mudou (a linha antiga já foi fechada acima)</span>
+<span class="kw">INSERT INTO</span> dim_cliente (id_cliente, nome, cidade, valid_from, valid_to, is_current)
+<span class="kw">SELECT</span> origem.id_cliente, origem.nome, origem.cidade, <span class="fn">CURRENT_DATE</span>, <span class="st">'9999-12-31'</span>, <span class="kw">TRUE</span>
+<span class="kw">FROM</span> staging_cliente origem
+<span class="kw">JOIN</span> dim_cliente destino
+  <span class="kw">ON</span> destino.id_cliente <span class="kw">=</span> origem.id_cliente
+<span class="kw">WHERE</span> destino.valid_to <span class="kw">=</span> <span class="fn">CURRENT_DATE</span> <span class="kw">AND</span> destino.is_current <span class="kw">=</span> <span class="kw">FALSE</span>;</div>
+    <p class="section-desc">Para ligar um fato à versão <strong>correta</strong> de uma dimensão Tipo 2, o join usa a chave substituta e a data do fato — nunca a chave natural sozinha:</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> f.data_compra, f.valor, d.cidade <span class="kw">AS</span> cidade_na_epoca
+<span class="kw">FROM</span> fato_compra f
+<span class="kw">JOIN</span> dim_cliente d
+  <span class="kw">ON</span> f.id_cliente <span class="kw">=</span> d.id_cliente
+ <span class="kw">AND</span> f.data_compra <span class="kw">BETWEEN</span> d.valid_from <span class="kw">AND</span> d.valid_to;</div>
+    <div class="info-box"><p>💡 Note o <code>BETWEEN d.valid_from AND d.valid_to</code>: é essa condição que garante que uma compra de 2021 vai casar com a linha "Recife" e uma compra de 2023 vai casar com a linha "São Paulo" — mesmo que as duas linhas pertençam ao mesmo <code>id_cliente</code>.</p></div>
+
+    <div class="section-title" style="font-size:18px;margin-top:10px;">🦆 Sem MERGE: a mesma coisa, script por script, no DuckDB</div>
+    <p class="section-desc">Nem todo motor tem (ou precisa de) um <code>MERGE</code> — e entender o passo a passo "na unha" ajuda a enxergar exatamente o que acontece por trás dele. Abaixo, a vida inteira da Maria (cliente 101) é simulada do zero no <strong>DuckDB</strong>, em scripts numerados e separados — cada um pode ser colado e rodado em sequência, na ordem, para ver a tabela crescendo em tempo real. É a mesma história do simulador interativo lá em cima, virada em SQL de verdade.</p>
+
+    <div class="script-step"><span class="script-step-num">1</span><span class="script-step-label">Criar a tabela dim_cliente (com uma sequência para a chave substituta)</span></div>
+    <div class="script-step-sub">O DuckDB não tem um tipo <code>SERIAL</code> automático — usa-se uma <code>SEQUENCE</code> explícita para gerar a <code>sk_cliente</code>, a chave que identifica cada <em>versão</em> de Maria.</div>
+    <div class="code-block">
+<span class="code-lang">sql · duckdb</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE SEQUENCE</span> seq_sk_cliente <span class="kw">START</span> <span class="num">1</span>;
+
+<span class="kw">CREATE TABLE</span> dim_cliente (
+    sk_cliente   <span class="kw">BIGINT PRIMARY KEY DEFAULT</span> <span class="fn">nextval</span>(<span class="st">'seq_sk_cliente'</span>),
+    id_cliente   <span class="kw">INTEGER NOT NULL</span>,
+    nome         <span class="kw">VARCHAR</span>,
+    cidade       <span class="kw">VARCHAR</span>,
+    categoria    <span class="kw">VARCHAR</span>,
+    valid_from   <span class="kw">DATE NOT NULL</span>,
+    valid_to     <span class="kw">DATE NOT NULL</span>,
+    is_current   <span class="kw">BOOLEAN NOT NULL</span>
+);</div>
+
+    <div class="script-step"><span class="script-step-num">2</span><span class="script-step-label">Cadastro original de Maria — 10/01/2021, Recife, categoria Bronze</span></div>
+    <div class="code-block">
+<span class="code-lang">sql · duckdb</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">INSERT INTO</span> dim_cliente (id_cliente, nome, cidade, categoria, valid_from, valid_to, is_current)
+<span class="kw">VALUES</span> (<span class="num">101</span>, <span class="st">'Maria'</span>, <span class="st">'Recife'</span>, <span class="st">'Bronze'</span>, <span class="kw">DATE</span> <span class="st">'2021-01-10'</span>, <span class="kw">DATE</span> <span class="st">'9999-12-31'</span>, <span class="kw">TRUE</span>);
+
+<span class="kw">SELECT</span> sk_cliente, cidade, categoria, valid_from, valid_to, is_current <span class="kw">FROM</span> dim_cliente;
+<span class="cm">-- 1 | Recife | Bronze | 2021-01-10 | 9999-12-31 | true   ← só essa linha existe até aqui</span></div>
+
+    <div class="script-step"><span class="script-step-num">3</span><span class="script-step-label">Evento: Maria se muda para São Paulo — 15/06/2022 (passo 1: fecha a versão vigente)</span></div>
+    <div class="code-block">
+<span class="code-lang">sql · duckdb</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">UPDATE</span> dim_cliente
+<span class="kw">SET</span> valid_to <span class="kw">=</span> <span class="kw">DATE</span> <span class="st">'2022-06-15'</span> <span class="kw">-</span> <span class="kw">INTERVAL</span> <span class="num">1</span> <span class="kw">DAY</span>,
+    is_current <span class="kw">=</span> <span class="kw">FALSE</span>
+<span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">101</span>
+  <span class="kw">AND</span> is_current <span class="kw">=</span> <span class="kw">TRUE</span>;</div>
+
+    <div class="script-step"><span class="script-step-num">4</span><span class="script-step-label">Evento: Maria se muda para São Paulo (passo 2: insere a nova versão vigente)</span></div>
+    <div class="code-block">
+<span class="code-lang">sql · duckdb</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">INSERT INTO</span> dim_cliente (id_cliente, nome, cidade, categoria, valid_from, valid_to, is_current)
+<span class="kw">VALUES</span> (<span class="num">101</span>, <span class="st">'Maria'</span>, <span class="st">'São Paulo'</span>, <span class="st">'Bronze'</span>, <span class="kw">DATE</span> <span class="st">'2022-06-15'</span>, <span class="kw">DATE</span> <span class="st">'9999-12-31'</span>, <span class="kw">TRUE</span>);
+
+<span class="kw">SELECT</span> sk_cliente, cidade, categoria, valid_from, valid_to, is_current
+<span class="kw">FROM</span> dim_cliente <span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">101</span> <span class="kw">ORDER BY</span> valid_from;
+<span class="cm">-- 1 | Recife     | Bronze | 2021-01-10 | 2022-06-14 | false  ← fechada no script 3</span>
+<span class="cm">-- 2 | São Paulo  | Bronze | 2022-06-15 | 9999-12-31 | true   ← nova versão vigente</span></div>
+
+    <div class="script-step"><span class="script-step-num">5</span><span class="script-step-label">Evento: Maria vira categoria Ouro — 02/03/2023 (mesmo padrão: fecha + insere)</span></div>
+    <div class="code-block">
+<span class="code-lang">sql · duckdb</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">UPDATE</span> dim_cliente
+<span class="kw">SET</span> valid_to <span class="kw">=</span> <span class="kw">DATE</span> <span class="st">'2023-03-02'</span> <span class="kw">-</span> <span class="kw">INTERVAL</span> <span class="num">1</span> <span class="kw">DAY</span>, is_current <span class="kw">=</span> <span class="kw">FALSE</span>
+<span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">101</span> <span class="kw">AND</span> is_current <span class="kw">=</span> <span class="kw">TRUE</span>;
+
+<span class="kw">INSERT INTO</span> dim_cliente (id_cliente, nome, cidade, categoria, valid_from, valid_to, is_current)
+<span class="kw">VALUES</span> (<span class="num">101</span>, <span class="st">'Maria'</span>, <span class="st">'São Paulo'</span>, <span class="st">'Ouro'</span>, <span class="kw">DATE</span> <span class="st">'2023-03-02'</span>, <span class="kw">DATE</span> <span class="st">'9999-12-31'</span>, <span class="kw">TRUE</span>);</div>
+
+    <div class="script-step"><span class="script-step-num">6</span><span class="script-step-label">Evento: Maria se muda para Belo Horizonte — 20/01/2024 (mesmo padrão de novo)</span></div>
+    <div class="code-block">
+<span class="code-lang">sql · duckdb</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">UPDATE</span> dim_cliente
+<span class="kw">SET</span> valid_to <span class="kw">=</span> <span class="kw">DATE</span> <span class="st">'2024-01-20'</span> <span class="kw">-</span> <span class="kw">INTERVAL</span> <span class="num">1</span> <span class="kw">DAY</span>, is_current <span class="kw">=</span> <span class="kw">FALSE</span>
+<span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">101</span> <span class="kw">AND</span> is_current <span class="kw">=</span> <span class="kw">TRUE</span>;
+
+<span class="kw">INSERT INTO</span> dim_cliente (id_cliente, nome, cidade, categoria, valid_from, valid_to, is_current)
+<span class="kw">VALUES</span> (<span class="num">101</span>, <span class="st">'Maria'</span>, <span class="st">'Belo Horizonte'</span>, <span class="st">'Ouro'</span>, <span class="kw">DATE</span> <span class="st">'2024-01-20'</span>, <span class="kw">DATE</span> <span class="st">'9999-12-31'</span>, <span class="kw">TRUE</span>);</div>
+
+    <div class="script-step"><span class="script-step-num">7</span><span class="script-step-label">Conferir o histórico completo — 4 versões, a vida inteira de Maria</span></div>
+    <div class="code-block">
+<span class="code-lang">sql · duckdb</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> sk_cliente, cidade, categoria, valid_from, valid_to, is_current
+<span class="kw">FROM</span> dim_cliente
+<span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">101</span>
+<span class="kw">ORDER BY</span> valid_from;</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>sk_cliente</th><th>cidade</th><th>categoria</th><th>valid_from</th><th>valid_to</th><th>is_current</th></tr></thead>
+        <tbody>
+          <tr class="row-fade"><td>1</td><td>Recife</td><td>Bronze</td><td>2021-01-10</td><td>2022-06-14</td><td><span class="badge-expired">false</span></td></tr>
+          <tr class="row-fade"><td>2</td><td>São Paulo</td><td>Bronze</td><td>2022-06-15</td><td>2023-03-01</td><td><span class="badge-expired">false</span></td></tr>
+          <tr class="row-fade"><td>3</td><td>São Paulo</td><td>Ouro</td><td>2023-03-02</td><td>2024-01-19</td><td><span class="badge-expired">false</span></td></tr>
+          <tr class="row-scan"><td>4</td><td>Belo Horizonte</td><td>Ouro</td><td>2024-01-20</td><td>9999-12-31</td><td><span class="badge-current">true</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="script-step"><span class="script-step-num">8</span><span class="script-step-label">Ligar as compras de Maria à cidade e categoria da época</span></div>
+    <div class="script-step-sub">As mesmas duas compras usadas lá em cima, na seção "O problema" — agora resolvidas de verdade com uma consulta.</div>
+    <div class="code-block">
+<span class="code-lang">sql · duckdb</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE TABLE</span> fato_compra (
+    id_cliente   <span class="kw">INTEGER</span>,
+    data_compra  <span class="kw">DATE</span>,
+    valor        <span class="kw">DECIMAL</span>(<span class="num">10</span>,<span class="num">2</span>)
+);
+
+<span class="kw">INSERT INTO</span> fato_compra <span class="kw">VALUES</span>
+  (<span class="num">101</span>, <span class="kw">DATE</span> <span class="st">'2021-03-15'</span>, <span class="num">120.00</span>),
+  (<span class="num">101</span>, <span class="kw">DATE</span> <span class="st">'2023-09-02'</span>, <span class="num">340.00</span>);
+
+<span class="kw">SELECT</span> f.data_compra, f.valor,
+       d.cidade    <span class="kw">AS</span> cidade_na_epoca,
+       d.categoria <span class="kw">AS</span> categoria_na_epoca
+<span class="kw">FROM</span> fato_compra f
+<span class="kw">JOIN</span> dim_cliente d
+  <span class="kw">ON</span> f.id_cliente <span class="kw">=</span> d.id_cliente
+ <span class="kw">AND</span> f.data_compra <span class="kw">BETWEEN</span> d.valid_from <span class="kw">AND</span> d.valid_to
+<span class="kw">ORDER BY</span> f.data_compra;
+<span class="cm">-- 2021-03-15 | 120.00 | Recife    | Bronze  ← cidade e categoria de Maria NAQUELE dia</span>
+<span class="cm">-- 2023-09-02 | 340.00 | São Paulo | Ouro    ← já tinha mudado de cidade e de categoria</span></div>
+    <div class="ok-box"><p>✅ Sem nenhum <code>MERGE</code>: só <code>CREATE SEQUENCE</code>, <code>CREATE TABLE</code>, <code>INSERT</code> e <code>UPDATE</code> — o mesmo par "fecha a antiga, abre a nova" repetido a cada mudança, exatamente como no simulador interativo lá em cima.</p></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔑 Sempre use uma chave substituta (surrogate key)</div><div class="card-text">Em Tipo 2/6, a <code>sk_cliente</code> (autoincremento ou hash) identifica a <em>versão</em>; a <code>id_cliente</code> (chave natural) identifica a <em>pessoa</em> através de todas as versões.</div></div>
+      <div class="card"><div class="card-title">📅 Feche o intervalo, não deixe "buracos" ou "sobreposições"</div><div class="card-text">O <code>valid_to</code> da versão antiga deve ser exatamente um dia antes do <code>valid_from</code> da nova — qualquer data precisa casar com exatamente uma versão.</div></div>
+      <div class="card"><div class="card-title">🚩 Indexe / filtre por is_current</div><div class="card-text">A grande maioria das consultas do dia a dia só quer a versão vigente — um índice ou uma view <code>WHERE is_current = TRUE</code> evita varrer histórico à toa.</div></div>
+      <div class="card"><div class="card-title">🧩 Misture tipos por atributo, não por tabela</div><div class="card-text">Nada impede uma mesma dimensão de ter uma coluna em Tipo 0, outra em Tipo 1 e outra em Tipo 2 — escolha por <em>atributo</em>, de acordo com o que o negócio precisa lembrar.</div></div>
+      <div class="card"><div class="card-title">⏱️ Cuidado com atributos que mudam demais</div><div class="card-text">Um atributo muito volátil (ex: "último login") em Tipo 2 faz a tabela explodir em linhas. Nesses casos, considere uma <strong>mini-dimensão</strong> separada, tratada em Tipo 1.</div></div>
+      <div class="card"><div class="card-title">🕓 Trate mudanças que chegam atrasadas (late-arriving)</div><div class="card-text">Se uma mudança de 2022 só chega no pipeline em 2024, é preciso "encaixar" a nova versão no meio da linha do tempo, reajustando o <code>valid_to</code> da versão vizinha — não simplesmente empilhar no fim.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Slowly Changing Dimensions</span>
+    <span>
+      Fontes: <a href="https://www.kimballgroup.com/" target="_blank" rel="noopener">Kimball Group</a> ·
+      Modelagem Dimensional (Ralph Kimball)
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-dimensao', icon:'🧒', label:'O que é Dimensão'},
+  {id:'s-problema', icon:'❓', label:'O Problema'},
+  {id:'s-tipo0', icon:'🧊', label:'Tipo 0'},
+  {id:'s-tipo1', icon:'✏️', label:'Tipo 1'},
+  {id:'s-tipo2', icon:'🕰️', label:'Tipo 2'},
+  {id:'s-tipo3', icon:'📎', label:'Tipo 3'},
+  {id:'s-tipo4', icon:'🗄️', label:'Tipo 4'},
+  {id:'s-tipo6', icon:'🍱', label:'Tipo 6'},
+  {id:'s-simulador', icon:'🎮', label:'Simulador'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-escolha', icon:'🧭', label:'Qual Escolher'},
+  {id:'s-sql', icon:'💻', label:'SQL na Prática'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== SIMULADOR — A VIDA DA MARIA ===================== */
+const lifeEvents = [
+  {icon:'🧑', label:'Cadastro', date:'10/01/2021', cidade:'Recife', categoria:'Bronze'},
+  {icon:'🚚', label:'Mudou de cidade', date:'15/06/2022', cidade:'São Paulo', categoria:'Bronze'},
+  {icon:'🏆', label:'Virou categoria Ouro', date:'02/03/2023', cidade:'São Paulo', categoria:'Ouro'},
+  {icon:'🏙️', label:'Mudou de novo', date:'20/01/2024', cidade:'Belo Horizonte', categoria:'Ouro'},
+];
+let simIdx = lifeEvents.length - 1;
+
+function buildLifeline(){
+  document.getElementById('lifeline').innerHTML = lifeEvents.map((e,i) => `
+    <div class="life-event ${i===simIdx?'active':i<simIdx?'done':''}" onclick="selectLifeEvent(${i})">
+      <div class="life-dot-wrap">
+        <span class="life-line ${i===0?'first':''}"></span>
+        <div class="life-dot">${i<simIdx?'✓':''}</div>
+        <span class="life-line ${i===lifeEvents.length-1?'first':''}"></span>
+      </div>
+      <span class="life-icon">${e.icon}</span>
+      <span class="life-label">${e.label}</span>
+      <span class="life-date">${e.date}</span>
+    </div>
+  `).join('');
+}
+function selectLifeEvent(i){
+  simIdx = i;
+  buildLifeline();
+  renderSimTables();
+}
+
+function renderSimTables(){
+  const upTo = lifeEvents.slice(0, simIdx+1);
+  const current = upTo[upTo.length-1];
+
+  // Tipo 1 — só o valor atual
+  document.getElementById('simType1').innerHTML = `
+    <tr><th>id</th><th>nome</th><th>cidade</th><th>categoria</th></tr>
+    <tr class="is-current just-added"><td>101</td><td>Maria</td><td>${current.cidade}</td><td>${current.categoria}</td></tr>
+  `;
+
+  // Tipo 2 — acumula uma linha por evento
+  let sk = 1000;
+  const rows2 = upTo.map((e,i) => {
+    sk++;
+    const isLast = i === upTo.length-1;
+    const validTo = isLast ? '9999-12-31' : upTo[i+1].date;
+    return `<tr class="${isLast?'is-current just-added':''}"><td>${sk}</td><td>101</td><td>${e.cidade}</td><td>${e.categoria}</td><td>${e.date}</td><td>${validTo}</td></tr>`;
+  }).join('');
+  document.getElementById('simType2').innerHTML = `
+    <tr><th>sk</th><th>id</th><th>cidade</th><th>categ.</th><th>de</th><th>até</th></tr>
+    ${rows2}
+  `;
+
+  // Tipo 3 — atual + só o passo anterior
+  const prev = upTo.length > 1 ? upTo[upTo.length-2] : null;
+  document.getElementById('simType3').innerHTML = `
+    <tr><th>id</th><th>cidade_ant.</th><th>cidade_atual</th><th>categ._ant.</th><th>categ._atual</th></tr>
+    <tr class="is-current just-added"><td>101</td><td>${prev?prev.cidade:'—'}</td><td>${current.cidade}</td><td>${prev?prev.categoria:'—'}</td><td>${current.categoria}</td></tr>
+  `;
+
+  // Tipo 4 — tabela atual + histórico separado (linhas anteriores ao atual)
+  const histRows = upTo.slice(0, -1).map(e => `<tr><td>101</td><td>${e.cidade}</td><td>${e.categoria}</td><td>${e.date}</td></tr>`).join('');
+  document.getElementById('simType4').innerHTML = `
+    <tr><th colspan="4" style="color:var(--accent-green);background:var(--bg-main);">dim_cliente (atual)</th></tr>
+    <tr class="is-current just-added"><td>101</td><td>${current.cidade}</td><td>${current.categoria}</td><td>—</td></tr>
+    <tr><th colspan="4" style="color:var(--text-disabled);background:var(--bg-main);">dim_cliente_historico</th></tr>
+    ${histRows || '<tr><td colspan="4" style="color:var(--text-disabled);">(vazio — ainda sem mudanças)</td></tr>'}
+  `;
+}
+buildLifeline();
+renderSimTables();
+
+/* ===================== CRESCIMENTO DA TABELA (comparação) ===================== */
+function updateGrowth(){
+  const n = +document.getElementById('growSlider').value;
+  document.getElementById('growVal').textContent = n;
+  const type1Rows = 1;
+  const type2Rows = n + 1;
+  const type4MainRows = 1;
+  const type4HistRows = n;
+  document.getElementById('growStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Tipo 1 — linhas</div><div class="stat-card-value">${type1Rows}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Tipo 2 — linhas</div><div class="stat-card-value">${type2Rows}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">Tipo 4 — atual / histórico</div><div class="stat-card-value" style="font-size:15px;">${type4MainRows} / ${type4HistRows}</div></div>
+  `;
+  drawGrowCanvas(type1Rows, type2Rows, type4HistRows);
+}
+function drawGrowCanvas(type1Rows, type2Rows, type4HistRows){
+  const cv = document.getElementById('growCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Tipo 1 (sobrescreve)', val:type1Rows, color:'#f86b63'},
+    {name:'Tipo 2 (nova linha)', val:type2Rows, color:'#7dded8'},
+    {name:'Tipo 4 (tabela histórico)', val:type4HistRows, color:'#c49aff'},
+  ];
+  const padL=210, padR=30, padTop=14, barH=32, gap=20;
+  const maxVal = Math.max(1, type2Rows);
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(d.val + ' linha(s)', padL+10, y+barH*0.65);
+  });
+}
+updateGrowth();
+window.addEventListener('resize', updateGrowth);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'SCD é uma sigla para "Slowly Changing Dimension" e se refere a técnicas para lidar com mudanças em atributos de dimensões.', a:true, e:'Verdadeiro. O termo descreve como registrar, ao longo do tempo, mudanças em atributos de uma dimensão (cliente, produto, loja) num Data Warehouse.'},
+  {q:'No SCD Tipo 1, o valor antigo é preservado numa coluna extra ao lado do novo.', a:false, e:'Falso. No Tipo 1 o valor antigo é simplesmente sobrescrito (UPDATE) e desaparece — quem preserva o valor anterior numa coluna extra é o Tipo 3.'},
+  {q:'O SCD Tipo 2 cria uma nova linha a cada mudança, mantendo o histórico completo através de colunas como valid_from, valid_to e is_current.', a:true, e:'Verdadeiro. É a técnica mais usada quando o histórico precisa ser fiel — cada versão do registro vira uma linha própria, com sua própria chave substituta.'},
+  {q:'No SCD Tipo 3, é possível recuperar todas as versões antigas de um atributo, não importa quantas vezes ele já mudou.', a:false, e:'Falso. O Tipo 3 só guarda um passo de histórico (o valor "anterior"); uma nova mudança sobrescreve essa coluna e a versão mais antiga se perde.'},
+  {q:'SCD Tipo 0 significa que o atributo é atualizado normalmente, como no Tipo 1.', a:false, e:'Falso. O Tipo 0 significa o oposto: o valor é gravado uma vez e nunca mais muda, mesmo que a origem tente atualizá-lo — é o "congelado".'},
+  {q:'No SCD Tipo 4, o histórico completo fica numa tabela separada, enquanto a tabela principal de dimensão guarda só o valor atual.', a:true, e:'Verdadeiro. Isso mantém a tabela principal enxuta e rápida para consultas do dia a dia, desviando o histórico para uma tabela dedicada.'},
+  {q:'O SCD Tipo 6 é chamado assim porque foi o sexto tipo descoberto, sem relação com os tipos 1, 2 e 3.', a:false, e:'Falso. O nome "6" é uma referência de brincadeira a 1+2+3=6, já que o Tipo 6 combina as técnicas dos Tipos 1, 2 e 3 numa única tabela.'},
+  {q:'Ao ligar um fato a uma dimensão SCD Tipo 2, o join deve considerar a data do fato, não só a chave natural do cliente.', a:true, e:'Verdadeiro. Como um mesmo cliente pode ter várias linhas (versões), o join precisa casar a data do fato com o intervalo valid_from/valid_to da versão correta.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

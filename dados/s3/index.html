@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Amazon S3 por dentro, explicado com analogias simples e muitos gráficos interativos. Buckets, objetos, regiões, durabilidade, storage classes, versionamento, lifecycle, permissões, criptografia e preço.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Amazon S3 Descomplicado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-amber:#f5b955;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-amber{border-color:var(--accent-amber);color:var(--accent-amber);background:rgba(245,185,85,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:220px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- KID BOX (modo criança) ---- */
+.kid-box{background:rgba(245,185,85,.08);border:1.5px dashed var(--accent-amber);border-radius:10px;padding:16px 20px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kb-icon{font-size:26px;flex-shrink:0;line-height:1;}
+.kid-box .kb-title{color:var(--accent-amber);font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;}
+.kid-box p{font-size:13.5px;color:var(--text-primary);line-height:1.75;}
+.kid-box p strong{color:var(--accent-amber);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text],input[type=number]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus,input[type=number]:focus{outline:none;border-color:var(--accent);}
+select{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Inter',sans-serif;font-size:12.5px;width:100%;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn.danger:hover{border-color:var(--accent-red);color:var(--accent-red);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- SWITCH (toggle liga/desliga) ---- */
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:12px 16px;}
+.switch-label{font-size:12.5px;color:var(--text-primary);font-weight:600;}
+.switch-sub{font-size:10.5px;color:var(--text-disabled);}
+.switch{position:relative;width:46px;height:24px;flex-shrink:0;}
+.switch input{opacity:0;width:0;height:0;position:absolute;}
+.switch .slider{position:absolute;inset:0;background:var(--border-strong);border-radius:24px;cursor:pointer;transition:.2s;}
+.switch .slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+.switch input:checked + .slider{background:var(--accent);}
+.switch input:checked + .slider::before{transform:translateX(22px);}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- CHIP / BAR ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.mini-bar-track{width:100%;height:8px;border-radius:4px;background:var(--bg-highlight);overflow:hidden;}
+.mini-bar-fill{height:100%;border-radius:4px;transition:width .3s;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- BUCKET / OBJECT VISUALS ---- */
+.bucket-viz{display:flex;flex-direction:column;align-items:center;gap:0;}
+.bucket-lid{width:100%;max-width:280px;height:16px;background:var(--accent);border-radius:6px 6px 0 0;}
+.bucket-body{width:100%;max-width:280px;min-height:140px;background:var(--bg-elevated);border:2px solid var(--accent);border-top:none;border-radius:0 0 10px 10px;padding:14px;display:flex;flex-direction:column;gap:8px;}
+.bucket-name-tag{text-align:center;font-family:'Roboto Mono',monospace;font-size:11.5px;color:var(--accent);font-weight:700;margin-bottom:4px;word-break:break-all;}
+.object-item{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;font-size:11px;color:var(--text-secondary);font-family:'Roboto Mono',monospace;display:flex;justify-content:space-between;gap:8px;align-items:center;}
+.object-item .oi-key{color:var(--text-primary);}
+.object-item .oi-size{color:var(--text-disabled);font-size:9.5px;flex-shrink:0;}
+
+.rule-check{display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 0;color:var(--text-secondary);}
+.rule-check .rc-icon{width:16px;flex-shrink:0;text-align:center;}
+.rule-check.ok{color:var(--text-primary);}
+.rule-check.ok .rc-icon{color:var(--accent-green);}
+.rule-check.bad .rc-icon{color:var(--accent-red);}
+
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:10px 14px;font-size:12px;color:var(--text-secondary);margin-bottom:8px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.obj-anatomy-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+@media (max-width:760px){.obj-anatomy-grid{grid-template-columns:repeat(2,1fr);}}
+
+/* ---- REGIONS / AZ ---- */
+.region-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.region-card{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:.15s;}
+.region-card:hover{border-color:var(--accent-blue);}
+.region-card.active{border-color:var(--accent);background:rgba(6,182,212,.12);}
+.region-flag{font-size:22px;}
+.region-code{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--accent);font-weight:700;margin-top:4px;}
+.region-city{font-size:10.5px;color:var(--text-secondary);}
+.az-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.az-box{flex:1;min-width:110px;background:var(--bg-elevated);border:2px solid var(--border-color);border-radius:8px;padding:16px 10px;text-align:center;transition:.3s;}
+.az-box.on{border-color:var(--accent-green);}
+.az-box.dead{border-color:var(--accent-red);opacity:.4;background:repeating-linear-gradient(135deg,var(--bg-elevated),var(--bg-elevated) 6px,rgba(248,107,99,.15) 6px,rgba(248,107,99,.15) 12px);}
+.az-box .az-icon{font-size:26px;}
+.az-box .az-label{font-size:10.5px;color:var(--text-secondary);margin-top:6px;font-weight:700;}
+
+/* ---- SHELVES (storage classes) ---- */
+.shelf-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;align-items:end;}
+@media (max-width:960px){.shelf-grid{grid-template-columns:repeat(4,1fr);}}
+.shelf-card{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;}
+.shelf-bar-track{width:100%;height:120px;display:flex;align-items:flex-end;background:var(--bg-highlight);border-radius:6px 6px 0 0;overflow:hidden;}
+.shelf-bar{width:100%;border-radius:6px 6px 0 0;transition:.3s;}
+.shelf-name{font-size:9.5px;text-align:center;color:var(--text-secondary);font-weight:700;line-height:1.3;min-height:26px;}
+.shelf-card.active .shelf-name{color:var(--accent);}
+.shelf-icon{font-size:18px;}
+
+/* ---- LIFECYCLE TRACK ---- */
+.life-track{position:relative;height:70px;background:var(--bg-elevated);border-radius:8px;margin-top:10px;}
+.life-zone{position:absolute;top:0;bottom:0;border-right:1px dashed var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-disabled);text-align:center;padding:0 4px;font-weight:700;text-transform:uppercase;}
+.life-marker{position:absolute;top:-14px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--bg-main);display:flex;align-items:center;justify-content:center;font-size:16px;transition:left .4s;transform:translateX(-50%);box-shadow:0 4px 12px rgba(6,182,212,.4);}
+.life-day-labels{display:flex;justify-content:space-between;font-size:9.5px;color:var(--text-disabled);margin-top:4px;font-family:'Roboto Mono',monospace;}
+
+/* ---- VERSIONING ---- */
+.version-stack{display:flex;flex-direction:column;gap:8px;}
+.version-card{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s;}
+.version-card:hover{border-color:var(--accent-blue);}
+.version-card.latest{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.version-card.deleted{border-color:var(--accent-red);background:rgba(248,107,99,.08);}
+.version-badge{font-family:'Roboto Mono',monospace;font-size:10px;font-weight:800;color:var(--accent);background:rgba(6,182,212,.14);padding:4px 8px;border-radius:5px;flex-shrink:0;}
+.version-card.deleted .version-badge{color:var(--accent-red);background:rgba(248,107,99,.14);}
+.version-content{flex:1;font-size:12px;color:var(--text-primary);font-family:'Roboto Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.version-time{font-size:10px;color:var(--text-disabled);flex-shrink:0;}
+
+/* ---- PERMISSION RESULT ---- */
+.perm-result{border-radius:8px;padding:20px;text-align:center;margin-top:14px;transition:.2s;}
+.perm-result.allow{background:rgba(125,222,216,.10);border:1.5px solid var(--accent-green);}
+.perm-result.deny{background:rgba(248,107,99,.10);border:1.5px solid var(--accent-red);}
+.perm-result .pr-verdict{font-size:26px;font-weight:800;letter-spacing:1px;}
+.perm-result.allow .pr-verdict{color:var(--accent-green);}
+.perm-result.deny .pr-verdict{color:var(--accent-red);}
+.perm-result .pr-reason{font-size:12.5px;color:var(--text-secondary);margin-top:6px;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-amber{border-top-color:var(--accent-amber);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .region-grid{grid-template-columns:repeat(2,1fr);}
+  .obj-anatomy-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Amazon S3</h1><span>O armário mágico da nuvem, explicado do zero</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2006</div><div class="hstat-label">Origem</div></div>
+      <div class="hstat"><div class="hstat-num">11×9</div><div class="hstat-label">Durabilidade</div></div>
+      <div class="hstat"><div class="hstat-num">5TB</div><div class="hstat-label">Objeto máx.</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do "o que é" ao "quanto custa"</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>O armário infinito que guarda <em>qualquer arquivo, em qualquer lugar</em></h2>
+      <p>Amazon S3 (<strong>Simple Storage Service</strong>) é o serviço de armazenamento de objetos da AWS: um "HD sem limite de tamanho" na internet, onde você guarda fotos, vídeos, backups, planilhas, arquivos <em>Parquet</em> ou qualquer outro tipo de arquivo — e busca de volta em milissegundos, de qualquer lugar do planeta. Nesta aula vamos explicar cada conceito com uma analogia bem simples (o "🧸 Modo Criança") <strong>e</strong> com o detalhe técnico de verdade, além de muitos gráficos e demos para você mexer com a mão.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Armazenamento de Objetos</span>
+        <span class="badge badge-green">11 Noves de Durabilidade</span>
+        <span class="badge badge-blue">Escala Infinita</span>
+        <span class="badge badge-purple">Pague pelo Uso</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🪣 meu-bucket-fotos</div>
+        <div class="fc-body">
+          <div class="fc-row">📄 ferias/praia.jpg<br><span style="font-size:9.5px;opacity:.7;">Key + Value + Metadados</span></div>
+          <div class="fc-row">📄 backup/dados.parquet<br><span style="font-size:9.5px;opacity:.7;">Key + Value + Metadados</span></div>
+        </div>
+        <div class="fc-foot">Bucket = caixa · Object = brinquedo dentro dela</div>
+      </div>
+      <div class="file-chip-caption">Um bucket S3 simplificado</div>
+    </div>
+  </section>
+
+  <!-- ============ BUCKETS, OBJECTS & KEYS ============ -->
+  <section class="section" id="s-buckets">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">📦 Buckets, Objects e Keys</div>
+    <p class="section-desc">
+      O S3 guarda <strong>objetos</strong> (qualquer arquivo, de 0 bytes a 5 TB) dentro de <strong>buckets</strong> (contêineres de nível mais alto). Cada objeto é identificado por uma <strong>key</strong> — uma string única dentro do bucket, geralmente parecida com um caminho de pastas (<code>ferias/praia.jpg</code>), embora o S3 não tenha pastas de verdade: é tudo uma lista plana de keys, e a "pasta" é só uma convenção visual no console.
+    </p>
+
+    <div class="kid-box">
+      <div class="kb-icon">🧸</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>Pense num <strong>armário mágico</strong> (o bucket) com um nome único no mundo inteiro — tipo "armario-da-maria-2026". Dentro dele você guarda seus brinquedos (os objetos). Cada brinquedo tem uma etiqueta colada (a key) tipo <strong>"quarto/ursinho.png"</strong> — mas atenção: não existem gavetinhas de verdade lá dentro, é tudo uma pilha só! A etiqueta só <em>parece</em> um caminho de gaveta pra ajudar você a organizar.</p>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🪣 Bucket</div>
+        <div class="card-text">O contêiner de nível mais alto. O nome precisa ser <strong>globalmente único</strong> (não pode existir outro igual em toda a AWS, dentro da mesma partição), fica associado a uma <strong>região</strong> específica e pode guardar praticamente uma quantidade ilimitada de objetos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📄 Object</div>
+        <div class="card-text">O arquivo em si: até <strong>5 TB</strong> por objeto. É composto de <code>Key</code> (nome), <code>Value</code> (os bytes/dados), <code>Version ID</code>, metadados e um <code>ETag</code> (uma espécie de checksum/hash do conteúdo).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏷️ Key</div>
+        <div class="card-text">O identificador único do objeto dentro do bucket — até 1024 caracteres UTF-8. Usar <code>/</code> na key (ex: <code>fotos/2026/praia.jpg</code>) é só uma convenção: cria a <em>ilusão</em> de pastas no console e nas ferramentas, mas por baixo é uma string só.</div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">🔬 Zoom: anatomia de um objeto — clique em cada peça</div>
+      <div class="obj-anatomy-grid" id="objAnatomyGrid"></div>
+      <div class="anatomy-detail" id="objAnatomyDetail">
+        <div class="ad-title">👆 Clique em qualquer peça</div>
+        <div class="ad-text">Um objeto S3 não é só "o arquivo" — é um pacotinho com várias partes. Explore cada uma.</div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: o validador de nome de bucket (as regras são bem rígidas!)</div>
+      <div class="grid-2">
+        <div>
+          <div class="ctrl-l">Digite um nome de bucket</div>
+          <input type="text" id="bucketNameInput" value="Meu_Bucket_Fotos" oninput="checkBucketName()">
+          <div style="margin-top:14px;" id="bucketRulesList"></div>
+        </div>
+        <div class="bucket-viz">
+          <div class="bucket-lid" id="bucketLid"></div>
+          <div class="bucket-body">
+            <div class="bucket-name-tag" id="bucketNameTag">—</div>
+            <div id="bucketStatusMsg" style="text-align:center;font-size:12px;font-weight:700;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box"><p>💡 Dica de professor: prefira sempre nomes em minúsculo, com hífen, incluindo algo único (seu domínio, um UUID, a conta) — tipo <code>profissao-dados-lake-prod</code>. Isso evita colisão de nome (alguém no mundo já pode ter pego o nome óbvio!) e já sai no formato compatível com <em>virtual-hosted-style URLs</em> (<code>https://bucket.s3.amazonaws.com/key</code>).</p></div>
+  </section>
+
+  <!-- ============ REGIÕES E AZs ============ -->
+  <section class="section" id="s-regioes">
+    <div class="section-eyebrow">Geografia da Nuvem</div>
+    <div class="section-title">🌎 Regiões e Availability Zones</div>
+    <p class="section-desc">Todo bucket S3 vive em uma <strong>região</strong> específica (ex: <code>sa-east-1</code>, em São Paulo) escolhida por você na criação — os dados não saem dali sozinhos. Cada região é formada por várias <strong>Availability Zones (AZs)</strong>: data centers fisicamente separados, com energia, refrigeração e rede independentes, mas conectados entre si por uma rede privada de baixíssima latência.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">🏙️</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>Uma <strong>Região</strong> é como uma cidade grande, tipo São Paulo. Dentro dessa cidade tem vários <strong>bairros diferentes</strong> (as Availability Zones) — cada bairro tem sua própria caixa de luz e seu próprio poço de água, bem separados um do outro. Se cair um raio bem forte num bairro, os outros continuam com luz normalmente! É por isso que seus brinquedos guardados no S3 quase nunca somem.</p>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Explore: escolha uma região ao redor do mundo</div>
+      <div class="region-grid" id="regionGrid"></div>
+      <div style="margin-top:18px;">
+        <div class="ctrl-l" id="regionAzLabel">Availability Zones dentro da região</div>
+        <div class="az-row" id="regionAzRow"></div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 O número de AZs por região é ilustrativo e cresce com o tempo — hoje a AWS opera dezenas de regiões pelo mundo, quase todas com <strong>3 ou mais AZs</strong> (o mínimo recomendado para o modelo de redundância do S3 funcionar bem). Guardar dados numa região próxima dos seus usuários reduz latência e, para muitas empresas, também ajuda a cumprir exigências legais de <em>onde</em> os dados podem ficar (soberania de dados).</p></div>
+  </section>
+
+  <!-- ============ DURABILIDADE ============ -->
+  <section class="section" id="s-durabilidade">
+    <div class="section-eyebrow">A Promessa Mais Famosa</div>
+    <div class="section-title">🛡️ Durabilidade: os "11 noves"</div>
+    <p class="section-desc">O S3 promete <strong>99,999999999% de durabilidade</strong> (onze noves) para a classe Standard — isso significa que ele é projetado para nunca perder seus dados. Isso é diferente de <strong>disponibilidade</strong> (o quão frequentemente você consegue <em>acessar</em> o dado agora, sem erro) — o S3 Standard promete 99,99% de disponibilidade. Durabilidade é sobre os dados existirem; disponibilidade é sobre você conseguir pegá-los <em>neste exato momento</em>.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">🧯</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>É como se cada brinquedo seu tivesse <strong>cópias idênticas guardadas em casas diferentes</strong> da cidade, automaticamente, sem você precisar fazer nada. Se uma casa pegar fogo, ainda sobram as outras cópias perfeitinhas! A chance de perder de vez um brinquedo é tããão pequena que, se você guardasse <strong>10 milhões de brinquedos</strong>, o esperado seria perder só <strong>1 a cada 10 mil anos</strong>.</p>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: o que acontece se uma AZ inteira cair?</div>
+      <div class="az-row" id="durAzRow"></div>
+      <div class="btn-toggle-row" style="margin-top:16px;">
+        <button class="player-btn danger" id="btnDurFail" onclick="simulateAzFailure()">☄️ Simular falha de uma AZ inteira</button>
+        <button class="player-btn" onclick="resetAzFailure()">↩️ Restaurar</button>
+      </div>
+      <div class="result-display" id="durResult">
+        <div><span class="rl">Cópias íntegras</span><span class="rv" id="durCopies">3 / 3</span></div>
+        <div><span class="rl">Seu arquivo continua acessível?</span><span class="rv" id="durAvailable">✅ Sim</span></div>
+      </div>
+    </div>
+
+    <div class="stat-cards">
+      <div class="stat-card c-green"><div class="stat-card-label">Durabilidade (Standard)</div><div class="stat-card-value">99,999999999%</div></div>
+      <div class="stat-card c-blue"><div class="stat-card-label">Disponibilidade (Standard)</div><div class="stat-card-value">99,99%</div></div>
+      <div class="stat-card c-amber"><div class="stat-card-label">Cópias redundantes mínimas</div><div class="stat-card-value">≥ 3 AZs</div></div>
+    </div>
+    <div class="info-box"><p>💡 O S3 é resiliente à perda de dados mesmo se <strong>duas</strong> instalações inteiras forem destruídas simultaneamente, na classe Standard. Já a classe <strong>One Zone-IA</strong> (que veremos já já) abre mão dessa redundância entre AZs para custar menos — e por isso não é indicada para o único cópia que você tem de algo insubstituível.</p></div>
+  </section>
+
+  <!-- ============ STORAGE CLASSES ============ -->
+  <section class="section" id="s-classes">
+    <div class="section-eyebrow">Onde Guardar Cada Coisa</div>
+    <div class="section-title">🗄️ Storage Classes: as prateleiras do S3</div>
+    <p class="section-desc">Nem todo dado é acessado com a mesma frequência. O S3 oferece várias <strong>classes de armazenamento</strong> — a mesma durabilidade de 11 noves, mas com trade-offs diferentes de custo, velocidade de acesso e resiliência.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">🗄️</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>Pense em <strong>prateleiras diferentes</strong> no seu quarto. Os brinquedos que você usa <strong>todo dia</strong> ficam na prateleira fácil de alcançar (Standard). Os que você não mexe há meses vão pro <strong>armário do corredor</strong> — ainda dá pra pegar rapidinho, só que guardar ali é mais barato (Infrequent Access). E as fotos de bebê que você só olha <strong>uma vez por ano</strong> vão pro <strong>porão trancado</strong> — bem mais barato, mas demora um tempinho pra buscar (Glacier)!</p>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Explore: clique numa prateleira para ver os detalhes (altura da barra = custo relativo por GB)</div>
+      <div class="shelf-grid" id="shelfGrid"></div>
+      <div class="anatomy-detail" id="shelfDetail" style="margin-top:18px;"></div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Calculadora: quanto custaria guardar seus dados em cada classe?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>GB armazenados por mês</span><span class="ctrl-v" id="shelfGbVal">1.000 GB</span></div>
+          <input type="range" id="shelfGb" min="1" max="10000" step="1" value="1000" oninput="drawShelfCostCanvas()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="shelfCostCanvas" height="200"></canvas></div>
+      <div class="section-desc" style="font-size:12px;text-align:center;margin-top:4px;">Valores de US$/GB-mês ilustrativos (região us-east-1, aproximados) — não incluem custo de requisições nem taxa de recuperação.</div>
+    </div>
+  </section>
+
+  <!-- ============ VERSIONAMENTO ============ -->
+  <section class="section" id="s-versionamento">
+    <div class="section-eyebrow">Uma Gaveta pra Cada Rascunho</div>
+    <div class="section-title">⏳ Versionamento</div>
+    <p class="section-desc">Com o <strong>versionamento</strong> ativado num bucket, toda vez que você sobrescreve ou apaga um objeto, o S3 <em>não destrói nada</em> — ele guarda a versão anterior e cria uma nova. Cada versão ganha um <code>Version ID</code> único. Apagar um objeto versionado não some o dado: apenas adiciona um <strong>delete marker</strong> por cima, escondendo-o da listagem padrão.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">🎨</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>É como se, toda vez que você desenhasse por cima do mesmo papel, o S3 guardasse o <strong>desenho antigo numa gaveta secreta</strong> antes de deixar você desenhar o novo por cima. Se você errar, é só abrir a gaveta e pegar o desenho de ontem de volta! E se você "jogar o desenho no lixo", ele só coloca um <strong>adesivo de "apagado"</strong> por cima — o desenho continua lá embaixo, se alguém quiser tirar o adesivo.</p>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: versione o objeto <code style="color:var(--accent);">foto-perfil.png</code></div>
+      <div class="ctrl-row">
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Conteúdo atual do objeto (edite e salve uma nova versão)</div>
+          <input type="text" id="versionInput" value="foto sorrindo de chapéu">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="player-btn primary" onclick="saveVersion()">💾 Salvar nova versão (PUT)</button>
+        <button class="player-btn danger" onclick="deleteObjectVersioned()">🗑️ Excluir objeto (DELETE)</button>
+      </div>
+      <div class="ctrl-l">Histórico de versões (mais recente no topo — clique para restaurar)</div>
+      <div class="version-stack" id="versionStack"></div>
+    </div>
+    <div class="info-box"><p>💡 "Restaurar" uma versão antiga no S3 não apaga as versões intermediárias — ele apenas <strong>copia o conteúdo antigo para uma versão nova</strong>, no topo da pilha. Isso significa que o histórico completo é sempre preservado, o que é ótimo para auditoria, mas também aumenta o custo de armazenamento — daí a importância de combinar versionamento com <em>lifecycle rules</em>, nosso próximo assunto.</p></div>
+  </section>
+
+  <!-- ============ LIFECYCLE ============ -->
+  <section class="section" id="s-lifecycle">
+    <div class="section-eyebrow">Arrumação Automática</div>
+    <div class="section-title">♻️ Lifecycle Rules</div>
+    <p class="section-desc">Regras de <strong>ciclo de vida</strong> movem objetos automaticamente entre storage classes (ou os expiram/apagam) com base na <em>idade</em> do objeto — sem você precisar fazer nada manualmente, todos os dias.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">⏰</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>É como programar um <strong>robozinho arrumador</strong>: "depois de 30 dias, move esse brinquedo pro armário do corredor; depois de 90 dias, pro porão; depois de 1 ano, pode jogar fora". Ele faz isso <strong>sozinho, todo santo dia</strong>, sem você precisar lembrar de arrumar o quarto!</p>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: configure as regras e "avance o tempo" para ver o objeto se mover</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Mover para IA após</span><span class="ctrl-v" id="lifeIaVal">30 dias</span></div>
+          <input type="range" id="lifeIa" min="0" max="180" step="10" value="30" oninput="renderLifecycle()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Mover para Glacier após</span><span class="ctrl-v" id="lifeGlacierVal">90 dias</span></div>
+          <input type="range" id="lifeGlacier" min="0" max="365" step="10" value="90" oninput="renderLifecycle()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Expirar (apagar) após</span><span class="ctrl-v" id="lifeExpireVal">400 dias</span></div>
+          <input type="range" id="lifeExpire" min="30" max="500" step="10" value="400" oninput="renderLifecycle()">
+        </div>
+      </div>
+      <div class="ctrl-row" style="margin-bottom:0;">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>⏩ Avance o tempo (dia atual do objeto)</span><span class="ctrl-v" id="lifeTodayVal">Dia 0</span></div>
+          <input type="range" id="lifeToday" min="0" max="500" step="1" value="0" oninput="renderLifecycle()">
+        </div>
+      </div>
+      <div class="life-track" id="lifeTrack">
+        <div class="life-marker" id="lifeMarker">📄</div>
+      </div>
+      <div class="life-day-labels"><span>dia 0</span><span>dia 500</span></div>
+      <div class="result-display" style="margin-top:16px;">
+        <div><span class="rl">Classe atual do objeto</span><span class="rv" id="lifeCurrentClass">S3 Standard</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PERMISSÕES E SEGURANÇA ============ -->
+  <section class="section" id="s-permissoes">
+    <div class="section-eyebrow">Quem Pode Abrir o Armário</div>
+    <div class="section-title">🔐 Permissões e Segurança</div>
+    <p class="section-desc">Por padrão, tudo em um bucket S3 é <strong>privado</strong>. O acesso é controlado por três camadas que podem se combinar: <strong>políticas do IAM</strong> (o que um usuário/papel pode fazer), <strong>Bucket Policy</strong> (um documento JSON preso ao próprio bucket, dizendo quem pode acessar o quê) e o interruptor de segurança <strong>Block Public Access</strong>, que fica <em>ligado por padrão</em> em todo bucket novo e pode bloquear acesso público mesmo que uma política tente liberá-lo.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">🔐</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>Seu armário de brinquedos tem um <strong>cadeado</strong>. Você decide quem tem a chave: só você, você + seus amigos, ou <strong>o mundo inteiro</strong> (bucket público — cuidado com isso!). E a AWS ainda coloca de fábrica uma <strong>trava extra</strong> ("Block Public Access") pra ninguém deixar a porta destrancada sem querer — mesmo que alguém tente dar a chave pra todo mundo, essa trava pode continuar segurando a porta fechada.</p>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: simule um pedido de acesso e veja se é permitido ou negado</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l">Quem está pedindo o arquivo?</div>
+          <select id="permRequester" onchange="evaluatePermission()">
+            <option value="owner">🙋 Dono da conta AWS</option>
+            <option value="iam">👤 Usuário IAM autenticado</option>
+            <option value="public">🌍 Qualquer pessoa da internet (público)</option>
+          </select>
+        </div>
+      </div>
+      <div class="switch-row" style="margin-bottom:10px;">
+        <div><div class="switch-label">🚫 Block Public Access</div><div class="switch-sub">Trava de fábrica contra acesso público (ligada por padrão)</div></div>
+        <label class="switch"><input type="checkbox" id="permBpa" checked onchange="evaluatePermission()"><span class="slider"></span></label>
+      </div>
+      <div class="switch-row" style="margin-bottom:10px;">
+        <div><div class="switch-label">📜 Bucket Policy permite leitura pública</div><div class="switch-sub">Documento JSON preso ao bucket dizendo "qualquer um pode ler"</div></div>
+        <label class="switch"><input type="checkbox" id="permPolicy" onchange="evaluatePermission()"><span class="slider"></span></label>
+      </div>
+      <div class="switch-row">
+        <div><div class="switch-label">✅ Permissão IAM: s3:GetObject</div><div class="switch-sub">O usuário autenticado tem essa ação liberada na sua política IAM</div></div>
+        <label class="switch"><input type="checkbox" id="permIam" checked onchange="evaluatePermission()"><span class="slider"></span></label>
+      </div>
+      <div class="perm-result" id="permResult"></div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">json — bucket policy</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>{
+  <span class="st">"Version"</span>: <span class="st">"2012-10-17"</span>,
+  <span class="st">"Statement"</span>: [{
+    <span class="st">"Sid"</span>: <span class="st">"NegaTransporteInseguro"</span>,
+    <span class="st">"Effect"</span>: <span class="st">"Deny"</span>,
+    <span class="st">"Principal"</span>: <span class="st">"*"</span>,
+    <span class="st">"Action"</span>: <span class="st">"s3:*"</span>,
+    <span class="st">"Resource"</span>: [<span class="st">"arn:aws:s3:::meu-bucket"</span>, <span class="st">"arn:aws:s3:::meu-bucket/*"</span>],
+    <span class="st">"Condition"</span>: { <span class="st">"Bool"</span>: { <span class="st">"aws:SecureTransport"</span>: <span class="st">"false"</span> } }
+  }]
+}</div>
+    <div class="warn-box"><p>⚠️ Um erro clássico de configuração é deixar um bucket público sem querer. Desde 2023, todo bucket novo já nasce com <strong>Block Public Access ativado</strong> — desative essa trava só quando você tiver 100% de certeza de que precisa de um site ou arquivo público, e mesmo assim prefira liberar objetos específicos em vez do bucket inteiro.</p></div>
+  </section>
+
+  <!-- ============ CRIPTOGRAFIA ============ -->
+  <section class="section" id="s-criptografia">
+    <div class="section-eyebrow">O Cadeado por Dentro</div>
+    <div class="section-title">🔒 Criptografia</div>
+    <p class="section-desc">Desde 2023, todo objeto novo no S3 é <strong>criptografado automaticamente em repouso</strong> com <code>SSE-S3</code> (chaves gerenciadas pelo próprio S3), sem custo extra. Para mais controle, dá para usar <code>SSE-KMS</code> (chaves gerenciadas pelo AWS KMS, com log de quem usou a chave) ou <code>SSE-C</code> (você fornece sua própria chave a cada requisição). Em trânsito, o S3 sempre suporta <strong>HTTPS/TLS</strong> — e você pode <em>exigir</em> isso com uma bucket policy, como no exemplo acima.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">🔒</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>É como escrever seu diário secreto num <strong>código embaralhado</strong> que só quem tem a chave certa consegue ler de volta. Mesmo que alguém roube o caderno, só vai ver rabisco sem sentido nenhum. O S3 já embaralha tudo sozinho, de graça, sem você precisar pedir!</p>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔑 SSE-S3</div><div class="card-text">Chaves totalmente gerenciadas pela AWS. Ativado <strong>por padrão</strong> em todo objeto, sem configuração e sem custo adicional. Ótimo para a maioria dos casos.</div></div>
+      <div class="card"><div class="card-title">🗝️ SSE-KMS</div><div class="card-text">Usa o AWS KMS: você controla a chave, define quem pode usá-la e ganha um <strong>log de auditoria</strong> (CloudTrail) de cada uso. Ideal quando há exigência de compliance.</div></div>
+      <div class="card"><div class="card-title">🔧 SSE-C</div><div class="card-text">Você mesmo fornece a chave de criptografia em cada requisição; a AWS não guarda a chave em nenhum lugar. Máximo controle, máxima responsabilidade sua.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ CONSISTÊNCIA ============ -->
+  <section class="section" id="s-consistencia">
+    <div class="section-eyebrow">Rapidez Garantida</div>
+    <div class="section-title">⚡ Consistência Forte</div>
+    <p class="section-desc">Desde dezembro de 2020, o S3 oferece <strong>consistência forte de leitura após escrita (strong read-after-write consistency)</strong> para todas as operações: assim que um <code>PUT</code> termina com sucesso, qualquer <code>GET</code> ou <code>LIST</code> seguinte já enxerga a versão mais nova — em qualquer lugar do mundo, sem "atraso" nem versões desatualizadas aparecendo por engano.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">⚡</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>Antigamente, se você trocasse uma figurinha no álbum e um amigo olhasse rapidinho, ele podia ainda ver a <strong>figurinha velha</strong> por um segundinho. Hoje o S3 é tão rápido e organizado que, assim que você troca, <strong>todo mundo já vê a figurinha nova na hora</strong> — sem esperar nadinha!</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ O que isso garante</div><div class="card-text">Um <code>PUT</code> de objeto novo, uma sobrescrita, ou um <code>DELETE</code> — todos ficam imediatamente visíveis para <code>GET</code>/<code>HEAD</code>/<code>LIST</code> subsequentes. Não existe mais o antigo cenário de "eventual consistency" para <code>PUT</code> em chave nova, que existia nos primeiros anos do serviço.</div></div>
+      <div class="card"><div class="card-title">🎯 Por que isso importa</div><div class="card-text">Pipelines de dados que escrevem e imediatamente leem (ex: um job Spark que grava um Parquet e outro processo lê na sequência) podem confiar que não vão "ver dado velho" — um problema real de gerações anteriores de data lakes sobre object storage.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ HOSTING ESTÁTICO / PRESIGNED URLS ============ -->
+  <section class="section" id="s-hosting">
+    <div class="section-eyebrow">Além de Guardar Arquivos</div>
+    <div class="section-title">🌐 Hospedagem Estática e URLs Pré-assinadas</div>
+    <p class="section-desc">Um bucket pode servir arquivos HTML/CSS/JS diretamente como um <strong>site estático</strong> — sem servidor nenhum rodando. E para dar acesso temporário a um objeto <em>privado</em> sem torná-lo público, o S3 oferece <strong>presigned URLs</strong>: um link especial, com prazo de validade, que carrega a autorização embutida nele mesmo.</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">🏪</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>Transformar o armário numa <strong>vitrine de loja</strong> que todo mundo pode olhar é o site estático. Já dar um <strong>"vale-brinde" que só funciona por 10 minutinhos</strong> pra alguém pegar UM brinquedo específico, sem entregar a chave do armário inteiro — isso é a URL pré-assinada!</p>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: gere uma URL pré-assinada e teste depois que ela expira</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Validade da URL</span><span class="ctrl-v" id="presignExpiryVal">5 minutos</span></div>
+          <input type="range" id="presignExpiry" min="1" max="60" step="1" value="5" oninput="updatePresignLabel()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="player-btn primary" onclick="generatePresign()">🔗 Gerar URL pré-assinada</button>
+        <button class="player-btn" onclick="testPresignNow()">🧪 Testar agora</button>
+        <button class="player-btn danger" onclick="testPresignExpired()">⏱️ Testar depois de expirar</button>
+      </div>
+      <div class="code-block" id="presignUrlBox" style="font-size:11.5px;">Clique em "Gerar URL pré-assinada" para começar.</div>
+      <div class="perm-result" id="presignResult" style="display:none;"></div>
+    </div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casosdeuso">
+    <div class="section-eyebrow">Pra Que Serve, Na Prática</div>
+    <div class="section-title">🧰 Casos de Uso</div>
+    <div class="grid-4">
+      <div class="card"><div class="card-title">🏞️ Data Lake</div><div class="card-text">Base de armazenamento de data lakes e lakehouses (Athena, EMR, Spark, Redshift Spectrum) — guardando arquivos <strong>Parquet</strong>, <strong>Delta Lake</strong> e <strong>Iceberg</strong> para consulta direta.</div></div>
+      <div class="card"><div class="card-title">💾 Backup & DR</div><div class="card-text">Backup de bancos de dados, snapshots e disaster recovery entre regiões, aproveitando a durabilidade de 11 noves e <strong>Cross-Region Replication</strong>.</div></div>
+      <div class="card"><div class="card-title">🌐 Site Estático</div><div class="card-text">Hospedagem de sites totalmente estáticos (React, Vue, landing pages) — combinado com CloudFront para CDN e HTTPS.</div></div>
+      <div class="card"><div class="card-title">🎬 Mídia & Streaming</div><div class="card-text">Origem de distribuição de vídeo, imagens e áudio para milhões de usuários, normalmente atrás de uma CDN.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ PREÇO ============ -->
+  <section class="section" id="s-preco">
+    <div class="section-eyebrow">Quanto Custa</div>
+    <div class="section-title">💰 Modelo de Preço: pague só pelo que usar</div>
+    <p class="section-desc">O S3 cobra por três eixos independentes: <strong>armazenamento</strong> (US$/GB por mês, varia por classe), <strong>requisições</strong> (PUT/GET/LIST custam centavos por milhar) e <strong>transferência de dados para fora</strong> da AWS (não há cobrança para colocar dados dentro).</p>
+
+    <div class="kid-box">
+      <div class="kb-icon">💰</div>
+      <div>
+        <div class="kb-title">Explicando para uma criança</div>
+        <p>É como alugar uma <strong>casinha de bonecas</strong>: você paga só pelo espaço que usa (armazenamento), pela quantidade de vezes que <strong>abre a portinha</strong> (requisições) e por mandar as coisas pra fora de casa (transferência de saída). Guardar coisas lá dentro é de graça — só custa quando você tira pra fora!</p>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Calculadora: estime o custo mensal do seu bucket (S3 Standard, valores ilustrativos)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>GB armazenados</span><span class="ctrl-v" id="priceGbVal">500 GB</span></div>
+          <input type="range" id="priceGb" min="1" max="10000" step="1" value="500" oninput="updatePricing()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Requisições GET por mês (milhares)</span><span class="ctrl-v" id="priceGetVal">100 mil</span></div>
+          <input type="range" id="priceGet" min="0" max="5000" step="10" value="100" oninput="updatePricing()">
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Requisições PUT por mês (milhares)</span><span class="ctrl-v" id="pricePutVal">10 mil</span></div>
+          <input type="range" id="pricePut" min="0" max="1000" step="5" value="10" oninput="updatePricing()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>GB transferidos para a internet</span><span class="ctrl-v" id="priceXferVal">50 GB</span></div>
+          <input type="range" id="priceXfer" min="0" max="5000" step="10" value="50" oninput="updatePricing()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="pricingCanvas" height="180"></canvas></div>
+      <div class="result-display">
+        <div><span class="rl">Armazenamento</span><span class="rv" id="priceStorageOut">—</span></div>
+        <div><span class="rl">Requisições</span><span class="rv" id="priceReqOut">—</span></div>
+        <div><span class="rl">Transferência</span><span class="rv" id="priceXferOut">—</span></div>
+        <div><span class="rl">Total estimado / mês</span><span class="rv" id="priceTotalOut" style="color:var(--accent-green);">—</span></div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Colocar dados <em>dentro</em> do S3 (transferência de entrada) é sempre gratuito. E tráfego entre o S3 e outros serviços AWS na <strong>mesma região</strong> (EC2, CloudFront, Lambda) costuma ser gratuito ou muito mais barato do que sair direto para a internet — mais um motivo para pensar bem em qual região colocar seus buckets.</p></div>
+  </section>
+
+  <!-- ============ CÓDIGO ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🐍 S3 na prática</div>
+    <p class="section-desc">Do dia a dia com a AWS CLI até automatizar tudo com o boto3 (Python) — os comandos mais usados no trabalho real com S3.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">AWS CLI — criar bucket e subir arquivos</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># cria um bucket numa região</span>
+aws s3 mb s3://meu-bucket-fotos --region sa-east-1
+
+<span class="cm"># sobe um arquivo único</span>
+aws s3 cp foto.jpg s3://meu-bucket-fotos/ferias/
+
+<span class="cm"># sincroniza uma pasta inteira (só envia o que mudou)</span>
+aws s3 sync ./dados s3://meu-bucket-fotos/backup/</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">AWS CLI — URL pré-assinada</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># gera um link válido por 300 segundos (5 min)</span>
+aws s3 presign s3://meu-bucket-fotos/ferias/praia.jpg \
+  --expires-in <span class="num">300</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python (boto3) — enviar e ler objetos</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> boto3
+
+s3 = boto3.client(<span class="st">"s3"</span>)
+
+s3.upload_file(<span class="st">"dados.parquet"</span>, <span class="st">"meu-bucket-fotos"</span>, <span class="st">"lake/dados.parquet"</span>)
+
+obj = s3.get_object(Bucket=<span class="st">"meu-bucket-fotos"</span>, Key=<span class="st">"lake/dados.parquet"</span>)
+conteudo = obj[<span class="st">"Body"</span>].read()</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python (boto3) — gerar URL pré-assinada</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>url = s3.generate_presigned_url(
+  <span class="st">"get_object"</span>,
+  Params={<span class="st">"Bucket"</span>: <span class="st">"meu-bucket-fotos"</span>, <span class="st">"Key"</span>: <span class="st">"ferias/praia.jpg"</span>},
+  ExpiresIn=<span class="num">300</span>  <span class="cm"># segundos</span>
+)
+<span class="fn">print</span>(url)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Amazon S3 Descomplicado</span>
+    <span>
+      Fontes: <a href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/Welcome.html" target="_blank" rel="noopener">AWS S3 User Guide</a> ·
+      <a href="https://aws.amazon.com/s3/storage-classes/" target="_blank" rel="noopener">S3 Storage Classes</a> ·
+      <a href="https://aws.amazon.com/s3/pricing/" target="_blank" rel="noopener">S3 Pricing</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-buckets', icon:'📦', label:'Buckets & Objects'},
+  {id:'s-regioes', icon:'🌎', label:'Regiões & AZs'},
+  {id:'s-durabilidade', icon:'🛡️', label:'Durabilidade'},
+  {id:'s-classes', icon:'🗄️', label:'Storage Classes'},
+  {id:'s-versionamento', icon:'⏳', label:'Versionamento'},
+  {id:'s-lifecycle', icon:'♻️', label:'Lifecycle'},
+  {id:'s-permissoes', icon:'🔐', label:'Permissões'},
+  {id:'s-criptografia', icon:'🔒', label:'Criptografia'},
+  {id:'s-consistencia', icon:'⚡', label:'Consistência'},
+  {id:'s-hosting', icon:'🌐', label:'Hosting & URLs'},
+  {id:'s-casosdeuso', icon:'🧰', label:'Casos de Uso'},
+  {id:'s-preco', icon:'💰', label:'Preço'},
+  {id:'s-codigo', icon:'🐍', label:'Na Prática'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== OBJECT ANATOMY ===================== */
+const objAnatomy = [
+  {id:'key', icon:'🏷️', label:'Key', t:'Key — "ferias/praia.jpg"', d:'O identificador único do objeto dentro do bucket, até 1024 caracteres UTF-8. É a "etiqueta" que parece um caminho de pastas, mas é só uma string.'},
+  {id:'value', icon:'📦', label:'Value', t:'Value — os bytes de dado', d:'O conteúdo de fato do arquivo: de 0 bytes até 5 TB. Pode ser uma foto, um vídeo, um Parquet, um JSON — qualquer sequência de bytes.'},
+  {id:'version', icon:'🆔', label:'Version ID', t:'Version ID', d:'Um identificador único gerado quando o versionamento está ativado no bucket. Cada PUT no mesmo Key gera um novo Version ID, sem apagar o anterior.'},
+  {id:'metadata', icon:'📋', label:'Metadata', t:'Metadata', d:'Pares chave/valor sobre o objeto: metadados de sistema (Content-Type, tamanho, data de modificação) e metadados customizados que você define (ex: x-amz-meta-autor).'},
+  {id:'etag', icon:'🔗', label:'ETag', t:'ETag', d:'Um hash (geralmente MD5, para uploads simples) do conteúdo do objeto — usado para verificar integridade e detectar se o conteúdo mudou.'},
+];
+document.getElementById('objAnatomyGrid').innerHTML = objAnatomy.map(o => `
+  <div class="pq-clickable" data-id="${o.id}" onclick="pickObjAnatomy('${o.id}')" style="text-align:center;">
+    <div style="font-size:20px;margin-bottom:4px;">${o.icon}</div>${o.label}
+  </div>`).join('');
+function pickObjAnatomy(id){
+  document.querySelectorAll('#objAnatomyGrid .pq-clickable').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+  const info = objAnatomy.find(o => o.id === id);
+  document.getElementById('objAnatomyDetail').innerHTML = `<div class="ad-title">${info.icon} ${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== BUCKET NAME VALIDATOR ===================== */
+const bucketRules = [
+  {t:'Entre 3 e 63 caracteres', test:v => v.length >= 3 && v.length <= 63},
+  {t:'Somente letras minúsculas, números, pontos (.) e hífens (-)', test:v => /^[a-z0-9.-]*$/.test(v) && v.length > 0},
+  {t:'Deve começar e terminar com letra ou número', test:v => /^[a-z0-9].*[a-z0-9]$/.test(v) || (v.length===1 && /[a-z0-9]/.test(v))},
+  {t:'Não pode ter dois pontos seguidos ( .. )', test:v => !v.includes('..')},
+  {t:'Não pode ter o formato de um endereço IP (ex: 192.168.1.1)', test:v => !/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(v)},
+];
+function checkBucketName(){
+  const v = document.getElementById('bucketNameInput').value;
+  const results = bucketRules.map(r => ({...r, ok:r.test(v)}));
+  document.getElementById('bucketRulesList').innerHTML = results.map(r => `
+    <div class="rule-check ${r.ok ? 'ok':'bad'}"><span class="rc-icon">${r.ok ? '✅':'❌'}</span>${r.t}</div>
+  `).join('');
+  const allOk = results.every(r => r.ok);
+  const tag = document.getElementById('bucketNameTag');
+  const lid = document.getElementById('bucketLid');
+  const msg = document.getElementById('bucketStatusMsg');
+  tag.textContent = v || '(vazio)';
+  if(allOk){
+    lid.style.background = 'var(--accent-green)';
+    tag.style.color = 'var(--accent-green)';
+    msg.textContent = '✅ Nome válido!';
+    msg.style.color = 'var(--accent-green)';
+  } else {
+    lid.style.background = 'var(--accent-red)';
+    tag.style.color = 'var(--accent-red)';
+    msg.textContent = '❌ Nome inválido — veja as regras';
+    msg.style.color = 'var(--accent-red)';
+  }
+}
+checkBucketName();
+
+/* ===================== REGIONS ===================== */
+const regions = [
+  {code:'sa-east-1', city:'São Paulo', flag:'🇧🇷', az:3},
+  {code:'us-east-1', city:'N. Virgínia', flag:'🇺🇸', az:6},
+  {code:'us-west-2', city:'Oregon', flag:'🇺🇸', az:4},
+  {code:'eu-west-1', city:'Irlanda', flag:'🇮🇪', az:3},
+  {code:'eu-central-1', city:'Frankfurt', flag:'🇩🇪', az:3},
+  {code:'ap-southeast-1', city:'Cingapura', flag:'🇸🇬', az:3},
+  {code:'ap-northeast-1', city:'Tóquio', flag:'🇯🇵', az:4},
+  {code:'ca-central-1', city:'Canadá', flag:'🇨🇦', az:3},
+];
+let selectedRegion = 'sa-east-1';
+function buildRegionGrid(){
+  document.getElementById('regionGrid').innerHTML = regions.map(r => `
+    <div class="region-card ${r.code===selectedRegion?'active':''}" data-code="${r.code}" onclick="selectRegion('${r.code}')">
+      <div class="region-flag">${r.flag}</div>
+      <div class="region-code">${r.code}</div>
+      <div class="region-city">${r.city}</div>
+    </div>`).join('');
+  renderRegionAz();
+}
+function selectRegion(code){
+  selectedRegion = code;
+  document.querySelectorAll('.region-card').forEach(c => c.classList.toggle('active', c.dataset.code === code));
+  renderRegionAz();
+}
+function renderRegionAz(){
+  const r = regions.find(x => x.code === selectedRegion);
+  document.getElementById('regionAzLabel').textContent = `Availability Zones em ${r.city} (${r.code}) — ${r.az} AZs`;
+  document.getElementById('regionAzRow').innerHTML = Array.from({length:r.az}).map((_,i) => `
+    <div class="az-box on"><div class="az-icon">🏢</div><div class="az-label">AZ ${String.fromCharCode(65+i)}</div></div>
+  `).join('');
+}
+buildRegionGrid();
+
+/* ===================== DURABILITY DEMO ===================== */
+function buildDurAz(){
+  document.getElementById('durAzRow').innerHTML = [0,1,2].map(i => `
+    <div class="az-box on" id="durAz${i}"><div class="az-icon">🏢</div><div class="az-label">Cópia ${i+1} — AZ ${String.fromCharCode(65+i)}</div></div>
+  `).join('');
+}
+function simulateAzFailure(){
+  const az0 = document.getElementById('durAz0');
+  az0.classList.remove('on'); az0.classList.add('dead');
+  az0.querySelector('.az-icon').textContent = '💥';
+  document.getElementById('durCopies').textContent = '2 / 3';
+  document.getElementById('durAvailable').textContent = '✅ Sim (ainda!)';
+}
+function resetAzFailure(){
+  buildDurAz();
+  document.getElementById('durCopies').textContent = '3 / 3';
+  document.getElementById('durAvailable').textContent = '✅ Sim';
+}
+buildDurAz();
+
+/* ===================== STORAGE CLASSES SHELVES ===================== */
+const storageClasses = [
+  {id:'standard', icon:'⚡', name:'S3 Standard', costRel:100, rate:0.023, color:'var(--accent)', use:'Dados "quentes", acessados com frequência (sites, apps, data lakes ativos).', latency:'Milissegundos', az:'≥ 3 AZs', minDays:'Nenhuma'},
+  {id:'intelligent', icon:'🧠', name:'S3 Intelligent-Tiering', costRel:100, rate:0.023, color:'var(--accent-blue)', use:'Padrão de acesso desconhecido ou imprevisível — o S3 move os dados sozinho entre camadas quentes e frias.', latency:'Milissegundos', az:'≥ 3 AZs', minDays:'Nenhuma'},
+  {id:'ia', icon:'📥', name:'S3 Standard-IA', costRel:55, rate:0.0125, color:'var(--accent-green)', use:'Acesso infrequente, mas que precisa de recuperação rápida quando acontece (backups, disaster recovery).', latency:'Milissegundos', az:'≥ 3 AZs', minDays:'30 dias'},
+  {id:'onezone', icon:'🏠', name:'S3 One Zone-IA', costRel:44, rate:0.01, color:'var(--accent-purple)', use:'Infrequente e recriável (cópias secundárias, dados derivados que podem ser regerados).', latency:'Milissegundos', az:'1 AZ apenas', minDays:'30 dias'},
+  {id:'glacierir', icon:'🧊', name:'Glacier Instant Retrieval', costRel:17, rate:0.004, color:'#8fd3e8', use:'Arquivo acessado raramente (ex: uma vez por trimestre) mas que precisa vir na hora.', latency:'Milissegundos', az:'≥ 3 AZs', minDays:'90 dias'},
+  {id:'glacierflex', icon:'🥶', name:'Glacier Flexible Retrieval', costRel:16, rate:0.0036, color:'#7aa7c7', use:'Backup e arquivamento com acesso 1-2x por ano — recuperação em minutos a horas.', latency:'Minutos a horas', az:'≥ 3 AZs', minDays:'90 dias'},
+  {id:'deeparchive', icon:'🥶', name:'Glacier Deep Archive', costRel:4, rate:0.00099, color:'#5c6b8a', use:'Arquivamento de longuíssimo prazo (compliance, dados legais) — o mais barato de todos.', latency:'Até 48 horas', az:'≥ 3 AZs', minDays:'180 dias'},
+];
+let selectedShelf = 'standard';
+function buildShelves(){
+  const maxCost = 100;
+  document.getElementById('shelfGrid').innerHTML = storageClasses.map(c => `
+    <div class="shelf-card ${c.id===selectedShelf?'active':''}" data-id="${c.id}" onclick="pickShelf('${c.id}')">
+      <div class="shelf-bar-track"><div class="shelf-bar" style="height:${Math.max(4,(c.costRel/maxCost)*100)}%;background:${c.color};"></div></div>
+      <div class="shelf-icon">${c.icon}</div>
+      <div class="shelf-name">${c.name}</div>
+    </div>`).join('');
+  pickShelf(selectedShelf);
+}
+function pickShelf(id){
+  selectedShelf = id;
+  document.querySelectorAll('.shelf-card').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+  const c = storageClasses.find(x => x.id === id);
+  document.getElementById('shelfDetail').innerHTML = `
+    <div class="ad-title">${c.icon} ${c.name}</div>
+    <div class="ad-text">${c.use}<br><br>
+    <strong>Redundância:</strong> ${c.az} &nbsp;·&nbsp; <strong>Latência de acesso:</strong> ${c.latency} &nbsp;·&nbsp; <strong>Retenção mínima:</strong> ${c.minDays}</div>`;
+}
+buildShelves();
+
+function drawShelfCostCanvas(){
+  const gb = +document.getElementById('shelfGb').value;
+  document.getElementById('shelfGbVal').textContent = gb.toLocaleString('pt-BR') + ' GB';
+  const cv = document.getElementById('shelfCostCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 200;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const values = storageClasses.map(c => gb * c.rate);
+  const maxVal = Math.max(...values) * 1.15;
+  const padB = 34, padTop=18, barGap=14;
+  const barW = (w - (storageClasses.length+1)*barGap)/storageClasses.length;
+  storageClasses.forEach((c,i) => {
+    const val = values[i];
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = c.color;
+    roundRect(ctx, x, y, barW, Math.max(2,barH), 5); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='11px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText('US$'+val.toFixed(2), x+barW/2, y-6);
+    ctx.fillStyle = '#98a2b3'; ctx.font='9px Inter, sans-serif';
+    const words = c.name.replace('S3 ','').replace('Glacier ','G. ').split(' ');
+    words.forEach((word,li) => ctx.fillText(word, x+barW/2, h-padB+12+li*10));
+    ctx.textAlign='left';
+  });
+}
+drawShelfCostCanvas();
+window.addEventListener('resize', drawShelfCostCanvas);
+
+/* ===================== VERSIONING DEMO ===================== */
+let versions = [];
+let versionCounter = 0;
+let objectDeleted = false;
+function randHex(n){ let s=''; for(let i=0;i<n;i++) s += Math.floor(Math.random()*16).toString(16); return s; }
+function saveVersion(){
+  const content = document.getElementById('versionInput').value || '(vazio)';
+  versionCounter++;
+  versions.unshift({id:randHex(12), content, n:versionCounter, deleted:false});
+  objectDeleted = false;
+  renderVersions();
+}
+function deleteObjectVersioned(){
+  if(versions.length === 0) return;
+  versionCounter++;
+  versions.unshift({id:randHex(12), content:'(delete marker)', n:versionCounter, deleted:true});
+  objectDeleted = true;
+  renderVersions();
+}
+function restoreVersion(id){
+  const old = versions.find(v => v.id === id);
+  if(!old) return;
+  document.getElementById('versionInput').value = old.content;
+  versionCounter++;
+  versions.unshift({id:randHex(12), content: old.content + ' (restaurado)', n:versionCounter, deleted:false});
+  objectDeleted = false;
+  renderVersions();
+}
+function renderVersions(){
+  document.getElementById('versionStack').innerHTML = versions.map((v,i) => `
+    <div class="version-card ${v.deleted ? 'deleted' : (i===0 ? 'latest' : '')}" onclick="${v.deleted ? '' : `restoreVersion('${v.id}')`}">
+      <span class="version-badge">v${v.n}</span>
+      <span class="version-content">${v.deleted ? '🗑️ Delete marker (objeto escondido, não apagado)' : v.content}</span>
+      <span class="version-time">${v.id}${i===0 && !v.deleted ? ' · atual' : ''}</span>
+    </div>`).join('') || '<div class="card-text">Nenhuma versão salva ainda — clique em "Salvar nova versão".</div>';
+}
+saveVersion();
+
+/* ===================== LIFECYCLE DEMO ===================== */
+function renderLifecycle(){
+  const ia = +document.getElementById('lifeIa').value;
+  const glacier = Math.max(+document.getElementById('lifeGlacier').value, ia);
+  const expire = Math.max(+document.getElementById('lifeExpire').value, glacier+1);
+  const today = +document.getElementById('lifeToday').value;
+  document.getElementById('lifeIaVal').textContent = ia + ' dias';
+  document.getElementById('lifeGlacierVal').textContent = glacier + ' dias';
+  document.getElementById('lifeExpireVal').textContent = expire + ' dias';
+  document.getElementById('lifeTodayVal').textContent = 'Dia ' + today;
+
+  const maxDay = 500;
+  const track = document.getElementById('lifeTrack');
+  const zones = [
+    {from:0, to:ia, label:'Standard', color:'rgba(6,182,212,.14)'},
+    {from:ia, to:glacier, label:'Standard-IA', color:'rgba(125,222,216,.14)'},
+    {from:glacier, to:expire, label:'Glacier', color:'rgba(196,154,255,.14)'},
+    {from:expire, to:maxDay, label:'Expirado', color:'rgba(248,107,99,.14)'},
+  ];
+  track.querySelectorAll('.life-zone').forEach(z => z.remove());
+  zones.forEach(z => {
+    if(z.to <= z.from) return;
+    const div = document.createElement('div');
+    div.className = 'life-zone';
+    div.style.left = (z.from/maxDay*100)+'%';
+    div.style.width = ((z.to-z.from)/maxDay*100)+'%';
+    div.style.background = z.color;
+    div.textContent = z.label;
+    track.insertBefore(div, document.getElementById('lifeMarker'));
+  });
+  const marker = document.getElementById('lifeMarker');
+  marker.style.left = (Math.min(today,maxDay)/maxDay*100)+'%';
+
+  let currentClass, icon;
+  if(today >= expire){ currentClass = '🗑️ Expirado / apagado'; icon='🗑️'; }
+  else if(today >= glacier){ currentClass = '🧊 S3 Glacier Flexible Retrieval'; icon='🧊'; }
+  else if(today >= ia){ currentClass = '📥 S3 Standard-IA'; icon='📥'; }
+  else { currentClass = '⚡ S3 Standard'; icon='📄'; }
+  marker.textContent = icon;
+  document.getElementById('lifeCurrentClass').textContent = currentClass;
+}
+renderLifecycle();
+
+/* ===================== PERMISSIONS SIMULATOR ===================== */
+function evaluatePermission(){
+  const who = document.getElementById('permRequester').value;
+  const bpa = document.getElementById('permBpa').checked;
+  const policy = document.getElementById('permPolicy').checked;
+  const iam = document.getElementById('permIam').checked;
+  const box = document.getElementById('permResult');
+  let allow = false, reason = '';
+
+  if(who === 'owner'){
+    allow = true;
+    reason = 'O dono da conta AWS sempre tem acesso total (a menos de uma política explícita de Deny, o que não configuramos aqui).';
+  } else if(who === 'iam'){
+    allow = iam;
+    reason = iam
+      ? 'O usuário está autenticado e tem a ação s3:GetObject liberada na política IAM — acesso concedido.'
+      : 'O usuário está autenticado, mas não tem a permissão s3:GetObject na política IAM — sem essa permissão explícita, o acesso é negado por padrão.';
+  } else {
+    if(bpa){
+      allow = false;
+      reason = 'Block Public Access está ligado — ele bloqueia acesso público mesmo que a Bucket Policy tente liberá-lo. Essa é a trava de segurança "de fábrica".';
+    } else {
+      allow = policy;
+      reason = policy
+        ? 'Block Public Access está desligado e a Bucket Policy libera leitura pública — qualquer pessoa da internet consegue acessar este objeto.'
+        : 'Block Public Access está desligado, mas nenhuma Bucket Policy libera acesso público — por padrão, tudo continua privado.';
+    }
+  }
+
+  box.className = 'perm-result ' + (allow ? 'allow' : 'deny');
+  box.innerHTML = `<div class="pr-verdict">${allow ? '✅ ALLOW' : '⛔ DENY'}</div><div class="pr-reason">${reason}</div>`;
+}
+evaluatePermission();
+
+/* ===================== PRESIGNED URL DEMO ===================== */
+let presignExpirySeconds = 300;
+function updatePresignLabel(){
+  const min = +document.getElementById('presignExpiry').value;
+  presignExpirySeconds = min*60;
+  document.getElementById('presignExpiryVal').textContent = min + (min===1?' minuto':' minutos');
+}
+function generatePresign(){
+  const min = +document.getElementById('presignExpiry').value;
+  const sig = randHex(32);
+  document.getElementById('presignUrlBox').textContent =
+`https://meu-bucket-fotos.s3.amazonaws.com/ferias/praia.jpg
+  ?X-Amz-Algorithm=AWS4-HMAC-SHA256
+  &X-Amz-Expires=${min*60}
+  &X-Amz-Signature=${sig}`;
+  document.getElementById('presignResult').style.display = 'none';
+}
+function testPresignNow(){
+  const box = document.getElementById('presignResult');
+  box.style.display = 'block';
+  box.className = 'perm-result allow';
+  box.innerHTML = `<div class="pr-verdict">✅ 200 OK</div><div class="pr-reason">Dentro do prazo de validade — a assinatura embutida na URL ainda é válida, então o S3 entrega o objeto mesmo sendo privado.</div>`;
+}
+function testPresignExpired(){
+  const box = document.getElementById('presignResult');
+  box.style.display = 'block';
+  box.className = 'perm-result deny';
+  box.innerHTML = `<div class="pr-verdict">⛔ 403 Forbidden</div><div class="pr-reason">O prazo definido em X-Amz-Expires já passou — o S3 recusa a requisição mesmo que a URL pareça idêntica. Depois de expirada, é preciso gerar uma nova.</div>`;
+}
+updatePresignLabel();
+
+/* ===================== PRICING CALCULATOR ===================== */
+function updatePricing(){
+  const gb = +document.getElementById('priceGb').value;
+  const getK = +document.getElementById('priceGet').value;
+  const putK = +document.getElementById('pricePut').value;
+  const xfer = +document.getElementById('priceXfer').value;
+  document.getElementById('priceGbVal').textContent = gb.toLocaleString('pt-BR') + ' GB';
+  document.getElementById('priceGetVal').textContent = getK.toLocaleString('pt-BR') + ' mil';
+  document.getElementById('pricePutVal').textContent = putK.toLocaleString('pt-BR') + ' mil';
+  document.getElementById('priceXferVal').textContent = xfer.toLocaleString('pt-BR') + ' GB';
+
+  const storageCost = gb * 0.023;
+  const getCost = getK * 1000 / 1000 * 0.0004;
+  const putCost = putK * 1000 / 1000 * 0.005;
+  const reqCost = getCost + putCost;
+  const xferCost = xfer * 0.09;
+  const total = storageCost + reqCost + xferCost;
+
+  document.getElementById('priceStorageOut').textContent = 'US$ ' + storageCost.toFixed(2);
+  document.getElementById('priceReqOut').textContent = 'US$ ' + reqCost.toFixed(2);
+  document.getElementById('priceXferOut').textContent = 'US$ ' + xferCost.toFixed(2);
+  document.getElementById('priceTotalOut').textContent = 'US$ ' + total.toFixed(2);
+
+  drawPricingCanvas([
+    {name:'Armazenamento', val:storageCost, color:'#06b6d4'},
+    {name:'Requisições', val:reqCost, color:'#36a2ef'},
+    {name:'Transferência', val:xferCost, color:'#c49aff'},
+  ]);
+}
+function drawPricingCanvas(data){
+  const cv = document.getElementById('pricingCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 180;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padB = 30, padTop=20, barGap=40;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = Math.max(...data.map(d=>d.val), 1) * 1.2;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, Math.max(2,barH), 6); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='12px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText('US$'+d.val.toFixed(2), x+barW/2, y-8);
+    ctx.fillStyle = '#98a2b3'; ctx.font='11px Inter, sans-serif';
+    ctx.fillText(d.name, x+barW/2, h-10);
+    ctx.textAlign='left';
+  });
+}
+updatePricing();
+window.addEventListener('resize', updatePricing);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O nome de um bucket S3 precisa ser único apenas dentro da sua conta AWS.', a:false, e:'Falso. O nome do bucket precisa ser globalmente único em toda a AWS (dentro da mesma partição) — se alguém já usou o nome, você não pode usá-lo.'},
+  {q:'A durabilidade de 99,999999999% (11 noves) significa que o S3 quase nunca perde dados, mesmo se uma instalação inteira for destruída.', a:true, e:'Verdadeiro. O S3 Standard replica os dados entre pelo menos 3 Availability Zones, sobrevivendo à perda simultânea de até duas delas.'},
+  {q:'S3 One Zone-IA guarda os dados em apenas uma Availability Zone.', a:true, e:'Verdadeiro. Por isso é mais barata, mas não é indicada como cópia única de dados insubstituíveis — perder aquela AZ pode significar perder o dado.'},
+  {q:'Versionar um bucket e depois "restaurar" uma versão antiga apaga as versões mais recentes.', a:false, e:'Falso. Restaurar cria uma cópia nova no topo da pilha de versões — o histórico completo continua preservado.'},
+  {q:'Block Public Access pode impedir o acesso público mesmo que a Bucket Policy tente liberá-lo.', a:true, e:'Verdadeiro. É uma trava de segurança independente, ligada por padrão em todo bucket novo desde 2023.'},
+  {q:'Desde 2020, o S3 tem consistência forte de leitura após escrita para todas as operações.', a:true, e:'Verdadeiro. Um PUT bem-sucedido já é imediatamente visível para GETs e LISTs seguintes, em qualquer lugar do mundo.'},
+  {q:'URLs pré-assinadas dão acesso permanente a um objeto privado.', a:false, e:'Falso. Elas têm um prazo de validade definido na hora da geração — depois de expirar, o S3 responde com erro 403 Forbidden.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Distribuição Hipergeométrica explicada do zero, como se fosse para uma criança, com caixas de bolinhas, baralhos, peixes marcados e muitos gráficos e simulações interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Distribuição Hipergeométrica Explicada com Desenhos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+.hero-map-grid{display:flex;flex-direction:column;gap:10px;width:300px;}
+.hero-map-card{display:flex;align-items:center;gap:10px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.hero-map-exp{flex:1;font-size:20px;text-align:center;line-height:1.35;}
+.hero-map-exp span{display:block;font-size:10px;color:var(--text-secondary);font-family:'Inter',sans-serif;margin-top:2px;}
+.hero-map-arrow{font-size:15px;color:var(--text-disabled);flex-shrink:0;}
+.hero-map-x{font-family:'Roboto Mono',monospace;font-weight:800;color:var(--accent);font-size:12.5px;min-width:96px;text-align:center;flex-shrink:0;line-height:1.3;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn.warn{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.player-btn:disabled{opacity:.35;cursor:not-allowed;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- DECISION FLOW ---- */
+.decision-flow{display:flex;flex-direction:column;gap:10px;}
+.decision-q{font-size:14px;font-weight:700;text-align:center;padding:10px;background:var(--bg-elevated);border-radius:6px;border:1px solid var(--border-color);}
+.decision-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.decision-branch{border-radius:8px;padding:16px;border:1.5px solid var(--border-color);background:var(--bg-elevated);}
+.decision-branch.arranjo{border-color:var(--accent-blue);}
+.decision-branch.combinacao{border-color:var(--accent-purple);}
+.decision-label{font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:700;color:var(--text-secondary);margin-bottom:8px;}
+.decision-result{font-size:13.5px;margin-bottom:8px;}
+.decision-example{font-size:12px;color:var(--text-secondary);}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- TRIAL CHIPS ---- */
+.trial-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:14px 0;}
+.trial-chip{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:'Roboto Mono',monospace;flex-shrink:0;}
+.trial-chip.pending{background:var(--bg-elevated);border:2px dashed var(--border-strong);color:var(--text-disabled);}
+.trial-chip.success{background:rgba(125,222,216,.9);color:#0b3b32;}
+.trial-chip.fail{background:rgba(248,107,99,.9);color:#4a0f0a;}
+.prob-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+.prob-chip{width:40px;font-size:10px;color:var(--text-secondary);text-align:center;font-family:'Roboto Mono',monospace;flex-shrink:0;}
+
+/* ---- CLASSIFY EXERCISE ---- */
+.classify-card{cursor:pointer;transition:.15s;}
+.classify-card:hover{border-color:var(--border-strong);}
+.classify-answer{display:none;}
+.classify-card.revealed .classify-answer{display:block;}
+.classify-card.revealed{border-color:var(--accent);}
+
+/* ---- BALL GRID (urna) ---- */
+.ball-grid{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;padding:16px;}
+.ball{width:26px;height:26px;border-radius:50%;transition:transform .25s,box-shadow .25s,opacity .25s;flex-shrink:0;}
+.ball-success{background:var(--accent-green);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);}
+.ball-fail{background:var(--border-strong);box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);}
+.ball-drawn{transform:scale(1.35);box-shadow:0 0 0 3px var(--accent),0 0 10px rgba(6,182,212,.6);}
+.ball-dim{opacity:.22;}
+.ball-legend{display:flex;gap:18px;justify-content:center;font-size:11.5px;color:var(--text-secondary);align-items:center;}
+.ball-legend span.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+
+/* ---- BINS/URNA GRID ---- */
+.bins-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.bins-letter{font-size:32px;font-weight:800;color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;margin-bottom:6px;}
+
+/* ---- MINI CHART GRID (forma) ---- */
+.mini-chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.mini-chart-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:10px;}
+.mini-chart-title{font-size:11px;text-align:center;color:var(--text-secondary);margin-bottom:6px;font-weight:700;}
+.mini-chart-title strong{color:var(--text-primary);}
+
+/* ---- DIFF (com/sem reposição) ---- */
+.diff-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.diff-col{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:16px;}
+.diff-col-title{font-size:12.5px;font-weight:700;text-align:center;margin-bottom:10px;}
+.diff-col.with .diff-col-title{color:var(--accent-purple);}
+.diff-col.without .diff-col-title{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.bins-grid,.mini-chart-grid,.diff-cols{grid-template-columns:1fr;}
+  .decision-branches{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Distribuição Hipergeométrica</h1><span>Tirar bolinhas de uma caixa sem devolver: contando quantos sucessos saem</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">17</div><div class="hstat-label">Conceitos</div></div>
+      <div class="hstat"><div class="hstat-num">nK/N</div><div class="hstat-label">Fórmula-chave</div></div>
+      <div class="hstat"><div class="hstat-num">11</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">~60min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: da caixa de bolinhas até contar sucessos sem devolver nada</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Tire <em>n bolinhas de uma caixa, sem devolver</em>, e conte os sucessos — isso é a Hipergeométrica</h2>
+      <p>Imagine uma caixa com <strong>N bolinhas</strong>, sendo que <strong>K</strong> delas são especiais (os "sucessos") e as demais não são. Você tira <strong>n bolinhas de uma vez, sem devolver nenhuma</strong>, e quer saber quantas das especiais vieram na sua mão. Esse número é uma <strong>variável aleatória Hipergeométrica</strong>. A grande diferença para a Binomial é que aqui <em>não há reposição</em>: cada bolinha retirada muda as chances da próxima. Tirar cartas de um baralho, pescar peixes marcados num lago, sortear bilhetes de rifa, inspecionar peças de um lote — todas essas situações escondem uma Hipergeométrica. Vamos construir essa ideia do zero, com muitas caixinhas de bolinhas, desenhos e simulações.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">N população</span>
+        <span class="badge badge-blue">K sucessos na população</span>
+        <span class="badge badge-purple">n tamanho da amostra</span>
+        <span class="badge badge-green">X = sucessos na amostra</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-map-grid">
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🎴<span>Baralho de 52 cartas, 4 ases, tiro 5 cartas</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Hiper(N=52,K=4,n=5)</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🐟<span>Lago com 200 peixes, 40 marcados, pesco 20</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Hiper(N=200,K=40,n=20)</div>
+        </div>
+        <div class="hero-map-card">
+          <div class="hero-map-exp">🎟️<span>100 bilhetes, 5 premiados, compro 10</span></div>
+          <div class="hero-map-arrow">➡️</div>
+          <div class="hero-map-x">X ~ Hiper(N=100,K=5,n=10)</div>
+        </div>
+      </div>
+      <div class="hero-visual-caption">Cada situação é uma "retirada sem devolver" — só muda o N, o K, o n, e o que estamos contando.</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧺 O que é a Distribuição Hipergeométrica?</div>
+    <p class="section-desc">
+      Pense numa caixa com <code style="color:var(--accent-blue);">N</code> bolinhas no total, das quais <code style="color:var(--accent-green);">K</code> são verdes (sucesso) e as demais <code>N−K</code> são cinzas (fracasso). Você mete a mão e tira <code style="color:var(--accent-purple);">n</code> bolinhas <strong>de uma vez, sem devolver nenhuma</strong>. O número de bolinhas verdes que vieram na sua mão é a variável <strong>X</strong>, e escrevemos <code>X ~ Hipergeométrica(N,K,n)</code>. Ajuste a caixa abaixo e sorteie a amostra para ver X nascer na sua frente.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Monte a caixa (N, K) e sorteie uma amostra de tamanho n, sem devolver</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — total de bolinhas na caixa</span><span class="ctrl-v" id="oqueNVal">24</span></div>
+          <input type="range" id="oqueN" min="6" max="40" step="1" value="24" oninput="oqueNKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — bolinhas verdes (sucesso)</span><span class="ctrl-v" id="oqueKVal">8</span></div>
+          <input type="range" id="oqueK" min="0" max="24" step="1" value="8" oninput="oqueKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — quantas você tira</span><span class="ctrl-v" id="oqueNSampleVal">6</span></div>
+          <input type="range" id="oqueNSample" min="1" max="24" step="1" value="6" oninput="renderOque()">
+        </div>
+      </div>
+      <div class="ball-legend">
+        <span><span class="dot" style="background:var(--accent-green);"></span>sucesso (verde)</span>
+        <span><span class="dot" style="background:var(--border-strong);"></span>fracasso (cinza)</span>
+        <span><span class="dot" style="background:var(--accent);box-shadow:0 0 0 2px var(--accent);"></span>sorteada</span>
+      </div>
+      <div class="canvas-wrap"><div class="ball-grid" id="oqueBallGrid"></div></div>
+      <div style="display:flex;justify-content:center;">
+        <button class="player-btn primary" onclick="oqueDraw()">✋ Tirar n bolinhas, sem devolver</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">X = nº de bolinhas verdes na amostra</span><span class="rv" id="oqueResult">Clique em tirar</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>A Hipergeométrica é sobre <strong>populações finitas amostradas sem reposição</strong>. Cada bolinha que sai muda a composição do que resta na caixa — é exatamente essa "memória" que torna essa distribuição diferente da Binomial.</p>
+    </div>
+  </section>
+
+  <!-- ============ URNA (condições) ============ -->
+  <section class="section" id="s-condicoes">
+    <div class="section-eyebrow">O Teste Antes de Usar a Fórmula</div>
+    <div class="section-title">✅ As 4 condições: use o truque URNA</div>
+    <p class="section-desc">
+      Nem toda amostragem é uma Hipergeométrica! Para garantir que você pode usar a fórmula, confira as <strong>4 condições</strong> — um jeito fácil de lembrar é a própria palavra <code style="color:var(--accent);">URNA</code>.
+    </p>
+
+    <div class="bins-grid">
+      <div class="card">
+        <div class="bins-letter">U</div>
+        <div class="card-title" style="justify-content:center;">Universo finito</div>
+        <div class="card-text" style="text-align:center;">Existe uma população <strong>finita e conhecida</strong> de tamanho <code>N</code>.</div>
+      </div>
+      <div class="card">
+        <div class="bins-letter">R</div>
+        <div class="card-title" style="justify-content:center;">Retirada sem reposição</div>
+        <div class="card-text" style="text-align:center;">As <code>n</code> unidades são retiradas <strong>de uma vez, sem devolver</strong> nada à população.</div>
+      </div>
+      <div class="card">
+        <div class="bins-letter">N</div>
+        <div class="card-title" style="justify-content:center;">Número fixo de sucessos</div>
+        <div class="card-text" style="text-align:center;">Do total <code>N</code>, exatamente <code>K</code> unidades são "sucesso" — esse número é <strong>fixo e conhecido</strong>.</div>
+      </div>
+      <div class="card">
+        <div class="bins-letter">A</div>
+        <div class="card-title" style="justify-content:center;">Amostra de tamanho fixo</div>
+        <div class="card-text" style="text-align:center;">O tamanho da amostra <code>n</code> é <strong>combinado antes</strong> de começar a tirar as unidades.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Repare que a letra que falta em relação ao BINS da Binomial é o <strong>"Independente"</strong> — aqui, de propósito, as retiradas <em>não</em> são independentes! É exatamente a falta de reposição que separa a Hipergeométrica da Binomial.</p>
+    </div>
+  </section>
+
+  <!-- ============ COM VS SEM REPOSIÇÃO ============ -->
+  <section class="section" id="s-diferenca">
+    <div class="section-eyebrow">A Diferença Que Muda Tudo</div>
+    <div class="section-title">🔁 Com reposição (Binomial) × Sem reposição (Hipergeométrica)</div>
+    <p class="section-desc">
+      Se você tira uma bolinha, <strong>anota o resultado e devolve</strong> à caixa antes da próxima retirada, a chance de sucesso <code>p=K/N</code> fica <strong>sempre igual</strong> — isso é o mundo da Binomial. Mas se você <strong>não devolve</strong>, a cada bolinha retirada o total de bolinhas e a quantidade de sucessos restantes mudam — a chance da próxima retirada é <strong>diferente</strong> a cada passo. Sorteie as duas versões abaixo e compare a probabilidade de sucesso, passo a passo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Monte a caixa e sorteie n retiradas das duas formas</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — total na caixa</span><span class="ctrl-v" id="diffNVal">15</span></div>
+          <input type="range" id="diffN" min="6" max="30" step="1" value="15" oninput="renderDiffLabels()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos na caixa</span><span class="ctrl-v" id="diffKVal">6</span></div>
+          <input type="range" id="diffK" min="0" max="15" step="1" value="6" oninput="renderDiffLabels()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — retiradas em sequência</span><span class="ctrl-v" id="diffDrawsVal">6</span></div>
+          <input type="range" id="diffDraws" min="2" max="10" step="1" value="6" oninput="renderDiffLabels()">
+        </div>
+      </div>
+      <div class="diff-cols">
+        <div class="diff-col with">
+          <div class="diff-col-title">🔁 COM reposição (Binomial) — p constante</div>
+          <div style="display:flex;justify-content:center;margin-bottom:8px;"><button class="player-btn" onclick="diffRunWith()">🎲 Sortear com reposição</button></div>
+          <div class="trial-row" id="diffWithRow"></div>
+          <div class="prob-row" id="diffWithProbRow"></div>
+        </div>
+        <div class="diff-col without">
+          <div class="diff-col-title">🚫 SEM reposição (Hipergeométrica) — p muda</div>
+          <div style="display:flex;justify-content:center;margin-bottom:8px;"><button class="player-btn primary" onclick="diffRunWithout()">✋ Sortear sem reposição</button></div>
+          <div class="trial-row" id="diffWithoutRow"></div>
+          <div class="prob-row" id="diffWithoutProbRow"></div>
+        </div>
+      </div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">As porcentagens abaixo de cada chip mostram a chance de sucesso <strong>naquela retirada</strong>.</div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Repare</div>
+      <p>Na coluna da esquerda, a porcentagem embaixo de cada chip é sempre a mesma. Na coluna da direita, ela sobe ou desce dependendo do que já saiu — se saíram muitos sucessos, sobram menos sucessos na caixa, e a chance da próxima retirada cai (e vice-versa).</p>
+    </div>
+  </section>
+
+  <!-- ============ PARÂMETROS ============ -->
+  <section class="section" id="s-parametros">
+    <div class="section-eyebrow">Os Três Números Que Definem Tudo</div>
+    <div class="section-title">🎚️ Os parâmetros N, K e n</div>
+    <p class="section-desc">
+      A Hipergeométrica precisa de <strong>três números</strong> para ficar completamente definida: <code style="color:var(--accent-blue);">N</code> (tamanho da população), <code style="color:var(--accent-green);">K</code> (quantos sucessos existem nela) e <code style="color:var(--accent-purple);">n</code> (tamanho da amostra retirada). X pode variar entre <code>max(0, n−(N−K))</code> e <code>min(n,K)</code> — ou seja, o alcance de X <strong>depende dos três</strong> ao mesmo tempo, diferente da Binomial (que só depende de n). Arraste os controles e veja o "esqueleto" da distribuição mudar de forma.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste N, K e n e veja como eles moldam a distribuição</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="paramNVal">40</span></div>
+          <input type="range" id="paramN" min="10" max="60" step="1" value="40" oninput="paramNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos na população</span><span class="ctrl-v" id="paramKVal">15</span></div>
+          <input type="range" id="paramK" min="0" max="40" step="1" value="15" oninput="paramKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — tamanho da amostra</span><span class="ctrl-v" id="paramNSampleVal">12</span></div>
+          <input type="range" id="paramNSample" min="1" max="40" step="1" value="12" oninput="renderParametros()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="paramPreviewCanvas" height="150"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Menor valor possível</div><div class="stat-card-value" id="paramMinVal">0</div></div>
+        <div class="stat-card c-blue"><div class="stat-card-label">Maior valor possível</div><div class="stat-card-value" id="paramMaxVal">12</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Onde se concentra ≈ n×K/N</div><div class="stat-card-value" id="paramCenterVal">4.50</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Diferente da Binomial, aqui X <strong>não pode</strong> ir livremente de 0 até n: se a caixa tem poucos sucessos (K pequeno), X nunca vai passar de K. E se a amostra é quase do tamanho da população, X também não pode ser muito pequeno — sobra pouco espaço para "escapar" dos sucessos.</p>
+    </div>
+  </section>
+
+  <!-- ============ CONTAGEM COMBINATÓRIA ============ -->
+  <section class="section" id="s-contagem">
+    <div class="section-eyebrow">De Quantos Jeitos Isso Pode Acontecer?</div>
+    <div class="section-title">🔢 Contando os casos: C(K,k) × C(N−K,n−k)</div>
+    <p class="section-desc">
+      Para ter <strong>exatamente</strong> <code style="color:var(--accent);">k</code> sucessos numa amostra de tamanho <code style="color:var(--accent-purple);">n</code>, precisamos escolher <code>k</code> das <code style="color:var(--accent-green);">K</code> bolinhas verdes <strong>e</strong> escolher as <code>n−k</code> restantes entre as <code>N−K</code> bolinhas cinzas. O número de jeitos de fazer as duas escolhas juntas é o <strong>produto</strong> das combinações: <code style="color:var(--accent);">C(K,k) × C(N−K,n−k)</code>. Dividindo pelo total de amostras possíveis <code>C(N,n)</code>, chegamos na probabilidade.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste N, K, n e k e veja as duas combinações sendo multiplicadas</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="contNVal">20</span></div>
+          <input type="range" id="contN" min="6" max="40" step="1" value="20" oninput="contNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos</span><span class="ctrl-v" id="contKVal">8</span></div>
+          <input type="range" id="contK" min="0" max="20" step="1" value="8" oninput="contKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — amostra</span><span class="ctrl-v" id="contNSampleVal">5</span></div>
+          <input type="range" id="contNSample" min="1" max="20" step="1" value="5" oninput="contNSampleChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✅ k — sucessos desejados</span><span class="ctrl-v" id="contKDesiredVal">2</span></div>
+          <input type="range" id="contKDesired" min="0" max="5" step="1" value="2" oninput="renderContagem()">
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title" style="justify-content:center;">🟢 Escolher k sucessos entre K</div>
+          <div class="card-formula" id="contCK">C(8,2) = 28</div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="justify-content:center;">⬜ Escolher n−k fracassos entre N−K</div>
+          <div class="card-formula" id="contCNK">C(12,3) = 220</div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="justify-content:center;">🎯 Total de amostras com k sucessos</div>
+          <div class="card-formula" id="contProduct">28 × 220 = 6.160</div>
+        </div>
+      </div>
+      <div class="card-formula" id="contFinal" style="margin-top:6px;">P(X=2) = 6.160 / C(20,5)=15.504 = 0.3973</div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Pense nisso como duas urnas separadas: uma só com as bolinhas verdes (de onde tiramos k) e outra só com as cinzas (de onde tiramos n−k). Multiplicar as duas contagens dá todas as combinações possíveis de "k verdes + (n−k) cinzas" juntas.</p>
+    </div>
+  </section>
+
+  <!-- ============ PMF ============ -->
+  <section class="section" id="s-pmf">
+    <div class="section-eyebrow">O Retrato Completo da Hipergeométrica</div>
+    <div class="section-title">📊 Distribuição de Probabilidade (PMF)</div>
+    <p class="section-desc">
+      Juntando tudo, a fórmula completa é <code style="color:var(--accent);">P(X=k) = C(K,k) × C(N−K,n−k) / C(N,n)</code>. Em palavras: <strong>(jeitos de escolher os k sucessos)</strong> × <strong>(jeitos de escolher os n−k fracassos)</strong>, dividido pelo <strong>total de amostras possíveis</strong>. Arraste os controles e veja cada barrinha do gráfico — e sua fórmula por trás — mudar ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste N, K, n e destaque um valor de k para ver a fórmula em ação</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="pmfNVal">30</span></div>
+          <input type="range" id="pmfN" min="6" max="60" step="1" value="30" oninput="pmfNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos</span><span class="ctrl-v" id="pmfKVal">12</span></div>
+          <input type="range" id="pmfK" min="0" max="30" step="1" value="12" oninput="pmfKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — amostra</span><span class="ctrl-v" id="pmfNSampleVal">10</span></div>
+          <input type="range" id="pmfNSample" min="1" max="30" step="1" value="10" oninput="pmfNSampleChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✅ k — destacar</span><span class="ctrl-v" id="pmfKDesiredVal">4</span></div>
+          <input type="range" id="pmfKDesired" min="0" max="10" step="1" value="4" oninput="renderPmfMain()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="pmfMainCanvas" height="220"></canvas></div>
+      <div class="card-formula" id="pmfFormulaBreak">C(12,4)=495 × C(18,6)=18.564 / C(30,10)=30.045.015 = 0.3050</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">P(X=k)</div><div class="stat-card-value" id="pmfKResult">0.3050</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Valor mais provável (moda)</div><div class="stat-card-value" id="pmfModeResult">4</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A regra de ouro da PMF</div>
+      <p>Some <strong>todas</strong> as barrinhas possíveis (de k=max(0,n−(N−K)) até k=min(n,K)) e o resultado é <strong>sempre exatamente 1</strong> — não importa quais N, K e n você escolher.</p>
+    </div>
+  </section>
+
+  <!-- ============ CDF ============ -->
+  <section class="section" id="s-cdf">
+    <div class="section-eyebrow">Somando a Probabilidade Aos Poucos</div>
+    <div class="section-title">📶 Função Acumulada (CDF)</div>
+    <p class="section-desc">
+      A <strong>função acumulada</strong> <code style="color:var(--accent);">F(k) = P(X ≤ k)</code> responde "qual a chance de X ser <em>até</em> esse valor?". Basta somar todas as barrinhas da PMF de 0 até k. As barras cianas fortes abaixo são a região somada; as barras apagadas ficam de fora.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste N, K, n e k para ver F(k) = P(X ≤ k)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="cdfNVal">30</span></div>
+          <input type="range" id="cdfN" min="6" max="60" step="1" value="30" oninput="cdfNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos</span><span class="ctrl-v" id="cdfKVal">12</span></div>
+          <input type="range" id="cdfK" min="0" max="30" step="1" value="12" oninput="cdfKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — amostra</span><span class="ctrl-v" id="cdfNSampleVal">10</span></div>
+          <input type="range" id="cdfNSample" min="1" max="30" step="1" value="10" oninput="cdfNSampleChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>k — até quantos sucessos</span><span class="ctrl-v" id="cdfKDesiredVal">4</span></div>
+          <input type="range" id="cdfKDesired" min="0" max="10" step="1" value="4" oninput="renderCdf()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="cdfCanvas" height="220"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-green"><div class="stat-card-label">F(k) = P(X≤k)</div><div class="stat-card-value" id="cdfLeResult">0.7412</div></div>
+        <div class="stat-card c-red"><div class="stat-card-label">P(X&gt;k) = 1−F(k)</div><div class="stat-card-value" id="cdfGtResult">0.2588</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">P(X=k)</div><div class="stat-card-value" id="cdfEqResult">0.3050</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>A função acumulada <strong>nunca diminui</strong>. No maior valor possível de X ela já vale exatamente 1 — X não pode passar de <code>min(n,K)</code>.</p>
+    </div>
+  </section>
+
+  <!-- ============ VALOR ESPERADO ============ -->
+  <section class="section" id="s-esperanca">
+    <div class="section-eyebrow">O "Centro de Gravidade" da Hipergeométrica</div>
+    <div class="section-title">⚖️ Valor Esperado E(X) = n×K/N</div>
+    <p class="section-desc">
+      Mesmo sem reposição, o valor esperado da Hipergeométrica tem a <strong>mesma cara</strong> do da Binomial: <code style="color:var(--accent);">E(X) = n×(K/N)</code>, onde <code>K/N</code> é a <strong>proporção</strong> de sucessos na população. Faz sentido: se 30% da caixa é verde, esperamos que, em média, 30% da nossa amostra também seja verde — não importa se devolvemos as bolinhas ou não.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste N, K e n e veja a linha tracejada marcar E(X) = n×K/N sobre a distribuição</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="expNVal">40</span></div>
+          <input type="range" id="expN" min="10" max="60" step="1" value="40" oninput="expNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos</span><span class="ctrl-v" id="expKVal">14</span></div>
+          <input type="range" id="expK" min="0" max="40" step="1" value="14" oninput="expKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — amostra</span><span class="ctrl-v" id="expNSampleVal">15</span></div>
+          <input type="range" id="expNSample" min="1" max="40" step="1" value="15" oninput="renderEsperanca()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="expCanvas" height="200"></canvas></div>
+      <div class="card-formula" id="expFormula"></div>
+      <div class="result-display">
+        <div><span class="rl">E(X) = n×K/N</span><span class="rv" id="expResult">5.25</span></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Cuidado: E(X) não precisa ser um valor possível!</div>
+      <p>Assim como na Binomial, <code>E(X)</code> pode dar um número quebrado (ex.: 5,25), mesmo que X só possa assumir valores <strong>inteiros</strong>. É uma média de longo prazo, repetindo a retirada da amostra muitas vezes, não uma previsão de uma única retirada.</p>
+    </div>
+  </section>
+
+  <!-- ============ VARIÂNCIA ============ -->
+  <section class="section" id="s-variancia">
+    <div class="section-eyebrow">O Quão Imprevisível é o Total de Sucessos</div>
+    <div class="section-title">📏 Variância: o fator de correção da população finita</div>
+    <p class="section-desc">
+      A variância é parecida com a da Binomial, mas ganha um <strong>fator extra</strong>: <code style="color:var(--accent);">Var(X) = n×(K/N)×(1−K/N)×((N−n)/(N−1))</code>. O termo <code>(N−n)/(N−1)</code> é o <strong>fator de correção de população finita</strong> — ele <em>reduz</em> a variância porque, sem reposição, sabemos cada vez mais sobre o que resta na caixa conforme tiramos bolinhas. Quando <code>n=N</code> (tiramos a caixa inteira), a variância vira <strong>zero</strong> — não há mais incerteza nenhuma!
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste N, K e n e compare a variância Hipergeométrica com a Binomial equivalente</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="varNVal">40</span></div>
+          <input type="range" id="varN" min="10" max="60" step="1" value="40" oninput="varNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos</span><span class="ctrl-v" id="varKVal">20</span></div>
+          <input type="range" id="varK" min="0" max="40" step="1" value="20" oninput="varKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — amostra</span><span class="ctrl-v" id="varNSampleVal">10</span></div>
+          <input type="range" id="varNSample" min="1" max="40" step="1" value="10" oninput="renderVariancia()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="varCanvas" height="220"></canvas></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Var(X) Hipergeométrica</div><div class="stat-card-value" id="varResult">1.923</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Var(X) Binomial equivalente</div><div class="stat-card-value" id="varBinomResult">2.500</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Fator (N−n)/(N−1)</div><div class="stat-card-value" id="varFactorResult">0.769</div></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa?</div>
+      <p>Sem reposição, o resultado é <strong>mais previsível</strong> do que com reposição — por isso a variância da Hipergeométrica é sempre <em>menor ou igual</em> à variância da Binomial com o mesmo n e p=K/N. Quanto mais perto n chega de N, mais forte é essa redução.</p>
+    </div>
+  </section>
+
+  <!-- ============ FORMA / ASSIMETRIA ============ -->
+  <section class="section" id="s-forma">
+    <div class="section-eyebrow">Nem Toda Hipergeométrica é Simétrica</div>
+    <div class="section-title">📐 A forma muda: assimetria à esquerda, direita ou nenhuma</div>
+    <p class="section-desc">
+      Assim como na Binomial, quando a proporção de sucessos <code>K/N</code> é próxima de <strong>50%</strong>, a distribuição fica quase simétrica. Quando <code>K/N</code> é pequeno, a maioria das amostras tem poucos sucessos (cauda longa à direita); quando é grande, é o oposto. Ajuste N e n e compare os três casos lado a lado.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste N e n (mesmos nos três gráficos) e compare K/N pequeno, médio e grande</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="formaNVal">40</span></div>
+          <input type="range" id="formaN" min="20" max="60" step="1" value="40" oninput="renderForma()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — amostra</span><span class="ctrl-v" id="formaNSampleVal">16</span></div>
+          <input type="range" id="formaNSample" min="5" max="40" step="1" value="16" oninput="renderForma()">
+        </div>
+      </div>
+      <div class="mini-chart-grid">
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">K/N≈0,15 — <strong>assimetria à direita</strong></div>
+          <canvas id="formaCanvasLow" height="130"></canvas>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">K/N≈0,50 — <strong>quase simétrica</strong></div>
+          <canvas id="formaCanvasMid" height="130"></canvas>
+        </div>
+        <div class="mini-chart-card">
+          <div class="mini-chart-title">K/N≈0,85 — <strong>assimetria à esquerda</strong></div>
+          <canvas id="formaCanvasHigh" height="130"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Mesmo truque de sempre: olhe para a <strong>cauda comprida</strong> (a parte fina que se estica) para nomear a assimetria — mesmo que o pico esteja do lado oposto.</p>
+    </div>
+  </section>
+
+  <!-- ============ SIMULAÇÃO ============ -->
+  <section class="section" id="s-simulacao">
+    <div class="section-eyebrow">Vendo a Teoria Encontrar a Prática</div>
+    <div class="section-title">🔁 Simulação: da retirada ao histograma</div>
+    <p class="section-desc">
+      Cada vez que você tira uma amostra de tamanho n <strong>sem reposição</strong> e conta os sucessos, obtém <strong>um único número</strong> — uma amostra de X. Repetindo esse processo completo muitas vezes e desenhando um histograma dos resultados, ele vai se parecer cada vez mais com a PMF teórica. Vamos ver isso ao vivo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste N, K e n, rode várias retiradas e observe o histograma se aproximar da curva teórica</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="simNVal">30</span></div>
+          <input type="range" id="simN" min="10" max="50" step="1" value="30" oninput="simNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos</span><span class="ctrl-v" id="simKVal">10</span></div>
+          <input type="range" id="simK" min="0" max="30" step="1" value="10" oninput="simKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — tamanho da amostra</span><span class="ctrl-v" id="simNSampleVal">8</span></div>
+          <input type="range" id="simNSample" min="1" max="30" step="1" value="8" oninput="simReset()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="player-btn primary" onclick="simRun(1)">✋ Rodar 1 retirada</button>
+        <button class="player-btn" onclick="simRun(100)">✋ Rodar 100 retiradas</button>
+        <button class="player-btn" onclick="simRun(1000)">✋ Rodar 1.000 retiradas</button>
+        <button class="player-btn" onclick="simReset()">⏹ Reiniciar</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="simCanvas" height="220"></canvas></div>
+      <div class="section-desc" style="text-align:center;font-size:12px;">🟢 Barras verdes = frequência observada nas retiradas simuladas. 🟡 Linha amarela = PMF teórica exata.</div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Retiradas rodadas</div><div class="stat-card-value" id="simRunsVal">0</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Média observada</div><div class="stat-card-value" id="simEmpMean">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Média teórica n×K/N</div><div class="stat-card-value" id="simTheoMean">2.67</div></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">Repare</div>
+      <p>Com poucas retiradas, o histograma verde fica "esburacado" e irregular. Conforme as retiradas se acumulam, ele vai grudando na curva amarela teórica — a Lei dos Grandes Números em ação, mesmo sem reposição.</p>
+    </div>
+  </section>
+
+  <!-- ============ APROXIMAÇÃO PELA BINOMIAL ============ -->
+  <section class="section" id="s-aproximacao">
+    <div class="section-eyebrow">Quando a População é Muito Maior que a Amostra</div>
+    <div class="section-title">🔀 Quando a Hipergeométrica quase vira uma Binomial</div>
+    <p class="section-desc">
+      Se a população <code style="color:var(--accent-blue);">N</code> é <strong>muito maior</strong> que a amostra <code style="color:var(--accent-purple);">n</code>, tirar sem reposição quase não muda as proporções — cada retirada "mal arranha" a composição da caixa. Nesse caso, a Hipergeométrica(N,K,n) fica muito parecida com uma <strong>Binomial(n, p=K/N)</strong>. A regra prática mais comum é usar essa aproximação quando <code>n/N ≤ 0,05</code> (a amostra é no máximo 5% da população).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Ajuste N, K e n e veja a Binomial aproximada (linha amarela) se ajustar às barras da Hipergeométrica</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>📦 N — população</span><span class="ctrl-v" id="approxNVal">200</span></div>
+          <input type="range" id="approxN" min="20" max="2000" step="10" value="200" oninput="approxNChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>🟢 K — sucessos</span><span class="ctrl-v" id="approxKVal">40</span></div>
+          <input type="range" id="approxK" min="0" max="2000" step="1" value="40" oninput="approxKChanged()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>✋ n — amostra</span><span class="ctrl-v" id="approxNSampleVal">15</span></div>
+          <input type="range" id="approxNSample" min="1" max="40" step="1" value="15" oninput="renderApprox()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="approxCanvas" height="220"></canvas></div>
+      <div style="display:flex;justify-content:center;margin-top:12px;"><span class="badge badge-green" id="approxBadge">✅ Aproximação boa</span></div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">n/N (fração amostrada)</div><div class="stat-card-value" id="approxRatioVal">7.50%</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">p = K/N usado na Binomial</div><div class="stat-card-value" id="approxPVal">0.2000</div></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Aumente N mantendo a mesma proporção K/N e o mesmo n — repare como as barras cianas (Hipergeométrica exata) e a linha amarela (Binomial aproximada) ficam quase idênticas. É por isso que pesquisas de opinião com amostras pequenas, tiradas de populações enormes, costumam usar a fórmula (mais simples) da Binomial.</p>
+    </div>
+  </section>
+
+  <!-- ============ É OU NÃO É HIPERGEOMÉTRICA ============ -->
+  <section class="section" id="s-exemplos">
+    <div class="section-eyebrow">Praticando o Olho Clínico</div>
+    <div class="section-title">🔍 É ou não é Hipergeométrica?</div>
+    <p class="section-desc">Clique em cada situação para descobrir se ela é (ou não) uma Distribuição Hipergeométrica — e, se não for, qual seria o modelo certo.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada exemplo para revelar a resposta</div>
+      <div class="grid-4" id="hyperCheckGrid"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Truque rápido: pergunte "existe reposição?". Se a resposta for "sim" (ou a população é praticamente infinita perto da amostra), é Binomial. Se for "não" e a população é finita e comparável ao tamanho da amostra, é Hipergeométrica.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela">
+    <div class="section-eyebrow">Tudo Que Você Precisa, num Só Lugar</div>
+    <div class="section-title">📋 Tabela-resumo: qual fórmula usar</div>
+    <p class="section-desc">Todos os conceitos desta aula reunidos, prontos para consulta.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">✅ Condições (URNA)</div>
+        <div class="card-formula">Universo finito · Retirada sem reposição · Número fixo de sucessos · Amostra fixa</div>
+        <div class="card-text">As 4 condições que uma situação precisa cumprir para valer a fórmula da Hipergeométrica.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎚️ Parâmetros</div>
+        <div class="card-formula">N (população), K (sucessos), n (amostra)</div>
+        <div class="card-text">Esses três números definem completamente a distribuição. X varia entre max(0,n−(N−K)) e min(n,K).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔢 Contagem</div>
+        <div class="card-formula">C(K,k) × C(N−K,n−k)</div>
+        <div class="card-text">Conta de quantos jeitos diferentes é possível ter exatamente k sucessos e n−k fracassos na amostra.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 PMF</div>
+        <div class="card-formula">P(X=k) = C(K,k)C(N−K,n−k) / C(N,n)</div>
+        <div class="card-text">A chance de obter exatamente k sucessos numa amostra de tamanho n, sem reposição.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📶 CDF</div>
+        <div class="card-formula">F(k) = P(X≤k) = Σ P(X=i), i=0..k</div>
+        <div class="card-text">Soma acumulada da PMF até k. Nunca diminui; vale 1 no maior valor possível de X.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚖️ Valor Esperado</div>
+        <div class="card-formula">E(X) = n×(K/N)</div>
+        <div class="card-text">Mesma forma da Binomial, usando a proporção de sucessos K/N como se fosse o "p".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Variância</div>
+        <div class="card-formula">Var(X)=n(K/N)(1−K/N)((N−n)/(N−1))</div>
+        <div class="card-text">Igual à variância da Binomial, multiplicada pelo fator de correção de população finita (N−n)/(N−1).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔀 Aproximação Binomial</div>
+        <div class="card-formula">n/N ≤ 0,05 (regra prática)</div>
+        <div class="card-text">Quando a amostra é bem pequena perto da população, Hipergeométrica(N,K,n) ≈ Binomial(n,K/N).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Caso especial: n=N</div>
+        <div class="card-formula">Var(X) = 0</div>
+        <div class="card-text">Se você tira a caixa inteira, já sabe exatamente quantos sucessos vai ter — não há incerteza.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando Fórmula</div>
+    <div class="section-title">✅ Boas práticas: como não se confundir</div>
+
+    <div class="decision-flow">
+      <div class="decision-q">Antes de aplicar a fórmula da Hipergeométrica: existe reposição, e a população é muito maior que a amostra?</div>
+      <div class="decision-branches">
+        <div class="decision-branch arranjo">
+          <div class="decision-label">🚫 Sem reposição, população comparável à amostra</div>
+          <div class="decision-result">➡️ É uma <strong>Hipergeométrica(N,K,n)</strong></div>
+          <div class="decision-example">Ex.: tirar cartas de um baralho sem devolver; inspecionar peças de um lote pequeno sem reposição.</div>
+        </div>
+        <div class="decision-branch combinacao">
+          <div class="decision-label">🔁 Com reposição, ou N ≫ n</div>
+          <div class="decision-result">➡️ Pode usar a <strong>Binomial(n, p=K/N)</strong></div>
+          <div class="decision-example">Ex.: pesquisa com amostra pequena de uma população enorme; sorteios com devolução.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-title">1️⃣ Não esqueça o fator de correção finita</div>
+        <div class="card-text">A variância da Hipergeométrica não é só n×p×(1−p) — falta multiplicar por (N−n)/(N−1). Esquecer esse fator superestima a incerteza.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ K é sobre a população, não a amostra</div>
+        <div class="card-text">K conta os sucessos que existem na caixa toda (população), não os que você já viu na amostra. É fácil confundir os dois.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ A ordem das retiradas não importa</div>
+        <div class="card-text">Tirar sem reposição em qualquer ordem dá a mesma probabilidade de X — só o "conjunto final" de bolinhas importa, não a sequência.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1: usar Binomial quando a amostra é grande perto da população</div>
+      <p>Se n/N é grande (por exemplo, tirar 30 de uma caixa de 50), a Binomial erra feio — a correção de população finita é grande demais para ignorar. Use a fórmula exata da Hipergeométrica.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2: esquecer os limites de k</div>
+      <p>k só pode variar entre <code>max(0,n−(N−K))</code> e <code>min(n,K)</code>. Calcular P(X=k) fora desse intervalo dá zero, não um erro de fórmula.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Sempre que vir "sem devolver", "sem reposição" ou "de uma população finita conhecida", pare e escreva <code>X ~ Hipergeométrica(N,K,n)</code> antes de calcular qualquer coisa.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer style="display:flex;justify-content:space-between;color:var(--text-disabled);font-size:11px;padding-top:10px;border-top:1px solid var(--border-color);">
+    <span>Profissão Dados — Distribuição Hipergeométrica</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers ===================== */
+function comb(n,k){ if(k<0||k>n||n<0) return 0; k=Math.min(k,n-k); let r=1; for(let i=0;i<k;i++) r = r*(n-i)/(i+1); return r; }
+function fmt(n){ return Math.round(n).toLocaleString('pt-BR'); }
+function pct(x,d=1){ return (x*100).toFixed(d).replace('.',',')+'%'; }
+function hyperPmf(N,K,n,k){ const den=comb(N,n); if(den===0) return 0; return comb(K,k)*comb(N-K,n-k)/den; }
+function binomialPmf(n,k,p){ return comb(n,k)*Math.pow(p,k)*Math.pow(1-p,n-k); }
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+
+/* ===================== generic bar chart (PMF-shaped) ===================== */
+function drawPmfBars(canvasId, values, highlightIndex, afterDraw){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = Math.max(...values, 1e-9);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const barW = plotW/n;
+  values.forEach((v,k)=>{
+    const barH = (v/maxV)*plotH;
+    const x = PL + k*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - barH;
+    ctx.fillStyle = k===highlightIndex ? '#06b6d4' : 'rgba(6,182,212,.38)';
+    roundRectPath(ctx, x, y, Math.max(bw,1), barH, 2);
+    ctx.fill();
+    if(n<=40){
+      ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+      ctx.fillText(k, x+bw/2, PT+plotH+14);
+    }
+  });
+  const layout = {
+    toX:(k)=> PL + k*barW + barW/2,
+    toY:(v)=> PT + plotH - (v/maxV)*plotH,
+    PL, PT, plotW, plotH, barW, maxV
+  };
+  if(afterDraw) afterDraw(ctx, layout);
+  return layout;
+}
+function drawCdfBars(canvasId, values, k){
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = values.length;
+  const maxV = Math.max(...values, 1e-9);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW = w-PL-PR, plotH = h-PT-PB;
+  const barW = plotW/n;
+  values.forEach((v,kk)=>{
+    const barH = (v/maxV)*plotH;
+    const x = PL + kk*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - barH;
+    ctx.fillStyle = kk<=k ? '#06b6d4' : 'rgba(6,182,212,.18)';
+    roundRectPath(ctx, x, y, Math.max(bw,1), barH, 2);
+    ctx.fill();
+    if(n<=40){
+      ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+      ctx.fillText(kk, x+bw/2, PT+plotH+14);
+    }
+  });
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🧺', label:'O que é'},
+  {id:'s-condicoes', icon:'✅', label:'Condições URNA'},
+  {id:'s-diferenca', icon:'🔁', label:'Com × Sem reposição'},
+  {id:'s-parametros', icon:'🎚️', label:'Parâmetros N,K,n'},
+  {id:'s-contagem', icon:'🔢', label:'Contagem C(K,k)'},
+  {id:'s-pmf', icon:'📊', label:'Distribuição (PMF)'},
+  {id:'s-cdf', icon:'📶', label:'Acumulada (CDF)'},
+  {id:'s-esperanca', icon:'⚖️', label:'E(X) = nK/N'},
+  {id:'s-variancia', icon:'📏', label:'Var(X)'},
+  {id:'s-forma', icon:'📐', label:'Forma/Assimetria'},
+  {id:'s-simulacao', icon:'🔁', label:'Simulação'},
+  {id:'s-aproximacao', icon:'🔀', label:'Aprox. Binomial'},
+  {id:'s-exemplos', icon:'🔍', label:'É Hipergeométrica?'},
+  {id:'s-tabela', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== O QUE É (urna builder) ===================== */
+let oquePop = [];
+let oqueDrawnIdx = null;
+function oqueNKChanged(){
+  const N = +document.getElementById('oqueN').value;
+  const kSlider = document.getElementById('oqueK');
+  kSlider.max = N;
+  if(+kSlider.value>N) kSlider.value = Math.round(N/3);
+  const nSlider = document.getElementById('oqueNSample');
+  nSlider.max = N;
+  if(+nSlider.value>N) nSlider.value = N;
+  oqueRegenPop();
+}
+function oqueKChanged(){ oqueRegenPop(); }
+function oqueRegenPop(){
+  const N = +document.getElementById('oqueN').value;
+  const K = +document.getElementById('oqueK').value;
+  oquePop = shuffle(Array.from({length:N}, (_,i)=> i<K?1:0));
+  oqueDrawnIdx = null;
+  renderOque();
+}
+function oqueDraw(){
+  const N = oquePop.length;
+  const n = +document.getElementById('oqueNSample').value;
+  const idx = shuffle([...Array(N).keys()]);
+  oqueDrawnIdx = new Set(idx.slice(0,n));
+  renderOque();
+}
+function renderOque(){
+  const N = +document.getElementById('oqueN').value;
+  const K = +document.getElementById('oqueK').value;
+  const n = +document.getElementById('oqueNSample').value;
+  document.getElementById('oqueNVal').textContent = N;
+  document.getElementById('oqueKVal').textContent = K;
+  document.getElementById('oqueNSampleVal').textContent = n;
+  if(oquePop.length !== N) oquePop = shuffle(Array.from({length:N}, (_,i)=> i<K?1:0));
+  document.getElementById('oqueBallGrid').innerHTML = oquePop.map((v,i)=>{
+    let cls = 'ball ' + (v ? 'ball-success' : 'ball-fail');
+    if(oqueDrawnIdx){ cls += oqueDrawnIdx.has(i) ? ' ball-drawn' : ' ball-dim'; }
+    return `<div class="${cls}"></div>`;
+  }).join('');
+  if(oqueDrawnIdx){
+    let k=0; oqueDrawnIdx.forEach(i=>{ if(oquePop[i]===1) k++; });
+    document.getElementById('oqueResult').textContent = `X = ${k} sucesso(s) em ${n} retirada${n>1?'s':''}`;
+  } else {
+    document.getElementById('oqueResult').textContent = 'Clique em tirar';
+  }
+}
+
+/* ===================== COM x SEM REPOSIÇÃO ===================== */
+function renderDiffLabels(){
+  document.getElementById('diffNVal').textContent = document.getElementById('diffN').value;
+  const N = +document.getElementById('diffN').value;
+  const kSlider = document.getElementById('diffK');
+  kSlider.max = N;
+  if(+kSlider.value>N) kSlider.value = Math.round(N/2);
+  document.getElementById('diffKVal').textContent = kSlider.value;
+  const dSlider = document.getElementById('diffDraws');
+  dSlider.max = Math.min(10,N);
+  if(+dSlider.value>+dSlider.max) dSlider.value = dSlider.max;
+  document.getElementById('diffDrawsVal').textContent = dSlider.value;
+}
+function diffRunWith(){
+  const N = +document.getElementById('diffN').value;
+  const K = +document.getElementById('diffK').value;
+  const n = +document.getElementById('diffDraws').value;
+  const p = K/N;
+  const trials=[], probs=[];
+  for(let i=0;i<n;i++){ probs.push(p); trials.push(Math.random()<p ? 1 : 0); }
+  renderDiffResult('diffWithRow','diffWithProbRow',trials,probs);
+}
+function diffRunWithout(){
+  const N = +document.getElementById('diffN').value;
+  const K = +document.getElementById('diffK').value;
+  const n = +document.getElementById('diffDraws').value;
+  let remN=N, remK=K;
+  const trials=[], probs=[];
+  for(let i=0;i<n;i++){
+    const p = remN>0 ? remK/remN : 0;
+    probs.push(p);
+    const success = Math.random()<p ? 1 : 0;
+    trials.push(success);
+    remN--; if(success) remK--;
+  }
+  renderDiffResult('diffWithoutRow','diffWithoutProbRow',trials,probs);
+}
+function renderDiffResult(rowId, probRowId, trials, probs){
+  document.getElementById(rowId).innerHTML = trials.map(t=>`<div class="trial-chip ${t?'success':'fail'}">${t}</div>`).join('');
+  document.getElementById(probRowId).innerHTML = probs.map(p=>`<div class="prob-chip">${pct(p,0)}</div>`).join('');
+}
+
+/* ===================== PARÂMETROS N,K,n ===================== */
+function paramNChanged(){
+  const N = +document.getElementById('paramN').value;
+  const kSlider = document.getElementById('paramK');
+  kSlider.max = N; if(+kSlider.value>N) kSlider.value = Math.round(N/3);
+  const nSlider = document.getElementById('paramNSample');
+  nSlider.max = N; if(+nSlider.value>N) nSlider.value = Math.min(+nSlider.value, N);
+  renderParametros();
+}
+function paramKChanged(){ renderParametros(); }
+function renderParametros(){
+  const N = +document.getElementById('paramN').value;
+  const K = +document.getElementById('paramK').value;
+  const n = +document.getElementById('paramNSample').value;
+  document.getElementById('paramNVal').textContent = N;
+  document.getElementById('paramKVal').textContent = K;
+  document.getElementById('paramNSampleVal').textContent = n;
+  const kmin = Math.max(0, n-(N-K));
+  const kmax = Math.min(n,K);
+  document.getElementById('paramMinVal').textContent = kmin;
+  document.getElementById('paramMaxVal').textContent = kmax;
+  document.getElementById('paramCenterVal').textContent = (n*K/N).toFixed(2);
+  const values=[]; for(let k=0;k<=n;k++) values.push(hyperPmf(N,K,n,k));
+  drawPmfBars('paramPreviewCanvas', values, -1);
+}
+
+/* ===================== CONTAGEM COMBINATÓRIA ===================== */
+function contNChanged(){
+  const N = +document.getElementById('contN').value;
+  const kSlider = document.getElementById('contK');
+  kSlider.max = N; if(+kSlider.value>N) kSlider.value = Math.round(N/3);
+  const nSlider = document.getElementById('contNSample');
+  nSlider.max = N; if(+nSlider.value>N) nSlider.value = Math.min(+nSlider.value, N);
+  contNSampleChanged();
+}
+function contKChanged(){ contNSampleChanged(); }
+function contNSampleChanged(){
+  const N = +document.getElementById('contN').value;
+  const K = +document.getElementById('contK').value;
+  const n = +document.getElementById('contNSample').value;
+  const kSlider = document.getElementById('contKDesired');
+  const kmin = Math.max(0, n-(N-K));
+  const kmax = Math.min(n,K);
+  kSlider.min = kmin; kSlider.max = kmax;
+  if(+kSlider.value<kmin) kSlider.value = kmin;
+  if(+kSlider.value>kmax) kSlider.value = kmax;
+  renderContagem();
+}
+function renderContagem(){
+  const N = +document.getElementById('contN').value;
+  const K = +document.getElementById('contK').value;
+  const n = +document.getElementById('contNSample').value;
+  const k = +document.getElementById('contKDesired').value;
+  document.getElementById('contNVal').textContent = N;
+  document.getElementById('contKVal').textContent = K;
+  document.getElementById('contNSampleVal').textContent = n;
+  document.getElementById('contKDesiredVal').textContent = k;
+  const cK = comb(K,k);
+  const cNK = comb(N-K, n-k);
+  const cN = comb(N,n);
+  const prod = cK*cNK;
+  document.getElementById('contCK').textContent = `C(${K},${k}) = ${fmt(cK)}`;
+  document.getElementById('contCNK').textContent = `C(${N-K},${n-k}) = ${fmt(cNK)}`;
+  document.getElementById('contProduct').textContent = `${fmt(cK)} × ${fmt(cNK)} = ${fmt(prod)}`;
+  const prob = cN>0 ? prod/cN : 0;
+  document.getElementById('contFinal').innerHTML = `P(X=${k}) = ${fmt(prod)} / C(${N},${n})=${fmt(cN)} = <strong style="color:var(--accent)">${prob.toFixed(4)}</strong>`;
+}
+
+/* ===================== PMF PRINCIPAL ===================== */
+function pmfNChanged(){
+  const N = +document.getElementById('pmfN').value;
+  const kSlider = document.getElementById('pmfK');
+  kSlider.max = N; if(+kSlider.value>N) kSlider.value = Math.round(N/3);
+  const nSlider = document.getElementById('pmfNSample');
+  nSlider.max = N; if(+nSlider.value>N) nSlider.value = Math.min(+nSlider.value, N);
+  pmfNSampleChanged();
+}
+function pmfKChanged(){ pmfNSampleChanged(); }
+function pmfNSampleChanged(){
+  const N = +document.getElementById('pmfN').value;
+  const K = +document.getElementById('pmfK').value;
+  const n = +document.getElementById('pmfNSample').value;
+  const kSlider = document.getElementById('pmfKDesired');
+  const kmin = Math.max(0, n-(N-K));
+  const kmax = Math.min(n,K);
+  kSlider.min = kmin; kSlider.max = kmax;
+  if(+kSlider.value<kmin) kSlider.value = kmin;
+  if(+kSlider.value>kmax) kSlider.value = Math.min(kmax, Math.round((kmin+kmax)/2));
+  renderPmfMain();
+}
+function renderPmfMain(){
+  const N = +document.getElementById('pmfN').value;
+  const K = +document.getElementById('pmfK').value;
+  const n = +document.getElementById('pmfNSample').value;
+  const k = +document.getElementById('pmfKDesired').value;
+  document.getElementById('pmfNVal').textContent = N;
+  document.getElementById('pmfKVal').textContent = K;
+  document.getElementById('pmfNSampleVal').textContent = n;
+  document.getElementById('pmfKDesiredVal').textContent = k;
+  const cK = comb(K,k);
+  const cNK = comb(N-K,n-k);
+  const cN = comb(N,n);
+  const prob = cN>0 ? cK*cNK/cN : 0;
+  document.getElementById('pmfFormulaBreak').innerHTML =
+    `C(${K},${k})=${fmt(cK)} &nbsp;×&nbsp; C(${N-K},${n-k})=${fmt(cNK)} &nbsp;/&nbsp; C(${N},${n})=${fmt(cN)} &nbsp;=&nbsp; <strong style="color:var(--accent)">${prob.toFixed(4)}</strong>`;
+  document.getElementById('pmfKResult').textContent = prob.toFixed(4)+' ('+pct(prob,2)+')';
+  let maxP=-1, mode=0; const values=[];
+  for(let kk=0;kk<=n;kk++){ const v=hyperPmf(N,K,n,kk); values.push(v); if(v>maxP){maxP=v; mode=kk;} }
+  document.getElementById('pmfModeResult').textContent = mode;
+  drawPmfBars('pmfMainCanvas', values, k);
+}
+
+/* ===================== CDF ===================== */
+function cdfNChanged(){
+  const N = +document.getElementById('cdfN').value;
+  const kSlider = document.getElementById('cdfK');
+  kSlider.max = N; if(+kSlider.value>N) kSlider.value = Math.round(N/3);
+  const nSlider = document.getElementById('cdfNSample');
+  nSlider.max = N; if(+nSlider.value>N) nSlider.value = Math.min(+nSlider.value, N);
+  cdfNSampleChanged();
+}
+function cdfKChanged(){ cdfNSampleChanged(); }
+function cdfNSampleChanged(){
+  const N = +document.getElementById('cdfN').value;
+  const K = +document.getElementById('cdfK').value;
+  const n = +document.getElementById('cdfNSample').value;
+  const kSlider = document.getElementById('cdfKDesired');
+  const kmin = Math.max(0, n-(N-K));
+  const kmax = Math.min(n,K);
+  kSlider.min = kmin; kSlider.max = kmax;
+  if(+kSlider.value<kmin) kSlider.value = kmin;
+  if(+kSlider.value>kmax) kSlider.value = Math.min(kmax, Math.round((kmin+kmax)/2));
+  renderCdf();
+}
+function renderCdf(){
+  const N = +document.getElementById('cdfN').value;
+  const K = +document.getElementById('cdfK').value;
+  const n = +document.getElementById('cdfNSample').value;
+  const k = +document.getElementById('cdfKDesired').value;
+  document.getElementById('cdfNVal').textContent = N;
+  document.getElementById('cdfKVal').textContent = K;
+  document.getElementById('cdfNSampleVal').textContent = n;
+  document.getElementById('cdfKDesiredVal').textContent = k;
+  const values=[]; for(let kk=0;kk<=n;kk++) values.push(hyperPmf(N,K,n,kk));
+  const Fk = values.slice(0,k+1).reduce((a,b)=>a+b,0);
+  document.getElementById('cdfLeResult').textContent = Fk.toFixed(4);
+  document.getElementById('cdfGtResult').textContent = (1-Fk).toFixed(4);
+  document.getElementById('cdfEqResult').textContent = values[k].toFixed(4);
+  drawCdfBars('cdfCanvas', values, k);
+}
+
+/* ===================== VALOR ESPERADO ===================== */
+function expNChanged(){
+  const N = +document.getElementById('expN').value;
+  const kSlider = document.getElementById('expK');
+  kSlider.max = N; if(+kSlider.value>N) kSlider.value = Math.round(N/3);
+  const nSlider = document.getElementById('expNSample');
+  nSlider.max = N; if(+nSlider.value>N) nSlider.value = Math.min(+nSlider.value, N);
+  renderEsperanca();
+}
+function expKChanged(){ renderEsperanca(); }
+function renderEsperanca(){
+  const N = +document.getElementById('expN').value;
+  const K = +document.getElementById('expK').value;
+  const n = +document.getElementById('expNSample').value;
+  document.getElementById('expNVal').textContent = N;
+  document.getElementById('expKVal').textContent = K;
+  document.getElementById('expNSampleVal').textContent = n;
+  const mean = n*K/N;
+  document.getElementById('expFormula').innerHTML = `E(X) = n×K/N = ${n}×${K}/${N} = <strong style="color:var(--accent)">${mean.toFixed(2)}</strong>`;
+  document.getElementById('expResult').textContent = mean.toFixed(2);
+  const values=[]; for(let k=0;k<=n;k++) values.push(hyperPmf(N,K,n,k));
+  drawPmfBars('expCanvas', values, -1, (ctx,L)=>{
+    const mx = L.toX(mean);
+    ctx.setLineDash([4,3]); ctx.strokeStyle='#e8b339'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(mx, L.PT); ctx.lineTo(mx, L.PT+L.plotH); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#e8b339'; ctx.font='bold 11px Roboto Mono'; ctx.textAlign='center';
+    ctx.fillText('E(X)='+mean.toFixed(1), mx, L.PT-4);
+  });
+}
+
+/* ===================== VARIÂNCIA ===================== */
+function varNChanged(){
+  const N = +document.getElementById('varN').value;
+  const kSlider = document.getElementById('varK');
+  kSlider.max = N; if(+kSlider.value>N) kSlider.value = Math.round(N/2);
+  const nSlider = document.getElementById('varNSample');
+  nSlider.max = N; if(+nSlider.value>N) nSlider.value = Math.min(+nSlider.value, N);
+  renderVariancia();
+}
+function varKChanged(){ renderVariancia(); }
+function renderVariancia(){
+  const N = +document.getElementById('varN').value;
+  const K = +document.getElementById('varK').value;
+  const n = +document.getElementById('varNSample').value;
+  document.getElementById('varNVal').textContent = N;
+  document.getElementById('varKVal').textContent = K;
+  document.getElementById('varNSampleVal').textContent = n;
+  const p = K/N;
+  const factor = N>1 ? (N-n)/(N-1) : 0;
+  const vHyper = n*p*(1-p)*factor;
+  const vBinom = n*p*(1-p);
+  document.getElementById('varResult').textContent = vHyper.toFixed(3);
+  document.getElementById('varBinomResult').textContent = vBinom.toFixed(3);
+  document.getElementById('varFactorResult').textContent = factor.toFixed(3);
+  drawVarComparison(N,n,p,vHyper,vBinom);
+}
+function drawVarComparison(N,n,p,vHyper,vBinom){
+  const canvas = document.getElementById('varCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const PL=44, PR=20, PT=20, PB=32;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  const maxN = Math.min(N, 40);
+  const maxV = Math.max(n*0.25*1.1, 0.01);
+  function toX(nn){ return PL + plotW*(nn/maxN); }
+  function toY(vv){ return PT + plotH*(1-vv/maxV); }
+  ctx.strokeStyle='rgba(152,162,179,.2)'; ctx.font='9px Roboto Mono'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+  for(let i=0;i<=4;i++){ const vv=maxV*i/4; const y=toY(vv); ctx.beginPath(); ctx.moveTo(PL,y); ctx.lineTo(w-PR,y); ctx.stroke(); ctx.fillText(vv.toFixed(2),PL-6,y+3); }
+  ctx.textAlign='center';
+  ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono';
+  ctx.fillText('n (amostra)', PL+plotW/2, h-4);
+  // Binomial reference (flat line, doesn't depend on n's finite-pop correction)
+  ctx.beginPath();
+  for(let i=0;i<=Math.min(N,40);i++){ const vv=i*p*(1-p); const px=toX(i), py=toY(vv); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  ctx.strokeStyle='#c49aff'; ctx.lineWidth=2; ctx.stroke();
+  // Hypergeometric curve (with finite pop correction), n from 0..N
+  ctx.beginPath();
+  for(let i=0;i<=Math.min(N,40);i++){ const factor = N>1 ? (N-i)/(N-1) : 0; const vv=i*p*(1-p)*factor; const px=toX(i), py=toY(vv); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+  ctx.strokeStyle='#06b6d4'; ctx.lineWidth=2.4; ctx.stroke();
+  // marker at current n
+  const mx=toX(n), my=toY(vBinom);
+  ctx.beginPath(); ctx.arc(mx,my,4,0,Math.PI*2); ctx.fillStyle='#c49aff'; ctx.fill();
+  const mx2=toX(n), my2=toY(vHyper);
+  ctx.beginPath(); ctx.arc(mx2,my2,5,0,Math.PI*2); ctx.fillStyle='#06b6d4'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.textAlign='left'; ctx.font='10px Inter'; ctx.fillStyle='#06b6d4'; ctx.fillText('● Hipergeométrica', w-160, 16);
+  ctx.fillStyle='#c49aff'; ctx.fillText('● Binomial equivalente', w-160, 30);
+}
+
+/* ===================== FORMA / ASSIMETRIA ===================== */
+function renderForma(){
+  const N = +document.getElementById('formaN').value;
+  const n = +document.getElementById('formaNSample').value;
+  document.getElementById('formaNVal').textContent = N;
+  document.getElementById('formaNSampleVal').textContent = n;
+  [{id:'formaCanvasLow',ratio:0.15},{id:'formaCanvasMid',ratio:0.5},{id:'formaCanvasHigh',ratio:0.85}].forEach(cfg=>{
+    const K = Math.min(N, Math.max(0, Math.round(N*cfg.ratio)));
+    const sample = Math.min(n,N);
+    const values=[]; for(let k=0;k<=sample;k++) values.push(hyperPmf(N,K,sample,k));
+    drawPmfBars(cfg.id, values, -1);
+  });
+}
+
+/* ===================== SIMULAÇÃO ===================== */
+let simCounts = []; let simRuns = 0;
+function simNChanged(){
+  const N = +document.getElementById('simN').value;
+  const kSlider = document.getElementById('simK');
+  kSlider.max = N; if(+kSlider.value>N) kSlider.value = Math.round(N/3);
+  const nSlider = document.getElementById('simNSample');
+  nSlider.max = N; if(+nSlider.value>N) nSlider.value = Math.min(+nSlider.value, N);
+  simReset();
+}
+function simKChanged(){ simReset(); }
+function simReset(){
+  const n = +document.getElementById('simNSample').value;
+  simCounts = new Array(n+1).fill(0);
+  simRuns = 0;
+  renderSim();
+}
+function simDrawOne(N,K,n){
+  const idx = shuffle([...Array(N).keys()]).slice(0,n);
+  let k=0;
+  idx.forEach(i=>{ if(i<K) k++; });
+  return k;
+}
+function simRun(times){
+  const N = +document.getElementById('simN').value;
+  const K = +document.getElementById('simK').value;
+  const n = +document.getElementById('simNSample').value;
+  if(simCounts.length !== n+1) simCounts = new Array(n+1).fill(0);
+  for(let t=0;t<times;t++){
+    const k = simDrawOne(N,K,n);
+    simCounts[k]++;
+    simRuns++;
+  }
+  renderSim();
+}
+function renderSim(){
+  const N = +document.getElementById('simN').value;
+  const K = +document.getElementById('simK').value;
+  const n = +document.getElementById('simNSample').value;
+  document.getElementById('simNVal').textContent = N;
+  document.getElementById('simKVal').textContent = K;
+  document.getElementById('simNSampleVal').textContent = n;
+  document.getElementById('simRunsVal').textContent = fmt(simRuns);
+  const empMean = simRuns>0 ? simCounts.reduce((s,c,k)=>s+c*k,0)/simRuns : 0;
+  document.getElementById('simEmpMean').textContent = simRuns>0 ? empMean.toFixed(2) : '—';
+  document.getElementById('simTheoMean').textContent = (n*K/N).toFixed(2);
+  const empProbs = simCounts.map(c => simRuns>0 ? c/simRuns : 0);
+  const theoProbs=[]; for(let k=0;k<=n;k++) theoProbs.push(hyperPmf(N,K,n,k));
+  drawSimChart(empProbs, theoProbs);
+}
+function drawSimChart(emp, theo){
+  const canvas = document.getElementById('simCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width = canvas.clientWidth;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+  const n = emp.length;
+  const maxV = Math.max(...emp, ...theo, 0.01);
+  const PL=8, PR=8, PT=16, PB = n<=40 ? 22 : 10;
+  const plotW=w-PL-PR, plotH=h-PT-PB;
+  const barW = plotW/n;
+  for(let k=0;k<n;k++){
+    const bh = (emp[k]/maxV)*plotH;
+    const x = PL + k*barW + barW*0.12;
+    const bw = barW*0.76;
+    const y = PT + plotH - bh;
+    ctx.fillStyle='rgba(125,222,216,.75)';
+    roundRectPath(ctx,x,y,Math.max(bw,1),bh,2); ctx.fill();
+  }
+  ctx.beginPath();
+  for(let k=0;k<n;k++){
+    const cx = PL + k*barW + barW/2;
+    const cy = PT + plotH - (theo[k]/maxV)*plotH;
+    if(k===0) ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy);
+  }
+  ctx.strokeStyle='#e8b339'; ctx.lineWidth=2; ctx.stroke();
+  if(n<=40){
+    ctx.fillStyle='#98a2b3'; ctx.font='9px Roboto Mono'; ctx.textAlign='center';
+    for(let k=0;k<n;k++) ctx.fillText(k, PL+k*barW+barW/2, PT+plotH+14);
+  }
+}
+
+/* ===================== APROXIMAÇÃO PELA BINOMIAL ===================== */
+function approxNChanged(){
+  const N = +document.getElementById('approxN').value;
+  const kSlider = document.getElementById('approxK');
+  kSlider.max = N; if(+kSlider.value>N) kSlider.value = Math.round(N*0.2);
+  renderApprox();
+}
+function approxKChanged(){ renderApprox(); }
+function renderApprox(){
+  const N = +document.getElementById('approxN').value;
+  const K = +document.getElementById('approxK').value;
+  const n = +document.getElementById('approxNSample').value;
+  document.getElementById('approxNVal').textContent = fmt(N);
+  document.getElementById('approxKVal').textContent = fmt(K);
+  document.getElementById('approxNSampleVal').textContent = n;
+  const p = N>0 ? K/N : 0;
+  const ratio = N>0 ? n/N : 0;
+  document.getElementById('approxRatioVal').textContent = pct(ratio,2);
+  document.getElementById('approxPVal').textContent = p.toFixed(4);
+  const badge = document.getElementById('approxBadge');
+  if(ratio<=0.05){ badge.className='badge badge-green'; badge.textContent='✅ Aproximação boa (n/N ≤ 5%)'; }
+  else if(ratio<=0.10){ badge.className='badge badge-blue'; badge.textContent='🟡 Aproximação razoável (n/N até 10%)'; }
+  else { badge.className='badge badge-purple'; badge.textContent='⚠️ Aproximação fraca (n/N > 10%) — use a fórmula exata'; }
+  const hyperN = Math.min(N, 4000);
+  const values=[]; for(let k=0;k<=n;k++) values.push(hyperPmf(hyperN,Math.round(K*(hyperN/N)),n,k));
+  drawPmfBars('approxCanvas', values, -1, (ctx,L)=>{
+    ctx.beginPath();
+    for(let k=0;k<=n;k++){
+      const by = binomialPmf(n,k,p);
+      const px = L.toX(k);
+      const py = L.PT + L.plotH - (by/L.maxV)*L.plotH;
+      if(k===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle='#e8b339'; ctx.lineWidth=2.2; ctx.stroke();
+  });
+}
+
+/* ===================== É OU NÃO É HIPERGEOMÉTRICA ===================== */
+const hyperCheckItems = [
+  {emoji:'🎴', label:'Tirar 5 cartas de um baralho de 52, sem devolver, e contar quantos ases saíram', isH:true, note:'População finita (52 cartas), K=4 ases fixos, amostra sem reposição. É Hipergeométrica!'},
+  {emoji:'🪙', label:'Jogar uma moeda 10 vezes, sempre com a mesma chance, e contar quantas caras saíram', isH:false, note:'Cada lançamento é independente e a chance nunca muda — isso é a Distribuição Binomial.'},
+  {emoji:'🐟', label:'Lago com 200 peixes (40 marcados antes); pescar 20 peixes sem devolver e contar quantos estão marcados', isH:true, note:'População finita conhecida (200), K=40 marcados, amostra sem reposição. É Hipergeométrica! (usado no método de captura-recaptura)'},
+  {emoji:'📊', label:'Pesquisa eleitoral: entrevistar 1.000 pessoas de uma população de 200 milhões de eleitores', isH:false, note:'Tecnicamente é Hipergeométrica, mas como n/N é praticamente zero, na prática se aproxima perfeitamente de uma Binomial.'},
+  {emoji:'🎟️', label:'Rifa com 100 bilhetes, 5 premiados; comprar 10 bilhetes (sem repetir nenhum) e contar quantos são premiados', isH:true, note:'População finita (100 bilhetes), K=5 premiados fixos, sem reposição. É Hipergeométrica!'},
+  {emoji:'🏭', label:'Linha de produção contínua com 2% de peças defeituosas; inspecionar 30 peças (uma população efetivamente enorme)', isH:false, note:'A "população" é tão grande que cada peça inspecionada não muda a proporção seguinte de forma relevante — trata-se como Binomial.'},
+  {emoji:'👥', label:'Grupo de 12 pessoas (7 homens, 5 mulheres); sortear uma comissão de 4 pessoas e contar quantas mulheres entraram', isH:true, note:'População finita (12 pessoas), K=5 mulheres fixas, comissão sem repetição. É Hipergeométrica!'},
+  {emoji:'🎲', label:'Rolar um dado 6 vezes e contar quantas vezes saiu o número 6', isH:false, note:'Cada lançamento é independente e a chance de sair 6 nunca muda — isso é a Distribuição Binomial.'},
+];
+function buildHyperCheck(){
+  document.getElementById('hyperCheckGrid').innerHTML = hyperCheckItems.map(it => `
+    <div class="card classify-card" onclick="this.classList.toggle('revealed')">
+      <div style="font-size:26px;text-align:center;">${it.emoji}</div>
+      <div class="card-text" style="text-align:center;margin-top:6px;">${it.label}</div>
+      <div class="classify-answer" style="text-align:center;margin-top:10px;">
+        <span class="badge ${it.isH?'badge-green':'badge-purple'}">${it.isH?'✅ É Hipergeométrica':'❌ Não é Hipergeométrica'}</span>
+        <div class="card-text" style="margin-top:8px;">${it.note}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Num baralho de 52 cartas (4 ases), você tira 5 cartas sem devolver. Qual a chance de sair exatamente 2 ases?',
+   a:'X ~ Hipergeométrica(N=52, K=4, n=5). <strong>P(X=2) = C(4,2)×C(48,3) / C(52,5) = 6×17.296 / 2.598.960 ≈ 0,0399 (3,99%)</strong>.'},
+  {q:'Um lote de 50 peças tem 5 defeituosas. Você inspeciona 10 peças sem reposição. Qual a chance de nenhuma sair defeituosa?',
+   a:'X ~ Hipergeométrica(N=50, K=5, n=10). <strong>P(X=0) = C(5,0)×C(45,10) / C(50,10) ≈ 0,3106 (31,06%)</strong>.'},
+  {q:'Uma sala tem 12 pessoas (7 homens, 5 mulheres). Sorteia-se uma comissão de 4 pessoas. Qual o número esperado de mulheres na comissão e a variância?',
+   a:'X ~ Hipergeométrica(N=12, K=5, n=4). <strong>E(X) = 4×5/12 ≈ 1,667</strong> mulheres esperadas. <strong>Var(X) = 4×(5/12)×(7/12)×(8/11) ≈ 0,707</strong>.'},
+  {q:'Uma rifa tem 100 bilhetes, dos quais 5 são premiados. Você compra 10 bilhetes (sem repetir nenhum). Qual a chance de ganhar pelo menos 1 prêmio?',
+   a:'X ~ Hipergeométrica(N=100, K=5, n=10). P(X=0) = C(5,0)×C(95,10)/C(100,10) ≈ 0,5838. <strong>P(X≥1) = 1−0,5838 ≈ 0,4162 (41,62%)</strong>.'},
+  {q:'Um lago tem 200 peixes, dos quais 40 foram marcados antes. Você pesca 20 peixes sem devolver. Qual o número esperado de peixes marcados na pescaria?',
+   a:'X ~ Hipergeométrica(N=200, K=40, n=20). <strong>E(X) = 20×40/200 = 4</strong> peixes marcados esperados — é assim que biólogos usam "captura-recaptura" para estimar o tamanho total de uma população (N) a partir do X observado.'},
+  {q:'Uma empresa tem 10.000 funcionários, 500 dos quais fizeram um treinamento. Você entrevista 50 funcionários ao acaso. A Hipergeométrica exata e a Binomial aproximada (p=0,05) dão respostas parecidas? Por quê?',
+   a:'Sim! Como n/N = 50/10.000 = 0,5% é bem pequeno, a amostra "mal arranha" a população — <strong>P(X=k)</strong> calculado pela Hipergeométrica exata e pela Binomial(n=50, p=0,05) ficam muito próximos (diferenças na 3ª ou 4ª casa decimal). É por isso que, na prática, pesquisas com amostras pequenas usam a fórmula mais simples da Binomial.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Na Distribuição Hipergeométrica, as retiradas são feitas sem reposição.', a:true,
+   explain:'Sim — essa é exatamente a característica que define a Hipergeométrica e a separa da Binomial.'},
+  {q:'O valor esperado da Hipergeométrica é diferente do valor esperado da Binomial equivalente (mesmo n e p=K/N).', a:false,
+   explain:'Não! Ambos valem n×p (ou n×K/N) — a esperança tem a mesma fórmula nos dois casos, só a variância muda.'},
+  {q:'A variância da Hipergeométrica é sempre menor ou igual à variância da Binomial equivalente.', a:true,
+   explain:'Correto — o fator de correção de população finita (N−n)/(N−1) é sempre menor ou igual a 1, o que reduz a variância.'},
+  {q:'Se n=N (você tira a caixa toda), a variância de X é zero.', a:true,
+   explain:'Sim! Se você tira todas as bolinhas, já sabe com certeza absoluta quantos sucessos vai ter — não existe mais incerteza.'},
+  {q:'Quando a população N é muito maior que a amostra n, a Hipergeométrica se aproxima bem de uma Binomial.', a:true,
+   explain:'Sim — quando n/N é pequeno (regra prática: ≤5%), tirar sem reposição quase não altera as proporções, então Hipergeométrica(N,K,n) ≈ Binomial(n,K/N).'},
+  {q:'K representa o número de sucessos observados na amostra retirada.', a:false,
+   explain:'Não — K é o número de sucessos que existem na população inteira (a caixa toda), não na amostra. X é quem conta os sucessos na amostra.'},
+  {q:'k pode assumir qualquer valor entre 0 e n, independente de K e N.', a:false,
+   explain:'Não! O alcance real de k é entre max(0, n−(N−K)) e min(n,K) — ele depende dos três parâmetros, não só de n.'},
+  {q:'Jogar um dado 6 vezes e contar quantos "6" saíram é um exemplo de Distribuição Hipergeométrica.', a:false,
+   explain:'Não — cada lançamento é independente e a chance nunca muda (sempre 1/6). Isso é a Distribuição Binomial.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT ===================== */
+oqueRegenPop();
+renderDiffLabels();
+renderParametros();
+contNSampleChanged();
+pmfNSampleChanged();
+cdfNSampleChanged();
+renderEsperanca();
+renderVariancia();
+renderForma();
+simReset();
+renderApprox();
+buildHyperCheck();
+buildProblems();
+buildQuiz();
+window.addEventListener('resize', ()=>{
+  renderParametros();
+  renderPmfMain();
+  renderCdf();
+  renderEsperanca();
+  renderVariancia();
+  renderForma();
+  renderSim();
+  renderApprox();
+});
+</script>
+</body>
+</html>

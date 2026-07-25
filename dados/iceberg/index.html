@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Apache Iceberg por dentro. Metadata.json, manifests, snapshots, time travel, hidden partitioning, schema/partition evolution, COW vs MOR e mais, com demos interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Apache Iceberg por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:10.5px;font-weight:700;padding:6px;letter-spacing:.5px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- BUCKET TRANSFORM DEMO (bits grid) ---- */
+.bucket-bits{display:flex;gap:5px;flex-wrap:wrap;}
+.bucket-bit{min-width:40px;height:34px;padding:0 6px;border-radius:6px;background:var(--bg-elevated);border:1.5px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;transition:.2s;}
+.bucket-bit.hit{background:rgba(6,182,212,.22);border-color:var(--accent);color:var(--accent);font-weight:700;transform:scale(1.08);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-skip td{opacity:.35;text-decoration:line-through;}
+.data-table td.cell-hit{background:rgba(6,182,212,.22);color:var(--accent);font-weight:700;border-radius:4px;}
+
+/* ---- KV LIST ---- */
+.kv-list{display:flex;flex-direction:column;gap:8px;}
+.kv-pair{display:flex;align-items:center;gap:12px;transition:.2s;flex-wrap:wrap;}
+.kv-key{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--accent-blue);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:12.5px;min-width:120px;text-align:center;flex-shrink:0;}
+.kv-arrow{color:var(--text-disabled);font-size:16px;flex-shrink:0;}
+.kv-value{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-primary);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:12.5px;flex:1;transition:.2s;}
+.kv-pair.highlight .kv-key{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.kv-pair.highlight .kv-value{border-color:var(--accent);background:rgba(6,182,212,.10);color:var(--accent);}
+
+/* ---- INDEXED LIST (field ids, buckets...) ---- */
+.indexed-list{display:flex;gap:8px;flex-wrap:wrap;}
+.indexed-item{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.indexed-item .idx-badge{font-size:10px;font-family:'Roboto Mono',monospace;color:var(--text-disabled);}
+.indexed-item .idx-box{min-width:44px;height:36px;padding:0 10px;border-radius:6px;background:var(--bg-elevated);border:1.5px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text-primary);font-family:'Roboto Mono',monospace;transition:.2s;}
+.indexed-item.hi .idx-box{border-color:var(--accent);background:rgba(6,182,212,.16);color:var(--accent);}
+.indexed-item.dead .idx-box{border-color:var(--accent-red);color:var(--accent-red);opacity:.55;text-decoration:line-through;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- METADATA TREE (Iceberg anatomy) ---- */
+.anatomy-wrap{position:relative;}
+#anatomySvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;position:relative;z-index:1;}
+.ib-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.ib-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.ib-pointer{text-align:center;background:rgba(6,182,212,.14);color:var(--accent);font-family:'Roboto Mono',monospace;font-weight:700;font-size:11px;padding:8px;border-radius:5px;margin-bottom:10px;letter-spacing:.5px;cursor:pointer;border:1.5px solid transparent;transition:.15s;}
+.ib-pointer:hover{border-color:var(--accent-blue);}
+.ib-pointer.active{border-color:var(--accent);background:rgba(6,182,212,.24);box-shadow:0 0 0 1px rgba(6,182,212,.25);}
+.ib-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.ib-clickable:hover{border-color:var(--accent-blue);}
+.ib-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.ib-nested{margin-left:14px;border-left:2px solid var(--border-color);padding-left:12px;margin-top:7px;margin-bottom:7px;}
+.ib-leaf{font-size:10.5px;padding:6px 10px;}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- STACK DIAGRAM (table format vs file format) ---- */
+.stack-wrap{display:flex;flex-direction:column;gap:8px;max-width:520px;margin:0 auto;}
+.stack-layer{cursor:pointer;border:1.5px solid var(--border-color);border-radius:8px;background:var(--bg-elevated);padding:12px 16px;text-align:center;font-weight:700;font-size:12.5px;color:var(--text-secondary);transition:.15s;}
+.stack-layer:hover{border-color:var(--accent-blue);}
+.stack-layer.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.stack-layer .sl-sub{display:block;font-weight:500;font-size:10.5px;color:var(--text-disabled);margin-top:2px;font-family:'Roboto Mono',monospace;}
+.stack-arrow{text-align:center;color:var(--text-disabled);font-size:14px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- SNAPSHOT TIMELINE ---- */
+.snap-line{display:flex;align-items:center;overflow-x:auto;padding:10px 4px 18px;scrollbar-width:none;}
+.snap-line::-webkit-scrollbar{display:none;height:0;}
+.snap-node{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;padding:0 4px;}
+.snap-dot{width:16px;height:16px;border-radius:50%;background:var(--bg-elevated);border:2.5px solid var(--border-strong);transition:.2s;}
+.snap-node.active .snap-dot{border-color:var(--accent);background:var(--accent);box-shadow:0 0 0 4px rgba(6,182,212,.18);}
+.snap-op{font-size:10px;font-family:'Roboto Mono',monospace;color:var(--text-secondary);font-weight:700;}
+.snap-node.active .snap-op{color:var(--accent);}
+.snap-ts{font-size:9px;color:var(--text-disabled);}
+.snap-connector{width:44px;height:2px;background:var(--border-color);flex-shrink:0;}
+
+/* ---- FILE BOX (COW/MOR + Compaction) ---- */
+.fb-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.fb-block{border:1.5px solid var(--border-color);border-radius:8px;padding:12px;background:var(--bg-elevated);position:relative;overflow:hidden;transition:.3s;}
+.fb-block.touched{border-color:var(--accent);box-shadow:0 0 0 1px rgba(6,182,212,.25);}
+.fb-block.untouched{opacity:.55;}
+.fb-block-title{font-size:10.5px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.fb-mini{width:100%;border-collapse:collapse;font-size:11.5px;}
+.fb-mini td{padding:5px 6px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.fb-mini tr:last-child td{border-bottom:none;}
+.fb-overlay{position:absolute;inset:0;background:rgba(17,18,22,.62);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;opacity:0;transform:scale(.85);transition:.35s;pointer-events:none;}
+.fb-overlay.show{opacity:1;transform:scale(1);}
+.fb-overlay-badge{color:var(--bg-main);font-weight:800;font-size:11px;padding:4px 12px;border-radius:4px;letter-spacing:.5px;text-transform:uppercase;}
+.fb-overlay-badge.cow{background:var(--accent-red);}
+.fb-overlay-badge.mor{background:var(--accent-green);}
+.fb-overlay-text{font-size:10.5px;color:var(--text-secondary);text-align:center;padding:0 10px;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- PARTITION SPEC / TREE ---- */
+.tree{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:2;color:var(--text-secondary);}
+.tree .t0{color:var(--text-primary);font-weight:700;}
+.tree .t1{padding-left:22px;color:var(--accent-blue);}
+.tree .t2{padding-left:44px;color:var(--accent-purple);}
+.tree .t3{padding-left:66px;color:var(--text-secondary);}
+.tree .t3 .fname{color:var(--accent-green);}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+  #anatomySvg{display:none;}
+  .fb-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Apache Iceberg</h1><span>O formato de tabela por trás do Lakehouse moderno</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2018</div><div class="hstat-label">Origem (Netflix)</div></div>
+      <div class="hstat"><div class="hstat-num">18</div><div class="hstat-label">Demos</div></div>
+      <div class="hstat"><div class="hstat-num">Avro</div><div class="hstat-label">Manifestos</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do problema ao formato de tabela por dentro</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>A camada que deu <em>superpoderes de banco de dados</em> a uma pasta de arquivos Parquet</h2>
+      <p>Apache Iceberg é um <strong>formato de tabela</strong> (table format) open-source, criado em 2018 na Netflix (Ryan Blue e Daniel Weeks) e hoje um projeto de topo da Apache Software Foundation. Ele não substitui o Parquet — ele organiza metadados <em>por cima</em> de arquivos Parquet, ORC ou Avro para dar a eles transações ACID, time travel, evolução de schema e de partição sem reescrever a tabela inteira. É o núcleo técnico por trás do conceito de <strong>Lakehouse</strong>, suportado por Spark, Trino, Flink, Snowflake, Databricks, BigQuery e praticamente todo motor analítico moderno. Nesta aula vamos abrir essa camada de metadados por dentro: snapshots, manifests, partition evolution e as garantias que tornam um data lake seguro como um banco de dados.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Transações ACID</span>
+        <span class="badge badge-green">Time Travel</span>
+        <span class="badge badge-blue">Schema Evolution</span>
+        <span class="badge badge-purple">Hidden Partitioning</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">catalog → metadata/v3.metadata.json</div>
+        <div class="fc-body">
+          <div class="fc-row">snap-...-1.avro (manifest list)<br><span style="font-size:9.5px;opacity:.7;">→ manifest-0.avro, manifest-1.avro</span></div>
+          <div class="fc-row">data/*.parquet<br><span style="font-size:9.5px;opacity:.7;">os arquivos de dados de verdade</span></div>
+        </div>
+        <div class="fc-foot">Metadados versionados, nunca sobrescritos</div>
+      </div>
+      <div class="file-chip-caption">Estrutura simplificada de uma tabela Iceberg</div>
+    </div>
+  </section>
+
+  <!-- ============ O PROBLEMA ============ -->
+  <section class="section" id="s-motivacao">
+    <div class="section-eyebrow">Antes do Iceberg</div>
+    <div class="section-title">🧩 O problema: tabelas como "pastas com arquivos"</div>
+    <p class="section-desc">
+      Durante anos, uma "tabela" em um data lake era, na prática, apenas uma <strong>convenção</strong>: uma pasta no S3/HDFS com arquivos Parquet dentro, organizada em subpastas <code>ano=2024/mes=01/</code> (estilo Hive). O Hive Metastore guardava só o schema e o caminho raiz — para saber <em>quais arquivos</em> pertencem à tabela agora, o motor de consulta precisava <strong>listar o diretório</strong> toda vez. Essa convenção simples esconde uma pilha de problemas sérios em produção.
+    </p>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Desafio</th><th>Tabela Hive (diretórios)</th><th>Apache Iceberg</th></tr></thead>
+        <tbody>
+          <tr><td>Como saber quais arquivos pertencem à tabela?</td><td>Lista o diretório (list em S3 — lento e sujeito a inconsistência)</td><td class="cell-hit">Lê uma lista explícita no manifest — zero listagem</td></tr>
+          <tr><td>Commit é atômico?</td><td>Não — grava arquivos e atualiza partição em passos separados</td><td class="cell-hit">Sim — troca do ponteiro do metadata.json é atômica</td></tr>
+          <tr><td>Time travel / rollback?</td><td>Não nativo</td><td class="cell-hit">Sim — cada commit vira um snapshot navegável</td></tr>
+          <tr><td>Renomear uma coluna é seguro?</td><td>Não — o match é por <em>nome</em>, rename pode confundir dados</td><td class="cell-hit">Sim — cada campo tem um ID estável (veja seção de Schema Evolution)</td></tr>
+          <tr><td>Trocar a estratégia de partição sem reescrever tudo?</td><td>Não — muda a partição, reprocessa a tabela inteira</td><td class="cell-hit">Sim — partition evolution nativa</td></tr>
+          <tr><td>Pular arquivos irrelevantes sem abri-los?</td><td>Só estatísticas internas do próprio Parquet (por arquivo)</td><td class="cell-hit">Estatísticas agregadas no manifest, por arquivo, sem abrir nenhum</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central do Iceberg</div>
+      <p>Uma tabela deixa de ser "uma pasta que eu listo" e passa a ser <strong>uma lista explícita e versionada de arquivos</strong>, mantida em uma árvore de metadados desacoplada dos dados. Cada mudança na tabela — um <code>INSERT</code>, um <code>DELETE</code>, uma compactação — gera uma nova versão completa dessa lista, nunca edita a anterior. É essa imutabilidade que sustenta transações, time travel e evolução segura.</p>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-conceito">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧊 Formato de tabela, não formato de arquivo</div>
+    <p class="section-desc">
+      É comum confundir os dois. <strong>Parquet</strong> define como bytes de linhas e colunas ficam organizados <em>dentro de um único arquivo</em> — isso não muda com o Iceberg. O <strong>Iceberg</strong> define como um <em>conjunto</em> desses arquivos vira uma tabela consultável com SQL: como saber quais arquivos existem agora, quais existiam ontem, qual é o schema atual, e como pular arquivos que não interessam a uma query. Clique nas camadas abaixo para ver onde cada peça do stack entra em ação.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: da query ao byte físico no disco</div>
+      <div class="stack-wrap" id="stackWrap"></div>
+      <div class="anatomy-detail" id="stackDetail">
+        <div class="ad-title">👆 Clique em qualquer camada</div>
+        <div class="ad-text">O Iceberg vive entre o motor de consulta e os arquivos físicos — ele é a "cola" que dá semântica de tabela a um punhado de arquivos Parquet espalhados no armazenamento.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📄 Formato de Arquivo (Parquet, ORC, Avro)</div>
+        <div class="card-text">Resolve <strong>"como comprimir e organizar bytes dentro de um arquivo"</strong>. Row groups, encodings, compressão — tudo o que vimos na aula de Parquet continua valendo, inalterado, por baixo de uma tabela Iceberg.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧊 Formato de Tabela (Iceberg)</div>
+        <div class="card-text">Resolve <strong>"como um conjunto de arquivos vira uma tabela"</strong>. Não guarda uma única linha de dado — só metadados: schema, partições, snapshots e a lista exata de arquivos válidos em cada momento.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMIA ============ -->
+  <section class="section" id="s-anatomia">
+    <div class="section-eyebrow">Estrutura de Metadados</div>
+    <div class="section-title">🏛️ Anatomia: as quatro camadas de uma tabela Iceberg</div>
+    <p class="section-desc">
+      Toda leitura ou escrita passa por quatro camadas, cada uma apontando para a próxima. Clique nas caixas abaixo — a mesma lógica da especificação oficial do Iceberg — para ver como um leitor navega do catálogo até o byte físico de um arquivo Parquet.
+    </p>
+
+    <div class="interactive-panel anatomy-wrap" id="anatomyWrap">
+      <svg id="anatomySvg"></svg>
+      <div class="anatomy-grid">
+        <!-- METADATA LAYER -->
+        <div class="ib-box" id="box-meta">
+          <div class="ib-box-label">🗄️ Camada de Metadados</div>
+          <div class="ib-pointer" data-id="catalog" onclick="pickAnatomy('catalog')">Catalog: db.vendas → aponta para v3</div>
+
+          <div class="ib-clickable" data-id="metajson" onclick="pickAnatomy('metajson')">metadata/v3.metadata.json</div>
+          <div class="ib-nested">
+            <div class="ib-clickable" data-id="schema" onclick="pickAnatomy('schema')" style="font-size:11px;">schemas[] · partition-specs[] · sort-orders[]</div>
+            <div class="ib-clickable" data-id="snaplog" onclick="pickAnatomy('snaplog')" style="font-size:11px;">snapshot-log[] · current-snapshot-id</div>
+            <div class="ib-clickable" data-id="manlist" onclick="pickAnatomy('manlist')">snap-9182-1.avro (manifest list)</div>
+            <div class="ib-nested">
+              <div class="ib-clickable ib-leaf" data-id="man0" onclick="pickAnatomy('man0')">manifest-0.avro</div>
+              <div class="ib-clickable ib-leaf" data-id="man1" onclick="pickAnatomy('man1')" style="opacity:.75;">manifest-1.avro</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATA LAYER -->
+        <div class="ib-box" id="box-data">
+          <div class="ib-box-label">📁 Camada de Dados</div>
+          <div class="ib-pointer" data-id="warehouse" onclick="pickAnatomy('warehouse')">s3://warehouse/db/vendas/</div>
+          <div class="ib-clickable" data-id="datafile0" onclick="pickAnatomy('datafile0')">data/00000-a.parquet</div>
+          <div class="ib-clickable" data-id="datafile1" onclick="pickAnatomy('datafile1')">data/00001-b.parquet</div>
+          <div class="ib-clickable" data-id="deletefile" onclick="pickAnatomy('deletefile')" style="opacity:.8;">data/delete-0001.parquet (position delete)</div>
+          <div class="ib-nested">
+            <div class="ib-clickable ib-leaf" data-id="rowgroup" onclick="pickAnatomy('rowgroup')" style="font-size:10.5px;">Por dentro: row groups, encodings, estatísticas — aula de Parquet</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="anatomy-detail" id="anatomyDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Um leitor sempre começa pelo catálogo — nunca lista o diretório de dados. Cada seta neste diagrama é um ponteiro explícito guardado em algum arquivo de metadados.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Repare que a leitura é <strong>sempre em cascata, de cima para baixo</strong>: (1) pergunta ao catálogo qual é o <code>metadata.json</code> atual; (2) lê o <code>current-snapshot-id</code> dentro dele e encontra o manifest list correspondente; (3) lê o manifest list e decide, por estatísticas de partição, quais manifests abrir; (4) dentro de cada manifest, decide, por estatísticas de coluna, quais arquivos de dados abrir; (5) só então abre bytes de Parquet de verdade. Nenhum passo exige listar uma pasta.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📋 metadata.json</div>
+        <div class="card-text">O arquivo raiz. Guarda <code>table-uuid</code>, <code>location</code>, todo o <strong>histórico de schemas</strong> e <strong>partition-specs</strong> (com IDs), <code>current-snapshot-id</code>, a lista completa de <code>snapshots[]</code> e o <code>snapshot-log</code> (para time travel por timestamp). É reescrito por completo a cada commit — nunca editado in-place.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📜 Manifest List (Avro)</div>
+        <div class="card-text">Um arquivo por snapshot. Lista os manifests que compõem aquele snapshot e, para cada um, guarda um <strong>resumo por campo de partição</strong> (<code>lower_bound</code>/<code>upper_bound</code>) — é a primeira camada de pruning, antes de abrir qualquer manifest.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📄 Manifest File (Avro)</div>
+        <div class="card-text">Lista arquivos de dados (ou delete files) escritos juntos. Para cada arquivo: caminho, valor de partição, contagem de linhas, tamanho e <strong>lower/upper bound por coluna</strong> — a segunda camada de pruning, no nível de arquivo individual.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SNAPSHOTS / TIME TRAVEL ============ -->
+  <section class="section" id="s-snapshots">
+    <div class="section-eyebrow">Histórico Imutável</div>
+    <div class="section-title">⏱️ Snapshots e Time Travel</div>
+    <p class="section-desc">Cada operação de escrita — <code>INSERT</code>, <code>DELETE</code>, <code>MERGE</code>, até uma compactação de manutenção — gera um <strong>snapshot</strong> novo: um novo manifest list + um novo <code>metadata.json</code> apontando para ele. Snapshots antigos continuam válidos e legíveis até serem explicitamente expirados. Clique em um ponto da linha do tempo abaixo para "viajar no tempo" até aquele commit.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: histórico de commits da tabela <code style="color:var(--accent);">db.vendas</code></div>
+      <div class="snap-line" id="snapLine"></div>
+      <div class="kv-list" id="snapDetail" style="margin-top:6px;"></div>
+      <div class="stat-cards" id="snapStats"></div>
+      <div class="btn-toggle-row" style="margin-top:16px;">
+        <button class="player-btn" onclick="rollbackSnapshot()">⏪ CALL rollback_to_snapshot(...)</button>
+      </div>
+      <div class="section-desc" id="rollbackNote" style="font-size:12px;margin-top:8px;"></div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Consultar uma versão específica (Spark SQL)</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> * <span class="kw">FROM</span> db.vendas.snapshots;
+
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> db.vendas
+<span class="kw">VERSION</span> <span class="kw">AS</span> <span class="kw">OF</span> <span class="num">3821550127630901234</span>;
+
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> db.vendas
+<span class="kw">TIMESTAMP</span> <span class="kw">AS</span> <span class="kw">OF</span> <span class="st">'2026-01-06 12:00:00'</span>;</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Voltar a tabela para um snapshot anterior</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CALL</span> spark_catalog.system.rollback_to_snapshot(
+  <span class="st">'db.vendas'</span>, <span class="num">3821550127630901234</span>
+);
+
+<span class="cm">-- os snapshots "descartados" não somem na hora;</span>
+<span class="cm">-- ficam órfãos até o expire_snapshots rodar</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MANIFESTS / PRUNING ============ -->
+  <section class="section" id="s-manifests">
+    <div class="section-eyebrow">A Mágica da Performance</div>
+    <div class="section-title">🎯 Pruning em dois níveis: Manifest List e Manifest</div>
+    <p class="section-desc">O planejamento de uma query no Iceberg nunca lista diretórios nem abre um Parquet "no escuro". Ele filtra em <strong>duas camadas de estatísticas</strong>, cada uma mais granular que a anterior, antes de tocar em qualquer byte de dado real.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Nível 1 — filtre <code style="color:var(--accent);">WHERE dt &gt;= X</code> e veja quais manifests seriam pulados</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Filtro: dt ≥</span><span class="ctrl-v" id="manifDateLabel">2024-07-01</span></div>
+          <input type="range" id="manifSlider" min="0" max="8" step="1" value="6" oninput="renderManifestPrune()">
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Manifest</th><th>min(dt)</th><th>max(dt)</th><th>Arquivos cobertos</th><th>Resultado</th></tr></thead>
+        <tbody id="manifBody"></tbody>
+      </table>
+      <div class="result-display">
+        <div><span class="rl">Manifests lidos</span><span class="rv" id="manifRead">4 / 4</span></div>
+        <div><span class="rl">Manifests pulados</span><span class="rv" id="manifSkip">0</span></div>
+        <div><span class="rl">Arquivos evitados</span><span class="rv" id="manifSaving">0</span></div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Nível 2 — dentro dos manifests que sobraram, filtre <code style="color:var(--accent);">WHERE valor &gt;= Y</code> por arquivo</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Filtro: valor ≥</span><span class="ctrl-v" id="fileValLabel">500</span></div>
+          <input type="range" id="fileValSlider" min="0" max="1000" step="10" value="500" oninput="renderFilePrune()">
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Data file (dentro dos manifests sobreviventes)</th><th>min(valor)</th><th>max(valor)</th><th>Resultado</th></tr></thead>
+        <tbody id="fileBody"></tbody>
+      </table>
+      <div class="result-display">
+        <div><span class="rl">Arquivos abertos de fato</span><span class="rv" id="fileRead">0 / 0</span></div>
+        <div><span class="rl">Economia total (2 níveis)</span><span class="rv" id="fileSaving">0%</span></div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Note a diferença para o Parquet puro: lá, o motor primeiro precisa <strong>abrir cada arquivo</strong> para ler seu footer e achar min/max. Aqui, essas estatísticas já estão <strong>agregadas no manifest</strong> — o planejador decide o que abrir sem tocar em um único arquivo Parquet.</p></div>
+  </section>
+
+  <!-- ============ HIDDEN PARTITIONING ============ -->
+  <section class="section" id="s-particionamento">
+    <div class="section-eyebrow">Adeus, Coluna de Partição Manual</div>
+    <div class="section-title">🙈 Hidden Partitioning e Transforms</div>
+    <p class="section-desc">Em uma tabela Hive, particionar por dia exige criar e <strong>manter manualmente</strong> uma coluna <code>dt</code> derivada de <code>evento_ts</code> — e o usuário precisa lembrar de filtrar por <code>dt</code>, não só por <code>evento_ts</code>, ou o pruning simplesmente não acontece. O Iceberg elimina essa coluna extra: a transformação de partição fica registrada no <em>partition spec</em>, e o motor de consulta traduz sozinho um filtro em <code>evento_ts</code> para pruning de partição. Isso é <strong>hidden partitioning</strong>.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: calculadora de partition transforms</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Valor de entrada (coluna <code style="color:var(--accent);">evento_ts</code>)</div>
+          <input type="text" id="transformInput" value="2026-07-19T14:32:00" oninput="renderTransform()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" id="transformButtons" style="margin-bottom:16px;"></div>
+      <div class="result-display">
+        <div><span class="rl">Transform aplicado</span><span class="rv" id="transformName">identity</span></div>
+        <div><span class="rl">Valor de partição gerado</span><span class="rv" id="transformValue">—</span></div>
+      </div>
+      <div id="bucketWrap" style="margin-top:14px;display:none;">
+        <div class="ctrl-l" style="margin-bottom:6px;">bucket(8, evento_ts) — em qual dos 8 buckets o valor cai</div>
+        <div class="bucket-bits" id="bucketBits"></div>
+        <div class="section-desc" style="font-size:11.5px;margin-top:6px;">Hash ilustrativo só para fins didáticos — o Iceberg real usa Murmur3.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📅 year / month / day / hour</div><div class="card-text">Deriva a partição diretamente de uma coluna de data/timestamp. Ideal para dados com padrão temporal de chegada e de consulta (a maioria dos pipelines).</div></div>
+      <div class="card"><div class="card-title">🪣 bucket(N, col)</div><div class="card-text">Aplica hash e distribui em <code>N</code> baldes fixos. Ótimo para colunas de alta cardinalidade sem ordem natural (ex: <code>user_id</code>), evitando partições desbalanceadas.</div></div>
+      <div class="card"><div class="card-title">✂️ truncate(N, col)</div><div class="card-text">Trunca uma string ou número para os primeiros <code>N</code> caracteres/dígitos — útil para agrupar por prefixo (ex: os 2 primeiros dígitos de um CEP).</div></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">O usuário nunca precisa saber disso</div>
+      <p>Uma query <code>WHERE evento_ts >= '2026-07-01'</code> funciona sem que ninguém escreva <code>WHERE dt = '2026-07'</code>. E, como veremos a seguir, você pode trocar de <code>month(evento_ts)</code> para <code>day(evento_ts)</code> no futuro <strong>sem reescrever</strong> um único arquivo antigo.</p>
+    </div>
+  </section>
+
+  <!-- ============ SCHEMA EVOLUTION ============ -->
+  <section class="section" id="s-evolucaoschema">
+    <div class="section-eyebrow">Segurança de Longo Prazo</div>
+    <div class="section-title">🧬 Evolução de Schema por Field ID</div>
+    <p class="section-desc">Cada coluna (inclusive campos aninhados) recebe, na criação, um <strong>ID inteiro permanente</strong> — gravado junto com os dados físicos no arquivo Parquet. O schema "atual" da tabela é só um mapeamento de nomes para esses IDs. Renomear, adicionar, remover ou reordenar colunas altera apenas esse mapeamento no <code>metadata.json</code>: os arquivos antigos <strong>nunca são reescritos</strong> e continuam sendo lidos corretamente, porque o leitor casa colunas por ID, nunca por nome ou posição.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: evolua o schema e veja o que acontece com um arquivo antigo</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="player-btn" onclick="schemaAddColumn()">+ Adicionar coluna <code>desconto</code></button>
+        <button class="player-btn" onclick="schemaRenameColumn()">✏️ Renomear <code>cliente</code> → <code>nome_cliente</code></button>
+        <button class="player-btn" onclick="schemaDropColumn()">🗑️ Remover <code>pais</code></button>
+        <button class="player-btn" onclick="schemaReset()">⟲ Reiniciar demo</button>
+      </div>
+      <div class="ctrl-l" style="margin-bottom:6px;">Schema atual da tabela</div>
+      <table class="data-table" style="margin-bottom:16px;">
+        <thead><tr><th>Field ID</th><th>Nome atual</th><th>Tipo</th><th>Status</th></tr></thead>
+        <tbody id="schemaBody"></tbody>
+      </table>
+      <div class="ctrl-l" style="margin-bottom:6px;">Arquivo Parquet gravado <em style="color:var(--accent);">antes</em> de qualquer mudança (imutável)</div>
+      <div class="indexed-list" id="schemaOldFile"></div>
+      <div class="anatomy-detail" id="schemaLog" style="margin-top:14px;">
+        <div class="ad-title">Log de evolução</div>
+        <div class="ad-text">Use os botões acima para simular <code>ALTER TABLE</code>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PARTITION EVOLUTION ============ -->
+  <section class="section" id="s-evolucaoparticao">
+    <div class="section-eyebrow">Sem Reescrever a Tabela</div>
+    <div class="section-title">🗺️ Evolução de Partição</div>
+    <p class="section-desc">Numa tabela Hive, mudar o esquema de particionamento significa reprocessar e reescrever <strong>toda</strong> a tabela. No Iceberg, um <code>ALTER TABLE ... REPLACE PARTITION FIELD</code> só afeta os <strong>dados escritos daqui pra frente</strong> — cada manifest guarda um <code>partition_spec_id</code>, e o planejador de query mistura specs diferentes de forma transparente na mesma tabela.</p>
+
+    <div class="fb-row">
+      <div class="fb-block touched">
+        <div class="fb-block-title">Spec 0 — até 30/06/2024</div>
+        <table class="fb-mini"><tbody>
+          <tr><td>Transform</td><td><code>month(evento_ts)</code></td></tr>
+          <tr><td>Motivo</td><td>Volume baixo, granularidade mensal bastava</td></tr>
+          <tr><td>Manifests</td><td>manifest-00, manifest-01</td></tr>
+        </tbody></table>
+      </div>
+      <div class="fb-block touched" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+        <div>
+          <div style="font-size:22px;">→</div>
+          <div class="card-text"><code>ALTER TABLE vendas<br>REPLACE PARTITION FIELD<br>month(evento_ts) WITH day(evento_ts)</code></div>
+        </div>
+      </div>
+      <div class="fb-block touched">
+        <div class="fb-block-title">Spec 1 — a partir de 01/07/2024</div>
+        <table class="fb-mini"><tbody>
+          <tr><td>Transform</td><td><code>day(evento_ts)</code></td></tr>
+          <tr><td>Motivo</td><td>Volume cresceu, granularidade diária reduz mais arquivos por query</td></tr>
+          <tr><td>Manifests</td><td>manifest-02, manifest-03</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div class="ok-box"><p>✅ Nenhum arquivo escrito sob o Spec 0 foi tocado. Uma query com <code>WHERE evento_ts >= '2024-06-15'</code> lê manifests dos dois specs ao mesmo tempo, aplicando pruning correto em cada um segundo sua própria granularidade.</p></div>
+  </section>
+
+  <!-- ============ COW vs MOR ============ -->
+  <section class="section" id="s-cowmor">
+    <div class="section-eyebrow">Como um DELETE/UPDATE Acontece</div>
+    <div class="section-title">✍️ Copy-on-Write vs. Merge-on-Read</div>
+    <p class="section-desc">Como o Iceberg nunca edita um arquivo Parquet in-place, um <code>DELETE</code>/<code>UPDATE</code>/<code>MERGE</code> precisa escolher uma estratégia. Experimente rodar <code>DELETE FROM vendas WHERE pais = 'Portugal'</code> nos dois modos e compare o custo de escrita.</p>
+
+    <div class="interactive-panel">
+      <div class="ctrl-row" style="margin-bottom:10px;">
+        <div class="ctrl-g">
+          <div class="ctrl-l">Estratégia</div>
+          <div class="btn-toggle-row">
+            <button class="btn-toggle active" id="btnCOW" onclick="setCowMorMode('cow')">Copy-on-Write</button>
+            <button class="btn-toggle" id="btnMOR" onclick="setCowMorMode('mor')">Merge-on-Read</button>
+          </div>
+        </div>
+        <div class="ctrl-g" style="flex:2;">
+          <div class="ctrl-l">Operação simulada</div>
+          <div class="chip" style="font-size:12px;">DELETE FROM vendas WHERE pais = 'Portugal'</div>
+        </div>
+      </div>
+      <div class="fb-row" id="cowMorRow"></div>
+      <div class="player-controls" style="display:flex;gap:8px;margin-top:14px;">
+        <button class="player-btn primary" onclick="runCowMor()">▶ Executar DELETE</button>
+        <button class="player-btn" onclick="resetCowMor()">⏹ Resetar</button>
+      </div>
+      <div class="result-display">
+        <div><span class="rl">Bytes escritos agora</span><span class="rv" id="cowMorWrite">—</span></div>
+        <div><span class="rl">Custo extra em leituras futuras</span><span class="rv" id="cowMorRead">—</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📝 Copy-on-Write (COW)</div>
+        <div class="card-text">Reescreve <strong>por completo</strong> cada arquivo afetado, sem as linhas removidas/atualizadas. Escrita mais cara, mas as leituras seguintes não têm nenhum custo extra — os dados já estão "limpos".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔀 Merge-on-Read (MOR)</div>
+        <div class="card-text">Grava só um pequeno <strong>delete file</strong> (position delete ou equality delete) apontando para as linhas removidas. Escrita muito mais barata, mas toda leitura futura precisa mesclar dado + delete file — até a compactação absorver essa dívida.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ACID ============ -->
+  <section class="section" id="s-acid">
+    <div class="section-eyebrow">Sem Locks Longos</div>
+    <div class="section-title">🔒 ACID via Concorrência Otimista</div>
+    <p class="section-desc">O Iceberg não trava a tabela enquanto um job escreve dados — isso poderia levar minutos ou horas. Em vez disso, usa <strong>concorrência otimista</strong>: o escritor prepara tudo em paralelo e só no final tenta uma troca atômica (compare-and-swap) do ponteiro no catálogo.</p>
+
+    <div class="code-block">
+<span class="code-lang">pseudo-código</span><span class="cm"># 1. lê a versão base sem travar nada</span>
+base <span class="kw">=</span> catalog.current_metadata_pointer(<span class="st">"db.vendas"</span>)
+
+<span class="cm"># 2. escreve novos data files + manifests + manifest list + metadata.json</span>
+<span class="cm">#    (pode levar minutos — ninguém mais é bloqueado durante isso)</span>
+new_metadata <span class="kw">=</span> build_new_metadata(base, changes)
+
+<span class="cm"># 3. tenta a troca atômica do ponteiro (compare-and-swap)</span>
+ok <span class="kw">=</span> catalog.compare_and_swap(<span class="st">"db.vendas"</span>, base, new_metadata)
+
+<span class="kw">if</span> <span class="kw">not</span> ok:
+    <span class="cm"># alguém commitou primeiro — refaz sobre o snapshot mais novo</span>
+    retry()</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🏁 Cenário: dois writers concorrentes</div>
+        <div class="card-text">Writer A e Writer B partem ambos do snapshot v5. A termina primeiro e faz o CAS com sucesso → tabela vai para v6. Quando B tenta o CAS contra v5, ele falha (a base já não é a atual) — B <strong>recalcula</strong> seus manifests contra v6 e tenta de novo, chegando a v7.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ Por que isso escala bem</div>
+        <div class="card-text">O trabalho pesado — escrever arquivos Parquet e manifests — acontece <strong>sem nenhum lock</strong>. Só a etapa final (trocar um ponteiro de alguns bytes) precisa ser atômica, e isso o catálogo resolve em milissegundos.</div>
+      </div>
+    </div>
+    <div class="warn-box"><p>⚠️ Isso significa que o catálogo escolhido <strong>precisa</strong> suportar compare-and-swap atômico de verdade — é por isso que "um arquivo texto qualquer apontando pro metadata.json" não serve como catálogo em produção multi-writer.</p></div>
+  </section>
+
+  <!-- ============ MANUTENÇÃO ============ -->
+  <section class="section" id="s-manutencao">
+    <div class="section-eyebrow">A Tabela Precisa de Cuidado</div>
+    <div class="section-title">🧹 Manutenção: compaction, expiração e limpeza</div>
+    <p class="section-desc">Uma tabela Iceberg viva acumula arquivos pequenos, delete files e snapshots antigos. Sem manutenção periódica, o desempenho de leitura degrada e o custo de armazenamento sobe.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: compactação de arquivos pequenos (rewrite_data_files)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Arquivos pequenos acumulados</span><span class="ctrl-v" id="compFilesVal">80</span></div>
+          <input type="range" id="compFiles" min="10" max="300" step="10" value="80" oninput="updateCompaction()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Tamanho médio atual</span><span class="ctrl-v" id="compAvgVal">6 MB</span></div>
+          <input type="range" id="compAvg" min="1" max="64" step="1" value="6" oninput="updateCompaction()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="compCanvas" height="150"></canvas></div>
+      <div class="btn-toggle-row" style="margin-top:14px;">
+        <button class="player-btn primary" onclick="runCompaction()">▶ CALL rewrite_data_files(...)</button>
+        <button class="player-btn" onclick="resetCompaction()">⏹ Resetar</button>
+      </div>
+      <div class="stat-cards" id="compStats"></div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🧹 rewrite_data_files</div><div class="card-text">Compacta arquivos pequenos (e absorve delete files do MOR) em arquivos maiores e mais eficientes de ler. A prática mais impactante de manutenção.</div></div>
+      <div class="card"><div class="card-title">🗑️ expire_snapshots</div><div class="card-text">Remove snapshots mais velhos que uma janela de retenção, junto com os arquivos que só existiam para servi-los — é o que finalmente libera espaço em disco após um rollback ou compactação.</div></div>
+      <div class="card"><div class="card-title">🧽 remove_orphan_files</div><div class="card-text">Limpa arquivos presentes no armazenamento mas não referenciados por nenhum manifest vivo — sobras de jobs que falharam no meio da escrita.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ CATÁLOGOS ============ -->
+  <section class="section" id="s-catalogos">
+    <div class="section-eyebrow">A Única Fonte da Verdade</div>
+    <div class="section-title">📚 Catálogos</div>
+    <p class="section-desc">O catálogo tem uma única responsabilidade crítica: mapear <code>nome_da_tabela → localização do metadata.json atual</code>, com suporte a <strong>compare-and-swap atômico</strong>. Sem essa garantia, dois escritores concorrentes podem corromper a tabela.</p>
+    <div class="grid-4">
+      <div class="card"><div class="card-title">🐘 Hive Metastore</div><div class="card-text">O catálogo clássico do ecossistema Hadoop. Amplamente suportado, mas thrift-based e operacionalmente mais pesado de manter.</div></div>
+      <div class="card"><div class="card-title">☁️ AWS Glue</div><div class="card-text">Catálogo gerenciado da AWS, integrado nativamente com Athena, EMR e Redshift Spectrum.</div></div>
+      <div class="card"><div class="card-title">🌐 REST Catalog</div><div class="card-text">O padrão moderno: uma API HTTP especificada pelo próprio projeto Iceberg. Implementada por Tabular, Polaris, Unity Catalog, Snowflake e outros — o caminho para portabilidade real entre motores.</div></div>
+      <div class="card"><div class="card-title">🌳 Nessie</div><div class="card-text">Catálogo com semântica de <strong>Git</strong> — branches e tags cobrindo múltiplas tabelas ao mesmo tempo, permitindo transações multi-tabela e workflows de revisão de dados.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama do Lakehouse</div>
+    <div class="section-title">⚖️ Iceberg vs. Delta Lake vs. Hudi vs. Tabelas Hive</div>
+    <p class="section-desc">Os três formatos de tabela resolvem o mesmo problema central com ênfases diferentes.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Formato</th><th>Metadados</th><th>Time Travel</th><th>Partition Evolution</th><th>Catálogos</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Hive Table</strong></td><td>Nenhum próprio (só Hive Metastore)</td><td>❌ Não</td><td>❌ Não</td><td>Hive Metastore</td><td>Compatibilidade legada</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Apache Hudi</strong></td><td>Timeline (<code>.hoodie</code>) + índices</td><td>✅ Sim</td><td>Parcial</td><td>Hive/Glue/próprio</td><td>Upserts e CDC de alta frequência (streaming)</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Delta Lake</strong></td><td>Transaction log JSON + checkpoints Parquet</td><td>✅ Sim</td><td>Não nativo</td><td>Hive/Unity Catalog</td><td>Ecossistema Databricks/Spark</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Apache Iceberg</strong></td><td>metadata.json + manifest list + manifests (Avro)</td><td>✅ Sim</td><td>✅ Sim (nativa)</td><td>Hive/Glue/REST/Nessie/JDBC</td><td>Interoperabilidade multi-engine, arquitetura aberta</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ CÓDIGO ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🐍 Iceberg na prática</div>
+    <p class="section-desc">De DDL em Spark SQL a leitura direta com PyIceberg — o essencial do dia a dia.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Spark SQL — criar com hidden partitioning</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE</span> <span class="kw">TABLE</span> db.vendas (
+  pedido_id <span class="kw">BIGINT</span>, cliente <span class="kw">STRING</span>,
+  pais <span class="kw">STRING</span>, evento_ts <span class="kw">TIMESTAMP</span>, valor <span class="kw">DOUBLE</span>
+) <span class="kw">USING</span> iceberg
+<span class="kw">PARTITIONED</span> <span class="kw">BY</span> (days(evento_ts));
+
+<span class="kw">ALTER</span> <span class="kw">TABLE</span> db.vendas
+<span class="kw">REPLACE</span> <span class="kw">PARTITION</span> <span class="kw">FIELD</span> days(evento_ts)
+<span class="kw">WITH</span> hours(evento_ts);</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Spark SQL — MERGE (upsert) e DELETE</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">MERGE</span> <span class="kw">INTO</span> db.vendas t
+<span class="kw">USING</span> stage_updates s <span class="kw">ON</span> t.pedido_id = s.pedido_id
+<span class="kw">WHEN</span> <span class="kw">MATCHED</span> <span class="kw">THEN</span> <span class="kw">UPDATE</span> <span class="kw">SET</span> *
+<span class="kw">WHEN</span> <span class="kw">NOT</span> <span class="kw">MATCHED</span> <span class="kw">THEN</span> <span class="kw">INSERT</span> *;
+
+<span class="kw">DELETE</span> <span class="kw">FROM</span> db.vendas <span class="kw">WHERE</span> pais = <span class="st">'Portugal'</span>;</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">PyIceberg — inspecionando metadados</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">from</span> pyiceberg.catalog <span class="kw">import</span> load_catalog
+
+catalog = load_catalog(<span class="st">"rest"</span>)
+tbl = catalog.load_table(<span class="st">"db.vendas"</span>)
+
+<span class="fn">print</span>(tbl.schema())
+<span class="fn">print</span>(tbl.current_snapshot().snapshot_id)
+
+df = tbl.scan(row_filter=<span class="st">"pais == 'Brasil'"</span>).to_pandas()</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Manutenção via Spark procedures</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CALL</span> spark_catalog.system.rewrite_data_files(
+  <span class="kw">table</span> =&gt; <span class="st">'db.vendas'</span>, options =&gt; <span class="kw">map</span>(<span class="st">'target-file-size-bytes'</span>,<span class="st">'536870912'</span>)
+);
+
+<span class="kw">CALL</span> spark_catalog.system.expire_snapshots(
+  <span class="kw">table</span> =&gt; <span class="st">'db.vendas'</span>, older_than =&gt; <span class="kw">TIMESTAMP</span> <span class="st">'2026-06-01 00:00:00'</span>
+);</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas práticas</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🪣 Escolha o transform certo</div>
+        <div class="card-text">Prefira granularidade que gere partições de <strong>algumas centenas de MB a poucos GB</strong>. Hidden partitioning não elimina o problema de over-partitioning — só esconde a coluna.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧹 Agende compactação</div>
+        <div class="card-text">Rode <code>rewrite_data_files</code> regularmente, especialmente em tabelas com streaming/MOR — delete files não compactados degradam leitura progressivamente.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">✍️ COW vs MOR conforme o padrão de carga</div>
+        <div class="card-text">MOR para pipelines com muitos updates/deletes pequenos e frequentes (CDC); COW para tabelas lidas com muito mais frequência do que são alteradas.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌐 Prefira um REST Catalog</div>
+        <div class="card-text">Reduz o acoplamento a um único motor e é o padrão que o próprio projeto Iceberg está consolidando — mais portabilidade entre Spark, Trino, Flink e data warehouses.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Apache Iceberg</span>
+    <span>
+      Fontes: <a href="https://iceberg.apache.org/spec/" target="_blank" rel="noopener">Apache Iceberg Table Spec</a> ·
+      <a href="https://iceberg.apache.org/docs/latest/" target="_blank" rel="noopener">Iceberg Docs</a> ·
+      <a href="https://www.tabular.io/apache-iceberg-cookbook/" target="_blank" rel="noopener">Tabular Cookbook</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-motivacao', icon:'🧩', label:'O Problema'},
+  {id:'s-conceito', icon:'🧊', label:'O que é'},
+  {id:'s-anatomia', icon:'🏛️', label:'Anatomia'},
+  {id:'s-snapshots', icon:'⏱️', label:'Snapshots'},
+  {id:'s-manifests', icon:'🎯', label:'Manifests'},
+  {id:'s-particionamento', icon:'🙈', label:'Hidden Part.'},
+  {id:'s-evolucaoschema', icon:'🧬', label:'Schema Evol.'},
+  {id:'s-evolucaoparticao', icon:'🗺️', label:'Partition Evol.'},
+  {id:'s-cowmor', icon:'✍️', label:'COW vs MOR'},
+  {id:'s-acid', icon:'🔒', label:'ACID'},
+  {id:'s-manutencao', icon:'🧹', label:'Manutenção'},
+  {id:'s-catalogos', icon:'📚', label:'Catálogos'},
+  {id:'s-comparacao', icon:'⚖️', label:'Comparação'},
+  {id:'s-codigo', icon:'🐍', label:'Na Prática'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== STACK DIAGRAM (table vs file format) ===================== */
+const stackLayers = [
+  {id:'engine', label:'Query Engine', sub:'Spark · Trino · Flink · Snowflake', d:'Recebe o SQL, monta o plano de execução e conversa com o catálogo para descobrir onde está a tabela — nunca abre arquivos diretamente sem passar por essa camada.'},
+  {id:'catalog', label:'Catalog', sub:'Hive Metastore · Glue · REST · Nessie', d:'Responde uma única pergunta crítica: "qual é o metadata.json atual da tabela db.vendas?" — com garantia de troca atômica a cada commit.'},
+  {id:'iceberg', label:'Apache Iceberg', sub:'metadata.json · manifest list · manifests', d:'A camada de formato de tabela propriamente dita: schema versionado, snapshots, partition specs e a lista exata de arquivos válidos agora.'},
+  {id:'files', label:'Arquivos de Dados', sub:'Parquet · ORC · Avro', d:'O formato de arquivo escolhido — na esmagadora maioria dos casos, Parquet. Row groups, encodings e compressão continuam exatamente como na aula de Parquet.'},
+  {id:'storage', label:'Armazenamento', sub:'S3 · HDFS · GCS · ADLS', d:'Onde os bytes fisicamente residem. O Iceberg foi desenhado para armazenamento de objetos (S3-like), sem depender de operações atômicas de diretório.'},
+];
+function buildStack(){
+  document.getElementById('stackWrap').innerHTML = stackLayers.map((l,i) => `
+    ${i>0 ? '<div class="stack-arrow">↓</div>' : ''}
+    <div class="stack-layer" data-id="${l.id}" onclick="pickStack('${l.id}')">${l.label}<span class="sl-sub">${l.sub}</span></div>
+  `).join('');
+}
+function pickStack(id){
+  document.querySelectorAll('.stack-layer').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+  const l = stackLayers.find(x => x.id === id);
+  document.getElementById('stackDetail').innerHTML = `<div class="ad-title">${l.label}</div><div class="ad-text">${l.d}</div>`;
+}
+buildStack();
+
+/* ===================== ANATOMY DIAGRAM (metadata tree) ===================== */
+const anatomyInfo = {
+  catalog: {t:'Catalog — ponteiro da tabela', d:'A única fonte da verdade sobre "qual metadata.json é o atual". Cada commit troca esse ponteiro atomicamente (compare-and-swap).', link:'metajson'},
+  metajson: {t:'metadata/v3.metadata.json', d:'Arquivo raiz de metadados: schemas, partition-specs, sort-orders, current-snapshot-id e a lista de todos os snapshots. Reescrito por completo a cada commit.', link:'catalog'},
+  schema: {t:'schemas[] · partition-specs[] · sort-orders[]', d:'O histórico completo de versões de schema e de partição da tabela, cada um com seu próprio ID — é isso que permite schema e partition evolution sem quebrar arquivos antigos.'},
+  snaplog: {t:'snapshot-log[] · current-snapshot-id', d:'A trilha de auditoria de todos os commits (timestamp + snapshot-id) e um ponteiro para qual é o snapshot ativo agora — a base do time travel.'},
+  manlist: {t:'Manifest List (Avro)', d:'Um arquivo por snapshot. Lista os manifests que compõem aquele snapshot, cada um com um resumo de min/max por campo de partição — primeira camada de pruning.', link:'man0'},
+  man0: {t:'manifest-0.avro', d:'Lista arquivos de dados escritos juntos, com caminho, valor de partição, contagem de linhas e min/max por coluna — segunda camada de pruning.', link:'datafile0'},
+  man1: {t:'manifest-1.avro', d:'Um segundo manifest, cobrindo outro grupo de arquivos de dados — cada manifest tem seu próprio partition_spec_id.', link:'datafile1'},
+  warehouse: {t:'s3://warehouse/db/vendas/', d:'A raiz física onde os arquivos vivem. Repare: nenhum leitor lista esta pasta — ele só abre exatamente os caminhos que os manifests apontaram.', link:'man0'},
+  datafile0: {t:'data/00000-a.parquet', d:'Um arquivo de dados real, em Parquet. Por dentro, é exatamente a estrutura estudada na aula de Parquet: row groups, column chunks, páginas.', link:'man0'},
+  datafile1: {t:'data/00001-b.parquet', d:'Outro arquivo de dados, referenciado pelo manifest-1.avro.', link:'man1'},
+  deletefile: {t:'delete-0001.parquet (position delete)', d:'Um arquivo especial de Merge-on-Read: em vez de dados novos, guarda referências (arquivo + posição da linha) para linhas que devem ser tratadas como removidas na leitura.'},
+  rowgroup: {t:'Por dentro do arquivo Parquet', d:'Nada muda aqui: row groups, column chunks, dictionary encoding, estatísticas min/max por row group — tudo o que foi coberto na aula de Parquet continua valendo por baixo do Iceberg.'},
+};
+function pickAnatomy(id){
+  document.querySelectorAll('.ib-clickable, .ib-pointer').forEach(el => el.classList.remove('active'));
+  const info = anatomyInfo[id];
+  if(!info) return;
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(el => el.classList.add('active'));
+  if(info.link) document.querySelectorAll(`[data-id="${info.link}"]`).forEach(el => el.classList.add('active'));
+  document.getElementById('anatomyDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+  drawConnectors(id, info.link);
+}
+function rectRel(el, wrap){
+  const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+  return {x: r.left - w.left, y: r.top - w.top, w: r.width, h: r.height};
+}
+function drawConnectors(id, linkId){
+  const svg = document.getElementById('anatomySvg');
+  const wrap = document.getElementById('anatomyWrap');
+  svg.innerHTML = '';
+  if(window.innerWidth <= 960 || !linkId) return;
+  const a = document.querySelector(`[data-id="${id}"]`);
+  const b = document.querySelector(`[data-id="${linkId}"]`);
+  if(!a || !b) return;
+  const ra = rectRel(a, wrap), rb = rectRel(b, wrap);
+  const isFileSide = ra.x < rb.x;
+  const x1 = isFileSide ? ra.x + ra.w : ra.x;
+  const y1 = ra.y + ra.h/2;
+  const x2 = isFileSide ? rb.x : rb.x + rb.w;
+  const y2 = rb.y + rb.h/2;
+  const mx = (x1+x2)/2;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+  path.setAttribute('stroke', '#06b6d4');
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('opacity', '0.85');
+  svg.appendChild(path);
+  [ [x1,y1], [x2,y2] ].forEach(([cx,cy]) => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', 3.5);
+    c.setAttribute('fill', '#06b6d4');
+    svg.appendChild(c);
+  });
+}
+window.addEventListener('resize', () => { const active = document.querySelector('.ib-clickable.active, .ib-pointer.active'); if(active) drawConnectors(active.dataset.id, anatomyInfo[active.dataset.id]?.link); });
+
+/* ===================== SNAPSHOTS / TIME TRAVEL ===================== */
+const snapshots = [
+  {id:'3821550127630901111', short:'#1', op:'append', ts:'2026-01-05 08:00', desc:'Carga inicial da tabela de vendas', added:1000, deleted:0, files:12, rows:1000},
+  {id:'3821550127630902222', short:'#2', op:'append', ts:'2026-01-06 08:00', desc:'Novo lote diário de vendas', added:200, deleted:0, files:14, rows:1200},
+  {id:'3821550127630903333', short:'#3', op:'replace', ts:'2026-01-06 23:00', desc:'Compactação noturna (rewrite_data_files)', added:0, deleted:0, files:3, rows:1200},
+  {id:'3821550127630904444', short:'#4', op:'delete', ts:'2026-01-08 10:00', desc:'Exclusão por solicitação LGPD', added:0, deleted:50, files:3, rows:1150},
+  {id:'3821550127630905555', short:'#5', op:'append', ts:'2026-01-09 08:00', desc:'Novo lote diário de vendas', added:300, deleted:0, files:5, rows:1450},
+];
+let activeSnapIdx = snapshots.length - 1;
+function buildSnapTimeline(){
+  const opColor = {append:'var(--accent-green)', replace:'var(--accent-blue)', delete:'var(--accent-red)'};
+  document.getElementById('snapLine').innerHTML = snapshots.map((s,i) => `
+    ${i>0 ? '<div class="snap-connector"></div>' : ''}
+    <div class="snap-node ${i===activeSnapIdx?'active':''}" data-i="${i}" onclick="pickSnapshot(${i})">
+      <span class="snap-op" style="color:${opColor[s.op]}">${s.op}</span>
+      <span class="snap-dot"></span>
+      <span class="snap-ts">${s.ts}</span>
+    </div>`).join('');
+}
+function pickSnapshot(i){
+  activeSnapIdx = i;
+  buildSnapTimeline();
+  const s = snapshots[i];
+  document.getElementById('snapDetail').innerHTML = `
+    <div class="kv-pair highlight"><div class="kv-key">snapshot-id</div><div class="kv-arrow">→</div><div class="kv-value">${s.id}</div></div>
+    <div class="kv-pair"><div class="kv-key">operation</div><div class="kv-arrow">→</div><div class="kv-value">${s.op}</div></div>
+    <div class="kv-pair"><div class="kv-key">resumo</div><div class="kv-arrow">→</div><div class="kv-value">${s.desc}</div></div>
+  `;
+  document.getElementById('snapStats').innerHTML = `
+    <div class="stat-card c-green"><div class="stat-card-label">Linhas na tabela</div><div class="stat-card-value">${s.rows.toLocaleString('pt-BR')}</div></div>
+    <div class="stat-card c-blue"><div class="stat-card-label">Arquivos de dados</div><div class="stat-card-value">${s.files}</div></div>
+    <div class="stat-card ${s.deleted>0?'c-red':''}"><div class="stat-card-label">+adicionadas / -removidas</div><div class="stat-card-value" style="font-size:15px;">+${s.added} / -${s.deleted}</div></div>
+  `;
+  document.getElementById('rollbackNote').textContent = '';
+}
+function rollbackSnapshot(){
+  const s = snapshots[activeSnapIdx];
+  document.getElementById('rollbackNote').innerHTML = `⏪ Tabela revertida para o snapshot <strong style="color:var(--accent);">${s.short}</strong> (${s.ts}). Os snapshots posteriores a ele não somem agora — ficam órfãos até <code>expire_snapshots</code> rodar.`;
+}
+buildSnapTimeline();
+pickSnapshot(activeSnapIdx);
+
+/* ===================== MANIFEST-LEVEL PRUNING (nível 1) ===================== */
+const manifestDates = ['2024-01-01','2024-02-15','2024-04-01','2024-05-10','2024-06-01','2024-06-25','2024-07-01','2024-07-16','2024-07-31'];
+const manifests = [
+  {name:'manifest-00.avro', min:'2024-01-01', max:'2024-03-31', files:8},
+  {name:'manifest-01.avro', min:'2024-04-01', max:'2024-06-30', files:10},
+  {name:'manifest-02.avro', min:'2024-07-01', max:'2024-07-15', files:6},
+  {name:'manifest-03.avro', min:'2024-07-16', max:'2024-07-31', files:5},
+];
+let survivingManifests = manifests;
+function renderManifestPrune(){
+  const idx = +document.getElementById('manifSlider').value;
+  const filter = manifestDates[idx];
+  document.getElementById('manifDateLabel').textContent = filter;
+  let read = 0, filesAvoided = 0, filesRemaining = 0;
+  survivingManifests = [];
+  const rows = manifests.map(m => {
+    const canMatch = m.max >= filter;
+    if(canMatch){ read++; survivingManifests.push(m); filesRemaining += m.files; }
+    else filesAvoided += m.files;
+    return `<tr class="${canMatch ? 'row-scan' : 'row-skip'}">
+      <td>${m.name}</td><td>${m.min}</td><td>${m.max}</td><td>${m.files}</td>
+      <td>${canMatch ? '✅ Lido (pode ter match)' : '⏭️ Pulado — nem aberto'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('manifBody').innerHTML = rows;
+  document.getElementById('manifRead').textContent = `${read} / ${manifests.length}`;
+  document.getElementById('manifSkip').textContent = manifests.length - read;
+  document.getElementById('manifSaving').textContent = filesAvoided;
+  renderFilePrune();
+}
+
+/* ===================== FILE-LEVEL PRUNING (nível 2) ===================== */
+const filesByManifest = {
+  'manifest-00.avro':[{name:'00000-a.parquet',min:10,max:200},{name:'00001-b.parquet',min:150,max:400}],
+  'manifest-01.avro':[{name:'00002-c.parquet',min:300,max:600},{name:'00003-d.parquet',min:50,max:180}],
+  'manifest-02.avro':[{name:'00004-e.parquet',min:500,max:999},{name:'00005-f.parquet',min:20,max:90}],
+  'manifest-03.avro':[{name:'00006-g.parquet',min:700,max:950},{name:'00007-h.parquet',min:10,max:60}],
+};
+function renderFilePrune(){
+  const filterVal = +document.getElementById('fileValSlider').value;
+  document.getElementById('fileValLabel').textContent = filterVal;
+  const files = survivingManifests.flatMap(m => filesByManifest[m.name] || []);
+  let read = 0;
+  const rows = files.map(f => {
+    const canMatch = f.max >= filterVal;
+    if(canMatch) read++;
+    return `<tr class="${canMatch ? 'row-scan' : 'row-skip'}">
+      <td>${f.name}</td><td>${f.min}</td><td>${f.max}</td>
+      <td>${canMatch ? '✅ Aberto' : '⏭️ Pulado via manifest stats'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('fileBody').innerHTML = rows || '<tr><td colspan="4" style="text-align:center;opacity:.5;">Nenhum manifest sobreviveu ao filtro de nível 1</td></tr>';
+  const totalFilesAllManifests = Object.values(filesByManifest).flat().length;
+  document.getElementById('fileRead').textContent = `${read} / ${files.length}`;
+  const saving = totalFilesAllManifests > 0 ? Math.round((1 - read/totalFilesAllManifests)*100) : 0;
+  document.getElementById('fileSaving').textContent = saving + '%';
+}
+renderManifestPrune();
+
+/* ===================== HIDDEN PARTITIONING / TRANSFORMS ===================== */
+const transforms = [
+  {id:'identity', label:'identity'},
+  {id:'year', label:'year()'},
+  {id:'month', label:'month()'},
+  {id:'day', label:'day()'},
+  {id:'hour', label:'hour()'},
+  {id:'bucket8', label:'bucket(8, ...)'},
+  {id:'truncate4', label:'truncate(4, ...)'},
+];
+let activeTransform = 'day';
+function pad(n){ return String(n).padStart(2,'0'); }
+function bucketHash(str, seed){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i) + seed*17) >>> 0; }
+  return h;
+}
+function buildTransformButtons(){
+  document.getElementById('transformButtons').innerHTML = transforms.map(t => `<button class="btn-toggle ${t.id===activeTransform?'active':''}" onclick="setTransform('${t.id}')">${t.label}</button>`).join('');
+}
+function setTransform(id){ activeTransform = id; buildTransformButtons(); renderTransform(); }
+function renderTransform(){
+  const raw = document.getElementById('transformInput').value.trim();
+  let value = '—', bucketId = null;
+  const d = new Date(raw);
+  const validDate = !isNaN(d.getTime());
+  switch(activeTransform){
+    case 'identity': value = raw; break;
+    case 'year': value = validDate ? String(d.getFullYear()) : 'entrada inválida'; break;
+    case 'month': value = validDate ? `${d.getFullYear()}-${pad(d.getMonth()+1)}` : 'entrada inválida'; break;
+    case 'day': value = validDate ? `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}` : 'entrada inválida'; break;
+    case 'hour': value = validDate ? `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}-${pad(d.getHours())}` : 'entrada inválida'; break;
+    case 'bucket8': bucketId = bucketHash(raw, 1) % 8; value = `bucket ${bucketId}`; break;
+    case 'truncate4': value = raw.slice(0,4); break;
+  }
+  document.getElementById('transformName').textContent = transforms.find(t=>t.id===activeTransform).label;
+  document.getElementById('transformValue').textContent = value;
+  const bucketWrap = document.getElementById('bucketWrap');
+  if(activeTransform === 'bucket8'){
+    bucketWrap.style.display = 'block';
+    document.getElementById('bucketBits').innerHTML = Array.from({length:8}, (_,i) => `<div class="bucket-bit ${i===bucketId?'hit':''}">${i}</div>`).join('');
+  } else {
+    bucketWrap.style.display = 'none';
+  }
+}
+buildTransformButtons();
+renderTransform();
+
+/* ===================== SCHEMA EVOLUTION ===================== */
+const schemaOldFileFixed = [
+  {id:1, name:'pedido_id'}, {id:2, name:'cliente'}, {id:3, name:'pais'}, {id:4, name:'valor'}
+];
+let schemaFields, schemaNextId, schemaLogLines;
+function schemaReset(){
+  schemaFields = [
+    {id:1, name:'pedido_id', type:'long', status:'original'},
+    {id:2, name:'cliente', type:'string', status:'original'},
+    {id:3, name:'pais', type:'string', status:'original'},
+    {id:4, name:'valor', type:'double', status:'original'},
+  ];
+  schemaNextId = 5;
+  schemaLogLines = ['Schema inicial — 4 colunas, IDs 1 a 4.'];
+  renderSchema();
+}
+function renderSchema(){
+  document.getElementById('schemaBody').innerHTML = schemaFields.filter(f => f.status !== 'dropped').map(f => `
+    <tr><td><span class="chip">${f.id}</span></td><td>${f.name}${f.status==='renamed'?' <span style="color:var(--accent);font-size:11px;">(renomeada)</span>':''}${f.status==='added'?' <span style="color:var(--accent-green);font-size:11px;">(nova)</span>':''}</td><td>${f.type}</td><td>${f.status}</td></tr>
+  `).join('') + schemaFields.filter(f => f.status === 'dropped').map(f => `
+    <tr style="opacity:.4;"><td><span class="chip">${f.id}</span></td><td><s>${f.name}</s></td><td>${f.type}</td><td>ID aposentado, nunca reutilizado</td></tr>
+  `).join('');
+
+  document.getElementById('schemaOldFile').innerHTML = schemaOldFileFixed.map(f => {
+    const current = schemaFields.find(sf => sf.id === f.id);
+    const dropped = !current || current.status === 'dropped';
+    return `<div class="indexed-item ${dropped?'dead':'hi'}"><div class="idx-badge">id ${f.id}</div><div class="idx-box">${f.name}</div></div>`;
+  }).join('') + `<div class="indexed-item"><div class="idx-badge">campos novos</div><div class="idx-box" style="opacity:.5;">NULL</div></div>`;
+
+  document.getElementById('schemaLog').innerHTML = `<div class="ad-title">Log de evolução</div><div class="ad-text">${schemaLogLines.map(l => '• '+l).join('<br>')}</div>`;
+}
+function schemaAddColumn(){
+  if(schemaFields.some(f => f.name === 'desconto')) return;
+  schemaFields.push({id: schemaNextId, name:'desconto', type:'double', status:'added'});
+  schemaLogLines.push(`ALTER TABLE ADD COLUMN desconto double → novo field ID ${schemaNextId}. O arquivo antigo não tem esse ID: leitura retorna NULL para ele, sem reescrever nada.`);
+  schemaNextId++;
+  renderSchema();
+}
+function schemaRenameColumn(){
+  const f = schemaFields.find(x => x.name === 'cliente');
+  if(!f) return;
+  f.name = 'nome_cliente'; f.status = 'renamed';
+  schemaLogLines.push(`ALTER TABLE RENAME COLUMN cliente TO nome_cliente → o ID 2 não muda. O arquivo antigo, gravado com o nome físico "cliente" no seu footer Parquet, continua sendo lido corretamente porque o match é por ID.`);
+  renderSchema();
+}
+function schemaDropColumn(){
+  const f = schemaFields.find(x => x.name === 'pais' || (x.status==='original' && x.id===3));
+  if(!f || f.status==='dropped') return;
+  f.status = 'dropped';
+  schemaLogLines.push(`ALTER TABLE DROP COLUMN pais → ID 3 é aposentado e nunca será reutilizado por uma coluna futura, evitando ambiguidade com arquivos antigos.`);
+  renderSchema();
+}
+schemaReset();
+
+/* ===================== COW vs MOR ===================== */
+const cowMorFiles = [
+  {name:'00000-a.parquet', country:'Brasil', rows:400, size:'18 MB'},
+  {name:'00001-b.parquet', country:'Portugal', rows:250, size:'11 MB'},
+  {name:'00002-c.parquet', country:'Brasil/Portugal (misto)', rows:500, size:'22 MB'},
+];
+let cowMorMode = 'cow';
+let cowMorRan = false;
+function setCowMorMode(mode){
+  cowMorMode = mode;
+  document.getElementById('btnCOW').classList.toggle('active', mode==='cow');
+  document.getElementById('btnMOR').classList.toggle('active', mode==='mor');
+  resetCowMor();
+}
+function buildCowMor(showResult){
+  document.getElementById('cowMorRow').innerHTML = cowMorFiles.map((f,i) => {
+    const affected = f.country.includes('Portugal');
+    const cls = !showResult ? '' : (affected ? 'touched' : 'untouched');
+    let overlay = '';
+    if(showResult && affected){
+      if(cowMorMode === 'cow'){
+        overlay = `<div class="fb-overlay show"><div class="fb-overlay-badge cow">🔄 Reescrito</div><div class="fb-overlay-text">novo arquivo sem as linhas de Portugal</div></div>`;
+      } else {
+        overlay = `<div class="fb-overlay show"><div class="fb-overlay-badge mor">📎 + delete file</div><div class="fb-overlay-text">arquivo original intacto</div></div>`;
+      }
+    }
+    return `<div class="fb-block ${cls}">
+      <div class="fb-block-title">${f.name}</div>
+      <table class="fb-mini"><tbody>
+        <tr><td>País</td><td>${f.country}</td></tr>
+        <tr><td>Linhas</td><td>${f.rows}</td></tr>
+        <tr><td>Tamanho</td><td>${f.size}</td></tr>
+      </tbody></table>
+      ${overlay}
+    </div>`;
+  }).join('');
+}
+function runCowMor(){
+  buildCowMor(true);
+  if(cowMorMode === 'cow'){
+    document.getElementById('cowMorWrite').textContent = '~11 MB (arquivo b reescrito) + ~22 MB (arquivo c reescrito)';
+    document.getElementById('cowMorRead').textContent = 'Nenhum — dados já limpos';
+  } else {
+    document.getElementById('cowMorWrite').textContent = '~40 KB (2 pequenos delete files)';
+    document.getElementById('cowMorRead').textContent = 'Merge de delete files até a próxima compactação';
+  }
+}
+function resetCowMor(){
+  buildCowMor(false);
+  document.getElementById('cowMorWrite').textContent = '—';
+  document.getElementById('cowMorRead').textContent = '—';
+}
+resetCowMor();
+
+/* ===================== COMPACTION DEMO ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  return ctx;
+}
+function drawFileGrid(cv, count, color, maxBoxes){
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const shown = Math.min(count, maxBoxes);
+  const cols = Math.ceil(Math.sqrt(shown*(w/h)));
+  const rowsN = Math.ceil(shown/cols);
+  const gap = 4;
+  const bw = (w - gap*(cols+1)) / cols;
+  const bh = Math.min(bw, (h - gap*(rowsN+1)) / rowsN);
+  for(let i=0;i<shown;i++){
+    const cx = i % cols, cy = Math.floor(i/cols);
+    const x = gap + cx*(bw+gap), y = gap + cy*(bh+gap);
+    ctx.fillStyle = color; ctx.globalAlpha = 0.55;
+    roundRect(ctx, x, y, bw, bh, 3); ctx.fill();
+    ctx.globalAlpha = 1; ctx.strokeStyle = color; ctx.lineWidth = 1.2;
+    roundRect(ctx, x, y, bw, bh, 3); ctx.stroke();
+  }
+  if(count > maxBoxes){
+    ctx.fillStyle = '#98a2b3'; ctx.font = '11px Inter, sans-serif';
+    ctx.fillText(`+ ${count-maxBoxes} arquivos (ilustração limitada)`, 6, h-6);
+  }
+}
+let compactionApplied = false;
+function updateCompaction(){
+  const files = +document.getElementById('compFiles').value;
+  const avgMB = +document.getElementById('compAvg').value;
+  document.getElementById('compFilesVal').textContent = files;
+  document.getElementById('compAvgVal').textContent = avgMB + ' MB';
+  compactionApplied = false;
+  renderCompactionState();
+}
+function renderCompactionState(){
+  const files = +document.getElementById('compFiles').value;
+  const avgMB = +document.getElementById('compAvg').value;
+  const totalMB = files * avgMB;
+  const cv = document.getElementById('compCanvas');
+  if(!compactionApplied){
+    drawFileGrid(cv, files, '#f86b63', 160);
+    document.getElementById('compStats').innerHTML = `
+      <div class="stat-card c-red"><div class="stat-card-label">Arquivos hoje</div><div class="stat-card-value">${files}</div></div>
+      <div class="stat-card"><div class="stat-card-label">Tamanho médio</div><div class="stat-card-value">${avgMB} MB</div></div>
+      <div class="stat-card"><div class="stat-card-label">Total de dados</div><div class="stat-card-value">${(totalMB/1024).toFixed(1)} GB</div></div>
+    `;
+  } else {
+    const targetMB = 512;
+    const newFiles = Math.max(1, Math.round(totalMB / targetMB));
+    drawFileGrid(cv, newFiles, '#7dded8', 160);
+    document.getElementById('compStats').innerHTML = `
+      <div class="stat-card c-green"><div class="stat-card-label">Arquivos após compactação</div><div class="stat-card-value">${newFiles}</div></div>
+      <div class="stat-card c-blue"><div class="stat-card-label">Redução de arquivos</div><div class="stat-card-value">${Math.round((1-newFiles/files)*100)}%</div></div>
+      <div class="stat-card"><div class="stat-card-label">Total de dados</div><div class="stat-card-value">${(totalMB/1024).toFixed(1)} GB</div></div>
+    `;
+  }
+}
+function runCompaction(){ compactionApplied = true; renderCompactionState(); }
+function resetCompaction(){ compactionApplied = false; renderCompactionState(); }
+updateCompaction();
+window.addEventListener('resize', renderCompactionState);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O Apache Iceberg é um formato de arquivo que substitui o Parquet.', a:false, e:'Falso. Iceberg é um formato de <em>tabela</em> — ele organiza metadados por cima de arquivos que continuam sendo Parquet, ORC ou Avro.'},
+  {q:'Cada commit no Iceberg cria um novo snapshot imutável, o que permite time travel.', a:true, e:'Verdadeiro. Um novo manifest list + um novo metadata.json são escritos a cada mudança, sem editar os anteriores.'},
+  {q:'Hidden partitioning significa que o usuário precisa criar e manter manualmente uma coluna de partição física.', a:false, e:'Falso. É exatamente o oposto: o Iceberg deriva o valor de partição automaticamente via transforms, sem exigir uma coluna extra nem que o usuário a conheça.'},
+  {q:'Renomear uma coluna no Iceberg pode quebrar a leitura de arquivos Parquet antigos.', a:false, e:'Falso. O casamento de colunas é feito por field ID, não por nome — arquivos antigos continuam legíveis normalmente após um rename.'},
+  {q:'Merge-on-Read grava um pequeno "delete file" em vez de reescrever o arquivo de dados inteiro.', a:true, e:'Verdadeiro. É essa a troca: escrita mais barata agora, custo de merge adiado para as leituras futuras, até a compactação.'},
+  {q:'A troca do ponteiro do catálogo para o novo metadata.json é uma operação atômica (compare-and-swap).', a:true, e:'Verdadeiro. É essa garantia que sustenta ACID sem exigir locks longos durante a escrita dos dados.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>
