@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Modelagem Dimensional e Star Schema ao estilo Kimball. Fatos, dimensões, grão, bus matrix, snowflake, bridge tables e mais, com diagramas e exemplos visuais usando a Loja de Brinquedos da Lu.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Modelagem Dimensional (Star Schema)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-orange:#f5a623;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-star-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-star-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* mini star preview for hero */
+.mini-star{position:relative;width:220px;height:220px;}
+.mini-star .mfact{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:76px;height:76px;border-radius:50%;background:rgba(196,154,255,.18);border:2px solid var(--accent-purple);display:flex;align-items:center;justify-content:center;font-size:26px;z-index:2;}
+.mini-star .mdim{position:absolute;width:52px;height:52px;border-radius:50%;background:var(--bg-elevated);border:1.5px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:20px;z-index:2;}
+.mini-star .mline{position:absolute;background:var(--border-strong);height:2px;transform-origin:0 0;z-index:1;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(6,182,212,.16);color:var(--accent);font-family:'Roboto Mono',monospace;font-weight:800;font-size:12px;flex-shrink:0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(245,166,35,.07);border-left:4px solid var(--accent-orange);padding:16px 18px;border-radius:6px;}
+.kid-box .highlight-title{color:var(--accent-orange);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-hi td{background:rgba(6,182,212,.10);color:var(--text-primary);}
+.data-table td.cell-yes{color:var(--accent-green);font-weight:800;text-align:center;}
+.data-table td.cell-no{color:var(--accent-red);font-weight:800;text-align:center;}
+.data-table td.center{text-align:center;}
+
+/* ---- KV LIST ---- */
+.kv-list{display:flex;flex-direction:column;gap:8px;}
+.kv-pair{display:flex;align-items:center;gap:12px;transition:.2s;}
+.kv-key{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--accent-blue);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:12.5px;min-width:120px;text-align:center;flex-shrink:0;}
+.kv-arrow{color:var(--text-disabled);font-size:16px;flex-shrink:0;}
+.kv-value{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-primary);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:12.5px;flex:1;transition:.2s;}
+
+/* ---- CHIP / BADGE ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.measure-tag{font-size:10px;padding:3px 10px;border-radius:10px;font-weight:800;letter-spacing:.3px;white-space:nowrap;display:inline-block;}
+.measure-tag.additive{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.measure-tag.semi{background:rgba(245,166,35,.14);color:var(--accent-orange);}
+.measure-tag.non{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- STAR SCHEMA DIAGRAM ---- */
+.star-wrap{position:relative;padding:10px 0 20px;}
+#starSvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.star-grid{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto auto;grid-template-areas:"tl tc tr" "ml center mr" "bl bc br";gap:18px 28px;position:relative;z-index:1;align-items:center;}
+.dim-box{border:1.5px solid var(--border-color);background:var(--bg-elevated);border-radius:9px;padding:13px 14px;text-align:center;cursor:pointer;transition:.18s;}
+.dim-box .db-icon{font-size:22px;}
+.dim-box .db-label{font-size:11.5px;font-weight:700;color:var(--text-secondary);margin-top:4px;}
+.dim-box:hover{border-color:var(--accent-blue);}
+.dim-box:hover .db-label{color:var(--accent-blue);}
+.dim-box.active{border-color:var(--accent);background:rgba(6,182,212,.14);box-shadow:0 0 0 1px rgba(6,182,212,.25);}
+.dim-box.active .db-label{color:var(--accent);}
+.fact-box{grid-area:center;background:rgba(196,154,255,.12);border:2px solid var(--accent-purple);border-radius:12px;padding:20px 16px;text-align:center;}
+.fact-box .fb-icon{font-size:30px;}
+.fact-box .fb-label{font-weight:800;color:var(--accent-purple);font-size:14px;margin-top:6px;}
+.fact-box .fb-sub{font-size:10px;color:var(--text-secondary);font-family:'Roboto Mono',monospace;margin-top:6px;line-height:1.6;}
+.star-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:18px;min-height:64px;}
+.star-detail .sd-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.star-detail .sd-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- SNOWFLAKE CHAIN ---- */
+.chain-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.chain-box{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:8px;padding:10px 14px;font-size:12px;text-align:center;}
+.chain-box b{display:block;color:var(--text-primary);font-size:12.5px;margin-bottom:3px;}
+.chain-box span{color:var(--text-secondary);font-size:10.5px;font-family:'Roboto Mono',monospace;}
+.chain-arrow{color:var(--accent);font-size:18px;}
+
+/* ---- MATRIX CHECK ---- */
+.mx-yes{color:var(--accent-green);font-weight:800;}
+.mx-no{color:var(--text-disabled);}
+
+/* ---- GRAIN VISUAL ---- */
+.grain-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+
+/* ---- BRIDGE DIAGRAM ---- */
+.bridge-row{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;}
+.bridge-node{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:8px;padding:14px 18px;text-align:center;min-width:140px;}
+.bridge-node.mid{border-color:var(--accent-orange);background:rgba(245,166,35,.10);}
+.bridge-node b{display:block;font-size:12.5px;color:var(--text-primary);margin-bottom:4px;}
+.bridge-node span{font-size:10.5px;color:var(--text-secondary);}
+.bridge-conn{width:44px;height:2px;background:var(--border-strong);position:relative;flex-shrink:0;}
+.bridge-conn::after{content:attr(data-label);position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9.5px;color:var(--text-disabled);white-space:nowrap;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.grid-6{grid-template-columns:1fr;}
+  .star-grid{grid-template-columns:1fr;grid-template-areas:"tl" "tc" "tr" "center" "bl" "bc" "br";}
+  #starSvg{display:none;}
+  .mini-star{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Modelagem Dimensional</h1><span>Star Schema ao estilo Kimball, explicado do zero</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">1996</div><div class="hstat-label">Livro de Kimball</div></div>
+      <div class="hstat"><div class="hstat-num">4</div><div class="hstat-label">Passos</div></div>
+      <div class="hstat"><div class="hstat-num">⭐</div><div class="hstat-label">Star Schema</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do banco do dia a dia ao esquema estrela</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>O jeito de organizar dados que parece <em>literalmente uma estrela</em></h2>
+      <p>Modelagem dimensional é a técnica criada por <strong>Ralph Kimball</strong> para organizar dados de um jeito que qualquer pessoa entende e que qualquer ferramenta de BI consulta rápido. A ideia central é simples: separe o que <em>aconteceu</em> (números — vendas, cliques, pagamentos) do que <em>descreve</em> o que aconteceu (quem, o quê, onde, quando). O primeiro vira uma <strong>tabela fato</strong>, no centro. O segundo vira várias <strong>tabelas dimensão</strong> ao redor. Ligue as duas coisas e o desenho literalmente parece uma estrela — daí o nome <em>Star Schema</em>. Nesta aula vamos construir um, do zero, usando a Loja de Brinquedos da Lu como exemplo do início ao fim.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Fatos & Dimensões</span>
+        <span class="badge badge-green">Fácil de Entender</span>
+        <span class="badge badge-blue">Rápido para Consultar</span>
+        <span class="badge badge-purple">Padrão da Indústria</span>
+      </div>
+    </div>
+    <div class="hero-star-icon">
+      <div class="mini-star" id="miniStar"></div>
+      <div class="hero-star-caption">Um fato no centro, dimensões ao redor — a "estrela" do Star Schema</div>
+    </div>
+  </section>
+
+  <!-- ============ OLTP vs OLAP ============ -->
+  <section class="section" id="s-oltp-olap">
+    <div class="section-eyebrow">Por que isso existe</div>
+    <div class="section-title">🏢 O banco do caixa não serve para responder perguntas</div>
+    <p class="section-desc">
+      Imagine a Loja de Brinquedos da Lu. Toda vez que alguém compra um brinquedo, o sistema do caixa grava isso num banco de dados <strong>transacional</strong> (chamado <em>OLTP</em> — Online Transaction Processing). Esse banco é ótimo para gravar <em>uma</em> venda por vez, rapidinho, sem duplicar dados. Mas quando a Lu pergunta <em>"qual brinquedo vendeu mais em cada loja, mês a mês, nos últimos 2 anos?"</em>, esse mesmo banco trava — porque a pergunta precisa juntar dezenas de tabelas pequenas e somar milhões de linhas. É para responder perguntas assim que existe o <strong>Data Warehouse</strong> (armazém de dados), organizado com modelagem dimensional — <em>OLAP</em>, Online Analytical Processing.
+    </p>
+
+    <div class="kid-box">
+      <div class="highlight-title">🧒 Explicando para uma criança</div>
+      <p>Pense no banco transacional como a <strong>gaveta de recibos</strong> — cada recibo guardado do jeitinho mais rápido de enfiar na gaveta, sem repetir papel. O Data Warehouse é como um <strong>álbum de figurinhas organizado por assunto</strong>: todas as figurinhas de "brinquedos" juntas, todas as de "lojas" juntas, todas as de "datas" juntas — e um caderninho central ligando tudo. Guardar recibos é rápido. Responder "quantas figurinhas de carrinho eu tenho?" fica fácil só se elas estiverem organizadas no álbum, não espalhadas na gaveta.</p>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>Característica</th><th>OLTP — Sistema do Caixa</th><th>OLAP — Data Warehouse (Star Schema)</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Objetivo</strong></td><td>Gravar 1 venda por vez, rápido e sem erro</td><td>Somar e comparar milhões de vendas, rápido</td></tr>
+        <tr><td><strong>Estrutura</strong></td><td>Muitas tabelas pequenas e normalizadas</td><td>Poucas tabelas grandes: fato + dimensões</td></tr>
+        <tr><td><strong>Operação típica</strong></td><td><code>INSERT</code>, <code>UPDATE</code> de 1 registro</td><td><code>SELECT ... GROUP BY</code> com milhões de linhas</td></tr>
+        <tr><td><strong>Usuário típico</strong></td><td>O sistema de vendas, o caixa</td><td>Analista, gerente, dashboard de BI</td></tr>
+        <tr><td><strong>Exemplo de pergunta</strong></td><td>"Qual o total desta venda #4821?"</td><td>"Qual brinquedo mais vendeu por trimestre?"</td></tr>
+        <tr><td><strong>Redundância</strong></td><td>Evitada ao máximo (normalização)</td><td>Aceita de propósito (desnormalização)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Não existe "certo" e "errado" aqui — são <strong>objetivos diferentes</strong>. O mesmo dado (uma venda de brinquedo) é formatado de um jeito para ser gravado rapidinho, e reformatado de outro jeito, num processo separado (o famoso <em>ETL/ELT</em>), para ser analisado rapidinho. O Star Schema é o formato de destino dessa segunda etapa.</p>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMIA DO STAR SCHEMA ============ -->
+  <section class="section" id="s-anatomia">
+    <div class="section-eyebrow">A Estrela</div>
+    <div class="section-title">⭐ Anatomia de um Star Schema</div>
+    <p class="section-desc">
+      Um Star Schema tem exatamente dois tipos de tabela: <strong>uma tabela fato</strong> no centro, guardando os números que aconteceram, e <strong>várias tabelas dimensão</strong> ao redor, guardando o contexto — quem, o quê, onde, quando, por quê. Clique em cada dimensão da Loja da Lu abaixo para ver o que ela guarda.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">🧸 Star Schema da Loja de Brinquedos da Lu — clique nas pontas da estrela</div>
+      <div class="star-wrap" id="starWrap">
+        <svg id="starSvg"></svg>
+        <div class="star-grid" id="starGrid">
+          <div class="dim-box" data-id="tempo" style="grid-area:tl;" onclick="pickStar('tempo')">
+            <div class="db-icon">📅</div><div class="db-label">Dim Tempo</div>
+          </div>
+          <div class="dim-box" data-id="brinquedo" style="grid-area:tc;" onclick="pickStar('brinquedo')">
+            <div class="db-icon">🧸</div><div class="db-label">Dim Brinquedo</div>
+          </div>
+          <div class="dim-box" data-id="loja" style="grid-area:tr;" onclick="pickStar('loja')">
+            <div class="db-icon">🏪</div><div class="db-label">Dim Loja</div>
+          </div>
+          <div class="fact-box" style="grid-area:center;">
+            <div class="fb-icon">🧾</div>
+            <div class="fb-label">FATO VENDAS</div>
+            <div class="fb-sub">qtd_vendida<br>valor_total<br>valor_desconto</div>
+          </div>
+          <div class="dim-box" data-id="cliente" style="grid-area:bl;" onclick="pickStar('cliente')">
+            <div class="db-icon">🧒</div><div class="db-label">Dim Cliente</div>
+          </div>
+          <div class="dim-box" data-id="vendedor" style="grid-area:bc;" onclick="pickStar('vendedor')">
+            <div class="db-icon">🧑‍💼</div><div class="db-label">Dim Vendedor</div>
+          </div>
+          <div class="dim-box" data-id="promocao" style="grid-area:br;" onclick="pickStar('promocao')">
+            <div class="db-icon">🏷️</div><div class="db-label">Dim Promoção</div>
+          </div>
+        </div>
+      </div>
+      <div class="star-detail" id="starDetail">
+        <div class="sd-title">👆 Clique em qualquer ponta da estrela</div>
+        <div class="sd-text">A tabela fato no centro só guarda <strong>números e chaves</strong> — nunca texto descritivo. Todo o "português" (nome do brinquedo, cidade da loja, nome do cliente) mora nas dimensões.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🧾 Tabela Fato — o que aconteceu</div>
+        <div class="card-text">Guarda <strong>medidas</strong> (números que se pode somar, contar, comparar — quantidade, valor) e <strong>chaves estrangeiras</strong> para cada dimensão relacionada. É sempre a tabela mais <em>alta</em> (mais linhas) do modelo — uma linha nova a cada venda, clique, pagamento etc. Raramente tem texto descritivo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧩 Tabela Dimensão — quem, o quê, onde, quando</div>
+        <div class="card-text">Guarda <strong>atributos descritivos</strong> em texto: nome do brinquedo, categoria, cor, cidade da loja, nome do cliente. É sempre mais <em>larga</em> (muitas colunas) e mais <em>baixa</em> (poucas linhas, comparado ao fato) — poucas centenas de brinquedos, poucas dezenas de lojas.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4 PASSOS DE KIMBALL ============ -->
+  <section class="section" id="s-4passos">
+    <div class="section-eyebrow">O Processo</div>
+    <div class="section-title">🧭 Os 4 passos de Kimball para desenhar qualquer Star Schema</div>
+    <p class="section-desc">Ralph Kimball resumiu o processo de desenho em uma ordem fixa de 4 perguntas. A ordem importa — pular etapas é a causa nº 1 de Star Schemas mal desenhados.</p>
+
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title"><span class="card-num">1</span> Processo de negócio</div>
+        <div class="card-text">Qual atividade estamos medindo? Não é "um departamento" — é um <em>evento</em> mensurável. Na Loja da Lu: <strong>"vendas de brinquedos"</strong>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="card-num">2</span> O grão</div>
+        <div class="card-text">O que representa <strong>uma linha</strong> da tabela fato? Precisa ser declarado antes de qualquer coluna. Ex: <strong>"1 linha por brinquedo vendido, dentro de cada pedido"</strong>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="card-num">3</span> As dimensões</div>
+        <div class="card-text">Dado o grão, quais perguntas de contexto fazem sentido? <strong>Quando</strong> (Tempo), <strong>o quê</strong> (Brinquedo), <strong>quem comprou</strong> (Cliente), <strong>onde</strong> (Loja), <strong>quem vendeu</strong> (Vendedor).</div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="card-num">4</span> Os fatos</div>
+        <div class="card-text">Quais números descrevem o evento nesse grão? <strong>quantidade vendida</strong>, <strong>valor total</strong>, <strong>valor de desconto</strong>.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">⚠️ O erro mais comum</div>
+      <p>Começar desenhando colunas de dimensão antes de declarar o grão. Se o grão não está claro, ninguém sabe se uma coluna pertence à tabela fato (varia a cada linha) ou à dimensão (é fixa para aquele contexto) — e o modelo vira uma bagunça de dados repetidos e somas erradas.</p>
+    </div>
+  </section>
+
+  <!-- ============ O GRÃO ============ -->
+  <section class="section" id="s-grao">
+    <div class="section-eyebrow">A decisão mais importante</div>
+    <div class="section-title">📏 O Grão: o que é "uma linha" da tabela fato?</div>
+    <p class="section-desc">
+      O <strong>grão</strong> (grain) é a definição exata do que uma única linha da tabela fato representa. Quanto mais fino o grão (mais detalhado), mais flexibilidade para agrupar de qualquer jeito depois — mas mais linhas. Veja como o mesmo conjunto de pedidos da Loja da Lu vira tabelas bem diferentes dependendo do grão escolhido.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: o mesmo dado, três grãos diferentes</div>
+      <div class="grain-tabs btn-toggle-row">
+        <button class="btn-toggle active" id="btnGrainItem" onclick="setGrain('item')">🧸 1 linha por item do pedido</button>
+        <button class="btn-toggle" id="btnGrainPedido" onclick="setGrain('pedido')">📦 1 linha por pedido</button>
+        <button class="btn-toggle" id="btnGrainDia" onclick="setGrain('dia')">📅 1 linha por dia</button>
+      </div>
+      <table class="data-table" id="grainTable"></table>
+      <div class="result-display">
+        <div><span class="rl">Linhas na tabela fato</span><span class="rv" id="grainRows">—</span></div>
+        <div><span class="rl">Detalhe preservado</span><span class="rv" id="grainDetail">—</span></div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Regra de ouro de Kimball</div>
+      <p>Sempre escolha o grão <strong>mais fino possível</strong> (mais atômico) que o processo de negócio produz naturalmente — mesmo que a maioria dos relatórios vá agregar por dia ou por mês. É fácil somar linhas detalhadas para virar um total; é <strong>impossível</strong> desmembrar um total de volta em detalhe. Dado resumido demais fecha portas para perguntas futuras.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELAS DIMENSÃO ============ -->
+  <section class="section" id="s-dimensoes">
+    <div class="section-eyebrow">O Contexto</div>
+    <div class="section-title">🧩 Tabelas Dimensão em detalhe</div>
+    <p class="section-desc">Dimensões respondem perguntas com palavras, não números. Elas são "largas" (muitos atributos descritivos) e relativamente "baixas" (poucas linhas). Veja a Dim Brinquedo da Loja da Lu:</p>
+
+    <table class="data-table">
+      <thead><tr><th>sk_brinquedo</th><th>codigo_sku</th><th>nome_brinquedo</th><th>categoria</th><th>subcategoria</th><th>faixa_etaria</th><th>marca</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>URS-001</td><td>Ursinho de Pelúcia</td><td>Pelúcias</td><td>Ursos</td><td>0-3 anos</td><td>Fofinhos</td></tr>
+        <tr><td>2</td><td>CAR-014</td><td>Carrinho de Corrida</td><td>Veículos</td><td>Carrinhos</td><td>4-7 anos</td><td>VelozBrinq</td></tr>
+        <tr><td>3</td><td>BON-007</td><td>Boneca Fadinha</td><td>Bonecas</td><td>Fadas</td><td>3-6 anos</td><td>Encantada</td></tr>
+        <tr><td>4</td><td>BOL-002</td><td>Bola de Futebol</td><td>Esportes</td><td>Bolas</td><td>5-12 anos</td><td>CampeãoKids</td></tr>
+      </tbody>
+    </table>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🧒 Explicando para uma criança</div>
+        <div class="card-text">A dimensão é como a <strong>ficha de um personagem</strong> num álbum de figurinhas: nome, time, posição, altura. Ela não muda a cada jogo — é só consultada quando você quer saber "quem é esse?".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌳 Hierarquias</div>
+        <div class="card-text">Repare que <code>subcategoria</code> → <code>categoria</code> forma uma hierarquia natural (Ursos está dentro de Pelúcias). Guardar essa hierarquia <strong>achatada em uma única tabela</strong> (em vez de tabelas separadas) é o que torna o Star Schema tão simples de consultar — chamamos isso de dimensão <strong>desnormalizada</strong>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 "Larga e baixa"</div>
+        <div class="card-text">Uma Dim Brinquedo pode ter 30+ colunas descritivas e ainda assim só algumas centenas de linhas — um brinquedo por linha. Compare com o fato, que tem poucas colunas mas milhões de linhas.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TABELA FATO & MEDIDAS ============ -->
+  <section class="section" id="s-fatos">
+    <div class="section-eyebrow">Os Números</div>
+    <div class="section-title">📊 Tabela Fato: nem toda medida soma do mesmo jeito</div>
+    <p class="section-desc">
+      A tabela fato guarda <strong>medidas</strong> — os números do processo de negócio. Mas atenção: nem toda medida pode ser somada em qualquer direção. Kimball separa as medidas em três tipos, e confundir um pelo outro é a forma nº 1 de gerar um relatório com número errado.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">✅ Aditiva</div>
+        <div class="card-text">Pode ser somada em <strong>qualquer</strong> dimensão: por produto, por loja, por tempo, por tudo junto. Ex: <code>qtd_vendida</code>, <code>valor_total</code>. São a maioria e as mais fáceis de usar.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🟠 Semi-aditiva</div>
+        <div class="card-text">Pode ser somada em <strong>algumas</strong> dimensões, mas não em todas — tipicamente <strong>não</strong> pode ser somada ao longo do tempo. Ex: <code>saldo_em_conta</code>, <code>estoque_em_maos</code>. Somar o saldo de 5 contas hoje faz sentido; somar o saldo de hoje com o de ontem, não.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔴 Não-aditiva</div>
+        <div class="card-text">Nunca deve ser somada — só faz sentido <strong>recalculada</strong> a partir de outras medidas. Ex: <code>margem_percentual</code>, <code>preco_unitario</code>. Some 10 margens de 20% e você não terá "200%" de nada útil.</div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>Medida</th><th>Tipo</th><th>Soma por Brinquedo?</th><th>Soma por Loja?</th><th>Soma por Tempo (todos os dias)?</th></tr></thead>
+      <tbody>
+        <tr><td><code>qtd_vendida</code></td><td><span class="measure-tag additive">Aditiva</span></td><td class="cell-yes">✓</td><td class="cell-yes">✓</td><td class="cell-yes">✓</td></tr>
+        <tr><td><code>valor_total</code></td><td><span class="measure-tag additive">Aditiva</span></td><td class="cell-yes">✓</td><td class="cell-yes">✓</td><td class="cell-yes">✓</td></tr>
+        <tr><td><code>estoque_em_maos</code></td><td><span class="measure-tag semi">Semi-aditiva</span></td><td class="cell-yes">✓</td><td class="cell-yes">✓</td><td class="cell-no">✗</td></tr>
+        <tr><td><code>saldo_caixa_do_dia</code></td><td><span class="measure-tag semi">Semi-aditiva</span></td><td class="cell-no">✗</td><td class="cell-yes">✓</td><td class="cell-no">✗</td></tr>
+        <tr><td><code>preco_unitario</code></td><td><span class="measure-tag non">Não-aditiva</span></td><td class="cell-no">✗</td><td class="cell-no">✗</td><td class="cell-no">✗</td></tr>
+        <tr><td><code>margem_percentual</code></td><td><span class="measure-tag non">Não-aditiva</span></td><td class="cell-no">✗</td><td class="cell-no">✗</td><td class="cell-no">✗</td></tr>
+      </tbody>
+    </table>
+
+    <div class="kid-box">
+      <div class="highlight-title">🧒 Explicando para uma criança</div>
+      <p>Somar quantidade vendida é como somar figurinhas — sempre dá pra juntar mais. Somar "saldo do cofrinho" de vários dias diferentes não faz sentido — o saldo de hoje já <em>inclui</em> o de ontem, não é um valor novo pra somar por cima. E somar "percentual de acerto numa prova" de 5 provas diferentes e dizer que a soma é o resultado final também não faz sentido — precisa recalcular a média, não somar.</p>
+    </div>
+  </section>
+
+  <!-- ============ TIPOS DE FATO ============ -->
+  <section class="section" id="s-tipos-fato">
+    <div class="section-eyebrow">Três Formatos</div>
+    <div class="section-title">🗂️ Os 3 tipos de tabela fato (+ fato sem números)</div>
+    <p class="section-desc">Kimball descreve três padrões de tabela fato, cada um resolvendo um tipo diferente de processo de negócio. Clique para comparar:</p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btnFactTrans" onclick="setFactType('trans')">🧾 Transação</button>
+        <button class="btn-toggle" id="btnFactSnap" onclick="setFactType('snap')">📸 Snapshot Periódico</button>
+        <button class="btn-toggle" id="btnFactAcum" onclick="setFactType('acum')">🚚 Snapshot Cumulativo</button>
+      </div>
+      <div id="factTypeBody"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🕳️ Bônus: Fato sem números (Factless Fact Table)</div>
+      <div class="card-text">Às vezes o "evento" importante não tem nenhum número associado — só o fato de ter <strong>acontecido</strong>. Ex: <code>fato_presenca_evento</code> (aluno X esteve na aula Y no dia Z) ou <code>fato_promocao_aplicada</code> (o brinquedo W esteve em promoção na loja V no dia D). A tabela só tem chaves estrangeiras; a "medida" é a própria <strong>existência da linha</strong> — útil para responder perguntas do tipo "quais combinações <em>não</em> aconteceram?".</div>
+    </div>
+  </section>
+
+  <!-- ============ SURROGATE KEYS ============ -->
+  <section class="section" id="s-chaves">
+    <div class="section-eyebrow">A Cola do Modelo</div>
+    <div class="section-title">🔑 Chaves Substitutas (Surrogate Keys)</div>
+    <p class="section-desc">
+      Toda dimensão ganha uma chave <strong>artificial</strong>, gerada pelo próprio Data Warehouse (geralmente um inteiro sequencial: 1, 2, 3...) — a <strong>surrogate key</strong>. Ela substitui a chave "natural" do sistema de origem (como o SKU do brinquedo ou o CPF do cliente) dentro do modelo dimensional.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">❌ Por que não usar a chave natural direto?</div>
+        <div class="card-text">Sistemas de origem <strong>reaproveitam códigos</strong> (um SKU descontinuado pode ser reciclado 2 anos depois para outro brinquedo), mudam de formato, ou simplesmente não existem ainda quando a linha é carregada (cliente ainda não identificado). Usar a chave natural direto quebra o histórico e trava a carga.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ O que a surrogate key resolve</div>
+        <div class="card-text">Desacopla o Data Warehouse do sistema de origem, permite guardar <strong>histórico</strong> (a mesma pessoa real vira várias linhas de dimensão ao longo do tempo — veja SCD adiante), e acelera <em>joins</em> — comparar dois inteiros é mais rápido que comparar strings.</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">sql</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="cm">-- Dimensão: sk_brinquedo é gerada pelo DW, nunca vem do sistema de origem</span>
+<span class="kw">CREATE TABLE</span> dim_brinquedo (
+  sk_brinquedo     <span class="fn">INT</span>          <span class="kw">PRIMARY KEY</span>,   <span class="cm">-- surrogate key</span>
+  codigo_sku       <span class="fn">VARCHAR</span>(20),               <span class="cm">-- chave natural do ERP</span>
+  nome_brinquedo   <span class="fn">VARCHAR</span>(100),
+  categoria        <span class="fn">VARCHAR</span>(50),
+  faixa_etaria     <span class="fn">VARCHAR</span>(20)
+);
+
+<span class="cm">-- Fato: aponta para as surrogate keys, nunca para os códigos naturais</span>
+<span class="kw">CREATE TABLE</span> fato_vendas (
+  sk_tempo         <span class="fn">INT</span>          <span class="kw">REFERENCES</span> dim_tempo(sk_tempo),
+  sk_brinquedo     <span class="fn">INT</span>          <span class="kw">REFERENCES</span> dim_brinquedo(sk_brinquedo),
+  sk_loja          <span class="fn">INT</span>          <span class="kw">REFERENCES</span> dim_loja(sk_loja),
+  sk_cliente       <span class="fn">INT</span>          <span class="kw">REFERENCES</span> dim_cliente(sk_cliente),
+  numero_pedido    <span class="fn">VARCHAR</span>(20),   <span class="cm">-- dimensão degenerada (veja seção seguinte)</span>
+  qtd_vendida      <span class="fn">INT</span>,
+  valor_total      <span class="fn">DECIMAL</span>(10,2)
+);</div>
+  </section>
+
+  <!-- ============ DIMENSÃO TEMPO ============ -->
+  <section class="section" id="s-tempo">
+    <div class="section-eyebrow">A Dimensão Mais Usada</div>
+    <div class="section-title">📅 Dimensão Tempo: a estrela que todo fato tem</div>
+    <p class="section-desc">
+      Quase toda tabela fato tem uma chave de tempo. Em vez de calcular "dia da semana" ou "é feriado?" toda vez na consulta, a modelagem dimensional pré-calcula <strong>tudo isso uma única vez</strong> e guarda numa tabela — a Dim Tempo. Isso evita lógica de data repetida em cada dashboard e deixa até quem não sabe SQL avançado filtrar "vendas de sextas-feiras em dezembro".
+    </p>
+
+    <table class="data-table">
+      <thead><tr><th>sk_tempo</th><th>data</th><th>dia_semana</th><th>fim_de_semana</th><th>mes</th><th>trimestre</th><th>ano</th><th>feriado</th></tr></thead>
+      <tbody>
+        <tr><td>20260724</td><td>2026-07-24</td><td>Sexta</td><td>Não</td><td>Julho</td><td>Q3</td><td>2026</td><td>—</td></tr>
+        <tr><td>20260725</td><td>2026-07-25</td><td>Sábado</td><td>Sim</td><td>Julho</td><td>Q3</td><td>2026</td><td>—</td></tr>
+        <tr><td>20261225</td><td>2026-12-25</td><td>Sexta</td><td>Não</td><td>Dezembro</td><td>Q4</td><td>2026</td><td>Natal</td></tr>
+      </tbody>
+    </table>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔁 Dimensão de "role-playing"</div>
+        <div class="card-text">Um mesmo pedido pode ter <code>data_pedido</code>, <code>data_envio</code> e <code>data_entrega</code>. Em vez de 3 dimensões de tempo diferentes, usa-se a <strong>mesma</strong> Dim Tempo três vezes no fato, através de <em>views</em> com nomes diferentes (<code>dim_data_pedido</code>, <code>dim_data_envio</code>...) — isso se chama dimensão de <strong>papéis (role-playing dimension)</strong>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔢 Por que a chave costuma ser <code>AAAAMMDD</code>?</div>
+        <div class="card-text">Usar um inteiro como <code>20260725</code> como surrogate key da Dim Tempo (em vez de um sequencial sem sentido) é uma exceção prática aceita por Kimball: é humanamente legível, ordena naturalmente e ainda funciona como surrogate key de verdade.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DIMENSÕES ESPECIAIS ============ -->
+  <section class="section" id="s-especiais">
+    <div class="section-eyebrow">Casos Especiais</div>
+    <div class="section-title">🧬 Dimensões degeneradas, junk e outriggers</div>
+    <p class="section-desc">Além das dimensões "normais", Kimball descreve alguns padrões especiais que resolvem problemas recorrentes:</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🎟️ Dimensão Degenerada</div>
+        <div class="card-text">Um atributo que <strong>parece</strong> dimensão (é um código, é texto) mas não tem contexto descritivo próprio — então fica direto na tabela fato, sem tabela dimensão separada. Ex: <code>numero_pedido</code>. Serve para agrupar itens do mesmo pedido, mas não tem "atributos" para descrever.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗑️ Dimensão Lixo (Junk Dimension)</div>
+        <div class="card-text">Vários indicadores pequenos e de baixa cardinalidade (sim/não, tipo de pagamento, canal de venda) que, juntos numa única dimensão combinada, evitam poluir o fato com 6 chaves estrangeiras minúsculas. Ex: <code>dim_flags_pedido</code> combinando <code>forma_pagamento</code> + <code>embrulho_presente</code> + <code>canal_venda</code>.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🛰️ Outrigger</div>
+        <div class="card-text">Uma dimensão que referencia <strong>outra</strong> dimensão (em vez do fato) — por exemplo, Dim Cliente referenciando Dim Tempo para guardar "data de cadastro". É usado com moderação: rompe um pouco a simplicidade da estrela, mas evita duplicar toda a lógica de calendário dentro da Dim Cliente.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STAR VS SNOWFLAKE ============ -->
+  <section class="section" id="s-snowflake">
+    <div class="section-eyebrow">Uma Escolha de Design</div>
+    <div class="section-title">❄️ Star Schema vs. Snowflake Schema</div>
+    <p class="section-desc">
+      E se a Dim Brinquedo, em vez de ter <code>categoria</code> e <code>subcategoria</code> achatadas na mesma tabela, normalizasse essa hierarquia em tabelas separadas? Isso é um <strong>Snowflake Schema</strong> — o mesmo Star Schema, mas com uma ou mais dimensões quebradas em várias tabelas normalizadas, formando "flocos de neve" ao redor do fato.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⭐ Star — Dim Brinquedo desnormalizada</div>
+        <div class="chain-row" style="justify-content:center;">
+          <div class="chain-box" style="min-width:220px;"><b>dim_brinquedo</b><span>sk_brinquedo, nome, categoria, subcategoria, departamento</span></div>
+        </div>
+        <div class="card-text" style="margin-top:12px;">Uma tabela só. Consulta simples: <code>1 JOIN</code>. Um pouco de redundância (a palavra "Pelúcias" se repete em cada brinquedo daquela categoria) — mas isso é barato em disco e rápido de ler.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">❄️ Snowflake — hierarquia normalizada</div>
+        <div class="chain-row" style="justify-content:center;">
+          <div class="chain-box"><b>dim_brinquedo</b><span>sk_brinquedo, nome, sk_subcategoria</span></div>
+          <span class="chain-arrow">→</span>
+          <div class="chain-box"><b>dim_subcategoria</b><span>sk_subcategoria, nome, sk_categoria</span></div>
+          <span class="chain-arrow">→</span>
+          <div class="chain-box"><b>dim_categoria</b><span>sk_categoria, nome, sk_departamento</span></div>
+        </div>
+        <div class="card-text" style="margin-top:12px;">Zero redundância. Mas para descobrir o departamento de um brinquedo, a consulta precisa de <strong>3 JOINs</strong> em vez de 1 — mais lento e mais difícil para ferramentas de BI e usuários de negócio entenderem.</div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>Critério</th><th>Star Schema</th><th>Snowflake Schema</th></tr></thead>
+      <tbody>
+        <tr><td>Normalização das dimensões</td><td class="center">Baixa (desnormalizada)</td><td class="center">Alta (normalizada)</td></tr>
+        <tr><td>Número de JOINs por consulta</td><td class="center">Poucos</td><td class="center">Muitos</td></tr>
+        <tr><td>Facilidade de entendimento</td><td class="center">Alta</td><td class="center">Menor</td></tr>
+        <tr><td>Espaço em disco</td><td class="center">Um pouco maior</td><td class="center">Menor</td></tr>
+        <tr><td>Velocidade de leitura</td><td class="center">Geralmente mais rápida</td><td class="center">Geralmente mais lenta</td></tr>
+        <tr><td>Recomendação de Kimball</td><td class="center">✅ Padrão preferido</td><td class="center">Só em casos pontuais</td></tr>
+      </tbody>
+    </table>
+
+    <div class="ok-box">
+      <div class="highlight-title">A recomendação de Kimball</div>
+      <p>Prefira <strong>Star</strong> quase sempre. Armazenamento é barato; tempo de consulta e clareza para o usuário de negócio não são. Snowflake às vezes aparece quando uma dimensão gigante e repetida (tipo uma hierarquia geográfica enorme) precisa ser mantida centralizada — mas é a exceção, não a regra.</p>
+    </div>
+  </section>
+
+  <!-- ============ BUS MATRIX ============ -->
+  <section class="section" id="s-bus">
+    <div class="section-eyebrow">Escalando para a Empresa Toda</div>
+    <div class="section-title">🚌 Dimensões Conformadas e a Bus Matrix</div>
+    <p class="section-desc">
+      A Loja da Lu não tem só "Vendas" — também tem "Devoluções", "Estoque" e "Frete". Cada um é um processo de negócio diferente, com sua própria tabela fato. Mas se todos usarem a <strong>mesma</strong> Dim Tempo, a <strong>mesma</strong> Dim Loja e a <strong>mesma</strong> Dim Brinquedo (mesmas surrogate keys, mesmos atributos), dá para comparar vendas com devoluções na mesma consulta. Essas são <strong>dimensões conformadas</strong> — o "cimento" que une vários Star Schemas num Data Warehouse só. Kimball chama o mapa disso de <strong>Bus Matrix</strong>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Bus Matrix da Loja de Brinquedos da Lu</div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Processo de Negócio ↓ / Dimensão →</th><th>📅 Tempo</th><th>🧸 Brinquedo</th><th>🏪 Loja</th><th>🧒 Cliente</th><th>🧑‍💼 Vendedor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Vendas</strong></td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td></tr>
+          <tr><td><strong>Devoluções</strong></td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-no">—</td></tr>
+          <tr><td><strong>Estoque (snapshot diário)</strong></td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-no">—</td><td class="center mx-no">—</td></tr>
+          <tr><td><strong>Frete / Entregas</strong></td><td class="center mx-yes">✓</td><td class="center mx-no">—</td><td class="center mx-yes">✓</td><td class="center mx-yes">✓</td><td class="center mx-no">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que isso importa</div>
+      <p>Sem dimensões conformadas, cada equipe cria sua própria "Dim Loja" com códigos diferentes — e aí "Loja Shopping Center" no relatório de Vendas não bate com "Loja Shop Center" no relatório de Estoque. A Bus Matrix é o documento que garante que todo Star Schema novo <strong>reaproveita</strong> as dimensões que já existem, em vez de recriar do zero.</p>
+    </div>
+  </section>
+
+  <!-- ============ BRIDGE TABLES ============ -->
+  <section class="section" id="s-bridge">
+    <div class="section-eyebrow">Quando um-para-muitos não basta</div>
+    <div class="section-title">🌉 Bridge Tables: relações muitos-para-muitos</div>
+    <p class="section-desc">
+      Às vezes um fato se relaciona com <strong>vários</strong> registros de uma dimensão ao mesmo tempo — por exemplo, um combo de presente da Loja da Lu pode incluir vários brinquedos ao mesmo tempo, ou uma conta bancária pode ter vários titulares. Uma chave estrangeira simples não resolve isso. A solução é uma <strong>tabela ponte (bridge table)</strong> no meio, com um <strong>fator de ponderação</strong> para não contar valores em duplicidade.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Exemplo: Combo de Presente com vários brinquedos</div>
+      <div class="bridge-row">
+        <div class="bridge-node"><b>fato_vendas</b><span>sk_combo = 501</span></div>
+        <div class="bridge-conn" data-label="1 : N"></div>
+        <div class="bridge-node mid"><b>bridge_combo_brinquedo</b><span>sk_combo, sk_brinquedo, fator_peso</span></div>
+        <div class="bridge-conn" data-label="N : 1"></div>
+        <div class="bridge-node"><b>dim_brinquedo</b><span>sk_brinquedo</span></div>
+      </div>
+      <table class="data-table" style="margin-top:18px;">
+        <thead><tr><th>sk_combo</th><th>sk_brinquedo</th><th>brinquedo</th><th>fator_peso</th></tr></thead>
+        <tbody>
+          <tr><td>501</td><td>1</td><td>Ursinho de Pelúcia</td><td>0.50</td></tr>
+          <tr><td>501</td><td>4</td><td>Bola de Futebol</td><td>0.50</td></tr>
+        </tbody>
+      </table>
+      <div class="card-text" style="margin-top:10px;">O <code>fator_peso</code> soma <strong>1.0</strong> por combo — assim, se o combo custou R$ 100, cada brinquedo "recebe" R$ 50 na hora de somar valor por brinquedo, sem duplicar o valor total do combo.</div>
+    </div>
+  </section>
+
+  <!-- ============ SCD ============ -->
+  <section class="section" id="s-scd">
+    <div class="section-eyebrow">Quando o Contexto Muda</div>
+    <div class="section-title">🕰️ Slowly Changing Dimensions (SCD) — resumo</div>
+    <p class="section-desc">
+      Dimensões não são estáticas para sempre: um cliente muda de cidade, um brinquedo muda de categoria, uma loja muda de gerente. O jeito de lidar com essas mudanças dentro de uma dimensão se chama <strong>SCD (Slowly Changing Dimension)</strong> — um assunto grande o suficiente para ter sua própria aula dedicada na Profissão Dados. Aqui vai o resumo essencial:
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🧊 SCD Tipo 0/1 — Ignorar ou Sobrescrever</div>
+        <div class="card-text">Tipo 0: nunca muda (congelado). Tipo 1: <strong>sobrescreve</strong> o valor antigo — simples, mas perde o histórico. Bom para corrigir erros de digitação.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🕰️ SCD Tipo 2 — Nova Linha</div>
+        <div class="card-text">Cria uma <strong>linha nova</strong> na dimensão a cada mudança, com <code>data_inicio</code>, <code>data_fim</code> e <code>flag_atual</code>. É o tipo mais usado — preserva o histórico completo e permite reconstruir "como era o cliente na época daquela venda".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📎 SCD Tipo 3/6 — Coluna extra / Híbrido</div>
+        <div class="card-text">Tipo 3: guarda o valor <strong>anterior</strong> numa coluna extra (só 1 mudança de histórico). Tipo 6: combina 1 + 2 + 3 — sobrescreve, versiona em nova linha <em>e</em> guarda o valor anterior numa coluna.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Quer a fundo — todos os 6 tipos, com simulador interativo e implementação em SQL <code>MERGE</code>? Veja a aula dedicada <strong>"Slowly Changing Dimensions (SCD)"</strong> da Profissão Dados.</p>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="ok-box">
+        <div class="highlight-title">Faça</div>
+        <p>
+          ✓ Declare o grão <strong>antes</strong> de desenhar qualquer coluna.<br>
+          ✓ Use surrogate keys inteiras em toda dimensão.<br>
+          ✓ Sempre inclua uma linha "Desconhecido / N/A" em cada dimensão, para fatos com chave nula.<br>
+          ✓ Reaproveite dimensões conformadas entre processos de negócio diferentes.<br>
+          ✓ Prefira Star sobre Snowflake, a menos que haja um motivo forte.
+        </p>
+      </div>
+      <div class="warn-box">
+        <div class="highlight-title">Evite</div>
+        <p>
+          ✗ Misturar grãos diferentes na mesma tabela fato (ex: linha de item e linha de total do pedido juntas).<br>
+          ✗ Somar medidas semi-aditivas ou não-aditivas sem pensar na dimensão de agregação.<br>
+          ✗ Usar a chave natural do sistema de origem como chave da dimensão.<br>
+          ✗ Criar uma dimensão nova quando uma conformada já existe.<br>
+          ✗ Esquecer de tratar mudanças em dimensões (escolher um tipo de SCD conscientemente).
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <div class="section-desc">Clique em cada pergunta para ver a resposta.</div>
+    <div id="quizList" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Modelagem Dimensional</span>
+    <span>
+      Fontes: <a href="https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/kimball-techniques/dimensional-modeling-techniques/" target="_blank" rel="noopener">Kimball Group — Dimensional Modeling Techniques</a> ·
+      <em>The Data Warehouse Toolkit</em>, Ralph Kimball & Margy Ross
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oltp-olap', icon:'🏢', label:'OLTP vs OLAP'},
+  {id:'s-anatomia', icon:'⭐', label:'Anatomia'},
+  {id:'s-4passos', icon:'🧭', label:'4 Passos'},
+  {id:'s-grao', icon:'📏', label:'O Grão'},
+  {id:'s-dimensoes', icon:'🧩', label:'Dimensões'},
+  {id:'s-fatos', icon:'📊', label:'Fatos & Medidas'},
+  {id:'s-tipos-fato', icon:'🗂️', label:'Tipos de Fato'},
+  {id:'s-chaves', icon:'🔑', label:'Chaves'},
+  {id:'s-tempo', icon:'📅', label:'Dim. Tempo'},
+  {id:'s-especiais', icon:'🧬', label:'Especiais'},
+  {id:'s-snowflake', icon:'❄️', label:'Snowflake'},
+  {id:'s-bus', icon:'🚌', label:'Bus Matrix'},
+  {id:'s-bridge', icon:'🌉', label:'Bridge'},
+  {id:'s-scd', icon:'🕰️', label:'SCD'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== MINI STAR (hero preview, static decorative) ===================== */
+function buildMiniStar(){
+  const wrap = document.getElementById('miniStar');
+  const cx = 110, cy = 110, r = 82;
+  const dims = ['📅','🧸','🏪','🧒','🧑‍💼','🏷️'];
+  let html = '';
+  dims.forEach((icon,i) => {
+    const angle = (Math.PI*2/dims.length)*i - Math.PI/2;
+    const x = cx + r*Math.cos(angle), y = cy + r*Math.sin(angle);
+    const len = Math.hypot(x-cx, y-cy);
+    const rot = Math.atan2(y-cy, x-cx) * 180/Math.PI;
+    html += `<div class="mline" style="left:${cx}px;top:${cy}px;width:${len}px;transform:rotate(${rot}deg);"></div>`;
+    html += `<div class="mdim" style="left:${x-26}px;top:${y-26}px;">${icon}</div>`;
+  });
+  html += `<div class="mfact">🧾</div>`;
+  wrap.innerHTML = html;
+}
+buildMiniStar();
+
+/* ===================== STAR SCHEMA ANATOMY DIAGRAM ===================== */
+const starInfo = {
+  tempo: {t:'📅 Dim Tempo', d:'Guarda uma linha por dia (ou por hora): data, dia da semana, mês, trimestre, ano, feriado, fim de semana. Usada por praticamente todo fato do Data Warehouse — é a dimensão mais "conformada" de todas.'},
+  brinquedo: {t:'🧸 Dim Brinquedo', d:'Uma linha por brinquedo vendável: nome, categoria, subcategoria, faixa etária, marca. É a dimensão de "produto" da Loja da Lu — larga em atributos, baixa em número de linhas.'},
+  loja: {t:'🏪 Dim Loja', d:'Uma linha por loja física ou canal online: cidade, estado, região, tipo de loja (shopping, rua, e-commerce), gerente responsável.'},
+  cliente: {t:'🧒 Dim Cliente', d:'Uma linha por cliente cadastrado: nome, cidade, faixa etária, segmento. Sujeita a SCD Tipo 2 quando o cliente muda de cidade ou de segmento ao longo do tempo.'},
+  vendedor: {t:'🧑‍💼 Dim Vendedor', d:'Uma linha por vendedor: nome, cargo, loja de lotação, data de contratação. Permite responder "qual vendedor mais vendeu no trimestre?".'},
+  promocao: {t:'🏷️ Dim Promoção', d:'Uma linha por campanha promocional: nome da campanha, tipo de desconto, data de início e fim. Permite medir o efeito de uma promoção nas vendas.'},
+};
+function rectRel(el, wrap){
+  const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+  return {x: r.left - w.left, y: r.top - w.top, w: r.width, h: r.height};
+}
+function centerOf(rect){ return {x: rect.x + rect.w/2, y: rect.y + rect.h/2}; }
+function edgePoint(rect, dx, dy){
+  const c = centerOf(rect);
+  if(dx === 0 && dy === 0) return c;
+  const hw = rect.w/2, hh = rect.h/2;
+  const scale = 1 / Math.max(Math.abs(dx)/hw, Math.abs(dy)/hh);
+  return {x: c.x + dx*scale, y: c.y + dy*scale};
+}
+function drawStarLines(highlightId){
+  const svg = document.getElementById('starSvg');
+  const wrap = document.getElementById('starWrap');
+  svg.innerHTML = '';
+  if(window.innerWidth <= 960) return;
+  const fact = document.querySelector('.fact-box');
+  if(!fact) return;
+  const rf = rectRel(fact, wrap);
+  const fc = centerOf(rf);
+  document.querySelectorAll('.dim-box').forEach(dim => {
+    const rd = rectRel(dim, wrap);
+    const dc = centerOf(rd);
+    const dx = dc.x - fc.x, dy = dc.y - fc.y;
+    const p1 = edgePoint(rf, dx, dy);
+    const p2 = edgePoint(rd, -dx, -dy);
+    const isHi = dim.dataset.id === highlightId;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+    line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+    line.setAttribute('stroke', isHi ? '#06b6d4' : '#535966');
+    line.setAttribute('stroke-width', isHi ? '2.5' : '1.5');
+    line.setAttribute('opacity', isHi ? '0.95' : '0.55');
+    svg.appendChild(line);
+  });
+}
+function pickStar(id){
+  document.querySelectorAll('.dim-box').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.dim-box[data-id="${id}"]`).classList.add('active');
+  const info = starInfo[id];
+  document.getElementById('starDetail').innerHTML = `<div class="sd-title">${info.t}</div><div class="sd-text">${info.d}</div>`;
+  drawStarLines(id);
+}
+drawStarLines(null);
+window.addEventListener('resize', () => { const active = document.querySelector('.dim-box.active'); drawStarLines(active ? active.dataset.id : null); });
+
+/* ===================== GRAIN DEMO ===================== */
+const grainData = {
+  item: {
+    head: ['numero_pedido','data','item','qtd','valor_item'],
+    rows: [
+      ['1001','2026-07-20','Ursinho de Pelúcia','2','R$ 40,00'],
+      ['1001','2026-07-20','Carrinho de Corrida','1','R$ 15,00'],
+      ['1002','2026-07-20','Boneca Fadinha','1','R$ 30,00'],
+      ['1003','2026-07-21','Bola de Futebol','3','R$ 30,00'],
+      ['1003','2026-07-21','Pião Relâmpago','2','R$ 10,00'],
+    ],
+    detail: '100% (item a item)'
+  },
+  pedido: {
+    head: ['numero_pedido','data','qtd_itens','valor_total_pedido'],
+    rows: [
+      ['1001','2026-07-20','3','R$ 55,00'],
+      ['1002','2026-07-20','1','R$ 30,00'],
+      ['1003','2026-07-21','5','R$ 40,00'],
+    ],
+    detail: 'Perde qual brinquedo foi vendido'
+  },
+  dia: {
+    head: ['data','qtd_pedidos','valor_total_dia'],
+    rows: [
+      ['2026-07-20','2','R$ 85,00'],
+      ['2026-07-21','1','R$ 40,00'],
+    ],
+    detail: 'Perde pedido e brinquedo individuais'
+  }
+};
+function setGrain(g){
+  ['item','pedido','dia'].forEach(k => document.getElementById('btnGrain'+k[0].toUpperCase()+k.slice(1)).classList.toggle('active', k===g));
+  const d = grainData[g];
+  document.getElementById('grainTable').innerHTML = `
+    <thead><tr>${d.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${d.rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  document.getElementById('grainRows').textContent = d.rows.length;
+  document.getElementById('grainDetail').textContent = d.detail;
+}
+setGrain('item');
+
+/* ===================== FACT TYPE DEMO ===================== */
+const factTypes = {
+  trans: {
+    title: '🧾 Fato de Transação — 1 linha por evento discreto',
+    desc: 'A mais comum. Uma linha nasce quando o evento acontece e nunca é atualizada depois. Ex: cada venda de brinquedo.',
+    head: ['sk_tempo','sk_brinquedo','sk_loja','qtd_vendida','valor_total'],
+    rows: [['20260720','1','3','2','R$ 40,00'],['20260720','2','3','1','R$ 15,00'],['20260721','4','1','3','R$ 30,00']]
+  },
+  snap: {
+    title: '📸 Snapshot Periódico — 1 linha por período, sempre',
+    desc: 'Uma linha para cada combinação de dimensão a cada período (dia, mês), mesmo sem movimento. Ex: estoque de cada brinquedo, todo fim de dia — precisa para responder "quanto tinha em estoque em 20/07?" sem somar transações.',
+    head: ['sk_tempo','sk_brinquedo','sk_loja','estoque_final'],
+    rows: [['20260720','1','3','48'],['20260720','2','3','22'],['20260721','1','3','46']]
+  },
+  acum: {
+    title: '🚚 Snapshot Cumulativo — 1 linha por processo, atualizada a cada etapa',
+    desc: 'Uma linha nasce quando o processo começa (ex: pedido criado) e é atualizada (UPDATE) conforme avança por etapas. Ótimo para medir tempo entre etapas de um pipeline. Ex: ciclo de vida de um pedido.',
+    head: ['numero_pedido','sk_tempo_pedido','sk_tempo_pago','sk_tempo_enviado','sk_tempo_entregue'],
+    rows: [['1001','20260720','20260720','20260721','20260723'],['1002','20260720','20260721','—','—']]
+  }
+};
+function setFactType(type){
+  ['Trans','Snap','Acum'].forEach(k => document.getElementById('btnFact'+k).classList.toggle('active', k.toLowerCase()===type));
+  const f = factTypes[type];
+  document.getElementById('factTypeBody').innerHTML = `
+    <div class="card-title" style="margin-bottom:4px;">${f.title}</div>
+    <div class="card-text" style="margin-bottom:14px;">${f.desc}</div>
+    <table class="data-table">
+      <thead><tr>${f.head.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${f.rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+}
+setFactType('trans');
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Uma tabela fato costuma ter mais linhas que qualquer tabela dimensão.', a:true, e:'Verdadeiro. O fato cresce uma linha a cada evento de negócio (venda, clique...); as dimensões crescem muito mais devagar.'},
+  {q:'O grão da tabela fato deve ser decidido só depois de definir todas as colunas de medida.', a:false, e:'Falso. Kimball recomenda declarar o grão primeiro — é ele que determina quais colunas fazem sentido como fato e quais como dimensão.'},
+  {q:'Medidas semi-aditivas, como saldo em conta ou estoque, podem ser somadas com segurança ao longo do tempo.', a:false, e:'Falso. Elas geralmente não podem ser somadas na dimensão tempo — somar o saldo de vários dias distorce o resultado, já que cada saldo já é acumulado.'},
+  {q:'Star Schema costuma ter menos JOINs por consulta do que Snowflake Schema.', a:true, e:'Verdadeiro. Dimensões desnormalizadas em uma única tabela (Star) exigem menos JOINs do que dimensões normalizadas em várias tabelas (Snowflake).'},
+  {q:'A chave estrangeira usada entre fato e dimensão deve ser sempre a chave natural do sistema de origem (ex: SKU, CPF).', a:false, e:'Falso. O padrão é usar surrogate keys geradas pelo próprio Data Warehouse — isso permite guardar histórico e evita conflitos de reaproveitamento de códigos na origem.'},
+  {q:'Dimensões conformadas permitem comparar fatos de processos de negócio diferentes (ex: Vendas e Devoluções) na mesma consulta.', a:true, e:'Verdadeiro. Quando ambos os fatos usam a mesma Dim Tempo, Dim Loja etc. (mesmas surrogate keys), é possível fazer JOIN e comparação direta entre eles.'},
+  {q:'Uma Bridge Table é usada quando a relação entre fato e dimensão é muitos-para-muitos.', a:true, e:'Verdadeiro. Ex: um combo de presente com vários brinquedos — a bridge table guarda a relação e um fator de peso para não duplicar valores ao somar.'},
+  {q:'SCD Tipo 1 preserva o histórico completo de mudanças em uma dimensão.', a:false, e:'Falso. SCD Tipo 1 sobrescreve o valor antigo — o histórico se perde. Quem preserva histórico completo, criando novas linhas, é o SCD Tipo 2.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>
