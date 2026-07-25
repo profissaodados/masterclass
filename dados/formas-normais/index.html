@@ -204,19 +204,23 @@ input[type=text]:focus{outline:none;border-color:var(--accent);}
 .cart-cell.combo{color:var(--accent-red);font-weight:700;background:rgba(248,107,99,.10);}
 
 /* ---- NESTED FORMS DIAGRAM ---- */
-.nf-nest{display:flex;flex-direction:column;align-items:center;padding:26px;}
-.nf-box{width:100%;border:2px solid;border-radius:16px;padding:22px;text-align:center;cursor:pointer;transition:.2s;position:relative;}
-.nf-box:hover{transform:scale(1.008);}
+.nf-nest{padding:10px;}
+.nf-box{border:2px solid;border-radius:14px;padding:16px 18px;cursor:pointer;transition:.15s;position:relative;background:rgba(0,0,0,.12);}
+.nf-box:hover{filter:brightness(1.15);}
 .nf-box.active{box-shadow:0 0 0 3px currentColor inset;}
-.nf-box-title{font-weight:800;font-size:14px;letter-spacing:.5px;}
-.nf-box-sub{font-size:10.5px;color:var(--text-secondary);margin-top:4px;text-transform:none;letter-spacing:0;}
+.nf-box-label{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.nf-box-title{font-weight:800;font-size:13.5px;letter-spacing:.3px;white-space:nowrap;}
+.nf-box-sub{font-size:10.5px;color:var(--text-secondary);text-transform:none;letter-spacing:0;}
 .nf-1{border-color:var(--accent-red);color:var(--accent-red);}
-.nf-2{border-color:var(--accent-yellow);color:var(--accent-yellow);padding:34px 26px;}
-.nf-3{border-color:var(--accent-blue);color:var(--accent-blue);padding:46px 26px;}
-.nf-bcnf{border-color:var(--accent-purple);color:var(--accent-purple);padding:58px 26px;}
-.nf-4{border-color:var(--accent);color:var(--accent);padding:70px 26px;}
-.nf-5{border-color:var(--accent-green);color:var(--accent-green);padding:82px 26px 26px;}
-.nf-box + .nf-box{margin-top:-52px;}
+.nf-2{border-color:var(--accent-yellow);color:var(--accent-yellow);}
+.nf-3{border-color:var(--accent-blue);color:var(--accent-blue);}
+.nf-bcnf{border-color:var(--accent-purple);color:var(--accent-purple);}
+.nf-4{border-color:var(--accent);color:var(--accent);}
+.nf-5{border-color:var(--accent-green);color:var(--accent-green);}
+.nf-5 .nf-box-label{margin-bottom:0;}
+@media (max-width:600px){
+  .nf-box-label{flex-direction:column;gap:2px;}
+}
 
 /* ---- TIMELINE-ISH STEP LIST ---- */
 .step-list{display:flex;flex-direction:column;gap:0;}
@@ -946,23 +950,28 @@ function setWizardStep(step){
 }
 setWizardStep(0);
 
-/* ===================== NESTED FORMS DIAGRAM ===================== */
+/* ===================== NESTED FORMS DIAGRAM (caixas realmente aninhadas, de fora pra dentro) ===================== */
 const nfLayers = [
-  {id:'nf5', cls:'nf-5', label:'5ª Forma Normal', sub:'sem dependências de junção', t:'🧩 5FN', d:'A camada mais interna: nenhuma tabela pode ser reconstruída de forma equivocada juntando pedaços menores. Rara no dia a dia — costuma "vir de graça" quando as regras anteriores já foram bem aplicadas.'},
-  {id:'nf4', cls:'nf-4', label:'4ª Forma Normal', sub:'sem dependências multivaloradas independentes', t:'🎈 4FN', d:'Proíbe misturar duas "listas" sem relação (como disciplinas e idiomas de um professor) na mesma tabela, o que criaria combinações artificiais.'},
-  {id:'nfbcnf', cls:'nf-bcnf', label:'Boyce-Codd (BCNF)', sub:'todo determinante é chave candidata', t:'🚧 BCNF', d:'Versão mais rígida da 3FN: cobre também os casos onde uma coluna que faz parte de alguma chave candidata ainda assim determina outra.'},
+  {id:'nf1', cls:'nf-1', label:'1ª Forma Normal', sub:'valores atômicos', t:'1️⃣ 1FN', d:'A camada mais externa e a base de tudo: cada célula guarda um único valor, sem listas escondidas. Toda tabela normalizada, não importa até onde vá, precisa começar respeitando isso.'},
+  {id:'nf2', cls:'nf-2', label:'2ª Forma Normal', sub:'sem dependência parcial', t:'2️⃣ 2FN', d:'Com chave composta, toda coluna precisa depender da chave inteira, nunca de só um pedaço dela. Todo dado em 2FN também está em 1FN — por isso a caixa fica dentro da anterior.'},
   {id:'nf3', cls:'nf-3', label:'3ª Forma Normal', sub:'sem dependência transitiva', t:'3️⃣ 3FN', d:'Nenhuma coluna não-chave pode depender de outra coluna não-chave. Cliente_nome não pode "morar" na tabela de Pedidos.'},
-  {id:'nf2', cls:'nf-2', label:'2ª Forma Normal', sub:'sem dependência parcial', t:'2️⃣ 2FN', d:'Com chave composta, toda coluna precisa depender da chave inteira, nunca de só um pedaço dela.'},
-  {id:'nf1', cls:'nf-1', label:'1ª Forma Normal', sub:'valores atômicos', t:'1️⃣ 1FN', d:'A camada mais externa e a base de tudo: cada célula guarda um único valor, sem listas escondidas.'},
+  {id:'nfbcnf', cls:'nf-bcnf', label:'Boyce-Codd (BCNF)', sub:'todo determinante é chave candidata', t:'🚧 BCNF', d:'Versão mais rígida da 3FN: cobre também os casos onde uma coluna que faz parte de alguma chave candidata ainda assim determina outra.'},
+  {id:'nf4', cls:'nf-4', label:'4ª Forma Normal', sub:'sem dependências multivaloradas independentes', t:'🎈 4FN', d:'Proíbe misturar duas "listas" sem relação (como disciplinas e idiomas de um professor) na mesma tabela, o que criaria combinações artificiais.'},
+  {id:'nf5', cls:'nf-5', label:'5ª Forma Normal', sub:'sem dependências de junção', t:'🧩 5FN', d:'A camada mais interna: nenhuma tabela pode ser reconstruída de forma equivocada juntando pedaços menores. Rara no dia a dia — costuma "vir de graça" quando as regras anteriores já foram bem aplicadas.'},
 ];
 function renderNfNest(){
-  document.getElementById('nfNest').innerHTML = nfLayers.map(l => `
-    <div class="nf-box ${l.cls}" data-id="${l.id}" onclick="pickNfLayer('${l.id}')">
-      <div class="nf-box-title">${l.label}</div>
-      <div class="nf-box-sub">${l.sub}</div>
-    </div>`).join('');
+  let html = '';
+  for(let i = nfLayers.length - 1; i >= 0; i--){
+    const l = nfLayers[i];
+    html = `<div class="nf-box ${l.cls}" data-id="${l.id}" onclick="pickNfLayer(event,'${l.id}')">
+      <div class="nf-box-label"><span class="nf-box-title">${l.label}</span><span class="nf-box-sub">${l.sub}</span></div>
+      ${html}
+    </div>`;
+  }
+  document.getElementById('nfNest').innerHTML = html;
 }
-function pickNfLayer(id){
+function pickNfLayer(ev, id){
+  ev.stopPropagation();
   document.querySelectorAll('.nf-box').forEach(el => el.classList.toggle('active', el.dataset.id === id));
   const l = nfLayers.find(x => x.id === id);
   document.getElementById('nfNestDetail').innerHTML = `<div class="ad-title">${l.t} — ${l.label}</div><div class="ad-text">${l.d}</div>`;
