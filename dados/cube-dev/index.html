@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Cube.dev. O que é, como o Cube Schema funciona, cubes, dimensions, measures, joins, pre-aggregations e as 3 APIs (SQL/REST/GraphQL) explicados com analogias simples, diagramas visuais e simulador interativo, comparando com o dbt Semantic Layer.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Cube.dev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;text-wrap:balance;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:240px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-row.new{border-color:var(--accent-green);color:var(--accent-green);font-weight:700;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- ARQUITETURA — fluxo em pipeline ---- */
+.arch-flow{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:10px 4px;}
+.arch-stage{flex:0 0 172px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px 14px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:flex-start;}
+.arch-stage.hl{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.arch-icon{font-size:28px;}
+.arch-title{font-size:12px;font-weight:800;color:var(--text-primary);}
+.arch-sub{font-size:10.5px;color:var(--text-secondary);line-height:1.5;}
+.arch-arrow{display:flex;align-items:center;justify-content:center;flex:0 0 30px;font-size:18px;color:var(--border-strong);}
+.arch-consumers{display:flex;flex-direction:column;gap:6px;align-items:flex-start;margin-top:2px;}
+.arch-consumer-chip{font-size:10px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:12px;padding:3px 9px;color:var(--text-secondary);white-space:nowrap;}
+@media (max-width:960px){.arch-flow{flex-direction:column;align-items:stretch;} .arch-stage{flex:none;} .arch-arrow{transform:rotate(90deg);flex:none;padding:6px 0;}}
+
+/* ---- CUBE / JOIN DIAGRAM ---- */
+.join-diagram{display:flex;align-items:center;gap:6px;overflow-x:auto;padding:10px 2px;}
+.semmodel-card{flex:0 0 250px;background:var(--bg-panel);border:2px solid var(--accent-blue);border-radius:12px;padding:16px 16px 12px;position:relative;}
+.semmodel-tag{position:absolute;top:-11px;left:14px;background:var(--accent-blue);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.semmodel-block{margin-top:14px;}
+.semmodel-block-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-disabled);font-weight:700;margin-bottom:5px;}
+.semmodel-item{font-size:11px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:5px 9px;margin-bottom:4px;color:var(--text-secondary);display:flex;justify-content:space-between;gap:8px;}
+.semmodel-item strong{color:var(--text-primary);font-family:'Roboto Mono',monospace;font-weight:700;}
+.semmodel-item.entity{border-color:var(--accent);color:var(--accent);}
+.join-connector{flex:0 0 96px;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:36px;}
+.join-connector-line{width:100%;height:2px;background:var(--accent);position:relative;}
+.join-connector-line::after{content:'▸';position:absolute;right:-6px;top:-9px;color:var(--accent);font-size:16px;}
+.join-connector-label{font-size:9.5px;color:var(--accent);font-family:'Roboto Mono',monospace;text-align:center;background:rgba(6,182,212,.1);border:1px solid var(--accent);border-radius:10px;padding:2px 8px;white-space:nowrap;}
+@media (max-width:960px){.join-diagram{flex-direction:column;} .semmodel-card{flex:none;width:100%;} .join-connector{flex-direction:row;width:100%;padding:6px 0;} .join-connector-line{height:22px;width:2px;} .join-connector-line::after{content:'▾';right:-8px;top:auto;bottom:-10px;}}
+
+/* ---- FLUXO INGREDIENTE → RESULTADO ---- */
+.recipe-flow{display:flex;align-items:center;gap:16px;overflow-x:auto;padding:8px 2px;flex-wrap:wrap;}
+.ingredient-chip{background:var(--bg-elevated);border:1px dashed var(--border-strong);border-radius:20px;padding:8px 16px;font-size:12px;color:var(--text-secondary);font-family:'Roboto Mono',monospace;white-space:nowrap;}
+.recipe-arrow{font-size:20px;color:var(--accent);}
+.dish-card{background:var(--bg-panel);border:2px solid var(--accent-green);border-radius:10px;padding:12px 18px;text-align:center;}
+.dish-card .dish-name{font-weight:800;color:var(--accent-green);font-size:13px;}
+.dish-card .dish-sub{font-size:10.5px;color:var(--text-disabled);margin-top:2px;}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.btn-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:normal;font-variant-numeric:tabular-nums;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-fade td{opacity:.55;}
+.cell-old{color:var(--accent-red);}
+.cell-new{color:var(--accent-green);font-weight:700;}
+.badge-current{background:rgba(125,222,216,.16);color:var(--accent-green);border:1px solid var(--accent-green);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.badge-expired{background:rgba(152,162,179,.10);color:var(--text-disabled);border:1px solid var(--border-color);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);font-variant-numeric:tabular-nums;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- COMPAT GRID (ferramentas conectando) ---- */
+.compat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
+.compat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;transition:.15s;}
+.compat-card.ok{border-color:var(--accent-green);}
+.compat-card.no{border-color:var(--accent-red);opacity:.85;}
+.compat-head{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.compat-name{font-size:12.5px;font-weight:700;color:var(--text-primary);}
+.compat-status{font-size:14px;}
+.compat-reason{font-size:11px;color:var(--text-secondary);line-height:1.5;}
+.compat-summary{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:14px;font-family:'Roboto Mono',monospace;}
+.compat-summary .big{font-size:26px;font-weight:800;}
+
+/* ---- DECISION CARDS ---- */
+.decision-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.decision-q{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.decision-arrow{font-size:11px;color:var(--text-disabled);text-align:center;}
+.decision-a{font-size:14px;font-weight:800;text-align:center;padding:8px;border-radius:6px;border:1px solid;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.grid-5,.compat-grid,.sim-grid{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *{transition-duration:.01ms !important; animation-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Cube.dev</h1><span>A camada de métricas que finge ser um banco Postgres</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">3</div><div class="hstat-label">APIs (SQL/REST/GraphQL)</div></div>
+      <div class="hstat"><div class="hstat-num">Postgres</div><div class="hstat-label">Protocolo da SQL API</div></div>
+      <div class="hstat"><div class="hstat-num">MIT</div><div class="hstat-label">Cube Core open source</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Toda ferramenta de BI já sabe falar <em>Postgres</em>. E se a sua camada de métricas também falasse?</h2>
+      <p>O <strong>Cube.dev</strong> é uma semantic layer (camada de métricas) open source — a mesma ideia do dbt Semantic Layer: definir "receita" e "ticket médio" uma única vez, num lugar central, para qualquer ferramenta consultar. A diferença está em <em>como</em> essa definição chega até você. Em vez de inventar uma API nova que cada ferramenta de BI precisaria aprender a falar, o Cube decidiu fingir ser um banco de dados <strong>Postgres</strong> comum. Qualquer ferramenta que já sabe se conectar a um Postgres — Power BI, Metabase, Tableau, DBeaver, Excel — conecta direto na camada de métricas do Cube, sem esperar um conector dedicado. Além da SQL API, o Cube também expõe REST API e GraphQL API, para quando você está construindo sua própria aplicação.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Cubes</span>
+        <span class="badge badge-blue">Dimensions</span>
+        <span class="badge badge-purple">Measures</span>
+        <span class="badge badge-green">Joins</span>
+        <span class="badge badge-yellow">Pre-aggregations</span>
+        <span class="badge badge-red">SQL API</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🧊 orders.yml — cube</div>
+        <div class="fc-body">
+          <div class="fc-row">measure: count</div>
+          <div class="fc-row">measure: total_amount (sum)</div>
+          <div class="fc-row new">join: users →</div>
+        </div>
+        <div class="fc-foot">→ consultável como Postgres por Power BI, Metabase, Tableau...</div>
+      </div>
+      <div class="file-chip-caption">Definido uma vez. Conectável por qualquer ferramenta que já fale SQL.</div>
+    </div>
+  </section>
+
+  <!-- ============ O PROBLEMA ============ -->
+  <section class="section" id="s-problema">
+    <div class="section-eyebrow">O Gatilho de Tudo</div>
+    <div class="section-title">❓ O problema: métricas centralizadas, mas só um punhado de ferramentas sabe "conversar" com elas</div>
+    <p class="section-desc">
+      O dbt Semantic Layer resolveu o problema de <strong>números divergentes</strong>: uma métrica, uma definição. Mas ele criou um problema novo — expôs essa definição através de uma <strong>API própria</strong> (GraphQL + um driver JDBC chamado Arrow Flight SQL). Toda ferramenta de BI que quiser consultar essa API precisa construir, do zero, um conector dedicado para falar essa língua nova. Hoje, só um punhado de ferramentas fez esse trabalho: Tableau, Google Sheets, Excel, Hex, Mode, Sigma. <strong>Power BI</strong> e <strong>Metabase</strong> — duas das ferramentas mais usadas no mercado — não têm conector nativo. Power BI só funciona via script Python (importação, não consulta ao vivo); Metabase exigiria um driver JDBC customizado que simplesmente não existe pronto.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🗺️</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Imagine que você inventou um idioma novo, todo certinho, com gramática perfeita — mas só seis dos seus amigos aprenderam a falar com você. Os outros amigos, que já falam um idioma muito mais comum (tipo o "português" das ferramentas de banco de dados: o Postgres), ficam de fora, mesmo que a mensagem que você quer passar seja exatamente a mesma. O Cube.dev resolveu isso ao decidir aprender a falar o idioma que <em>todo mundo já sabia</em>, em vez de esperar todo mundo aprender o idioma novo.</p>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Escolha um protocolo abaixo e veja quais ferramentas de BI conseguem se conectar <strong>nativamente</strong> — sem plugin customizado, sem script de importação, sem esperar um conector que ainda não existe:</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Protocolo de consulta da camada de métricas</div>
+      <div class="btn-toggle-row" id="protocolButtons"></div>
+      <div class="compat-grid" id="compatGrid"></div>
+      <div class="compat-summary" id="compatSummary"></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Isso não é uma crítica ao conceito de semantic layer — o dbt Semantic Layer é ótimo em fazer o que promete: centralizar a definição. O Cube.dev resolve especificamente o problema <em>seguinte</em>: como fazer essa definição chegar até qualquer ferramenta, sem esperar cada fornecedor de BI construir um conector sob medida.</p></div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-fundamentos">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧠 Então, o que é exatamente o Cube.dev?</div>
+    <p class="section-desc">
+      O Cube.dev é uma camada que fica entre o seu banco de dados (Postgres, Snowflake, BigQuery, DuckDB, e mais de 20 outros) e as ferramentas que consomem números. Você descreve suas tabelas em termos de negócio — um <strong>Cube Schema</strong> — e o Cube.dev traduz perguntas ("qual foi a receita por status, em março?") em SQL otimizado para o seu banco. Até aqui, é exatamente a mesma ideia do dbt Semantic Layer. A diferença é o "sotaque": o Cube expõe tudo isso através de um servidor que <em>finge ser um Postgres de verdade</em> — a chamada <strong>SQL API</strong> — além de uma REST API e uma GraphQL API próprias.
+    </p>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🗣️ API nova (dbt Semantic Layer)</div>
+        <div class="card-text">Expõe GraphQL + Arrow Flight SQL (JDBC). Poderosa, mas exige que cada ferramenta construa um conector dedicado para entender essa API.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🐘 Protocolo universal (Cube.dev)</div>
+        <div class="card-text">Expõe Postgres wire protocol — o mesmo "idioma" que qualquer driver, ODBC, ou ferramenta de BI já sabe falar há décadas.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ Cube API Server</div>
+        <div class="card-text">O "tradutor" de verdade: lê o Cube Schema e compila SQL válido, na hora, para o seu banco — igual o MetricFlow faz no mundo dbt.</div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 O Cube.dev não é exclusivo do ecossistema dbt — ele é agnóstico de ferramenta de transformação. Funciona em cima de qualquer banco ou warehouse, tenha você usado dbt para transformar os dados ou não.</p></div>
+  </section>
+
+  <!-- ============ CUBE SCHEMA ============ -->
+  <section class="section" id="s-schema">
+    <div class="section-eyebrow">A peça central</div>
+    <div class="section-title">🧊 Cube Schema — dimensions, measures e joins, tudo num único arquivo</div>
+    <p class="section-desc">
+      Um <strong>cube</strong> é a unidade básica do Cube.dev: um arquivo que descreve uma tabela (ou uma consulta) em termos que qualquer pessoa de negócio entende. Diferente do dbt Semantic Layer — que separa a "ficha técnica" (semantic model) da "receita" (metric) em dois conceitos — o Cube junta tudo num único lugar: <code>dimensions</code> (o que agrupa e filtra), <code>measures</code> (o que já é a métrica de negócio, pronta para consumo) e <code>joins</code> (como esse cube se conecta com outros). O Cube Schema pode ser escrito em <strong>YAML</strong> ou em <strong>JavaScript</strong> — em JS, você ganha a possibilidade de gerar cubos dinamicamente com código.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧊</div>
+      <div>
+        <div class="highlight-title">Analogia</div>
+        <p>Se no dbt Semantic Layer a "ficha técnica do brinquedo" (semantic model) e a "receita de como brincar" (metric) são duas folhas separadas, no Cube.dev elas viram um <strong>cubo mágico único</strong>: cada lado do cubo já mostra tanto o encaixe (join) quanto a etiqueta (dimension) quanto a contagem pronta (measure). Você olha para um cubo só e já sabe tudo sobre aquele pedaço do seu negócio.</p>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">O mesmo cubo <code>orders</code>, escrito nas duas linguagens suportadas — escolha uma:</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Linguagem do Cube Schema</div>
+      <div class="btn-toggle-row" id="schemaLangButtons"></div>
+      <div id="schemaLangDetail" style="margin-top:16px;"></div>
+    </div>
+    <div class="ok-box"><p>✅ Repare que este schema não recalcula nada sozinho — ele só <strong>rotula</strong> uma tabela que já existe no banco (<code>public.orders</code>). O trabalho pesado de transformação continua sendo feito antes, pelo seu pipeline de dados de sempre (dbt, ou qualquer outro).</p></div>
+  </section>
+
+  <!-- ============ JOINS ============ -->
+  <section class="section" id="s-joins">
+    <div class="section-eyebrow">Conectando cubos</div>
+    <div class="section-title">🔗 Joins — o encaixe declarado explicitamente, com SQL de verdade</div>
+    <p class="section-desc">
+      Uma métrica raramente vive sozinha num cubo só. Para agrupar "receita" (que mora no cubo <code>orders</code>) por "região" (que mora no cubo <code>users</code>), o Cube precisa saber como ligar os dois. No dbt Semantic Layer, essa ligação é <em>inferida</em> a partir de entities com nomes compatíveis. No Cube.dev, você declara o join explicitamente, com uma condição SQL e um tipo de relacionamento (<code>one_to_one</code>, <code>one_to_many</code>, <code>many_to_one</code>) — menos "mágica automática", mais controle sobre exatamente como o encaixe acontece.
+    </p>
+    <p class="section-desc" style="font-size:12.5px;">Veja o join declarado entre os cubos <code>orders</code> e <code>users</code>, e o resultado ao pedir a measure <code>total_amount</code> agrupada pela dimension <code>users.region</code>:</p>
+    <div class="join-diagram">
+      <div class="semmodel-card">
+        <span class="semmodel-tag">🧊 orders</span>
+        <div class="semmodel-block">
+          <div class="semmodel-block-label">📅 dimensions</div>
+          <div class="semmodel-item entity"><span>id</span><strong>primary_key</strong></div>
+          <div class="semmodel-item"><span>status</span><strong>string</strong></div>
+        </div>
+        <div class="semmodel-block">
+          <div class="semmodel-block-label">🧮 measures</div>
+          <div class="semmodel-item"><span>total_amount</span><strong>sum</strong></div>
+        </div>
+      </div>
+      <div class="join-connector">
+        <span class="join-connector-line"></span>
+        <span class="join-connector-label">joins: users<br>many_to_one</span>
+      </div>
+      <div class="semmodel-card">
+        <span class="semmodel-tag">🧊 users</span>
+        <div class="semmodel-block">
+          <div class="semmodel-block-label">📅 dimensions</div>
+          <div class="semmodel-item entity"><span>id</span><strong>primary_key</strong></div>
+          <div class="semmodel-item"><span>region</span><strong>string</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">yaml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="fn">cubes</span>:
+  - <span class="fn">name</span>: <span class="st">orders</span>
+    <span class="fn">sql_table</span>: <span class="st">public.orders</span>
+
+    <span class="fn">joins</span>: <span class="cm"># declarado à mão, não inferido por nome</span>
+      - <span class="fn">name</span>: <span class="st">users</span>
+        <span class="fn">sql</span>: <span class="st">"{CUBE}.user_id = {users}.id"</span>
+        <span class="fn">relationship</span>: <span class="st">many_to_one</span></div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">1️⃣ one_to_one</div><div class="card-text">Cada linha de um cubo corresponde a exatamente 1 linha do outro. Raro — ex: <code>orders</code> e <code>order_details</code> 1 pra 1.</div></div>
+      <div class="card"><div class="card-title">🔁 one_to_many</div><div class="card-text">1 linha aqui pode casar com várias linhas do outro cubo. Ex: <code>users</code> → vários <code>orders</code>.</div></div>
+      <div class="card"><div class="card-title">↩️ many_to_one</div><div class="card-text">Várias linhas aqui apontam pra 1 linha do outro. Ex: <code>orders</code> → 1 <code>users</code>. O mais comum em fatos apontando pra dimensões.</div></div>
+    </div>
+    <div class="info-box"><p>💡 Na <strong>SQL API</strong>, você não aciona esse join com um <code>ON orders.user_id = users.id</code> — a coluna física não fica exposta como campo, a menos que você a declare como dimension. O jeito certo é <code>ON orders.__cubeJoinField = users.__cubeJoinField</code>, um campo especial que aciona o join já descrito no <code>joins:</code> do schema. Confirmado rodando o projeto prático desta aula.</p></div>
+  </section>
+
+  <!-- ============ PRE-AGGREGATIONS ============ -->
+  <section class="section" id="s-preagg">
+    <div class="section-eyebrow">O diferencial</div>
+    <div class="section-title">⚡ Pre-aggregations — o cache que o dbt Semantic Layer não tem de forma explícita</div>
+    <p class="section-desc">
+      Toda vez que alguém pede uma métrica ao MetricFlow, ele recalcula do zero, direto no warehouse — não existe uma camada de cache própria; a velocidade depende inteiramente do seu banco. O Cube.dev resolve isso com <strong>pre-aggregations</strong>: você declara, dentro do próprio cubo, um resumo (rollup) que deve ser materializado e mantido atualizado num armazenamento rápido chamado <strong>Cube Store</strong>. Quando uma consulta bate com esse resumo, o Cube responde a partir do cache — não do banco de origem.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🍱</div>
+      <div>
+        <div class="highlight-title">Analogia</div>
+        <p>É a diferença entre <strong>cozinhar o jantar do zero toda vez</strong> que alguém tem fome, e ter uma <strong>marmita pronta na geladeira</strong> para as perguntas mais comuns. Se todo dia 200 pessoas perguntam "quanto vendemos por status, hoje?", não faz sentido escanear a tabela inteira 200 vezes — você prepara essa marmita (a pre-aggregation) uma vez, atualiza de tempos em tempos, e serve na hora pra quem perguntar.</p>
+      </div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">yaml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="fn">cubes</span>:
+  - <span class="fn">name</span>: <span class="st">orders</span>
+    <span class="cm"># ...dimensions e measures já definidas acima...</span>
+
+    <span class="fn">pre_aggregations</span>:
+      - <span class="fn">name</span>: <span class="st">orders_by_status_daily</span>
+        <span class="fn">measures</span>:
+          - orders.count
+          - orders.total_amount
+        <span class="fn">dimensions</span>:
+          - orders.status
+        <span class="fn">time_dimension</span>: <span class="st">orders.created_at</span>
+        <span class="fn">granularity</span>: <span class="st">day</span>
+        <span class="fn">refresh_key</span>:
+          <span class="fn">every</span>: <span class="st">1 hour</span> <span class="cm"># de quanto em quanto tempo o Cube Store se atualiza</span></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">❌ Sem pre-aggregation</div><div class="card-text">Cada consulta escaneia a tabela inteira no warehouse. Dashboards pesados ficam lentos e o custo de computação escala junto com o número de acessos.</div></div>
+      <div class="card"><div class="card-title">✅ Com pre-aggregation</div><div class="card-text">O resumo já está pronto no Cube Store. A consulta responde em dezenas de milissegundos, e o warehouse só é acionado quando o cache precisa ser atualizado.</div></div>
+    </div>
+    <div class="info-box"><p>💡 O Cube decide sozinho quando uma consulta "bate" com uma pre-aggregation existente (match automático) — você não precisa reescrever a pergunta de negócio para aproveitar o cache, só declarar o rollup uma vez no schema.</p></div>
+  </section>
+
+  <!-- ============ AS 3 APIS ============ -->
+  <section class="section" id="s-apis">
+    <div class="section-eyebrow">Como consultar</div>
+    <div class="section-title">🌐 3 formas de perguntar a mesma coisa ao Cube.dev</div>
+    <p class="section-desc">
+      O mesmo cubo, com as mesmas métricas, pode ser consultado de três jeitos diferentes — cada um serve um tipo de consumidor. É essa flexibilidade de protocolo que dá ao Cube.dev sua compatibilidade ampla com ferramentas de BI já existentes.
+    </p>
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha uma API</div>
+      <div class="btn-toggle-row" id="apiButtons"></div>
+      <div id="apiDetail" style="margin-top:16px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ ARQUITETURA ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Como tudo se conecta</div>
+    <div class="section-title">🏗️ Arquitetura: do banco de dados até qualquer ferramenta de BI</div>
+    <p class="section-desc">
+      Uma consulta atravessa 4 estações antes de virar um número numa tela — e, diferente da arquitetura do dbt Semantic Layer, a última estação aqui não filtra quem pode entrar: <strong>qualquer</strong> ferramenta que fale Postgres, REST ou GraphQL consegue chegar até o resultado.
+    </p>
+    <div class="arch-flow">
+      <div class="arch-stage"><span class="arch-icon">🏬</span><span class="arch-title">Banco / Warehouse</span><span class="arch-sub">Postgres, Snowflake, BigQuery, DuckDB...</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage"><span class="arch-icon">🧊</span><span class="arch-title">Cube Schema</span><span class="arch-sub">cubes: dimensions, measures, joins</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage hl"><span class="arch-icon">⚙️</span><span class="arch-title">Cube API Server</span><span class="arch-sub">compila SQL + pre-aggregations no Cube Store</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage">
+        <span class="arch-icon">🌐</span><span class="arch-title">Qualquer consumidor</span>
+        <div class="arch-consumers">
+          <span class="arch-consumer-chip">📊 Power BI / Tableau</span>
+          <span class="arch-consumer-chip">🐘 Metabase / DBeaver</span>
+          <span class="arch-consumer-chip">🔢 Google Sheets / Excel</span>
+          <span class="arch-consumer-chip">🖥️ Retool / apps custom</span>
+          <span class="arch-consumer-chip">📈 Hex / Mode / Sigma</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🐳 Self-hosted (Docker / Kubernetes)</div>
+        <div class="card-text">Você mesmo sobe o Cube API Server e o Cube Store, de graça — o Cube Core é open source (MIT). Ótimo para rodar tudo localmente ou dentro da sua própria infraestrutura.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">☁️ Cube Cloud — hospedado</div>
+        <div class="card-text">Versão gerenciada, paga, com orquestração de pre-aggregations, monitoramento e escalonamento automático — o equivalente ao papel que o dbt Cloud cumpre pro Semantic Layer.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">⚖️ Cube.dev vs. dbt Semantic Layer, lado a lado</div>
+    <p class="section-desc">Os dois resolvem o mesmo problema de fundo — números divergentes entre ferramentas — com abordagens diferentes o suficiente para mudar quem consegue usar o quê.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Critério</th><th>dbt Semantic Layer</th><th>Cube.dev</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Protocolo de consulta</strong></td><td>API própria: GraphQL + Arrow Flight SQL (JDBC)</td><td>Postgres wire protocol (SQL API) + REST API + GraphQL API</td></tr>
+          <tr class="row-scan"><td><strong>Conectores nativos em BI</strong></td><td>Tableau, Google Sheets, Excel, Hex, Mode, Sigma</td><td>Qualquer ferramenta que fale Postgres: Power BI, Metabase, Tableau, DBeaver, Excel...</td></tr>
+          <tr><td><strong>Linguagem de definição</strong></td><td>YAML</td><td>YAML ou JavaScript</td></tr>
+          <tr><td><strong>Cache / pre-agregação</strong></td><td>Não tem camada própria — depende do warehouse a cada consulta</td><td>Pre-aggregations nativas, materializadas no Cube Store</td></tr>
+          <tr><td><strong>API de produção</strong></td><td>Precisa de dbt Cloud (plano Team/Enterprise) para hospedar a API</td><td>Self-hosted grátis (Docker/K8s) ou Cube Cloud pago</td></tr>
+          <tr><td><strong>Núcleo open source</strong></td><td>MetricFlow é open source, mas a API de produção roda no dbt Cloud (pago)</td><td>Cube Core é open source (MIT) — API completa roda self-hosted sem custo</td></tr>
+          <tr><td><strong>Integração com transformação</strong></td><td>Nativo do ecossistema dbt — semantic model aponta pra um <code>ref()</code></td><td>Agnóstico de ferramenta — funciona com ou sem dbt por trás</td></tr>
+          <tr><td><strong>Curva de aprendizado</strong></td><td>Baixa, se o time já usa dbt no dia a dia</td><td>Um pouco mais alta — schema e conceitos próprios, separados do dbt</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ SIMULADOR ============ -->
+  <section class="section" id="s-simulador">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">🎮 Simulador: o que a pre-aggregation economiza quando o dashboard fica popular</div>
+    <p class="section-desc">Arraste o número de consultas que o mesmo dashboard recebe por hora, e veja a diferença entre bater direto no warehouse a cada clique e servir a partir de uma pre-aggregation já materializada no Cube Store.</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Consultas ao mesmo dashboard, por hora</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Número de consultas / hora</span><span class="ctrl-v" id="queryVal">20</span></div>
+          <input type="range" id="querySlider" min="1" max="300" step="1" value="20" oninput="updatePreagg()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="preaggCanvas" height="130"></canvas></div>
+      <div class="stat-cards" id="preaggStats"></div>
+    </div>
+  </section>
+
+  <!-- ============ RODANDO DE VERDADE ============ -->
+  <section class="section" id="s-projeto">
+    <div class="section-eyebrow">Mão na Massa — Projeto Real</div>
+    <div class="section-title">🐳 Rodando de verdade: Cube.dev + Postgres num Docker Compose</div>
+    <p class="section-desc">
+      Existe um projeto completo, testado do início ao fim, na pasta <code>cube_project/</code> ao lado desta aula. Ele sobe um <strong>Postgres real</strong> (a fonte dos dados) e o <strong>Cube.dev</strong> (self-hosted, via Docker) na frente dele — com um Cube Schema que reproduz exatamente os exemplos vistos até aqui. Os dados são os <em>mesmos</em> clientes e pedidos do projeto irmão <code>loja_metrics</code> (dbt Semantic Layer), de propósito: dá pra comparar as duas camadas de métricas sobre a base idêntica.
+    </p>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🏬 db-init/01_init.sql</div><div class="card-text">Cria e popula <code>customers</code> (10 linhas) e <code>orders</code> (73 linhas) — os mesmos CSVs do <code>loja_metrics</code>.</div></div>
+      <div class="card"><div class="card-title">🧊 model/cubes/*.yml</div><div class="card-text">O Cube Schema de verdade: <code>customers.yml</code> e <code>orders.yml</code>, com joins, measures e 1 pre-aggregation.</div></div>
+      <div class="card"><div class="card-title">🐳 docker-compose.yml</div><div class="card-text">Sobe <code>source-db</code> (Postgres 16) e <code>cube</code> (Cube.dev) — 2 containers, nenhuma instalação local além do Docker.</div></div>
+    </div>
+
+    <p class="section-desc" style="font-size:12.5px;">1. Subir o ambiente e esperar a API ficar pronta:</p>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">cd</span> cube_project
+docker compose up -d
+
+<span class="cm"># espera a API responder 200</span>
+curl http<span class="kw">:</span>//localhost<span class="num">:4000</span>/readyz</div>
+
+    <div class="warn-box"><p>⚠️ Se o projeto estiver num disco <strong>exFAT</strong> (comum em SSDs portáteis usados em Mac e Windows), o macOS cria arquivos ocultos <code>._nome.yml</code> toda vez que o schema é salvo — o Cube tenta compilar esses arquivos e quebra com <code>EPERM: operation not permitted</code>. Se isso acontecer: <code>find model -name '._*' -delete</code>. O schema recarrega sozinho, sem precisar reiniciar o container.</p></div>
+
+    <p class="section-desc" style="font-size:12.5px;">2. Consultar pela <strong>SQL API</strong> — o coração da aula. Usando o <code>psql</code> que já vem dentro do container do Postgres, só pra não depender de instalar nada localmente:</p>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>docker exec -it cube_source_db bash -c <span class="st">"PGPASSWORD=cube psql -h cube -p 15432 -U cube -d cube_db"</span></div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- join entre cubos: measure de "orders" agrupada por dimension de "customers".
+-- __cubeJoinField é o campo especial que aciona o join já declarado no schema
+-- (ver aviso na seção Joins) — não é a coluna física customer_id.</span>
+<span class="kw">SELECT</span> customers.region, <span class="fn">MEASURE</span>(orders.revenue) <span class="kw">AS</span> revenue
+<span class="kw">FROM</span> orders
+<span class="kw">LEFT JOIN</span> customers <span class="kw">ON</span> orders.__cubeJoinField <span class="kw">=</span> customers.__cubeJoinField
+<span class="kw">GROUP BY</span> <span class="num">1</span>
+<span class="kw">ORDER BY</span> revenue <span class="kw">DESC</span>;
+
+<span class="cm">--     region     | revenue
+-- --------------+---------
+--  Sudeste      |  5102.3
+--  Sul          | 4651.63
+--  Norte        | 2115.95
+--  Nordeste     |    1382
+--  Centro-Oeste | 1071.16</span></div>
+
+    <p class="section-desc">
+      Repare que você não escreveu <code>SUM</code>, <code>CASE WHEN</code> nem o <code>JOIN</code> de verdade — só pediu <code>MEASURE(orders.revenue)</code> agrupado por <code>customers.region</code>. Por trás dessa pergunta simples, o Cube percorre 4 etapas antes de tocar no Postgres:
+    </p>
+    <div class="arch-flow">
+      <div class="arch-stage"><span class="arch-icon">🐘</span><span class="arch-title">1. Chega como SQL</span><span class="arch-sub">o psql manda a query como se falasse com um Postgres comum</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage"><span class="arch-icon">🧠</span><span class="arch-title">2. SQL API faz o parse</span><span class="arch-sub">um motor (Apache DataFusion) entende SELECT / MEASURE / JOIN</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage hl"><span class="arch-icon">🧊</span><span class="arch-title">3. Compilador do Schema</span><span class="arch-sub">troca orders.revenue e customers.region pelas colunas reais, com o filtro e o JOIN do schema</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage"><span class="arch-icon">🏬</span><span class="arch-title">4. SQL final no Postgres</span><span class="arch-sub">SELECT/SUM/CASE WHEN/JOIN de verdade, executado na fonte</span></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">O Cube tem um endpoint que mostra exatamente esse SQL final, sem executar nada — ótimo pra depurar uma measure ou conferir se o filtro saiu como esperado. Rodando ele para a mesma pergunta acima (<code>revenue</code> por <code>region</code>), o SQL gerado de verdade contra o Postgres foi este:</p>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># pede o SQL compilado, sem executar — troque a query por qualquer outra pra depurar</span>
+curl -H <span class="st">"Authorization: &lt;TOKEN&gt;"</span> \
+  -G --data-urlencode <span class="st">'query={"measures":["orders.revenue"],"dimensions":["customers.region"]}'</span> \
+  http<span class="kw">:</span>//localhost<span class="num">:4000</span>/cubejs-api/v1/sql</div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- SQL real, devolvido pelo endpoint acima — é isto que rodou no source-db</span>
+<span class="kw">SELECT</span>
+  <span class="st">"customers"</span>.region <span class="kw">AS</span> <span class="st">"customers__region"</span>,
+  <span class="fn">sum</span>(<span class="kw">CASE WHEN</span> (<span class="st">"orders"</span>.status <span class="kw">NOT IN</span> (<span class="st">'cancelled'</span>, <span class="st">'refunded'</span>)) <span class="kw">THEN</span> <span class="st">"orders"</span>.order_total <span class="kw">END</span>) <span class="kw">AS</span> <span class="st">"orders__revenue"</span>
+<span class="kw">FROM</span> public.orders <span class="kw">AS</span> <span class="st">"orders"</span>
+<span class="kw">LEFT JOIN</span> public.customers <span class="kw">AS</span> <span class="st">"customers"</span> <span class="kw">ON</span> <span class="st">"orders"</span>.customer_id <span class="kw">=</span> <span class="st">"customers"</span>.customer_id
+<span class="kw">GROUP BY</span> <span class="num">1</span>
+<span class="kw">ORDER BY</span> <span class="num">2</span> <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> <span class="num">10000</span></div>
+    <div class="ok-box"><p>✅ O <code>CASE WHEN status NOT IN ('cancelled', 'refunded')</code> veio direto do <code>filters:</code> declarado na measure <code>revenue</code> (seção Cube Schema), e o <code>LEFT JOIN ... ON orders.customer_id = customers.customer_id</code> veio direto do <code>joins:</code> declarado no cubo <code>orders</code> (seção Joins) — nada disso foi escrito à mão na consulta.</p></div>
+    <p class="section-desc" style="font-size:12.5px;">Isso vale pras 3 APIs: SQL API, REST API e GraphQL API não são 3 motores diferentes — são 3 portas de entrada que convergem no <em>mesmo</em> compilador de schema, que sempre gera o mesmo SQL final para a mesma pergunta.</p>
+
+    <p class="section-desc" style="font-size:12.5px;">3. Consultar pela <strong>REST API</strong> e pela <strong>GraphQL API</strong>:</p>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># REST API</span>
+curl -H <span class="st">"Authorization: &lt;TOKEN&gt;"</span> \
+  -G --data-urlencode <span class="st">'query={"measures":["orders.revenue","orders.count","orders.average_order_value"]}'</span> \
+  http<span class="kw">:</span>//localhost<span class="num">:4000</span>/cubejs-api/v1/load
+
+<span class="cm"># {"data":[{"orders.revenue":"14323.04","orders.count":"73","orders.average_order_value":"255.7685714285714286"}]}</span>
+
+<span class="cm"># GraphQL API</span>
+curl -X POST http<span class="kw">:</span>//localhost<span class="num">:4000</span>/cubejs-api/graphql \
+  -H <span class="st">"Authorization: &lt;TOKEN&gt;"</span> \
+  -H <span class="st">"Content-Type: application/json"</span> \
+  -d <span class="st">'{"query":"{ cube { orders { status, revenue } } }"}'</span></div>
+
+    <p class="section-desc" style="font-size:12.5px;">4. Confirmar que a <strong>pre-aggregation</strong> está sendo usada de verdade — o campo <code>usedPreAggregations</code> na resposta mostra a tabela materializada no Cube Store, em vez de recalcular no Postgres:</p>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>curl -H <span class="st">"Authorization: &lt;TOKEN&gt;"</span> \
+  -G --data-urlencode <span class="st">'query={"measures":["orders.revenue"],"dimensions":["orders.status"],"timeDimensions":[{"dimension":"orders.created_at","granularity":"day"}]}'</span> \
+  http<span class="kw">:</span>//localhost<span class="num">:4000</span>/cubejs-api/v1/load
+
+<span class="cm">// resposta inclui:
+// "usedPreAggregations": {
+//   "dev_pre_aggregations.orders_revenue_by_status_daily": { ... }
+// }</span></div>
+
+    <p class="section-desc" style="font-size:12.5px;">Os números batem, testados nas 3 APIs, sobre a mesma base do <code>loja_metrics</code>:</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Métrica</th><th>dbt Semantic Layer (<code>mf query --metrics revenue</code>)</th><th>Cube.dev (measure <code>orders.revenue</code>)</th></tr></thead>
+        <tbody>
+          <tr><td>Receita (válida)</td><td>R$ 14.323,04</td><td>R$ 14.323,04</td></tr>
+          <tr><td>Pedidos válidos</td><td>56</td><td>56</td></tr>
+          <tr class="row-scan"><td>Ticket médio</td><td>R$ 255,77</td><td>R$ 255,77</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ok-box"><p>✅ Os números batem porque a regra de negócio é idêntica nos dois projetos — o que muda é só <strong>como</strong> você chega até o resultado: CLI + API própria de um lado, <code>psql</code>/<code>curl</code> genéricos do outro.</p></div>
+
+    <p class="section-desc" style="font-size:12.5px;">5. Encerrar o ambiente:</p>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>docker compose down -v <span class="cm"># -v também apaga o Postgres e o Cube Store</span></div>
+
+    <p class="section-desc" style="font-size:12.5px;">Estrutura completa do projeto prático:</p>
+    <div class="code-block">
+<span class="code-lang">text</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>cube_project/
+├── docker-compose.yml     <span class="cm"># source-db (Postgres) + cube (Cube.dev)</span>
+├── db-init/
+│   └── 01_init.sql        <span class="cm"># cria/popula customers e orders</span>
+├── model/
+│   └── cubes/
+│       ├── customers.yml  <span class="cm"># dimensions</span>
+│       └── orders.yml     <span class="cm"># dimensions, measures, joins, pre_aggregations</span>
+└── README.md</div>
+  </section>
+
+  <!-- ============ QUAL ESCOLHER ============ -->
+  <section class="section" id="s-escolha">
+    <div class="section-eyebrow">Guia de Decisão</div>
+    <div class="section-title">🧭 Qual camada de métricas escolher?</div>
+    <p class="section-desc">Na prática, as duas resolvem o mesmo problema central — use as perguntas abaixo para decidir qual delas resolve melhor o <em>seu</em> contexto.</p>
+    <div class="grid-3">
+      <div class="decision-card">
+        <div class="decision-q">"Já uso dbt para transformação e quero manter as métricas versionadas junto com os modelos, no mesmo projeto?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-red);color:var(--accent-red);">dbt Semantic Layer</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso que Power BI ou Metabase consultem as métricas nativamente, sem plugin nem script de importação?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Cube.dev</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Quero pre-agregações automáticas pra acelerar dashboards pesados, sem montar minha própria camada de cache?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Cube.dev</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Meu time já paga dbt Cloud Team/Enterprise, e a API do Semantic Layer já está incluída no plano?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-red);color:var(--accent-red);">dbt Semantic Layer</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso unir métricas de fontes diferentes — nem tudo passa pelo mesmo projeto dbt?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Cube.dev</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Prefiro manter tudo 100% open source e self-hosted, sem depender de um plano pago pra API rodar em produção?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Cube.dev</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🧊 Um cube por tabela fato ou dimensão</div><div class="card-text">Não misture grãos diferentes num mesmo cubo — se a granularidade muda, provavelmente é hora de um cubo novo.</div></div>
+      <div class="card"><div class="card-title">🔗 Declare o relationship certo em cada join</div><div class="card-text"><code>one_to_many</code>, <code>many_to_one</code> ou <code>one_to_one</code> errado gera fan-out silencioso — métricas somadas em duplicidade sem nenhum erro visível.</div></div>
+      <div class="card"><div class="card-title">⚡ Comece sem pre-aggregation, meça, depois adicione</div><div class="card-text">Adicione rollups nas consultas que o time realmente repete — pre-aggregation em tudo só aumenta custo de manutenção sem ganho real.</div></div>
+      <div class="card"><div class="card-title">🕰️ Defina sempre um refresh_key nas pre-aggregations</div><div class="card-text">Sem ele, o cache pode ficar desatualizado sem nenhum aviso — decida explicitamente de quanto em quanto tempo os dados devem virar.</div></div>
+      <div class="card"><div class="card-title">🏷️ Nomeie dimensions e measures como o negócio fala</div><div class="card-text">Prefira <code>revenue</code> a <code>sum_order_total_v2</code> — o nome da measure é o contrato com quem vai consumi-la.</div></div>
+      <div class="card"><div class="card-title">🔐 Use security context para dado sensível</div><div class="card-text">A SQL API expõe seus cubos como se fossem tabelas — sem row-level security no schema, qualquer usuário conectado enxerga tudo.</div></div>
+      <div class="card"><div class="card-title">📦 Versione o Cube Schema num repositório git</div><div class="card-text">Trate como qualquer outro código de produção, com revisão de PR — mudanças aqui afetam o número que todo mundo vê.</div></div>
+      <div class="card"><div class="card-title">🧪 Compare os números durante uma migração</div><div class="card-text">Se está migrando de outra camada de métricas, rode a mesma pergunta nas duas e confirme que os resultados batem antes de desligar a antiga.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Cube.dev</span>
+    <span>
+      Fontes: <a href="https://cube.dev/docs" target="_blank" rel="noopener">Cube.dev — Documentação</a> ·
+      Comparado com dbt Semantic Layer (MetricFlow)
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-problema', icon:'❓', label:'O Problema'},
+  {id:'s-fundamentos', icon:'🧠', label:'O que é'},
+  {id:'s-schema', icon:'🧊', label:'Cube Schema'},
+  {id:'s-joins', icon:'🔗', label:'Joins'},
+  {id:'s-preagg', icon:'⚡', label:'Pre-aggregations'},
+  {id:'s-apis', icon:'🌐', label:'3 APIs'},
+  {id:'s-arquitetura', icon:'🏗️', label:'Arquitetura'},
+  {id:'s-comparacao', icon:'⚖️', label:'Comparação'},
+  {id:'s-simulador', icon:'🎮', label:'Simulador'},
+  {id:'s-projeto', icon:'🐳', label:'Rodando de Verdade'},
+  {id:'s-escolha', icon:'🧭', label:'Qual Escolher'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== O PROBLEMA — compatibilidade de protocolo ===================== */
+const protocols = {
+  dbtsl: {
+    label: '🗣️ dbt Semantic Layer (API própria)',
+    tools: [
+      {name:'Tableau', ok:true, reason:'Conector nativo oficial.'},
+      {name:'Google Sheets', ok:true, reason:'Conector nativo oficial.'},
+      {name:'Excel', ok:true, reason:'Conector nativo oficial.'},
+      {name:'Hex', ok:true, reason:'Integração nativa.'},
+      {name:'Mode', ok:true, reason:'Integração nativa.'},
+      {name:'Sigma', ok:true, reason:'Integração nativa.'},
+      {name:'Power BI', ok:false, reason:'Só via script Python (SDK dbtsl) — importação, não consulta ao vivo.'},
+      {name:'Metabase', ok:false, reason:'Exigiria driver JDBC customizado, que não existe pronto.'},
+      {name:'DBeaver', ok:false, reason:'Sem client Arrow Flight SQL pronto para uso comum.'},
+    ],
+  },
+  cube: {
+    label: '🐘 Cube.dev (Postgres wire protocol)',
+    tools: [
+      {name:'Tableau', ok:true, reason:'Conecta como se fosse um Postgres qualquer.'},
+      {name:'Google Sheets', ok:true, reason:'Via conector ODBC/Postgres padrão.'},
+      {name:'Excel', ok:true, reason:'Via conector ODBC/Postgres padrão.'},
+      {name:'Hex', ok:true, reason:'Conecta via SQL API ou REST API.'},
+      {name:'Mode', ok:true, reason:'Conecta via SQL API ou REST API.'},
+      {name:'Sigma', ok:true, reason:'Conecta via SQL API ou REST API.'},
+      {name:'Power BI', ok:true, reason:'Conector Postgres nativo já embutido no Power BI.'},
+      {name:'Metabase', ok:true, reason:'Metabase já fala Postgres nativamente — nenhum driver extra necessário.'},
+      {name:'DBeaver', ok:true, reason:'Qualquer cliente SQL genérico conecta direto, como em qualquer banco.'},
+    ],
+  },
+};
+let protocolKey = 'dbtsl';
+function buildProtocolButtons(){
+  document.getElementById('protocolButtons').innerHTML = Object.entries(protocols).map(([k,v]) =>
+    `<button class="btn-toggle ${k===protocolKey?'active':''}" onclick="selectProtocol('${k}')">${v.label}</button>`
+  ).join('');
+}
+function selectProtocol(k){
+  protocolKey = k;
+  buildProtocolButtons();
+  renderCompat();
+}
+function renderCompat(){
+  const p = protocols[protocolKey];
+  document.getElementById('compatGrid').innerHTML = p.tools.map(t => `
+    <div class="compat-card ${t.ok?'ok':'no'}">
+      <div class="compat-head"><span class="compat-name">${t.name}</span><span class="compat-status">${t.ok?'✅':'❌'}</span></div>
+      <div class="compat-reason">${t.reason}</div>
+    </div>
+  `).join('');
+  const okCount = p.tools.filter(t=>t.ok).length;
+  document.getElementById('compatSummary').innerHTML = `
+    <span class="big" style="color:${okCount===p.tools.length?'var(--accent-green)':'var(--accent-yellow)'};">${okCount} / ${p.tools.length}</span>
+    <span style="color:var(--text-secondary);font-size:12px;">ferramentas conectam nativamente</span>
+  `;
+}
+buildProtocolButtons();
+renderCompat();
+
+/* ===================== CUBE SCHEMA — YAML vs JavaScript ===================== */
+const schemaLangs = {
+  yaml: {
+    label: 'YAML',
+    code: `cubes:
+  - name: orders
+    sql_table: public.orders
+
+    joins:
+      - name: users
+        sql: "{CUBE}.user_id = {users}.id"
+        relationship: many_to_one
+
+    dimensions:
+      - name: id
+        sql: id
+        type: number
+        primary_key: true
+
+      - name: status
+        sql: status
+        type: string
+
+      - name: created_at
+        sql: created_at
+        type: time
+
+    measures:
+      - name: count
+        type: count
+
+      - name: total_amount
+        sql: amount
+        type: sum`,
+  },
+  js: {
+    label: 'JavaScript',
+    code: `cube(\`orders\`, {
+  sql_table: \`public.orders\`,
+
+  joins: {
+    users: {
+      sql: \`\${CUBE}.user_id = \${users}.id\`,
+      relationship: \`many_to_one\`,
+    },
+  },
+
+  dimensions: {
+    id: { sql: \`id\`, type: \`number\`, primary_key: true },
+    status: { sql: \`status\`, type: \`string\` },
+    created_at: { sql: \`created_at\`, type: \`time\` },
+  },
+
+  measures: {
+    count: { type: \`count\` },
+    total_amount: { sql: \`amount\`, type: \`sum\` },
+  },
+});`,
+  },
+};
+let schemaLangKey = 'yaml';
+function buildSchemaLangButtons(){
+  document.getElementById('schemaLangButtons').innerHTML = Object.entries(schemaLangs).map(([k,v]) =>
+    `<button class="btn-toggle ${k===schemaLangKey?'active':''}" onclick="selectSchemaLang('${k}')">${v.label}</button>`
+  ).join('');
+}
+function selectSchemaLang(k){
+  schemaLangKey = k;
+  buildSchemaLangButtons();
+  renderSchemaLang();
+}
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function highlightGeneric(src, lang){
+  const escaped = escapeHtml(src);
+  if(lang === 'yaml'){
+    return escaped.split('\n').map(line => {
+      const m = line.match(/^(\s*(?:- )?)([a-zA-Z_]+)(:\s*)(.*)$/);
+      if(!m) return line.replace(/(#.*)$/, '<span class="cm">$1</span>');
+      const [, indent, key, colon, rest] = m;
+      let restHtml = rest;
+      if(rest !== ''){
+        restHtml = /^-?\d+(\.\d+)?$/.test(rest) ? `<span class="num">${rest}</span>` : `<span class="st">${rest}</span>`;
+      }
+      return `${indent}<span class="fn">${key}</span>${colon}${restHtml}`;
+    }).join('\n');
+  }
+  return escaped
+    .replace(/(`[^`]*`)/g, '<span class="st">$1</span>')
+    .replace(/\b(cube|sql_table|joins|sql|relationship|dimensions|type|primary_key|measures)\b(?=:)/g, '<span class="fn">$1</span>')
+    .replace(/\b(cube|true|false)\b/g, '<span class="kw">$1</span>');
+}
+function renderSchemaLang(){
+  const v = schemaLangs[schemaLangKey];
+  document.getElementById('schemaLangDetail').innerHTML = `
+    <div class="code-block">
+      <span class="code-lang">${v.label.toLowerCase()}</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>${highlightGeneric(v.code, schemaLangKey)}</div>
+  `;
+}
+buildSchemaLangButtons();
+renderSchemaLang();
+
+/* ===================== 3 APIs ===================== */
+const apiTypes = {
+  sql: {
+    label: 'SQL API', color:'#06b6d4',
+    desc: 'Conecte como se o Cube fosse um banco Postgres. Ferramentas de BI genéricas, DBeaver, psql — todos funcionam sem nenhuma configuração especial.',
+    lang: 'sql',
+    code: `-- psql -h localhost -p 15432 -U cube cube_db
+
+SELECT status, SUM(total_amount) AS revenue
+FROM orders
+GROUP BY 1
+ORDER BY revenue DESC;`,
+    who: 'Power BI, Metabase, Tableau, DBeaver, Excel, qualquer cliente Postgres',
+  },
+  rest: {
+    label: 'REST API', color:'#36a2ef',
+    desc: 'Uma chamada HTTP com um JSON descrevendo measures, dimensions e filtros. Ideal para aplicações próprias e scripts de automação.',
+    lang: 'bash',
+    code: `curl \\
+  -H "Authorization: <TOKEN>" \\
+  -G --data-urlencode \\
+  'query={"measures":["orders.total_amount"],"dimensions":["orders.status"]}' \\
+  http://localhost:4000/cubejs-api/v1/load`,
+    who: 'Apps internas, scripts Python/Node, integrações via automação',
+  },
+  graphql: {
+    label: 'GraphQL API', color:'#c49aff',
+    desc: 'A mesma consulta, no formato GraphQL — útil quando o resto do seu frontend já fala GraphQL para outros dados.',
+    lang: 'graphql',
+    code: `query {
+  cube {
+    orders {
+      status
+      total_amount
+    }
+  }
+}`,
+    who: 'Frontends React/Vue já integrados a um client GraphQL',
+  },
+};
+let apiKey = 'sql';
+function buildApiButtons(){
+  document.getElementById('apiButtons').innerHTML = Object.entries(apiTypes).map(([k,v]) =>
+    `<button class="btn-toggle ${k===apiKey?'active':''}" onclick="selectApi('${k}')">${v.label}</button>`
+  ).join('');
+}
+function selectApi(k){
+  apiKey = k;
+  buildApiButtons();
+  renderApiDetail();
+}
+function renderApiDetail(){
+  const v = apiTypes[apiKey];
+  document.getElementById('apiDetail').innerHTML = `
+    <p class="card-text" style="margin-bottom:12px;font-size:13px;">${v.desc}</p>
+    <div class="code-block">
+      <span class="code-lang">${v.lang}</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>${escapeHtml(v.code)}</div>
+    <div class="result-display" style="margin-top:12px;">
+      <span style="font-size:12px;color:var(--text-secondary);">Quem costuma usar:</span>
+      <span style="font-size:13.5px;font-weight:800;color:${v.color};">${v.who}</span>
+    </div>
+  `;
+}
+buildApiButtons();
+renderApiDetail();
+
+/* ===================== SIMULADOR — impacto da pre-aggregation ===================== */
+function updatePreagg(){
+  const n = +document.getElementById('querySlider').value;
+  document.getElementById('queryVal').textContent = n;
+  const latencyNoAgg = 4200; // ms, escaneando o warehouse toda vez
+  const latencyWithAgg = 80; // ms, servido do Cube Store
+  const costPerScanUSD = 0.006; // custo estimado por scan completo no warehouse
+  const costNoAgg = n * costPerScanUSD;
+  const costWithAgg = costPerScanUSD; // só o refresh periódico, não por consulta
+  document.getElementById('preaggStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Latência média sem pre-agg</div><div class="stat-card-value">${latencyNoAgg} ms</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Latência média com pre-agg</div><div class="stat-card-value">${latencyWithAgg} ms</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">Custo estimado de warehouse / hora</div><div class="stat-card-value" style="font-size:16px;">$${costNoAgg.toFixed(2)} vs $${costWithAgg.toFixed(3)}</div></div>
+  `;
+  drawPreaggCanvas(n, latencyNoAgg, latencyWithAgg);
+}
+function drawPreaggCanvas(n, latencyNoAgg, latencyWithAgg){
+  const cv = document.getElementById('preaggCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 130;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:`Sem pre-agg — ${n} consultas × ${latencyNoAgg}ms direto no warehouse`, val:latencyNoAgg, color:'#f86b63'},
+    {name:`Com pre-agg — ${n} consultas × ${latencyWithAgg}ms servidas pelo Cube Store`, val:latencyWithAgg, color:'#7dded8'},
+  ];
+  const padL=300, padR=30, padTop=14, barH=34, gap=22;
+  const maxVal = Math.max(1, latencyNoAgg);
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(d.val + ' ms', padL+10, y+barH*0.65);
+  });
+}
+updatePreagg();
+window.addEventListener('resize', updatePreagg);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O Cube.dev expõe suas métricas através de um protocolo Postgres, o que permite que ferramentas como Power BI e Metabase se conectem sem precisar de um conector dedicado.', a:true, e:'Verdadeiro. Essa é a SQL API do Cube — ela fala Postgres wire protocol, o mesmo idioma que praticamente toda ferramenta de BI já sabe usar.'},
+  {q:'O dbt Semantic Layer usa o mesmo protocolo Postgres que o Cube.dev.', a:false, e:'Falso. O dbt Semantic Layer usa uma API própria: GraphQL e um driver JDBC chamado Arrow Flight SQL — diferente do protocolo Postgres.'},
+  {q:'No Cube.dev, é obrigatório escrever o schema em YAML — não é possível usar JavaScript.', a:false, e:'Falso. O Cube Schema pode ser escrito tanto em YAML quanto em JavaScript, inclusive gerando cubos dinamicamente com código.'},
+  {q:'Pre-aggregations no Cube.dev são resumos materializados e guardados no Cube Store, para acelerar consultas repetidas.', a:true, e:'Verdadeiro. É esse cache explícito que permite respostas em dezenas de milissegundos, mesmo com muitos acessos simultâneos ao mesmo dashboard.'},
+  {q:'Um cube no Cube.dev pode conter dimensions, measures e joins, tudo no mesmo arquivo.', a:true, e:'Verdadeiro. Diferente do dbt Semantic Layer (que separa semantic model de metric), o Cube junta ficha técnica e receita num único cubo.'},
+  {q:'A SQL API do Cube.dev exige que a ferramenta de BI tenha um driver especial, desenvolvido só para o Cube.', a:false, e:'Falso. Justamente o contrário: a SQL API imita um Postgres comum, então qualquer driver Postgres já existente funciona sem modificação.'},
+  {q:'O núcleo do Cube.dev (Cube Core) é open source, e pode rodar self-hosted via Docker sem custo de licença.', a:true, e:'Verdadeiro. O Cube Core é licenciado como MIT — o custo aparece só se você optar pela versão gerenciada, o Cube Cloud.'},
+  {q:'Cube.dev e dbt Semantic Layer resolvem exatamente o mesmo problema com a mesma abordagem técnica, então escolher um ou outro não faz nenhuma diferença prática.', a:false, e:'Falso. Ambos centralizam a definição de métricas, mas escolhem protocolos de distribuição diferentes — isso muda diretamente quais ferramentas de BI conseguem se conectar nativamente.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Agosto / 2026';
+</script>
+</body>
+</html>

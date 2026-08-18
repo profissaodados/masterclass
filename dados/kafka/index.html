@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Apache Kafka do zero. Tópicos, partições, offsets, replicação, grupos de consumidores e garantias de entrega, explicados com analogias visuais e demos interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Apache Kafka do Zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#f0b429;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;max-width:230px;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- KID EXPLANATION BOX ---- */
+.kid-box{background:rgba(240,180,41,.08);border:1.5px dashed var(--accent-yellow);border-radius:10px;padding:16px 18px;}
+.kid-box-title{color:var(--accent-yellow);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.75;}
+.kid-box strong{color:var(--text-primary);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn.danger{border-color:var(--accent-red);color:var(--accent-red);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- CLICKABLE ANATOMY DIAGRAM ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-yellow{border-top-color:var(--accent-yellow);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- ENVELOPE (anatomia da mensagem) ---- */
+.envelope{border:2px solid var(--accent);border-radius:10px;background:var(--bg-elevated);overflow:hidden;max-width:520px;}
+.envelope-top{background:rgba(6,182,212,.14);padding:10px 16px;font-family:'Roboto Mono',monospace;font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.5px;}
+.envelope-body{padding:16px;display:flex;flex-direction:column;gap:8px;}
+.env-field{display:flex;gap:10px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:9px 12px;align-items:baseline;}
+.env-field .ef-k{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-disabled);font-weight:700;min-width:92px;}
+.env-field .ef-v{font-family:'Roboto Mono',monospace;font-size:12px;color:var(--text-primary);}
+.env-field.optional{border-style:dashed;opacity:.85;}
+
+/* ---- PARTITION LOG ---- */
+.partition-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:12px 14px;background:var(--bg-elevated);}
+.partition-box-label{font-size:10.5px;text-transform:uppercase;color:var(--text-disabled);font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;}
+.plog{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.plog-cell{min-width:56px;height:46px;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Roboto Mono',monospace;font-size:10.5px;color:var(--text-secondary);padding:2px 4px;text-align:center;}
+.plog-cell .off{font-size:8px;color:var(--text-disabled);}
+.plog-cell.newmsg{border-color:var(--accent);background:rgba(6,182,212,.16);color:var(--accent);animation:popin .35s ease;}
+.plog-cell.empty{border-style:dashed;color:var(--text-disabled);}
+@keyframes popin{from{transform:scale(.65);opacity:0;}to{transform:scale(1);opacity:1;}}
+
+/* ---- BROKER / CLUSTER ---- */
+.broker-cluster{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+.broker-box{border:1.5px solid var(--border-strong);border-radius:8px;background:var(--bg-elevated);padding:14px 16px;min-width:170px;text-align:center;transition:.2s;}
+.broker-box.is-down{opacity:.35;border-style:dashed;}
+.broker-title{font-weight:700;font-size:12.5px;color:var(--text-primary);margin-bottom:10px;display:flex;align-items:center;justify-content:center;gap:6px;}
+.replica-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;margin:3px;font-family:'Roboto Mono',monospace;}
+.replica-pill.leader{background:rgba(6,182,212,.18);color:var(--accent);border:1px solid var(--accent);}
+.replica-pill.follower{background:rgba(152,162,179,.12);color:var(--text-secondary);border:1px solid var(--border-color);}
+.replica-pill.down{background:rgba(248,107,99,.12);color:var(--accent-red);border:1px solid var(--accent-red);text-decoration:line-through;}
+
+/* ---- CONSUMER GROUP ASSIGNMENT ---- */
+.assign-list{display:flex;flex-direction:column;gap:10px;}
+.assign-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;}
+.assign-row.idle{opacity:.4;border-style:dashed;}
+.assign-consumer{font-size:11.5px;font-weight:700;min-width:120px;color:var(--text-primary);display:flex;align-items:center;gap:6px;}
+.assign-arrow{color:var(--text-disabled);font-size:14px;}
+.assign-partitions{display:flex;gap:6px;flex-wrap:wrap;}
+.assign-part{min-width:38px;height:32px;padding:0 6px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;font-family:'Roboto Mono',monospace;border:1.5px solid var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+
+/* ---- TIMELINE ---- */
+.tl{display:flex;gap:0;overflow-x:auto;padding-top:6px;}
+.tl-item{flex:1;min-width:190px;border-left:2px solid var(--border-color);padding:0 16px 6px;position:relative;}
+.tl-item::before{content:'';position:absolute;left:-6px;top:0;width:10px;height:10px;border-radius:50%;background:var(--accent);}
+.tl-year{font-family:'Roboto Mono',monospace;color:var(--accent);font-weight:700;font-size:12px;}
+.tl-title{font-weight:700;font-size:13px;margin:4px 0;color:var(--text-primary);}
+.tl-text{font-size:12px;color:var(--text-secondary);line-height:1.6;}
+
+/* ---- KEY-VALUE TILES (compaction) ---- */
+.kv-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;}
+.kv-tile{min-width:62px;padding:7px 9px;border-radius:6px;border:1.5px solid var(--border-color);background:var(--bg-elevated);text-align:center;font-family:'Roboto Mono',monospace;font-size:10.5px;}
+.kv-tile .k{color:var(--accent-blue);font-weight:700;display:block;}
+.kv-tile .v{color:var(--text-secondary);display:block;}
+.kv-tile.stale{opacity:.3;text-decoration:line-through;}
+.kv-tile.tombstone{border-color:var(--accent-red);color:var(--accent-red);}
+.kv-tile.kept{border-color:var(--accent-green);}
+.kv-tile.kept .k{color:var(--accent-green);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Apache Kafka</h1><span>A espinha dorsal de eventos em tempo real do mundo digital</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2011</div><div class="hstat-label">Origem</div></div>
+      <div class="hstat"><div class="hstat-num">13</div><div class="hstat-label">Demos</div></div>
+      <div class="hstat"><div class="hstat-num">Log</div><div class="hstat-label">Modelo</div></div>
+      <div class="hstat"><div class="hstat-num">~60min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito ao "mão na massa"</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Um <em>caderno gigante e compartilhado</em> onde nada é apagado</h2>
+      <p>Apache Kafka é uma <strong>plataforma de streaming de eventos distribuída</strong>: um lugar onde sistemas podem <em>publicar</em> ("aconteceu isso!") e outros sistemas podem <em>ler</em> esses acontecimentos, cada um no seu próprio ritmo — sem que o publicador precise saber quem está lendo. Criado em 2011 no LinkedIn por Jay Kreps, Neha Narkhede e Jun Rao para resolver a bagunça de integrações ponto a ponto entre times, hoje o Kafka é a peça central de arquiteturas orientadas a eventos: de pedidos de e-commerce a sensores de IoT, de logs de aplicação a transações bancárias.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Streaming de Eventos</span>
+        <span class="badge badge-green">Pub/Sub</span>
+        <span class="badge badge-blue">Distribuído</span>
+        <span class="badge badge-purple">Durável &amp; Replayável</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">📚 TÓPICO: pedidos</div>
+        <div class="fc-body">
+          <div class="fc-row">Partição 0 → 0,1,2,3,4...<br><span style="font-size:9.5px;opacity:.7;">só cresce para a direita</span></div>
+          <div class="fc-row">Partição 1 → 0,1,2,3...<br><span style="font-size:9.5px;opacity:.7;">nada é editado ou apagado no meio</span></div>
+          <div class="fc-row">Partição 2 → 0,1,2...<br><span style="font-size:9.5px;opacity:.7;">cada consumidor lê no seu ritmo</span></div>
+        </div>
+        <div class="fc-foot">Producers escrevem · Consumers leem</div>
+      </div>
+      <div class="file-chip-caption">Um tópico não "enche" — mensagens antigas simplesmente expiram sozinhas depois de um tempo configurável</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">📬 O que é o Apache Kafka?</div>
+    <p class="section-desc">
+      Esquece por um momento a definição técnica. Pense no Kafka como um <strong>quadro de avisos gigante e organizado</strong>: alguém pendura um aviso ("cliente 123 comprou um teclado"), e qualquer pessoa interessada pode ir até o quadro e ler esse aviso — quando quiser, no seu próprio ritmo, e sem que quem pendurou o aviso precise saber quem foi ler. Diferente de um recado sussurrado no ouvido (uma chamada direta entre dois sistemas), o quadro de avisos <strong>fica lá</strong>, organizado, em ordem, disponível para quantas pessoas quiserem passar e ler.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📝 Log distribuído</div>
+        <div class="card-text">No coração do Kafka existe uma estrutura simples: um log <strong>append-only</strong> (só se adiciona ao final, nunca se edita ou apaga no meio) — como um diário onde cada página nova é numerada e nunca arrancada.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📡 Publish/Subscribe</div>
+        <div class="card-text">Quem escreve (<em>producer</em>) não conhece quem vai ler (<em>consumer</em>). Isso <strong>desacopla</strong> sistemas: você pode adicionar um novo leitor sem tocar em quem escreve.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔁 Replay (reprocessamento)</div>
+        <div class="card-text">Como as mensagens continuam guardadas depois de lidas, um novo sistema pode "voltar no tempo" e reler tudo desde o início — algo que uma fila tradicional normalmente não permite.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Imagina um <strong>caderno enorme e mágico</strong> na sala de aula. Quando algo acontece — "a Ana comprou um sorvete" — alguém escreve uma linha nova no caderno. O caderno <strong>nunca tem borracha</strong>: ninguém apaga nada, só se escreve mais pra baixo. Qualquer colega pode pegar o caderno, ler a partir de onde parou da última vez, e devolver — e o caderno continua lá, do mesmo jeitinho, pronto pro próximo colega ler também. O Kafka é esse caderno mágico, só que gigante, compartilhado por muitos computadores ao mesmo tempo.</p>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Origem</div>
+      <p>Criado em 2011 dentro do LinkedIn para resolver um problema de escala interna: dezenas de sistemas precisavam trocar eventos (cliques, atualizações de perfil, métricas) e as integrações ponto a ponto viraram um pesadelo de manter. Batizado em homenagem ao escritor Franz Kafka, o projeto foi doado à Apache Software Foundation e hoje é mantido também pela Confluent (empresa fundada pelos criadores originais), com um ecossistema enorme de contribuidores.</p>
+    </div>
+  </section>
+
+  <!-- ============ O PROBLEMA ============ -->
+  <section class="section" id="s-problema">
+    <div class="section-eyebrow">Por que ele existe</div>
+    <div class="section-title">🍝 O Problema que o Kafka Resolve</div>
+    <p class="section-desc">Antes de existir um "quadro de avisos" central, sistemas que precisam trocar informação costumam se conectar <strong>diretamente</strong> uns aos outros: o sistema de Pedidos chama a API de Pagamentos, que chama o sistema de Estoque, que avisa o time de Logística... Cada nova integração é <em>mais um fio</em> nessa teia. Clique nos botões para comparar visualmente os dois mundos.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: quantas conexões diretas um novo sistema exige?</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnSemKafka" onclick="setIntegrationMode('sem')">🍝 Sem Kafka (ponto a ponto)</button>
+        <button class="btn-toggle" id="btnComKafka" onclick="setIntegrationMode('com')">✅ Com Kafka (hub central)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="integrationCanvas" height="230"></canvas></div>
+      <div class="stat-cards" id="integrationStats"></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Imagina uma turma de 5 amigos tentando combinar um recado, cada um ligando pro celular de todo mundo — são <strong>muitas ligações cruzadas</strong> e fácil de alguém esquecer de avisar alguém. Agora imagina que a turma tem um <strong>mural na parede</strong>: cada um escreve seu recado no mural uma vez só, e todo mundo passa lá e lê quando quiser. Muito mais simples — e se entrar um amigo novo na turma, ele só precisa aprender a olhar o mural, não ligar pra todo mundo.</p>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Com <strong>N</strong> sistemas que produzem eventos e <strong>M</strong> sistemas que consomem, o modelo ponto a ponto tende a <code>N × M</code> conexões (e cada uma com seu próprio protocolo, retry, formato...). Com um hub central como o Kafka, isso cai para algo perto de <code>N + M</code> — cada sistema só precisa conversar com o Kafka.</p>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMIA DA MENSAGEM ============ -->
+  <section class="section" id="s-mensagem">
+    <div class="section-eyebrow">A Unidade Básica</div>
+    <div class="section-title">✉️ Anatomia de uma Mensagem</div>
+    <p class="section-desc">Toda informação que passa pelo Kafka viaja dentro de uma <strong>mensagem</strong> (também chamada de <em>record</em>) — pense nela como uma carta bem organizada, com um envelope que carrega mais do que só o conteúdo.</p>
+
+    <div class="envelope">
+      <div class="envelope-top">✉️ MENSAGEM — tópico "pedidos", partição 1, offset 42</div>
+      <div class="envelope-body">
+        <div class="env-field"><span class="ef-k">Key</span><span class="ef-v">"cliente-123"</span></div>
+        <div class="env-field"><span class="ef-k">Value</span><span class="ef-v">{"item":"teclado","valor":249.90}</span></div>
+        <div class="env-field"><span class="ef-k">Timestamp</span><span class="ef-v">2026-08-09T14:32:07Z</span></div>
+        <div class="env-field optional"><span class="ef-k">Headers</span><span class="ef-v">origem=app-mobile; versao=2</span></div>
+        <div class="env-field optional"><span class="ef-k">Partition</span><span class="ef-v">1 (definida pela key)</span></div>
+        <div class="env-field optional"><span class="ef-k">Offset</span><span class="ef-v">42 (posição atribuída pelo Kafka)</span></div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:6px;">
+      <div class="card"><div class="card-title">🔑 Key (opcional)</div><div class="card-text">Decide <strong>em qual partição</strong> a mensagem cai. Mensagens com a mesma key sempre vão para a mesma partição — é assim que se garante ordem "por cliente", "por sensor" etc.</div></div>
+      <div class="card"><div class="card-title">📦 Value</div><div class="card-text">O conteúdo em si — normalmente JSON, Avro ou Protobuf. Para o Kafka, é só uma sequência de bytes; ele não entende nem valida o formato.</div></div>
+      <div class="card"><div class="card-title">🏷️ Headers (opcional)</div><div class="card-text">Pequenos metadados chave-valor, como "notinhas grudadas no envelope" — úteis para rastreamento, versionamento, tracing distribuído.</div></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>É como uma <strong>carta de verdade</strong>: o <em>value</em> é o que está escrito dentro da carta; a <em>key</em> é o endereço no envelope, que decide em qual caixa de correio (partição) a carta vai cair; o <em>timestamp</em> é o carimbo dos correios com a data; e o <em>offset</em> é o número que o carteiro carimba dizendo "essa é a carta número 42 dessa caixinha".</p>
+    </div>
+  </section>
+
+  <!-- ============ TÓPICOS, PARTIÇÕES & OFFSETS ============ -->
+  <section class="section" id="s-topicos">
+    <div class="section-eyebrow">Como os Dados são Organizados</div>
+    <div class="section-title">📚 Tópicos, Partições &amp; Offsets</div>
+    <p class="section-desc">Um <strong>tópico</strong> é uma categoria nomeada de eventos — por exemplo, <code>pedidos</code> ou <code>cliques-app</code>. Por baixo dos panos, cada tópico é dividido em uma ou mais <strong>partições</strong>: logs independentes, cada um <em>append-only</em>, cada um com sua própria numeração sequencial chamada <strong>offset</strong>. Dividir em partições é o que permite ao Kafka paralelizar leitura e escrita entre várias máquinas.</p>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Se o tópico é uma <strong>gaveta de arquivos</strong>, as partições são <strong>pastas dentro da gaveta</strong>. Cada pasta tem suas folhas numeradas em ordem (0, 1, 2, 3...) — esse número é o <em>offset</em>, tipo o número da página. Você sempre pode dizer "já li até a página 7 dessa pasta" e continuar exatamente dali na próxima vez, sem se perder.</p>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: envie mensagens e veja em qual partição elas caem</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l">Chave da mensagem (key) — deixe vazio para round-robin</div>
+          <input type="text" id="topicKeyInput" placeholder="ex: cliente-123">
+        </div>
+        <div class="ctrl-g" style="flex:0;min-width:auto;">
+          <button class="player-btn primary" onclick="sendTopicMessage()">📨 Enviar mensagem</button>
+          <button class="player-btn" onclick="resetTopicDemo()">↺ Reiniciar</button>
+        </div>
+      </div>
+      <div class="grid-3" id="partitionsWrap"></div>
+      <div class="info-box" style="margin-top:14px;">
+        <p>💡 Mensagens com a <strong>mesma key</strong> sempre caem na <strong>mesma partição</strong> (o Kafka faz um hash da key). É por isso que, se você quer ler os eventos de um cliente sempre na ordem certa, basta usar o ID do cliente como key — todos os eventos dele ficam na mesma "pasta", em ordem.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">➕ Append-only</div>
+        <div class="card-text">Uma mensagem nunca é editada ou removida do meio do log — só é adicionada ao final. "Apagar" uma mensagem específica não é uma operação normal do Kafka (isso é papel da <em>retenção</em> e da <em>compactação</em>, que veremos adiante).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔢 Offset</div>
+        <div class="card-text">Um número inteiro sequencial, único <strong>dentro de cada partição</strong> (não é global do tópico). O offset 5 da partição 0 e o offset 5 da partição 1 são mensagens completamente diferentes.</div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Calculadora: quantas partições eu preciso?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Throughput desejado (MB/s)</span><span class="ctrl-v" id="throughputVal">50 MB/s</span></div>
+          <input type="range" id="throughputSlider" min="1" max="500" step="1" value="50" oninput="updatePartitionCalc()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Throughput por partição (estimativa)</span><span class="ctrl-v" id="perPartVal">10 MB/s</span></div>
+          <input type="range" id="perPartSlider" min="1" max="50" step="1" value="10" oninput="updatePartitionCalc()">
+        </div>
+      </div>
+      <div class="result-display" id="partitionCalcResult"></div>
+      <div class="section-desc" style="font-size:12px;margin-top:8px;">Estimativa <strong>ilustrativa</strong> — o throughput real por partição depende de tamanho de mensagem, hardware e configuração. Mais partições = mais paralelismo, mas também mais overhead de coordenação e arquivos abertos nos brokers.</div>
+    </div>
+  </section>
+
+  <!-- ============ PRODUTORES E CONSUMIDORES ============ -->
+  <section class="section" id="s-produtores">
+    <div class="section-eyebrow">Quem Escreve, Quem Lê</div>
+    <div class="section-title">🏭 Produtores &amp; Consumidores</div>
+    <p class="section-desc">Um <strong>producer</strong> é qualquer aplicação que escreve mensagens em um tópico. Um <strong>consumer</strong> é qualquer aplicação que lê mensagens de um tópico. Eles nunca se falam diretamente — só conversam com o Kafka.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🏭 Producer</div>
+        <div class="card-text">Decide o tópico, opcionalmente a key (e portanto a partição), e envia. Pode esperar (ou não) a confirmação do Kafka de que a mensagem foi gravada com segurança (parâmetro <code>acks</code> — veremos em Garantias de Entrega).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📚 Tópico (no Kafka)</div>
+        <div class="card-text">Recebe, ordena por partição e <strong>guarda</strong> as mensagens pelo tempo de retenção configurado — mesmo depois de já terem sido lidas por algum consumidor.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧑‍💻 Consumer</div>
+        <div class="card-text">Se inscreve em um ou mais tópicos e <strong>puxa</strong> (pull, não push) as mensagens no seu próprio ritmo, controlando seu próprio offset — pode até voltar e reler mensagens antigas.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>É como uma <strong>esteira de fábrica de brinquedos</strong>: uma pessoa (producer) coloca brinquedos novos na esteira. A esteira nunca para de girar e guarda todos os brinquedos em ordem. Várias outras pessoas (consumers) podem vir pegar os brinquedos quando quiserem — uma pega pra pintar, outra pra embalar, outra só pra contar quantos passaram. Ninguém atrapalha o outro, e a pessoa que colocou o brinquedo na esteira nem precisa saber quem vai pegar.</p>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Diferente de filas tradicionais, onde a mensagem some assim que é entregue, no Kafka a mesma mensagem pode ser lida por <strong>vários consumidores independentes</strong> (times diferentes, propósitos diferentes) — cada um controlando seu próprio "até onde já li" (offset), sem interferir nos outros.</p>
+    </div>
+  </section>
+
+  <!-- ============ BROKERS & CLUSTER ============ -->
+  <section class="section" id="s-brokers">
+    <div class="section-eyebrow">Onde os Dados Vivem</div>
+    <div class="section-title">🖥️ Brokers &amp; Cluster</div>
+    <p class="section-desc">Um <strong>broker</strong> é um servidor Kafka — um processo que armazena partições em disco e atende producers e consumers. Um <strong>cluster</strong> é um grupo de brokers trabalhando juntos: as partições de um tópico ficam <em>espalhadas</em> entre eles, e cada broker pode ser líder de algumas partições e réplica de outras.</p>
+
+    <div class="card">
+      <div class="card-title">🗂️ Um tópico com 6 partições espalhado em 3 brokers</div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>Broker</th><th>Partições onde é líder</th><th>Partições onde é réplica (follower)</th></tr></thead>
+          <tbody>
+            <tr><td><strong style="color:var(--accent);">Broker 1</strong></td><td>P0, P3</td><td>P1, P4</td></tr>
+            <tr><td><strong style="color:var(--accent-blue);">Broker 2</strong></td><td>P1, P4</td><td>P2, P5</td></tr>
+            <tr><td><strong style="color:var(--accent-purple);">Broker 3</strong></td><td>P2, P5</td><td>P0, P3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Imagina uma <strong>biblioteca com 3 bibliotecários</strong>, e os livros (partições) espalhados entre eles, meio a meio. Nenhum bibliotecário guarda tudo sozinho — isso deixaria a fila enorme se muita gente quisesse livros ao mesmo tempo. Espalhando os livros, várias pessoas podem pegar livros diferentes, com bibliotecários diferentes, tudo ao mesmo tempo, bem mais rápido.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card"><div class="card-title">⚖️ Distribuição de carga</div><div class="card-text">Com as partições espalhadas, o trabalho de escrita e leitura também se espalha — nenhum servidor único vira gargalo.</div></div>
+      <div class="card"><div class="card-title">🧬 Cada partição tem réplicas</div><div class="card-text">Cada partição não vive em só um broker: ela é <strong>replicada</strong> em vários, para sobreviver à queda de uma máquina. É o assunto da próxima seção.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ REPLICAÇÃO ============ -->
+  <section class="section" id="s-replicacao">
+    <div class="section-eyebrow">Tolerância a Falhas</div>
+    <div class="section-title">🧬 Replicação: Líder, Seguidores &amp; ISR</div>
+    <p class="section-desc">Cada partição tem uma réplica <strong>líder</strong> (leader) — só ela recebe escritas e leituras — e uma ou mais réplicas <strong>seguidoras</strong> (followers), que ficam copiando os dados do líder em segundo plano. O conjunto de réplicas que está <strong>em dia</strong> com o líder se chama <strong>ISR</strong> (In-Sync Replicas). Se o broker líder cair, o Kafka promove automaticamente uma réplica da ISR a novo líder — sem perder dados.</p>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>É como tirar <strong>fotocópias de um bilhete importante</strong> e deixar cópias com dois amigos de confiança. Se você (o líder) perder o bilhete original, um dos amigos que tinha uma cópia atualizada (a ISR) vira o novo "dono oficial" do bilhete — e ninguém perde a informação. Só não adianta um amigo que nunca tirou a cópia mais recente virar o responsável: por isso só quem está com a cópia em dia pode assumir.</p>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: o que acontece quando o broker líder cai?</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="player-btn danger" onclick="killLeaderBroker()">💥 Derrubar o broker líder</button>
+        <button class="player-btn" onclick="resetReplicationDemo()">↺ Restaurar cluster</button>
+      </div>
+      <div class="broker-cluster" id="brokerCluster"></div>
+      <div class="anatomy-detail" id="replicationDetail" style="margin-top:16px;">
+        <div class="ad-title">Estado atual: tudo saudável</div>
+        <div class="ad-text">Partição P0 — líder no Broker A, seguidores em sincronia (ISR) nos Brokers B e C.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">👑 Leader</div><div class="card-text">Única réplica que producers e consumers acessam para aquela partição — evita conflitos de "qual cópia é a certa".</div></div>
+      <div class="card"><div class="card-title">🪞 Follower</div><div class="card-text">Copia passivamente o que o líder escreve. Não atende clientes diretamente (a menos que promovido a líder).</div></div>
+      <div class="card"><div class="card-title">✅ ISR</div><div class="card-text">Replicas "em dia" o suficiente com o líder para serem candidatas seguras a assumir a liderança sem perda de dados.</div></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 O <strong>replication factor</strong> (fator de replicação) define quantas cópias totais de cada partição existem — um valor comum em produção é <code>3</code>, o que tolera a queda de até 1 ou 2 brokers (dependendo das configurações de confirmação) sem perder dados nem parar de escrever.</p>
+    </div>
+  </section>
+
+  <!-- ============ GRUPOS DE CONSUMIDORES ============ -->
+  <section class="section" id="s-grupos">
+    <div class="section-eyebrow">Paralelismo de Leitura</div>
+    <div class="section-title">👥 Grupos de Consumidores</div>
+    <p class="section-desc">Vários consumidores podem se juntar em um <strong>consumer group</strong> para dividir o trabalho de ler um tópico: o Kafka garante que <strong>cada partição é lida por apenas um consumidor daquele grupo por vez</strong> — nunca dois ao mesmo tempo. Isso permite escalar a leitura horizontalmente, simplesmente adicionando mais consumidores (até o limite do número de partições).</p>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Pensa em <strong>6 caixas de brinquedos</strong> (partições) e uma equipe de amigos que precisa organizar tudo. Se são 3 amigos, cada um cuida de 2 caixas — ninguém mexe na caixa do outro, ninguém briga por brinquedo. Se chegar um 4º amigo, as caixas se reorganizam para incluir ele. Mas se chegar um 7º amigo... ele fica de braços cruzados, porque só tem 6 caixas — <strong>não adianta ter mais gente do que caixas para cuidar</strong>.</p>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: 6 partições, quantos consumidores no grupo?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Consumidores no grupo</span><span class="ctrl-v" id="numConsumersVal">3</span></div>
+          <input type="range" id="numConsumersSlider" min="1" max="8" step="1" value="3" oninput="updateConsumerGroup()">
+        </div>
+      </div>
+      <div class="assign-list" id="assignList"></div>
+      <div class="stat-cards" id="groupStats"></div>
+    </div>
+
+    <div class="warn-box">
+      <p>⚠️ Quando um consumidor entra ou sai do grupo, o Kafka faz um <strong>rebalanceamento</strong>: redistribui as partições entre os consumidores restantes. Durante esse processo, a leitura daquele grupo pode pausar brevemente — por isso rebalanceamentos frequentes (consumidores entrando/saindo o tempo todo) prejudicam o throughput.</p>
+    </div>
+  </section>
+
+  <!-- ============ ORDEM & PARALELISMO ============ -->
+  <section class="section" id="s-ordem">
+    <div class="section-eyebrow">A Garantia Mais Mal-Entendida</div>
+    <div class="section-title">🔢 Ordem &amp; Paralelismo</div>
+    <p class="section-desc">O Kafka garante ordem <strong>dentro de uma mesma partição</strong> — nunca entre partições diferentes. Se você precisa que os eventos de uma mesma entidade (um cliente, um pedido, um sensor) sejam lidos sempre na ordem em que aconteceram, use o ID dessa entidade como <em>key</em>, garantindo que caiam sempre na mesma partição.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">✅ Dentro de 1 partição — ordem garantida</div>
+        <div class="partition-box">
+          <div class="partition-box-label"><span>Partição 0 (todos os eventos do cliente-123)</span></div>
+          <div class="plog">
+            <div class="plog-cell"><span>login</span><span class="off">off 0</span></div>
+            <div class="plog-cell"><span>add_item</span><span class="off">off 1</span></div>
+            <div class="plog-cell"><span>checkout</span><span class="off">off 2</span></div>
+            <div class="plog-cell"><span>pagamento</span><span class="off">off 3</span></div>
+          </div>
+        </div>
+        <div class="card-text" style="margin-top:10px;">Qualquer consumidor lê exatamente nessa ordem: login → add_item → checkout → pagamento. Impossível ler "pagamento" antes de "checkout".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚠️ Entre partições diferentes — sem garantia</div>
+        <div class="partition-box" style="margin-bottom:8px;">
+          <div class="partition-box-label"><span>Partição 0 (cliente-123)</span></div>
+          <div class="plog">
+            <div class="plog-cell"><span>login</span><span class="off">off 0</span></div>
+            <div class="plog-cell"><span>checkout</span><span class="off">off 1</span></div>
+          </div>
+        </div>
+        <div class="partition-box">
+          <div class="partition-box-label"><span>Partição 1 (cliente-456)</span></div>
+          <div class="plog">
+            <div class="plog-cell"><span>login</span><span class="off">off 0</span></div>
+            <div class="plog-cell"><span>checkout</span><span class="off">off 1</span></div>
+          </div>
+        </div>
+        <div class="card-text" style="margin-top:10px;">Um consumidor pode ler "checkout" do cliente-456 antes do "login" do cliente-123 — são fluxos independentes, sem relação de ordem entre si.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Cada partição é como uma <strong>fila separada de brinquedos numa esteira</strong> — dentro da mesma fila, o primeiro que entrou é o primeiro que sai, sempre. Mas se você tem <strong>duas esteiras</strong> lado a lado, não tem como garantir que um brinquedo da esteira 1 chegue antes ou depois de um da esteira 2 — elas andam cada uma no seu próprio tempo.</p>
+    </div>
+  </section>
+
+  <!-- ============ GARANTIAS DE ENTREGA ============ -->
+  <section class="section" id="s-entrega">
+    <div class="section-eyebrow">Confiabilidade</div>
+    <div class="section-title">📮 Garantias de Entrega</div>
+    <p class="section-desc">Quando um producer envia uma mensagem, o que pode dar errado — e o que o Kafka faz a respeito — depende de configuração. Clique em cada garantia para ver a analogia, a configuração e o trade-off.</p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="deliveryButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="deliveryDetail">
+        <div class="ad-title">👆 Clique em uma garantia</div>
+        <div class="ad-text">Veja a analogia do dia a dia e a configuração técnica correspondente.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>É a diferença entre <strong>jogar um bilhete pela janela</strong> torcendo pra alguém pegar (pode se perder), <strong>enviar o bilhete e mandar de novo se não tiver certeza que chegou</strong> (pode chegar em dobro), e <strong>enviar com um código especial que faz a pessoa perceber e ignorar se o bilhete já chegou antes</strong> (não perde, não duplica — mas dá mais trabalho para combinar esse código).</p>
+    </div>
+  </section>
+
+  <!-- ============ RETENÇÃO & COMPACTAÇÃO ============ -->
+  <section class="section" id="s-retencao">
+    <div class="section-eyebrow">O que Acontece com Mensagens Antigas</div>
+    <div class="section-title">🗄️ Retenção &amp; Log Compaction</div>
+    <p class="section-desc">O Kafka não guarda mensagens para sempre por padrão — existem duas políticas (que podem até ser combinadas) para decidir o que descartar.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⏳ Retenção por tempo/tamanho</div>
+        <div class="card-text">Configuração clássica: apagar mensagens mais velhas que <code>retention.ms</code> (ex: 7 dias) ou quando o log ultrapassa um tamanho em bytes. Ideal para eventos "de passagem", como cliques ou logs.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗜️ Log Compaction</div>
+        <div class="card-text">Em vez de olhar o tempo, mantém apenas o <strong>valor mais recente por key</strong>, apagando versões antigas da mesma key. Ideal para representar "o estado atual de algo" — como uma tabela.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔍 Compactação na prática — log de um tópico "perfil-cliente" (key = id do cliente)</div>
+      <div class="section-desc" style="font-size:12.5px;margin-bottom:10px;">Log original (todos os eventos, em ordem de chegada):</div>
+      <div class="kv-row" id="kvBefore"></div>
+      <div class="section-desc" style="font-size:12.5px;margin:14px 0 10px;">Depois da compactação (só sobrevive o valor mais recente de cada key — e uma <em>tombstone</em> remove a key de vez):</div>
+      <div class="kv-row" id="kvAfter"></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Retenção por tempo é como uma <strong>gaveta que se limpa sozinha</strong> a cada semana, jogando fora tudo que é velho, não importa o quê. Compactação é diferente: é como um <strong>fichário de nomes</strong> — se você escreve o endereço novo da Ana numa ficha nova, a ficha velha do endereço antigo dela é jogada fora, mas sempre sobra <strong>uma</strong> ficha com a Ana, com a informação mais atual.</p>
+    </div>
+  </section>
+
+  <!-- ============ ZOOKEEPER → KRAFT ============ -->
+  <section class="section" id="s-zk-kraft">
+    <div class="section-eyebrow">Evolução da Arquitetura</div>
+    <div class="section-title">🕰️ De ZooKeeper para KRaft</div>
+    <p class="section-desc">O Kafka precisa que os brokers concordem sobre coisas como "quem é o líder de cada partição" e "quais brokers estão vivos" — isso é <strong>metadata de cluster</strong>, e por muitos anos essa coordenação dependia de um sistema externo: o Apache ZooKeeper.</p>
+
+    <div class="tl">
+      <div class="tl-item"><div class="tl-year">2011</div><div class="tl-title">Kafka nasce no LinkedIn</div><div class="tl-text">Criado para resolver a integração entre dezenas de sistemas internos, usando o ZooKeeper para eleição de controller e metadata.</div></div>
+      <div class="tl-item"><div class="tl-year">2012</div><div class="tl-title">Vira projeto Apache</div><div class="tl-text">Doado à Apache Software Foundation, ganha o ecossistema de contribuidores que tem até hoje.</div></div>
+      <div class="tl-item"><div class="tl-year">2020</div><div class="tl-title">KIP-500 é proposto</div><div class="tl-text">Plano oficial para remover a dependência do ZooKeeper, movendo a metadata para dentro do próprio Kafka via um log replicado (Raft).</div></div>
+      <div class="tl-item"><div class="tl-year">2022</div><div class="tl-title">KRaft fica pronto para produção</div><div class="tl-text">A partir do Kafka 3.3, o modo KRaft (Kafka + Raft) passa a ser recomendado para novos clusters, ainda como opção ao lado do ZooKeeper.</div></div>
+      <div class="tl-item"><div class="tl-year">2025</div><div class="tl-title">Kafka 4.0: só KRaft</div><div class="tl-text">O suporte ao ZooKeeper é removido do Kafka. Todo cluster novo roda em KRaft — mais simples de operar, uma dependência a menos para gerenciar.</div></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Pensa numa equipe de futebol que sempre precisou de um <strong>juiz externo</strong> (ZooKeeper) só para decidir quem é o capitão do time a cada rodada. Depois de um tempo, o próprio time aprendeu a <strong>se organizar sozinho</strong> e votar no capitão entre eles mesmos (KRaft) — sem precisar chamar ninguém de fora. Menos gente envolvida, menos coisa pra dar errado.</p>
+    </div>
+  </section>
+
+  <!-- ============ ECOSSISTEMA ============ -->
+  <section class="section" id="s-ecossistema">
+    <div class="section-eyebrow">Além do Núcleo</div>
+    <div class="section-title">🧩 Ecossistema Kafka</div>
+    <p class="section-desc">O Kafka "puro" (produzir/consumir mensagens) é só a base. Ao redor dele cresceu um ecossistema para cobrir tarefas comuns sem reinventar a roda.</p>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔌 Kafka Connect</div><div class="card-text">Framework para <strong>conectar</strong> o Kafka a sistemas externos (bancos de dados, S3, Elasticsearch) sem escrever código — via <em>source connectors</em> (entram dados) e <em>sink connectors</em> (saem dados), útil inclusive para CDC (Change Data Capture).</div></div>
+      <div class="card"><div class="card-title">🌊 Kafka Streams</div><div class="card-text">Biblioteca Java para processar eventos <strong>continuamente</strong> — filtrar, agregar, juntar streams — direto dentro da sua aplicação, sem precisar de um cluster de processamento separado.</div></div>
+      <div class="card"><div class="card-title">📊 ksqlDB</div><div class="card-text">Escreva processamento de streams usando <strong>SQL</strong> em vez de código Java — bom para quem já pensa em termos de consultas e agregações.</div></div>
+      <div class="card"><div class="card-title">📐 Schema Registry</div><div class="card-text">Guarda e valida os <strong>schemas</strong> (Avro/Protobuf/JSON Schema) das mensagens, garantindo que producers e consumers concordem sobre o formato — e permitindo evolução de schema com compatibilidade.</div></div>
+      <div class="card"><div class="card-title">🪞 MirrorMaker</div><div class="card-text">Replica tópicos inteiros <strong>entre clusters</strong> Kafka diferentes — usado para disaster recovery, migração entre regiões ou agregação multi-datacenter.</div></div>
+      <div class="card"><div class="card-title">🛠️ Producer/Consumer APIs</div><div class="card-text">As bibliotecas cliente (Java, Python, Go, Node...) usadas para escrever aplicações que produzem e consomem mensagens diretamente — a base de tudo o resto.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ PRIMEIROS PASSOS ============ -->
+  <section class="section" id="s-instalacao">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">📦 Primeiros Passos</div>
+    <p class="section-desc">Suba um Kafka local em modo KRaft (sem ZooKeeper) e comece a produzir e consumir mensagens.</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Docker — um broker Kafka em segundos</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># imagem oficial da Apache, já com KRaft embutido</span>
+docker run -d --name kafka -p 9092:9092 \
+  apache/kafka:latest</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">CLI — criar um tópico</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --create --topic pedidos \
+  --partitions 3 --replication-factor 1 \
+  --bootstrap-server localhost:9092</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">CLI — produzir mensagens no terminal</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>docker exec -it kafka /opt/kafka/bin/kafka-console-producer.sh \
+  --topic pedidos --bootstrap-server localhost:9092
+&gt; {"item":"teclado","valor":249.90}</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">CLI — consumir mensagens no terminal</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>docker exec -it kafka /opt/kafka/bin/kafka-console-consumer.sh \
+  --topic pedidos --from-beginning \
+  --bootstrap-server localhost:9092</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ NA PRÁTICA ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Código de Verdade</div>
+    <div class="section-title">🐍 Kafka na Prática</div>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python — producer (confluent-kafka)</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># pip install confluent-kafka</span>
+<span class="kw">from</span> confluent_kafka <span class="kw">import</span> Producer
+
+p = <span class="fn">Producer</span>({<span class="st">'bootstrap.servers'</span>: <span class="st">'localhost:9092'</span>})
+
+p.<span class="fn">produce</span>(
+    <span class="st">'pedidos'</span>,
+    key=<span class="st">'cliente-123'</span>,
+    value=<span class="st">'{"item":"teclado","valor":249.90}'</span>
+)
+p.<span class="fn">flush</span>()</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python — consumer em um grupo</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">from</span> confluent_kafka <span class="kw">import</span> Consumer
+
+c = <span class="fn">Consumer</span>({
+    <span class="st">'bootstrap.servers'</span>: <span class="st">'localhost:9092'</span>,
+    <span class="st">'group.id'</span>: <span class="st">'time-fraude'</span>,
+    <span class="st">'auto.offset.reset'</span>: <span class="st">'earliest'</span>,
+})
+c.<span class="fn">subscribe</span>([<span class="st">'pedidos'</span>])
+
+<span class="kw">while</span> <span class="kw">True</span>:
+    msg = c.<span class="fn">poll</span>(<span class="num">1.0</span>)
+    <span class="kw">if</span> msg <span class="kw">is</span> <span class="kw">None</span>: <span class="kw">continue</span>
+    <span class="fn">print</span>(msg.<span class="fn">key</span>(), msg.<span class="fn">value</span>())</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Node.js — producer (kafkajs)</div>
+        <div class="code-block">
+<span class="code-lang">javascript</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">// npm install kafkajs</span>
+<span class="kw">const</span> { Kafka } = <span class="fn">require</span>(<span class="st">'kafkajs'</span>)
+<span class="kw">const</span> kafka = <span class="kw">new</span> <span class="fn">Kafka</span>({ brokers: [<span class="st">'localhost:9092'</span>] })
+<span class="kw">const</span> producer = kafka.<span class="fn">producer</span>()
+
+<span class="kw">await</span> producer.<span class="fn">connect</span>()
+<span class="kw">await</span> producer.<span class="fn">send</span>({
+  topic: <span class="st">'pedidos'</span>,
+  messages: [{ key: <span class="st">'cliente-123'</span>, value: <span class="fn">JSON.stringify</span>({item:<span class="st">'teclado'</span>}) }]
+})</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Kafka Streams — pseudocódigo de contagem em tempo real</div>
+        <div class="code-block">
+<span class="code-lang">java (conceitual)</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">// para cada item vendido, mantém uma contagem sempre atualizada</span>
+builder.<span class="fn">stream</span>(<span class="st">"pedidos"</span>)
+  .<span class="fn">flatMapValues</span>(pedido -&gt; pedido.<span class="fn">getItens</span>())
+  .<span class="fn">groupBy</span>((chave, item) -&gt; item)
+  .<span class="fn">count</span>()
+  .<span class="fn">toStream</span>()
+  .<span class="fn">to</span>(<span class="st">"contagem-por-item"</span>);</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 Kafka vs. RabbitMQ vs. SQS vs. Pulsar</div>
+    <p class="section-desc">Todos "movem mensagens" — mas a pergunta certa é: você precisa de uma <strong>fila de tarefas</strong> que soma quando entregue, ou de um <strong>log de eventos</strong> que pode ser relido do zero?</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Sistema</th><th>Modelo</th><th>Mensagem some ao ser lida?</th><th>Ordenação</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Kafka</strong></td><td>Log distribuído (pull)</td><td>Não — fica até expirar/compactar</td><td>Garantida por partição</td><td>Streaming de eventos, replay, alto throughput</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">RabbitMQ</strong></td><td>Fila tradicional (push, AMQP)</td><td>Sim — some ao confirmar (ack)</td><td>Por fila, quebra com concorrência</td><td>Filas de tarefas, roteamento complexo de mensagens</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">AWS SQS</strong></td><td>Fila gerenciada</td><td>Sim — some ao confirmar</td><td>Sem garantia (exceto filas FIFO)</td><td>Desacoplar microsserviços na AWS sem operar infra</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Apache Pulsar</strong></td><td>Log distribuído (pub-sub + filas)</td><td>Não — similar ao Kafka</td><td>Garantida por partição</td><td>Multi-tenancy nativo, storage em camadas</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="canvas-wrap"><canvas id="compareCanvas" height="150"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Ordem de grandeza <strong>ilustrativa</strong> (não um benchmark) para throughput agregado sustentado — o número real depende muito de tamanho de mensagem, hardware e configuração de durabilidade.</div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casos-uso">
+    <div class="section-eyebrow">Onde ele Brilha</div>
+    <div class="section-title">🎯 Casos de Uso</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🛒 Desacoplar microsserviços</div><div class="card-text">O serviço de Pedidos publica "pedido criado" e não precisa saber que Estoque, Faturamento e Notificações vão reagir — cada um lê no seu ritmo.</div></div>
+      <div class="card"><div class="card-title">📈 Analytics em tempo real</div><div class="card-text">Dashboards e alertas que reagem a eventos assim que acontecem, em vez de esperar um job em lote rodar de madrugada.</div></div>
+      <div class="card"><div class="card-title">🔄 Change Data Capture (CDC)</div><div class="card-text">Capturar cada mudança de um banco de dados como um evento no Kafka, replicando estado para outros sistemas quase em tempo real.</div></div>
+      <div class="card"><div class="card-title">📝 Agregação de logs</div><div class="card-text">Centralizar logs de centenas de aplicações em um único lugar, antes de indexar em ferramentas de observabilidade.</div></div>
+      <div class="card"><div class="card-title">📡 Telemetria de IoT</div><div class="card-text">Milhões de sensores publicando leituras continuamente — o Kafka absorve o volume e distribui para quem for processar.</div></div>
+      <div class="card"><div class="card-title">🕵️ Detecção de fraude</div><div class="card-text">Processar transações no instante em que acontecem, cruzando padrões em streaming em vez de rodar análises só no dia seguinte.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔑 Escolha a key com cuidado</div><div class="card-text">A key define o particionamento e a ordem garantida — mudar a estratégia de key depois que o tópico já está em produção pode quebrar suposições de ordem que consumidores já dependem.</div></div>
+      <div class="card"><div class="card-title">🔢 Não crie partições demais "por garantia"</div><div class="card-text">Mais partições significa mais paralelismo, mas também mais arquivos abertos, mais overhead de replicação e rebalanceamentos mais lentos. Dimensione pelo throughput real (veja a calculadora acima).</div></div>
+      <div class="card"><div class="card-title">🛡️ Ajuste <code>acks</code> conforme a criticidade</div><div class="card-text">Nem toda mensagem precisa de <code>acks=all</code>. Logs de clique podem tolerar <code>acks=1</code>; transações financeiras, não.</div></div>
+      <div class="card"><div class="card-title">📐 Use um Schema Registry em produção</div><div class="card-text">Evita que um producer mude o formato da mensagem e quebre silenciosamente todos os consumidores que dependiam do formato antigo.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Kafka não é um banco de dados de consulta — não existe <code>WHERE</code> nativo sobre o conteúdo das mensagens. Para consultar por atributos específicos, combine com Kafka Streams/ksqlDB, ou materialize os dados em outro sistema (banco, índice de busca) via Kafka Connect.</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Apache Kafka</span>
+    <span>
+      Fontes: <a href="https://kafka.apache.org/documentation/" target="_blank" rel="noopener">Kafka Docs</a> ·
+      <a href="https://kafka.apache.org/intro" target="_blank" rel="noopener">Introduction to Kafka</a> ·
+      <a href="https://github.com/apache/kafka" target="_blank" rel="noopener">GitHub</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'📬', label:'O que é'},
+  {id:'s-problema', icon:'🍝', label:'O Problema'},
+  {id:'s-mensagem', icon:'✉️', label:'A Mensagem'},
+  {id:'s-topicos', icon:'📚', label:'Tópicos & Partições'},
+  {id:'s-produtores', icon:'🏭', label:'Producers & Consumers'},
+  {id:'s-brokers', icon:'🖥️', label:'Brokers & Cluster'},
+  {id:'s-replicacao', icon:'🧬', label:'Replicação'},
+  {id:'s-grupos', icon:'👥', label:'Grupos de Consumo'},
+  {id:'s-ordem', icon:'🔢', label:'Ordem'},
+  {id:'s-entrega', icon:'📮', label:'Garantias de Entrega'},
+  {id:'s-retencao', icon:'🗄️', label:'Retenção'},
+  {id:'s-zk-kraft', icon:'🕰️', label:'ZooKeeper → KRaft'},
+  {id:'s-ecossistema', icon:'🧩', label:'Ecossistema'},
+  {id:'s-instalacao', icon:'📦', label:'Primeiros Passos'},
+  {id:'s-codigo', icon:'🐍', label:'Na Prática'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-casos-uso', icon:'🎯', label:'Casos de Uso'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== INTEGRATION (spaghetti vs hub) CANVAS ===================== */
+const producersList = ['App Pedidos','App Pagamentos','App Estoque'];
+const consumersList = ['E-mail', 'BI / Analytics', 'Detecção de Fraude', 'Logística'];
+let integrationMode = 'sem';
+function setIntegrationMode(mode){
+  integrationMode = mode;
+  document.getElementById('btnSemKafka').classList.toggle('active', mode==='sem');
+  document.getElementById('btnComKafka').classList.toggle('active', mode==='com');
+  drawIntegrationCanvas();
+  const n = producersList.length, m = consumersList.length;
+  const semConn = n*m, comConn = n+m;
+  document.getElementById('integrationStats').innerHTML = `
+    <div class="stat-card ${mode==='sem'?'c-red':''}"><div class="stat-card-label">Sistemas produtores</div><div class="stat-card-value">${n}</div></div>
+    <div class="stat-card ${mode==='sem'?'c-red':''}"><div class="stat-card-label">Sistemas consumidores</div><div class="stat-card-value">${m}</div></div>
+    <div class="stat-card ${mode==='sem' ? 'c-red' : 'c-green'}" style="grid-column:1/-1;"><div class="stat-card-label">${mode==='sem' ? `Conexões diretas (N × M)` : `Conexões via Kafka (N + M)`}</div><div class="stat-card-value">${mode==='sem'?semConn:comConn}</div></div>
+  `;
+}
+function drawIntegrationCanvas(){
+  const cv = document.getElementById('integrationCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 230;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+
+  const leftX = 90, rightX = w-90;
+  const topPad = 30, botPad = 30;
+  const pY = producersList.map((_,i) => topPad + i*((h-topPad-botPad)/(producersList.length-1||1)));
+  const cY = consumersList.map((_,i) => topPad + i*((h-topPad-botPad)/(consumersList.length-1||1)));
+
+  ctx.font = '10.5px Inter, sans-serif'; ctx.textAlign='center';
+
+  if(integrationMode === 'sem'){
+    ctx.strokeStyle = 'rgba(248,107,99,.45)'; ctx.lineWidth = 1.2;
+    pY.forEach(py => { cY.forEach(cy => {
+      ctx.beginPath(); ctx.moveTo(leftX+34, py); ctx.lineTo(rightX-34, cy); ctx.stroke();
+    }); });
+  } else {
+    const hubX = w/2, hubY = h/2;
+    ctx.strokeStyle = 'rgba(6,182,212,.55)'; ctx.lineWidth = 1.6;
+    pY.forEach(py => { ctx.beginPath(); ctx.moveTo(leftX+34, py); ctx.lineTo(hubX-46, hubY); ctx.stroke(); });
+    cY.forEach(cy => { ctx.beginPath(); ctx.moveTo(hubX+46, hubY); ctx.lineTo(rightX-34, cy); ctx.stroke(); });
+    ctx.fillStyle = '#111216'; roundRect(ctx, hubX-46, hubY-20, 92, 40, 8); ctx.fill();
+    ctx.strokeStyle = '#06b6d4'; ctx.lineWidth = 2; roundRect(ctx, hubX-46, hubY-20, 92, 40, 8); ctx.stroke();
+    ctx.fillStyle = '#06b6d4'; ctx.font = '11px Roboto Mono, monospace';
+    ctx.fillText('KAFKA', hubX, hubY+4);
+  }
+
+  producersList.forEach((name,i) => {
+    const y = pY[i];
+    ctx.fillStyle = '#25262e'; roundRect(ctx, leftX-34, y-16, 68, 32, 6); ctx.fill();
+    ctx.strokeStyle = '#535966'; ctx.lineWidth=1; roundRect(ctx, leftX-34, y-16, 68, 32, 6); ctx.stroke();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='9px Inter, sans-serif';
+    name.split(' ').forEach((w2,li) => ctx.fillText(w2, leftX, y-4+li*10));
+  });
+  consumersList.forEach((name,i) => {
+    const y = cY[i];
+    ctx.fillStyle = '#25262e'; roundRect(ctx, rightX-34, y-16, 68, 32, 6); ctx.fill();
+    ctx.strokeStyle = '#535966'; ctx.lineWidth=1; roundRect(ctx, rightX-34, y-16, 68, 32, 6); ctx.stroke();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='8.5px Inter, sans-serif';
+    const words = name.split(' ');
+    if(words.length > 1){
+      ctx.fillText(words.slice(0,Math.ceil(words.length/2)).join(' '), rightX, y-4);
+      ctx.fillText(words.slice(Math.ceil(words.length/2)).join(' '), rightX, y+7);
+    } else { ctx.fillText(name, rightX, y+2); }
+  });
+  ctx.textAlign='left';
+}
+setIntegrationMode('sem');
+window.addEventListener('resize', drawIntegrationCanvas);
+
+/* ===================== TOPIC / PARTITIONS DEMO ===================== */
+const NUM_PARTITIONS = 3;
+let topicPartitions = [[],[],[]];
+let rrCounter = 0;
+function simpleHash(str){ let h=0; for(let i=0;i<str.length;i++){ h = (h*31 + str.charCodeAt(i)) >>> 0; } return h; }
+function seedTopicDemo(){
+  topicPartitions = [[],[],[]];
+  const seed = [
+    {key:'cliente-123', value:'login'},
+    {key:'cliente-456', value:'add_item'},
+    {key:'cliente-123', value:'checkout'},
+    {key:'', value:'heartbeat'},
+  ];
+  seed.forEach(m => routeMessage(m.key, m.value, false));
+}
+function routeMessage(key, value, isNew){
+  let idx;
+  if(key && key.trim() !== ''){
+    idx = simpleHash(key.trim()) % NUM_PARTITIONS;
+  } else {
+    idx = rrCounter % NUM_PARTITIONS;
+    rrCounter++;
+  }
+  topicPartitions[idx].push({key: key && key.trim() !== '' ? key.trim() : '—', value, isNew});
+  return idx;
+}
+function sendTopicMessage(){
+  const keyInput = document.getElementById('topicKeyInput');
+  const key = keyInput.value;
+  const sampleValues = ['evento_A','evento_B','clique','compra','erro_500','view_pagina'];
+  const value = sampleValues[Math.floor(Math.random()*sampleValues.length)];
+  topicPartitions.forEach(p => p.forEach(m => m.isNew = false));
+  const idx = routeMessage(key, value, true);
+  renderPartitions();
+  keyInput.value = '';
+}
+function resetTopicDemo(){
+  seedTopicDemo();
+  renderPartitions();
+}
+function renderPartitions(){
+  const wrap = document.getElementById('partitionsWrap');
+  wrap.innerHTML = topicPartitions.map((msgs,i) => `
+    <div class="partition-box">
+      <div class="partition-box-label"><span>Partição ${i}</span><span class="chip" style="font-size:9px;padding:2px 8px;">${msgs.length} msgs</span></div>
+      <div class="plog">
+        ${msgs.length ? msgs.map((m,off) => `
+          <div class="plog-cell ${m.isNew ? 'newmsg' : ''}">
+            <span>${m.value}</span>
+            <span class="off">off ${off} · ${m.key}</span>
+          </div>`).join('') : '<div class="plog-cell empty">vazia</div>'}
+      </div>
+    </div>
+  `).join('');
+}
+seedTopicDemo();
+renderPartitions();
+
+/* ===================== PARTITION SIZING CALCULATOR ===================== */
+function updatePartitionCalc(){
+  const target = +document.getElementById('throughputSlider').value;
+  const perPart = +document.getElementById('perPartSlider').value;
+  document.getElementById('throughputVal').textContent = target + ' MB/s';
+  document.getElementById('perPartVal').textContent = perPart + ' MB/s';
+  const minPartitions = Math.max(1, Math.ceil(target / perPart));
+  document.getElementById('partitionCalcResult').innerHTML = `
+    <div><span class="rl">Partições mínimas recomendadas</span><span class="rv">${minPartitions}</span></div>
+  `;
+}
+updatePartitionCalc();
+
+/* ===================== REPLICATION / BROKER FAILOVER DEMO ===================== */
+let brokerState = {
+  A: {status:'up', role:'leader'},
+  B: {status:'up', role:'follower', isr:true},
+  C: {status:'up', role:'follower', isr:true},
+};
+function renderBrokerCluster(){
+  const el = document.getElementById('brokerCluster');
+  const order = ['A','B','C'];
+  el.innerHTML = order.map(id => {
+    const b = brokerState[id];
+    const down = b.status === 'down';
+    let pill;
+    if(down){ pill = `<span class="replica-pill down">P0 (offline)</span>`; }
+    else if(b.role === 'leader'){ pill = `<span class="replica-pill leader">👑 P0 líder</span>`; }
+    else { pill = `<span class="replica-pill follower">${b.isr ? '✅' : '⏳'} P0 seguidor ${b.isr ? '(ISR)' : '(fora da ISR)'}</span>`; }
+    return `<div class="broker-box ${down ? 'is-down' : ''}">
+      <div class="broker-title">🖥️ Broker ${id}</div>
+      ${pill}
+    </div>`;
+  }).join('');
+}
+function killLeaderBroker(){
+  const order = ['A','B','C'];
+  const leaderId = order.find(id => brokerState[id].role === 'leader' && brokerState[id].status === 'up');
+  if(!leaderId){
+    document.getElementById('replicationDetail').innerHTML = `<div class="ad-title">⚠️ Não há líder saudável para derrubar</div><div class="ad-text">Restaure o cluster para simular novamente.</div>`;
+    return;
+  }
+  brokerState[leaderId].status = 'down';
+  const candidate = order.find(id => id !== leaderId && brokerState[id].status === 'up' && brokerState[id].isr);
+  let detailHtml;
+  if(candidate){
+    brokerState[candidate].role = 'leader';
+    delete brokerState[candidate].isr;
+    detailHtml = `<div class="ad-title">💥 Broker ${leaderId} caiu — novo líder eleito: Broker ${candidate}</div>
+      <div class="ad-text">O Broker ${candidate} estava na ISR (em sincronia total com o líder anterior), então foi promovido automaticamente. Nenhuma mensagem confirmada (acks=all) foi perdida.</div>`;
+  } else {
+    detailHtml = `<div class="ad-title">💥 Broker ${leaderId} caiu — sem réplica em ISR disponível</div>
+      <div class="ad-text">Sem uma réplica em sincronia para promover, a partição fica indisponível para escrita até um broker voltar (dependendo da configuração de unclean leader election).</div>`;
+  }
+  renderBrokerCluster();
+  document.getElementById('replicationDetail').innerHTML = detailHtml;
+}
+function resetReplicationDemo(){
+  brokerState = {
+    A: {status:'up', role:'leader'},
+    B: {status:'up', role:'follower', isr:true},
+    C: {status:'up', role:'follower', isr:true},
+  };
+  renderBrokerCluster();
+  document.getElementById('replicationDetail').innerHTML = `<div class="ad-title">Estado atual: tudo saudável</div><div class="ad-text">Partição P0 — líder no Broker A, seguidores em sincronia (ISR) nos Brokers B e C.</div>`;
+}
+renderBrokerCluster();
+
+/* ===================== CONSUMER GROUP ASSIGNMENT DEMO ===================== */
+const TOTAL_PARTITIONS = 6;
+function updateConsumerGroup(){
+  const n = +document.getElementById('numConsumersSlider').value;
+  document.getElementById('numConsumersVal').textContent = n;
+  const activeConsumers = Math.min(n, TOTAL_PARTITIONS);
+  const base = Math.floor(TOTAL_PARTITIONS / activeConsumers);
+  const remainder = TOTAL_PARTITIONS % activeConsumers;
+  let partIdx = 0;
+  const assignments = [];
+  for(let i=0;i<activeConsumers;i++){
+    const count = base + (i < remainder ? 1 : 0);
+    const parts = [];
+    for(let j=0;j<count;j++){ parts.push(partIdx); partIdx++; }
+    assignments.push(parts);
+  }
+  const idleCount = Math.max(0, n - TOTAL_PARTITIONS);
+
+  let rowsHtml = assignments.map((parts,i) => `
+    <div class="assign-row">
+      <div class="assign-consumer">🧑‍💻 Consumidor ${i+1}</div>
+      <span class="assign-arrow">→</span>
+      <div class="assign-partitions">${parts.map(p => `<div class="assign-part">P${p}</div>`).join('')}</div>
+    </div>`).join('');
+  for(let i=0;i<idleCount;i++){
+    rowsHtml += `<div class="assign-row idle">
+      <div class="assign-consumer">🧑‍💻 Consumidor ${activeConsumers+i+1}</div>
+      <span class="assign-arrow">→</span>
+      <div class="assign-partitions"><span class="chip">ocioso — sem partição disponível</span></div>
+    </div>`;
+  }
+  document.getElementById('assignList').innerHTML = rowsHtml;
+  document.getElementById('groupStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Partições totais</div><div class="stat-card-value">${TOTAL_PARTITIONS}</div></div>
+    <div class="stat-card ${idleCount ? 'c-red' : 'c-green'}"><div class="stat-card-label">Consumidores ociosos</div><div class="stat-card-value">${idleCount}</div></div>
+    <div class="stat-card"><div class="stat-card-label">Partições por consumidor ativo</div><div class="stat-card-value">${remainder ? base+'-'+(base+1) : base}</div></div>
+  `;
+}
+updateConsumerGroup();
+
+/* ===================== DELIVERY SEMANTICS PICKER ===================== */
+const deliveryInfo = {
+  atmost: {
+    t: 'No máximo uma vez (at-most-once)',
+    kid: 'Jogar um bilhete pela janela e nunca conferir se alguém pegou — se cair na grama, azar, ninguém vai atrás dele.',
+    d: 'O producer envia e não espera confirmação (ou não faz retry se falhar). Nunca duplica, mas pode perder mensagens em caso de falha de rede ou do broker.',
+    code: `producer.send(topico, msg)\n<span class="cm"># acks=0 — dispara e esquece, sem confirmação</span>`
+  },
+  atleast: {
+    t: 'Pelo menos uma vez (at-least-once)',
+    kid: 'Mandar o bilhete e, se não tiver certeza que chegou, mandar de novo — o bilhete quase certamente chega, mas às vezes chega em dobro.',
+    d: 'O padrão mais comum: o producer faz retry até confirmar. Garante que a mensagem chegue, mas em falhas de rede (onde o ack se perde, não a mensagem) pode gerar duplicatas.',
+    code: `producer.send(topico, msg)\n<span class="cm"># acks=all + retries — reenvia se não confirmar</span>`
+  },
+  exactly: {
+    t: 'Exatamente uma vez (exactly-once)',
+    kid: 'Mandar o bilhete com um número de série — se o destinatário já viu aquele número antes, ele simplesmente ignora a cópia repetida.',
+    d: 'Combina producer idempotente (o Kafka detecta e descarta reenvios duplicados) com transações — usado quando duplicar é inaceitável, como em transações financeiras. Tem mais overhead de coordenação.',
+    code: `producer = Producer({\n  'enable.idempotence': True,\n  'transactional.id': 'pagamentos-1'\n})`
+  },
+};
+function buildDeliveryButtons(){
+  document.getElementById('deliveryButtons').innerHTML = Object.keys(deliveryInfo).map(k =>
+    `<button class="btn-toggle" data-dk="${k}" onclick="pickDelivery('${k}')">${deliveryInfo[k].t}</button>`
+  ).join('');
+}
+function pickDelivery(key){
+  document.querySelectorAll('#deliveryButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.dk === key));
+  const info = deliveryInfo[key];
+  document.getElementById('deliveryDetail').innerHTML = `
+    <div class="ad-title">${info.t}</div>
+    <div class="ad-text">🧒 <em>${info.kid}</em></div>
+    <div class="ad-text" style="margin-top:8px;">${info.d}</div>
+    <div class="code-block" style="margin-top:10px;"><span class="code-lang">python (conceitual)</span>${info.code}</div>
+  `;
+}
+buildDeliveryButtons();
+
+/* ===================== LOG COMPACTION VISUAL ===================== */
+function buildCompactionVisual(){
+  const before = [
+    {k:'cliente-101', v:'"Ana"', stale:true},
+    {k:'cliente-102', v:'"Bruno"', stale:true},
+    {k:'cliente-101', v:'"Ana Souza"', stale:true},
+    {k:'cliente-103', v:'"Carla"', stale:false},
+    {k:'cliente-102', v:'"Bruno Lima"', stale:false},
+    {k:'cliente-101', v:'null (tombstone)', stale:false, tomb:true},
+  ];
+  document.getElementById('kvBefore').innerHTML = before.map(m => `
+    <div class="kv-tile ${m.tomb ? 'tombstone' : ''}"><span class="k">${m.k}</span><span class="v">${m.v}</span></div>
+  `).join('<span class="assign-arrow">·</span>');
+
+  const after = [
+    {k:'cliente-102', v:'"Bruno Lima"'},
+    {k:'cliente-103', v:'"Carla"'},
+  ];
+  document.getElementById('kvAfter').innerHTML = after.map(m => `
+    <div class="kv-tile kept"><span class="k">${m.k}</span><span class="v">${m.v}</span></div>
+  `).join('') + `<div class="chip" style="opacity:.7;">cliente-101 foi removido de vez (tombstone aplicada)</div>`;
+}
+buildCompactionVisual();
+
+/* ===================== COMPARISON CANVAS ===================== */
+function drawCompareCanvas(){
+  const cv = document.getElementById('compareCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Kafka', val:10, color:'#06b6d4'},
+    {name:'Apache Pulsar', val:9, color:'#c49aff'},
+    {name:'RabbitMQ', val:3, color:'#36a2ef'},
+    {name:'AWS SQS (padrão)', val:2, color:'#98a2b3'},
+  ];
+  const padB = 26, padTop=14, barGap=18;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = 11;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, barH, 5); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='11px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText(d.val + 'x', x+barW/2, y-6);
+    ctx.fillStyle = '#98a2b3'; ctx.font='9.5px Inter, sans-serif';
+    const words = d.name.split(' ');
+    ctx.fillText(words.slice(0, Math.ceil(words.length/2)).join(' '), x+barW/2, h-18);
+    ctx.fillText(words.slice(Math.ceil(words.length/2)).join(' '), x+barW/2, h-8);
+    ctx.textAlign='left';
+  });
+}
+drawCompareCanvas();
+window.addEventListener('resize', drawCompareCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Assim que um consumidor lê uma mensagem no Kafka, ela é removida do tópico.', a:false, e:'Falso. A mensagem continua no log até expirar pela retenção configurada (ou ser removida por log compaction) — outros consumidores, ou o mesmo consumidor mais tarde, podem relê-la.'},
+  {q:'A ordem das mensagens só é garantida dentro de uma mesma partição, não entre partições diferentes de um tópico.', a:true, e:'Verdadeiro. Cada partição é um log independente; entre partições diferentes não existe relação de ordem garantida.'},
+  {q:'Mensagens com a mesma key sempre vão para a mesma partição, com o particionador padrão.', a:true, e:'Verdadeiro. O Kafka aplica um hash da key para escolher a partição — a mesma key sempre resolve para a mesma partição, garantindo ordem "por chave".'},
+  {q:'Dois consumidores do mesmo consumer group podem ler ativamente a mesma partição ao mesmo tempo.', a:false, e:'Falso. Dentro de um mesmo grupo, cada partição é atribuída a apenas um consumidor por vez — é assim que se evita processamento duplicado dentro do grupo.'},
+  {q:'O offset identifica a posição de uma mensagem dentro de uma partição específica.', a:true, e:'Verdadeiro. É um contador sequencial local à partição — o mesmo número de offset em partições diferentes se refere a mensagens diferentes.'},
+  {q:'A partir do Kafka 4.0, o ZooKeeper deixou de ser necessário graças ao modo KRaft.', a:true, e:'Verdadeiro. O KIP-500 moveu a metadata do cluster para dentro do próprio Kafka via um log replicado (Raft), e o Kafka 4.0 removeu o suporte ao ZooKeeper.'},
+  {q:'acks=all garante a maior durabilidade, pois espera a confirmação de todas as réplicas em sincronia (ISR).', a:true, e:'Verdadeiro. É a configuração mais segura contra perda de dados, ao custo de uma latência um pouco maior por mensagem.'},
+  {q:'Log compaction remove mensagens apenas com base no tempo, igual à retenção padrão.', a:false, e:'Falso. Log compaction mantém apenas o valor mais recente de cada key, independente de quando foi escrito — ideal para representar "o estado atual" de algo.'},
+  {q:'Adicionar mais partições a um tópico é uma forma de aumentar o paralelismo de leitura entre consumidores de um mesmo grupo.', a:true, e:'Verdadeiro. Como cada partição só é lida por um consumidor do grupo por vez, mais partições permitem mais consumidores ativos simultaneamente.'},
+  {q:'O Kafka funciona bem tanto para mensageria pontual (fila) quanto para streaming contínuo de eventos com replay.', a:true, e:'Verdadeiro. É essa flexibilidade — log durável e replayável, mas com semântica de pub/sub — que o diferencia de filas tradicionais como RabbitMQ ou SQS.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Agosto / 2026';
+</script>
+</body>
+</html>

@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Microsserviços. Do monólito à arquitetura distribuída, com analogias simples, diagramas visuais, simuladores interativos (circuit breaker, saga pattern) e exemplos de código na prática.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Microsserviços</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-row.old{opacity:.55;text-decoration:line-through;}
+.file-chip .fc-row.new{border-color:var(--accent-green);color:var(--accent-green);font-weight:700;text-decoration:none;opacity:1;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-fade td{opacity:.55;}
+.cell-old{color:var(--accent-red);text-decoration:line-through;}
+.cell-new{color:var(--accent-green);font-weight:700;}
+.badge-current{background:rgba(125,222,216,.16);color:var(--accent-green);border:1px solid var(--accent-green);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.badge-expired{background:rgba(152,162,179,.10);color:var(--text-disabled);border:1px solid var(--border-color);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- SCRIPT STEP BADGE ---- */
+.script-step{display:flex;align-items:center;gap:10px;margin:22px 0 6px;}
+.script-step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--bg-main);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Roboto Mono',monospace;}
+.script-step-label{font-size:13px;font-weight:700;color:var(--text-primary);}
+.script-step-sub{font-size:12px;color:var(--text-secondary);margin:2px 0 8px 36px;line-height:1.6;}
+
+/* ---- DECISION CARDS ---- */
+.decision-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.decision-q{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.decision-arrow{font-size:11px;color:var(--text-disabled);text-align:center;}
+.decision-a{font-size:14px;font-weight:800;text-align:center;padding:8px;border-radius:6px;border:1px solid;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ============================================================
+   Componentes específicos — Microsserviços
+   ============================================================ */
+.svc-diagram{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap;margin-top:6px;}
+.svc-box{flex:1;min-width:140px;background:var(--bg-panel);border:2px solid var(--accent);border-radius:10px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;}
+.svc-icon{font-size:32px;}
+.svc-name{font-weight:800;font-size:12.5px;color:var(--text-primary);}
+.svc-tech{font-size:9.5px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;}
+.svc-db{font-size:10px;color:var(--accent-green);background:rgba(125,222,216,.08);border:1px solid var(--accent-green);border-radius:12px;padding:3px 10px;font-family:'Roboto Mono',monospace;}
+.svc-arrow-h{display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--border-strong);flex:0 0 24px;}
+@media (max-width:960px){.svc-diagram{flex-direction:column;}.svc-arrow-h{transform:rotate(90deg);}}
+
+.arch-compare{display:flex;gap:20px;align-items:stretch;flex-wrap:wrap;margin-top:6px;}
+.mono-box{flex:1;min-width:260px;background:var(--bg-panel);border:2px dashed var(--border-strong);border-radius:12px;padding:20px 18px 16px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.mono-tag{position:absolute;top:-11px;left:14px;background:var(--accent-red);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.mono-inner{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px;}
+.mono-mod{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.mono-db{margin-top:2px;background:rgba(6,182,212,.08);border:1px solid var(--accent);border-radius:6px;padding:9px;text-align:center;font-size:11px;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.mono-caption{font-size:10.5px;color:var(--text-disabled);text-align:center;margin-top:4px;line-height:1.5;}
+.micro-group{flex:1.4;min-width:300px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.micro-tag{position:absolute;top:-11px;left:14px;background:var(--accent-green);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;z-index:2;}
+.micro-row{display:flex;gap:8px;flex-wrap:wrap;border:1.5px dashed var(--border-color);border-radius:12px;padding:18px 10px 10px;}
+.micro-svc{flex:1;min-width:82px;background:var(--bg-panel);border:1.5px solid var(--accent-green);border-radius:8px;padding:9px 6px;text-align:center;}
+.micro-svc-icon{font-size:18px;}
+.micro-svc-name{font-size:10px;color:var(--text-primary);font-weight:700;margin-top:3px;}
+.micro-svc-db{font-size:8.5px;color:var(--accent-green);margin-top:4px;font-family:'Roboto Mono',monospace;}
+.micro-caption{font-size:10.5px;color:var(--text-disabled);text-align:center;margin-top:4px;line-height:1.5;}
+@media (max-width:960px){.arch-compare{flex-direction:column;}}
+
+/* comunicação sync/async */
+.comm-actors{display:flex;align-items:center;justify-content:center;gap:34px;width:100%;flex-wrap:wrap;}
+.comm-actor{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.comm-actor-icon{font-size:34px;}
+.comm-actor-label{font-size:11px;color:var(--text-secondary);font-weight:700;text-align:center;}
+.comm-mid{flex:1;min-width:160px;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;}
+.comm-line{width:100%;height:2px;background:var(--border-strong);position:relative;}
+.comm-msg{font-size:10.5px;color:var(--accent);font-family:'Roboto Mono',monospace;background:var(--bg-main);padding:2px 8px;border-radius:10px;border:1px solid var(--accent);white-space:nowrap;}
+.comm-msg.back{color:var(--accent-green);border-color:var(--accent-green);}
+.comm-note{font-size:10px;color:var(--text-disabled);text-align:center;}
+.queue-box{background:var(--bg-elevated);border:2px dashed var(--accent-purple);border-radius:10px;padding:12px 16px;text-align:center;min-width:120px;}
+.queue-box .qi{font-size:26px;}
+.queue-box .ql{font-size:10.5px;color:var(--accent-purple);font-weight:700;margin-top:4px;}
+
+/* gateway */
+.gateway-diagram{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.gw-box{background:var(--bg-panel);border-radius:10px;padding:12px 24px;text-align:center;font-size:12px;font-weight:700;}
+.gw-client{border:2px solid var(--accent-blue);color:var(--accent-blue);}
+.gw-gate{border:2px solid var(--accent);color:var(--accent);background:rgba(6,182,212,.08);padding:14px 30px;}
+.gw-arrow{font-size:18px;color:var(--border-strong);}
+.gw-services{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:4px;}
+.gw-svc{border:1.5px solid var(--accent-green);border-radius:8px;padding:9px 14px;font-size:11px;color:var(--accent-green);font-weight:700;background:var(--bg-panel);}
+
+/* circuit breaker */
+.breaker-visual{display:flex;align-items:center;justify-content:center;gap:26px;flex-wrap:wrap;margin-bottom:10px;}
+.breaker-state{width:110px;height:110px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:4px solid var(--border-color);transition:.3s;gap:3px;flex-shrink:0;}
+.breaker-state.closed{border-color:var(--accent-green);background:rgba(125,222,216,.08);}
+.breaker-state.open{border-color:var(--accent-red);background:rgba(248,107,99,.08);}
+.breaker-state.half{border-color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.breaker-state-icon{font-size:30px;}
+.breaker-state-label{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
+.breaker-log{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px;max-height:170px;overflow-y:auto;}
+.breaker-entry{font-size:11px;font-family:'Roboto Mono',monospace;padding:6px 10px;border-radius:5px;background:var(--bg-elevated);border:1px solid var(--border-color);}
+.breaker-entry.fail{color:var(--accent-red);}
+.breaker-entry.ok{color:var(--accent-green);}
+.breaker-entry.reject{color:var(--accent-yellow);}
+
+/* saga */
+.saga-flow{display:flex;flex-direction:column;gap:0;max-width:520px;}
+.saga-step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;background:var(--bg-panel);border:1px solid var(--border-color);transition:.2s;}
+.saga-step-icon{font-size:20px;width:30px;text-align:center;}
+.saga-step-label{flex:1;font-size:12.5px;font-weight:700;color:var(--text-primary);}
+.saga-step-status{font-size:9.5px;font-weight:800;padding:3px 10px;border-radius:10px;text-transform:uppercase;white-space:nowrap;}
+.saga-step-status.pending{background:var(--bg-elevated);color:var(--text-disabled);}
+.saga-step-status.ok{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.saga-step-status.fail{background:rgba(248,107,99,.14);color:var(--accent-red);}
+.saga-step-status.undo{background:rgba(232,196,104,.14);color:var(--accent-yellow);}
+.saga-connector{width:2px;height:14px;background:var(--border-strong);margin-left:29px;}
+
+/* containers */
+.ship-hull{background:var(--bg-elevated);border:1.5px dashed var(--border-strong);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.container-box{background:var(--bg-panel);border:2px solid var(--accent-blue);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--text-secondary);}
+.container-box .ci{font-size:20px;}
+.container-box strong{color:var(--text-primary);}
+
+/* observabilidade */
+.dash-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.dash-tile{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+.dash-tile-title{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.dash-tile-body{font-size:11.5px;color:var(--text-secondary);line-height:1.6;}
+.trace-bar-wrap{display:flex;flex-direction:column;gap:5px;margin-top:4px;}
+.trace-row{display:flex;align-items:center;gap:8px;font-size:10px;}
+.trace-label{width:64px;flex-shrink:0;color:var(--text-disabled);font-family:'Roboto Mono',monospace;}
+.trace-bar{height:14px;border-radius:3px;background:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.dash-panel{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Microsserviços</h1><span>Como quebrar um sistema gigante em pedacinhos que conversam entre si</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">9</div><div class="hstat-label">Padrões Cobertos</div></div>
+      <div class="hstat"><div class="hstat-num">Netflix</div><div class="hstat-label">Caso famoso</div></div>
+      <div class="hstat"><div class="hstat-num">1 svc</div><div class="hstat-label">= 1 banco só seu</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Um sistema gigante, <em>quebrado</em> em pedacinhos independentes.</h2>
+      <p><strong>Microsserviços</strong> é um jeito de construir software: em vez de um único programa enorme fazendo tudo (login, catálogo, pagamento, entrega...), você constrói <em>vários programinhas pequenos</em>, cada um responsável por <strong>uma única coisa</strong>, com seu próprio banco de dados, seu próprio time e seu próprio ritmo de mudança. Eles conversam entre si por <em>rede</em> — chamadas de API ou mensagens — em vez de simplesmente chamar funções internas. É a arquitetura por trás de gigantes como <strong>Netflix, Amazon e Uber</strong>, e hoje é o padrão-ouro para sistemas que precisam crescer sem virar um monstro impossível de mexer. Vamos destrinchar tudo isso com muita analogia simples e diagrama visual.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Independência</span>
+        <span class="badge badge-green">Banco Próprio</span>
+        <span class="badge badge-blue">API / Eventos</span>
+        <span class="badge badge-purple">Deploy Isolado</span>
+        <span class="badge badge-yellow">Escala Sob Medida</span>
+        <span class="badge badge-red">Falha Contida</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🏢 SISTEMA DE E-COMMERCE</div>
+        <div class="fc-body">
+          <div class="fc-row old">1 código gigante fazendo tudo</div>
+          <div class="fc-row new">Vira: Catálogo + Carrinho + Pagamento + Entrega</div>
+        </div>
+        <div class="fc-foot">Como dividir sem quebrar tudo?</div>
+      </div>
+      <div class="file-chip-caption">Essa pergunta é o coração da aula de hoje</div>
+    </div>
+  </section>
+
+  <!-- ============ FUNDAMENTO ============ -->
+  <section class="section" id="s-fundamento">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧩 Primeiro, o básico: o que é um Microsserviço?</div>
+    <p class="section-desc">
+      Um <strong>microsserviço</strong> é um programa pequeno, independente, que faz <em>uma única coisa bem-feita</em> — por exemplo, "gerenciar o catálogo de produtos" ou "processar pagamentos" — e expõe essa capacidade para outros programas através de uma <strong>API</strong> (uma "porta de entrada" bem definida). Ele roda sozinho, pode ser feito numa linguagem diferente dos outros, tem seu próprio banco de dados e pode ser atualizado sem precisar mexer em mais nada.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧱</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Pensa numa caixa de <strong>LEGO</strong>. Cada peça é pequena e faz uma função simples — uma peça é uma roda, outra é uma porta, outra é uma janela. Nenhuma peça sozinha é o carro inteiro, mas cada uma se <em>encaixa</em> nas outras através de "pinos" padronizados. Se a porta quebrar, você troca só a porta — não precisa desmontar o carro inteiro. Um sistema de microsserviços é assim: várias "peças de LEGO" de software, cada uma independente, encaixando através de APIs.</p>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Veja como fica na prática: cada serviço é uma caixinha própria, com seu ícone, sua tecnologia e — o mais importante — <strong>seu próprio banco de dados</strong>, que mais ninguém acessa diretamente.</p>
+    <div class="svc-diagram">
+      <div class="svc-box">
+        <div class="svc-icon">📦</div>
+        <div class="svc-name">Catálogo</div>
+        <div class="svc-tech">Node.js</div>
+        <div class="svc-db">🗄️ catalogo_db</div>
+      </div>
+      <div class="svc-arrow-h">↔</div>
+      <div class="svc-box">
+        <div class="svc-icon">🛒</div>
+        <div class="svc-name">Carrinho</div>
+        <div class="svc-tech">Java</div>
+        <div class="svc-db">🗄️ carrinho_db</div>
+      </div>
+      <div class="svc-arrow-h">↔</div>
+      <div class="svc-box">
+        <div class="svc-icon">💳</div>
+        <div class="svc-name">Pagamento</div>
+        <div class="svc-tech">Go</div>
+        <div class="svc-db">🗄️ pagamento_db</div>
+      </div>
+      <div class="svc-arrow-h">↔</div>
+      <div class="svc-box">
+        <div class="svc-icon">🚚</div>
+        <div class="svc-name">Entrega</div>
+        <div class="svc-tech">Python</div>
+        <div class="svc-db">🗄️ entrega_db</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔑 Característica 1 — Independência</div><div class="card-text">Cada serviço pode ser <strong>desenvolvido, testado, implantado e escalado</strong> sem depender do calendário dos outros times. O time de Pagamento pode lançar uma versão nova hoje, sem esperar o time de Entrega.</div></div>
+      <div class="card"><div class="card-title">🔑 Característica 2 — Dono dos próprios dados</div><div class="card-text">Ninguém acessa o banco de dados de outro serviço diretamente. Toda troca de informação passa pela <strong>API</strong> — é a única "porta" oficial de entrada.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ MONOLITO VS MICRO ============ -->
+  <section class="section" id="s-monolito">
+    <div class="section-eyebrow">O Gatilho de Tudo</div>
+    <div class="section-title">🏢 O problema: quando o monólito vira um bolo impossível de fatiar</div>
+    <p class="section-desc">
+      A maioria dos sistemas começa como um <strong>monólito</strong>: um único código, um único banco de dados, um único "deploy". É simples de começar — e é assim mesmo que <em>deveria</em> começar a maioria dos projetos. O problema aparece quando o sistema cresce: centenas de funcionalidades no mesmo código, dezenas de times mexendo no mesmo repositório, e qualquer mudança pequena — mesmo num botão — exige testar e publicar <strong>o sistema inteiro de novo</strong>. É como um bolo já assado: os ingredientes estão todos misturados, não dá mais para tirar só o chocolate sem desmontar tudo.
+    </p>
+    <div class="arch-compare">
+      <div class="mono-box">
+        <span class="mono-tag">🏢 Monólito</span>
+        <div class="mono-inner">
+          <div class="mono-mod">Login</div>
+          <div class="mono-mod">Catálogo</div>
+          <div class="mono-mod">Carrinho</div>
+          <div class="mono-mod">Pagamento</div>
+          <div class="mono-mod">Entrega</div>
+          <div class="mono-mod">Notificação</div>
+        </div>
+        <div class="mono-db">🗄️ 1 banco de dados único, compartilhado por tudo</div>
+        <div class="mono-caption">1 código, 1 deploy, 1 time mexendo em tudo ao mesmo tempo.<br>Mudar 1 botão = testar o sistema inteiro de novo.</div>
+      </div>
+      <div class="micro-group">
+        <span class="micro-tag">🧩 Microsserviços</span>
+        <div class="micro-row">
+          <div class="micro-svc"><div class="micro-svc-icon">🔐</div><div class="micro-svc-name">Login</div><div class="micro-svc-db">db próprio</div></div>
+          <div class="micro-svc"><div class="micro-svc-icon">📦</div><div class="micro-svc-name">Catálogo</div><div class="micro-svc-db">db próprio</div></div>
+          <div class="micro-svc"><div class="micro-svc-icon">🛒</div><div class="micro-svc-name">Carrinho</div><div class="micro-svc-db">db próprio</div></div>
+        </div>
+        <div class="micro-row">
+          <div class="micro-svc"><div class="micro-svc-icon">💳</div><div class="micro-svc-name">Pagamento</div><div class="micro-svc-db">db próprio</div></div>
+          <div class="micro-svc"><div class="micro-svc-icon">🚚</div><div class="micro-svc-name">Entrega</div><div class="micro-svc-db">db próprio</div></div>
+          <div class="micro-svc"><div class="micro-svc-icon">🔔</div><div class="micro-svc-name">Notificação</div><div class="micro-svc-db">db próprio</div></div>
+        </div>
+        <div class="micro-caption">6 caixinhas independentes, cada uma com seu próprio banco.<br>Mudar o "Pagamento" não obriga a testar o "Catálogo" de novo.</div>
+      </div>
+    </div>
+    <div class="kid-box">
+      <div class="kid-emoji">🍰</div>
+      <div><div class="highlight-title">Analogia</div><p>Monólito é como um <strong>bolo já assado</strong>: farinha, ovo, chocolate e recheio viraram uma coisa só — não dá pra tirar só o recheio sem destruir o bolo inteiro. Microsserviços é como um <strong>buffet</strong>: cada prato (arroz, feijão, salada, sobremesa) fica separado em sua própria travessa. Você pode trocar a sobremesa sem mexer no arroz, e cada travessa pode até ser preparada por um cozinheiro diferente.</p></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Importante: monólito <strong>não é sinônimo de "ruim"</strong>. Para projetos pequenos e times enxutos, um monólito bem organizado é quase sempre a escolha certa — é mais simples de construir, testar e depurar. Microsserviços resolvem um problema de <em>escala</em> (de código, de times e de tráfego) que só aparece depois que o sistema cresce bastante. Trocar de arquitetura cedo demais é, ironicamente, um dos erros mais comuns.</p></div>
+  </section>
+
+  <!-- ============ ANATOMIA ============ -->
+  <section class="section" id="s-anatomia">
+    <div class="section-eyebrow">Por Dentro da Peça</div>
+    <div class="section-title">🔬 Anatomia de um microsserviço</div>
+    <p class="section-desc">Todo microsserviço "saudável" segue a mesma receita básica, não importa a linguagem em que foi escrito:</p>
+    <div class="grid-4">
+      <div class="card"><div class="card-title">📡 API própria</div><div class="card-text">Uma porta de entrada bem documentada (REST, gRPC...) — é a <em>única</em> forma de outros serviços pedirem algo a ele.</div></div>
+      <div class="card"><div class="card-title">🗄️ Banco de dados próprio</div><div class="card-text">Ninguém de fora lê ou escreve direto nesse banco. Se outro serviço precisa do dado, ele <em>pergunta pela API</em>.</div></div>
+      <div class="card"><div class="card-title">⚙️ Lógica de negócio própria</div><div class="card-text">As regras de "como calcular frete" moram só no serviço de Entrega — não espalhadas em vários lugares.</div></div>
+      <div class="card"><div class="card-title">🚀 Deploy independente</div><div class="card-text">Publicar uma nova versão do Catálogo não exige recompilar ou reiniciar o Pagamento.</div></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">A regra mais importante — e a mais violada na prática — é o <strong>banco de dados privado</strong>. Se dois serviços compartilham a mesma tabela, eles deixam de ser independentes: uma mudança na estrutura da tabela quebra os dois ao mesmo tempo.</p>
+    <div class="grid-2">
+      <div class="card" style="border-color:var(--accent-red);">
+        <div class="card-title" style="color:var(--accent-red);">❌ Errado — banco compartilhado</div>
+        <div class="card-text">O serviço de Pedidos lê a tabela <code>produtos</code> diretamente do banco do Catálogo para saber o preço. Se o Catálogo renomear uma coluna, o Pedidos quebra <strong>sem aviso</strong> — eles viraram um monólito disfarçado de dois serviços.</div>
+      </div>
+      <div class="card" style="border-color:var(--accent-green);">
+        <div class="card-title" style="color:var(--accent-green);">✅ Certo — comunicação via API</div>
+        <div class="card-text">O serviço de Pedidos chama <code>GET /produtos/42</code> no Catálogo. O Catálogo pode trocar sua tabela interna à vontade — desde que a resposta da API continue no mesmo formato, o Pedidos nunca percebe a diferença.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMUNICAÇÃO ============ -->
+  <section class="section" id="s-comunicacao">
+    <div class="section-eyebrow">O Coração da Arquitetura</div>
+    <div class="section-title">📡 Como eles conversam: síncrono x assíncrono</div>
+    <p class="section-desc">Se cada serviço é uma "ilha" independente, como eles se falam? Existem dois jeitos fundamentalmente diferentes — e a escolha entre eles muda todo o comportamento do sistema.</p>
+
+    <div class="btn-toggle-row" style="margin-bottom:4px;">
+      <button class="btn-toggle active" id="btnSync" onclick="showComm('sync')">📞 Síncrono (REST/gRPC)</button>
+      <button class="btn-toggle" id="btnAsync" onclick="showComm('async')">📬 Assíncrono (fila/evento)</button>
+    </div>
+
+    <div class="interactive-panel" id="commPanelSync">
+      <div class="panel-label">Chamada síncrona — o Pedido liga direto para o Estoque e ESPERA a resposta</div>
+      <div class="comm-actors">
+        <div class="comm-actor"><span class="comm-actor-icon">🧾</span><span class="comm-actor-label">Serviço de Pedido</span></div>
+        <div class="comm-mid">
+          <div class="comm-line"></div><span class="comm-msg">→ GET /estoque/42</span>
+          <div class="comm-line"></div><span class="comm-msg back">← 200 OK { "disponivel": true }</span>
+          <span class="comm-note">⏳ o Pedido fica travado esperando a resposta</span>
+        </div>
+        <div class="comm-actor"><span class="comm-actor-icon">📦</span><span class="comm-actor-label">Serviço de Estoque</span></div>
+      </div>
+      <div class="kid-box" style="margin-top:14px;">
+        <div class="kid-emoji">📞</div>
+        <div><div class="highlight-title">Analogia</div><p>É como uma <strong>ligação de telefone</strong>: você liga, pergunta algo, e fica esperando na linha até a outra pessoa responder. Simples e direto — mas se a pessoa do outro lado demorar (ou não atender), você fica preso esperando também.</p></div>
+      </div>
+    </div>
+
+    <div class="interactive-panel" id="commPanelAsync" style="display:none;">
+      <div class="panel-label">Chamada assíncrona — o Pedido publica um evento e SEGUE em frente, sem esperar</div>
+      <div class="comm-actors">
+        <div class="comm-actor"><span class="comm-actor-icon">🧾</span><span class="comm-actor-label">Serviço de Pedido</span></div>
+        <div class="comm-mid">
+          <div class="comm-line"></div><span class="comm-msg">→ publica "pedido.criado"</span>
+          <span class="comm-note">✅ o Pedido já segue pra próxima tarefa, sem esperar</span>
+        </div>
+        <div class="queue-box"><div class="qi">📬</div><div class="ql">Fila / Tópico</div></div>
+        <div class="comm-mid">
+          <div class="comm-line"></div><span class="comm-msg back">← consome quando puder</span>
+        </div>
+        <div class="comm-actor"><span class="comm-actor-icon">📦</span><span class="comm-actor-label">Estoque</span></div>
+      </div>
+      <div class="kid-box" style="margin-top:14px;">
+        <div class="kid-emoji">📮</div>
+        <div><div class="highlight-title">Analogia</div><p>É como <strong>enviar uma carta pelos Correios</strong>: você coloca a carta na caixa de correio e vai fazer outra coisa. O destinatário lê quando puder — pode ser em 5 minutos ou amanhã. Você não fica esperando parado, e se o carteiro (a fila) estiver de folga hoje, a carta simplesmente espera lá até ele voltar, sem se perder.</p></div>
+      </div>
+    </div>
+
+    <p class="section-desc" style="font-size:12.5px;margin-top:6px;">Exemplo real dos dois formatos — a mesma pergunta ("esse produto está em estoque?"), respondida de dois jeitos:</p>
+    <div class="grid-2">
+      <div class="code-block">
+<span class="code-lang">http · síncrono</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="fn">GET</span> /estoque/42 <span class="kw">HTTP/1.1</span>
+<span class="cm">Host: estoque-service.interno</span>
+
+<span class="kw">HTTP/1.1</span> <span class="num">200</span> OK
+<span class="cm">Content-Type: application/json</span>
+
+{
+  <span class="st">"produto_id"</span>: <span class="num">42</span>,
+  <span class="st">"disponivel"</span>: <span class="kw">true</span>,
+  <span class="st">"quantidade"</span>: <span class="num">18</span>
+}</div>
+      <div class="code-block">
+<span class="code-lang">json · evento assíncrono</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">// publicado no tópico "pedido.criado"</span>
+{
+  <span class="st">"evento"</span>: <span class="st">"pedido.criado"</span>,
+  <span class="st">"pedido_id"</span>: <span class="st">"PD-9911"</span>,
+  <span class="st">"produto_id"</span>: <span class="num">42</span>,
+  <span class="st">"quantidade"</span>: <span class="num">1</span>,
+  <span class="st">"timestamp"</span>: <span class="st">"2026-07-30T14:02:00Z"</span>
+}
+<span class="cm">// o Estoque (e quem mais quiser) consome quando puder</span></div>
+    </div>
+    <div class="data-table" style="margin-top:6px;">
+      <table class="data-table" style="width:100%;">
+        <thead><tr><th></th><th>Síncrono (REST/gRPC)</th><th>Assíncrono (fila/evento)</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Quem espera?</strong></td><td>Quem chamou fica esperando a resposta</td><td>Ninguém espera — resposta chega depois, se chegar</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Se o outro serviço cair?</strong></td><td>A chamada falha na hora</td><td>A mensagem fica guardada na fila até alguém processar</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Bom para</strong></td><td>Perguntas que precisam de resposta imediata ("posso pagar agora?")</td><td>Avisos e reações em cadeia ("um pedido foi criado, quem se interessa?")</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Acoplamento</strong></td><td>Quem chama precisa saber o endereço exato de quem responde</td><td>Quem publica nem sabe quem (ou quantos) vão consumir</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ GATEWAY ============ -->
+  <section class="section" id="s-gateway">
+    <div class="section-eyebrow">A Porta de Entrada</div>
+    <div class="section-title">🚪 API Gateway — o porteiro do prédio</div>
+    <p class="section-desc">Se um app de celular precisasse saber o endereço exato de cada um dos 20 microsserviços por trás do sistema, qualquer mudança interna quebraria o app. O <strong>API Gateway</strong> resolve isso: é uma única porta de entrada, que recebe todas as requisições dos clientes e as <em>redireciona</em> internamente para o serviço certo — além de cuidar de tarefas comuns a todos, como autenticação e limite de chamadas.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🚪</div>
+      <div><div class="highlight-title">Analogia</div><p>É como o <strong>porteiro de um prédio grande</strong> com dezenas de escritórios. Você não precisa saber em qual andar fica cada empresa — chega na portaria, diz o que quer, e o porteiro te encaminha para a sala certa. Ele também barra quem não tem crachá (autenticação) e evita que 500 pessoas lotem o elevador ao mesmo tempo (limite de chamadas).</p></div>
+    </div>
+    <div class="gateway-diagram">
+      <div class="gw-box gw-client">📱 App do Cliente</div>
+      <div class="gw-arrow">↓ 1 endereço só, ex: api.loja.com</div>
+      <div class="gw-box gw-gate">🚪 API Gateway<br><span style="font-size:10px;font-weight:400;color:var(--text-secondary);">autentica · roteia · limita chamadas</span></div>
+      <div class="gw-arrow">↓ redireciona internamente</div>
+      <div class="gw-services">
+        <div class="gw-svc">📦 /catalogo/*</div>
+        <div class="gw-svc">🛒 /carrinho/*</div>
+        <div class="gw-svc">💳 /pagamento/*</div>
+        <div class="gw-svc">🚚 /entrega/*</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Vantagem</div><div class="card-text">O cliente externo só conhece <strong>um endereço</strong>. Os serviços internos podem ser reorganizados, renomeados ou até fundidos sem que o app precise mudar uma linha.</div></div>
+      <div class="card"><div class="card-title">⚠️ Cuidado</div><div class="card-text">O Gateway não pode virar um "monólito disfarçado" cheio de regras de negócio — sua função é <em>rotear e proteger</em>, não decidir preço nem calcular frete.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ SERVICE DISCOVERY ============ -->
+  <section class="section" id="s-discovery">
+    <div class="section-eyebrow">Quem Está Vivo?</div>
+    <div class="section-title">📖 Service Discovery — a lista telefônica que se atualiza sozinha</div>
+    <p class="section-desc">Em produção, cada serviço roda em várias <strong>cópias (réplicas)</strong> para aguentar tráfego, e essas cópias sobem e descem o tempo todo — uma trava e é reiniciada, outra é criada para aguentar um pico de vendas. Guardar o "endereço fixo" de cada réplica à mão seria impossível de manter. O <strong>Service Discovery</strong> é um serviço central que sabe, <em>em tempo real</em>, quais réplicas de cada serviço estão vivas e em qual endereço — os outros serviços perguntam a ele antes de fazer qualquer chamada.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">📇</div>
+      <div><div class="highlight-title">Analogia</div><p>É como uma <strong>lista telefônica que se atualiza sozinha</strong>. Em vez de decorar o número de cada amigo (que pode trocar de celular), você liga para a central, diz o nome, e ela te dá o número <em>atualizado na hora</em>. Se um amigo trocar de número, você nem percebe — a central já sabe o novo.</p></div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">exemplo · registro no discovery</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">// cada réplica se registra sozinha ao subir</span>
+{
+  <span class="st">"servico"</span>: <span class="st">"estoque-service"</span>,
+  <span class="st">"instancias"</span>: [
+    { <span class="st">"id"</span>: <span class="st">"estoque-7f1a"</span>, <span class="st">"endereco"</span>: <span class="st">"10.0.2.14:8080"</span>, <span class="st">"saude"</span>: <span class="st">"UP"</span> },
+    { <span class="st">"id"</span>: <span class="st">"estoque-9b3c"</span>, <span class="st">"endereco"</span>: <span class="st">"10.0.2.31:8080"</span>, <span class="st">"saude"</span>: <span class="st">"UP"</span> },
+    { <span class="st">"id"</span>: <span class="st">"estoque-2e0d"</span>, <span class="st">"endereco"</span>: <span class="st">"10.0.2.09:8080"</span>, <span class="st">"saude"</span>: <span class="st">"DOWN"</span> }
+  ]
+}
+<span class="cm">// quem for chamar o Estoque só usa as instâncias marcadas "UP"</span></div>
+    <div class="info-box"><p>💡 Ferramentas comuns para isso: <strong>Consul, Eureka, etcd</strong> — ou, no mundo Kubernetes, o próprio <strong>DNS interno do cluster</strong> já resolve esse problema automaticamente.</p></div>
+  </section>
+
+  <!-- ============ LOAD BALANCER ============ -->
+  <section class="section" id="s-loadbalancer">
+    <div class="section-eyebrow">Distribuindo o Trabalho</div>
+    <div class="section-title">⚖️ Load Balancer — a fila organizada do banco</div>
+    <p class="section-desc">Sabendo (pelo Service Discovery) que existem 3 réplicas saudáveis do serviço de Estoque, alguém precisa decidir <em>qual delas</em> vai atender cada requisição, para que nenhuma fique sobrecarregada enquanto as outras ficam ociosas. Esse é o trabalho do <strong>Load Balancer</strong> (balanceador de carga).</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🏦</div>
+      <div><div class="highlight-title">Analogia</div><p>É como o <strong>funcionário que organiza a fila do banco</strong> com várias janelas de atendimento. Em vez de cada cliente escolher uma janela aleatoriamente (e lotar só uma delas), o funcionário direciona cada pessoa para o caixa <em>livre</em> — distribuindo o trabalho de forma justa entre todos os atendentes.</p></div>
+    </div>
+    <div class="svc-diagram">
+      <div class="svc-box" style="min-width:110px;">
+        <div class="svc-icon">⚖️</div>
+        <div class="svc-name">Load Balancer</div>
+      </div>
+      <div class="svc-arrow-h">→</div>
+      <div class="svc-box"><div class="svc-icon">📦</div><div class="svc-name">Estoque #1</div><div class="svc-tech">33% do tráfego</div></div>
+      <div class="svc-box"><div class="svc-icon">📦</div><div class="svc-name">Estoque #2</div><div class="svc-tech">33% do tráfego</div></div>
+      <div class="svc-box"><div class="svc-icon">📦</div><div class="svc-name">Estoque #3</div><div class="svc-tech">33% do tráfego</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔁 Round-robin</div><div class="card-text">A estratégia mais simples: distribui as chamadas em rodízio, uma para cada réplica, na ordem — 1, 2, 3, 1, 2, 3...</div></div>
+      <div class="card"><div class="card-title">📉 Menor carga</div><div class="card-text">Estratégia mais esperta: manda a próxima chamada para a réplica que está com <em>menos</em> requisições em andamento no momento.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ CIRCUIT BREAKER ============ -->
+  <section class="section" id="s-resiliencia">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">🔌 Circuit Breaker — o disjuntor de energia da sua casa</div>
+    <p class="section-desc">Se o serviço de Pagamento começa a falhar (ou fica lento demais), e o serviço de Pedido continua tentando chamá-lo sem parar, o problema se espalha: o Pedido também fica travado esperando, consome memória, e a falha de <em>um</em> serviço derruba o sistema <em>inteiro</em>. O padrão <strong>Circuit Breaker</strong> evita esse efeito dominó: depois de detectar falhas demais seguidas, ele "abre o circuito" e passa a rejeitar chamadas <strong>na hora</strong>, sem nem tentar — dando um respiro para o serviço com problema se recuperar.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">⚡</div>
+      <div><div class="highlight-title">Analogia</div><p>É exatamente como o <strong>disjuntor (a "chave" no quadro de energia) da sua casa</strong>. Se um curto-circuito acontece no chuveiro, o disjuntor <em>desarma</em> na hora — em vez de deixar a energia continuar passando e incendiar a casa toda. Depois de um tempo, você pode tentar religar (testar se o problema passou); se continuar dando curto, ele desarma de novo.</p></div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simulador — clique nos botões e veja o disjuntor mudar de estado ao vivo</div>
+      <div class="breaker-visual">
+        <div class="breaker-state closed" id="breakerVisual">
+          <span class="breaker-state-icon" id="breakerIcon">🟢</span>
+          <span class="breaker-state-label" id="breakerLabel">FECHADO</span>
+        </div>
+        <div class="breaker-log" id="breakerLog"></div>
+      </div>
+      <div class="btn-toggle-row">
+        <button class="btn-toggle" onclick="callService(true)">❌ Chamar Pagamento (com erro)</button>
+        <button class="btn-toggle" onclick="callService(false)">✅ Chamar Pagamento (com sucesso)</button>
+        <button class="btn-toggle" onclick="resetBreaker()">🔄 Resetar simulação</button>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:4px;">
+      <div class="card" style="border-color:var(--accent-green);"><div class="card-title" style="color:var(--accent-green);">🟢 Fechado</div><div class="card-text">Tudo normal — as chamadas passam direto para o serviço de verdade.</div></div>
+      <div class="card" style="border-color:var(--accent-red);"><div class="card-title" style="color:var(--accent-red);">🔴 Aberto</div><div class="card-text">Falhas demais seguidas — o circuito rejeita chamadas na hora, sem nem tentar, protegendo o resto do sistema.</div></div>
+      <div class="card" style="border-color:var(--accent-yellow);"><div class="card-title" style="color:var(--accent-yellow);">🟡 Semiaberto</div><div class="card-text">Passado um tempo, deixa <em>uma</em> chamada de teste passar. Se der certo, fecha de novo; se falhar, abre de novo.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ SAGA ============ -->
+  <section class="section" id="s-saga">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">🔄 Saga Pattern — o plano B em cascata</div>
+    <p class="section-desc">Num monólito, uma compra inteira (reservar estoque, cobrar cartão, agendar entrega) pode ser uma <strong>transação única</strong> no banco: ou tudo acontece, ou nada acontece. Em microsserviços isso não existe — cada passo mexe num banco de dados <em>diferente</em>, de um serviço diferente. Se o pagamento falhar <em>depois</em> do estoque já ter sido reservado, alguém precisa desfazer manualmente a reserva. Essa sequência de "passo a passo, com um plano B para desfazer o que já foi feito" é o padrão <strong>Saga</strong>.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🁢</div>
+      <div><div class="highlight-title">Analogia</div><p>É como um <strong>dominó que pode voltar atrás</strong>. Você derruba a primeira peça, ela derruba a segunda, a segunda derruba a terceira... mas se em algum ponto uma peça não consegue cair direito, alguém precisa <em>levantar de volta</em> as peças anteriores, uma por uma, na ordem contrária — para que o tabuleiro volte ao estado inicial, como se nada tivesse acontecido.</p></div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simulador — escolha um cenário e veja a saga (e a compensação) acontecer</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle" onclick="runSaga(false)">▶️ Cenário: tudo dá certo</button>
+        <button class="btn-toggle" onclick="runSaga(true)">▶️ Cenário: pagamento falha (com rollback)</button>
+      </div>
+      <div class="saga-flow" id="sagaFlow"></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Repare que "desfazer" nem sempre é literal: não dá para "descobrar" um cartão de crédito. Por isso, o passo de compensação costuma ser uma <strong>ação nova de sentido oposto</strong> — ex: em vez de apagar a cobrança, cria-se um <em>estorno</em>. É por isso que cada serviço numa Saga precisa expor não só a ação original, mas também sua "ação compensatória" correspondente.</p></div>
+  </section>
+
+  <!-- ============ CONTAINERS ============ -->
+  <section class="section" id="s-containers">
+    <div class="section-eyebrow">Como Eles Rodam</div>
+    <div class="section-title">📦 Containers &amp; Orquestração</div>
+    <p class="section-desc">Com dezenas de microsserviços, cada um com sua linguagem, suas dependências e sua versão, seria um pesadelo instalar tudo manualmente em cada servidor. <strong>Containers</strong> (a tecnologia mais popular é o <strong>Docker</strong>) resolvem isso empacotando cada serviço junto com tudo que ele precisa para rodar — e um <strong>orquestrador</strong> (o mais popular é o <strong>Kubernetes</strong>) decide onde e quantas cópias de cada container devem estar rodando, reiniciando automaticamente qualquer uma que travar.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🚢</div>
+      <div><div class="highlight-title">Analogia</div><p>É exatamente como os <strong>contêineres de um navio cargueiro</strong>. Não importa o que tem dentro de cada contêiner — roupas, eletrônicos, brinquedos — todos têm o mesmo formato padrão por fora, então qualquer guindaste, caminhão ou navio consegue transportá-los sem perguntar o que tem dentro. O Kubernetes é como o <strong>operador do porto</strong>: decide em qual navio (servidor) cada contêiner vai, e se um cair no mar, manda outro idêntico no lugar.</p></div>
+    </div>
+    <div class="ship-hull">
+      <div class="container-box"><span class="ci">📦</span><span><strong>Container: catalogo-service</strong> — Node.js 20 + código + dependências, tudo empacotado junto</span></div>
+      <div class="container-box"><span class="ci">📦</span><span><strong>Container: pagamento-service</strong> — Go 1.22 + código + dependências, isolado do resto</span></div>
+      <div class="container-box"><span class="ci">📦</span><span><strong>Container: entrega-service</strong> — Python 3.12 + código + dependências, isolado do resto</span></div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">dockerfile</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">FROM</span> node:20-alpine
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> package.json .
+<span class="kw">RUN</span> npm install
+<span class="kw">COPY</span> . .
+<span class="kw">EXPOSE</span> 8080
+<span class="kw">CMD</span> [<span class="st">"node"</span>, <span class="st">"server.js"</span>]
+<span class="cm"># empacota o catálogo inteiro: código + node + dependências</span></div>
+    <div class="code-block">
+<span class="code-lang">bash · kubernetes</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># pede ao Kubernetes 3 réplicas do catálogo rodando ao mesmo tempo</span>
+kubectl scale deployment catalogo-service --replicas=3
+
+<span class="cm"># se uma réplica travar, o Kubernetes sobe outra automaticamente</span>
+<span class="cm"># para manter sempre 3 rodando — sem intervenção manual</span></div>
+  </section>
+
+  <!-- ============ OBSERVABILIDADE ============ -->
+  <section class="section" id="s-observabilidade">
+    <div class="section-eyebrow">Enxergando o Invisível</div>
+    <div class="section-title">📊 Observabilidade — o painel do carro</div>
+    <p class="section-desc">Quando um pedido passa por 6 serviços diferentes e algo dá errado, "olhar o código" não ajuda — o problema pode estar em qualquer um dos 6. <strong>Observabilidade</strong> é o conjunto de ferramentas que permite enxergar o que está acontecendo <em>de fora</em>, sem precisar adivinhar.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🚗</div>
+      <div><div class="highlight-title">Analogia</div><p>É como o <strong>painel do carro</strong>: o velocímetro te dá um número (métrica), a luz de "verifique o motor" te avisa que algo específico deu errado (log/alerta), e o GPS te mostra o caminho completo que você percorreu, curva por curva (tracing). Sem o painel, você só descobriria o problema quando o carro já tivesse parado no meio da estrada.</p></div>
+    </div>
+    <div class="dash-panel">
+      <div class="dash-tile">
+        <div class="dash-tile-title">📈 Métricas</div>
+        <div class="dash-tile-body">Números ao longo do tempo: quantas requisições por segundo, quantos erros, tempo médio de resposta. Respondem "<em>quanto</em>" e "<em>o quê</em>" está acontecendo agora.</div>
+      </div>
+      <div class="dash-tile">
+        <div class="dash-tile-title">📝 Logs</div>
+        <div class="dash-tile-body">O registro detalhado de cada evento: "14:02:03 — pagamento recusado para o pedido PD-9911, motivo: saldo insuficiente". Respondem "<em>o que exatamente</em> aconteceu".</div>
+      </div>
+      <div class="dash-tile">
+        <div class="dash-tile-title">🔍 Tracing distribuído</div>
+        <div class="dash-tile-body">Segue um único pedido através de <em>todos</em> os serviços que ele passou, mostrando quanto tempo cada um gastou. Responde "<em>onde</em>" no caminho a lentidão aconteceu.</div>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Um exemplo de trace: o mesmo pedido PD-9911 passando por 4 serviços — dá para ver exatamente onde o tempo foi gasto:</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Trace do pedido PD-9911 — 312ms no total</div>
+      <div class="trace-bar-wrap">
+        <div class="trace-row"><span class="trace-label">Gateway</span><div class="trace-bar" style="width:6%;background:var(--accent-blue);"></div><span>18ms</span></div>
+        <div class="trace-row"><span class="trace-label">Carrinho</span><div class="trace-bar" style="width:14%;background:var(--accent-green);"></div><span>44ms</span></div>
+        <div class="trace-row"><span class="trace-label">Estoque</span><div class="trace-bar" style="width:19%;background:var(--accent-purple);"></div><span>60ms</span></div>
+        <div class="trace-row"><span class="trace-label">Pagamento</span><div class="trace-bar" style="width:61%;background:var(--accent-red);"></div><span>190ms ⚠️</span></div>
+      </div>
+      <div class="warn-box" style="margin-top:12px;"><p>⚠️ O tracing deixa óbvio: dos 312ms totais, <strong>190ms (61%)</strong> foram gastos dentro do serviço de Pagamento — é ali que uma investigação de performance deveria começar, não nos outros três serviços.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ SIMULADOR GERAL ============ -->
+  <section class="section" id="s-simulador">
+    <div class="section-eyebrow">Juntando Tudo</div>
+    <div class="section-title">🎮 O caminho de um pedido, do clique à entrega</div>
+    <p class="section-desc">Juntando todas as peças desta aula, veja o caminho completo de <strong>1 clique em "Comprar"</strong> até o pedido sair para entrega — passando por Gateway, síncrono, assíncrono e Saga, tudo junto:</p>
+    <div class="gateway-diagram">
+      <div class="gw-box gw-client">📱 Cliente clica em "Comprar"</div>
+      <div class="gw-arrow">↓</div>
+      <div class="gw-box gw-gate">🚪 API Gateway autentica e roteia</div>
+      <div class="gw-arrow">↓ (1) síncrono — precisa da resposta na hora</div>
+      <div class="gw-services">
+        <div class="gw-svc">🛒 Carrinho confirma itens</div>
+        <div class="gw-svc">📦 Estoque reserva (Saga passo 1)</div>
+        <div class="gw-svc">💳 Pagamento cobra (Saga passo 2)</div>
+      </div>
+      <div class="gw-arrow">↓ (2) assíncrono — dispara evento "pedido.pago" e segue</div>
+      <div class="gw-services">
+        <div class="gw-svc">🚚 Entrega agenda coleta</div>
+        <div class="gw-svc">🔔 Notificação envia e-mail</div>
+        <div class="gw-svc">📊 Observabilidade registra métricas e trace</div>
+      </div>
+    </div>
+    <div class="ok-box"><p>✅ Note como cada padrão da aula aparece num único fluxo real: o <strong>Gateway</strong> como porta única, os primeiros passos <strong>síncronos</strong> porque o cliente precisa saber na hora se a compra foi aprovada, e os passos finais <strong>assíncronos</strong> porque nem entrega nem e-mail precisam travar a resposta ao cliente — e por trás de tudo, a <strong>Saga</strong> garantindo que, se o pagamento falhar, a reserva de estoque seja desfeita.</p></div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO / ESCALA ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📈 Comparando: Monólito x Microsserviços</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th></th><th>Monólito</th><th>Microsserviços</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Simplicidade inicial</strong></td><td>Alta — 1 código, 1 deploy</td><td>Baixa — muitas peças móveis desde o dia 1</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Escala</strong></td><td>Escala o sistema inteiro, mesmo que só 1 parte esteja sob carga</td><td>Escala só o serviço que precisa — mais eficiente</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Falha de uma parte</strong></td><td>Pode derrubar o sistema inteiro</td><td>Tende a ficar contida no serviço afetado (com Circuit Breaker)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Deploy</strong></td><td>Publica tudo junto — mais lento, mais arriscado</td><td>Cada serviço publica sozinho — rápido, risco isolado</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Times</strong></td><td>Vários times no mesmo código — conflitos frequentes</td><td>Cada time dono de seus próprios serviços</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Complexidade operacional</strong></td><td>Baixa — 1 coisa para monitorar</td><td>Alta — precisa de observabilidade, orquestração, service discovery...</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Consistência de dados</strong></td><td>Transação única no banco garante tudo-ou-nada</td><td>Precisa de padrões como Saga — mais trabalho manual</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Quantas instâncias cada arquitetura precisa, conforme o tráfego do checkout cresce?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Pedidos de checkout por segundo</span><span class="ctrl-v" id="scaleVal">50</span></div>
+          <input type="range" id="scaleSlider" min="5" max="200" step="5" value="50" oninput="updateScale()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="scaleCanvas" height="150"></canvas></div>
+      <div class="stat-cards" id="scaleStats"></div>
+      <p class="section-desc" style="font-size:11.5px;margin-top:10px;">No monólito, <strong>cada réplica carrega o sistema inteiro</strong> (catálogo, carrinho, pagamento, entrega...) mesmo que só o checkout esteja sob pressão — escalar significa replicar tudo. Nos microsserviços, só o serviço de <strong>Checkout</strong> precisa crescer; Catálogo, Carrinho, Usuário e Entrega continuam com 1 instância cada, sem desperdiçar recursos.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUAL ESCOLHER ============ -->
+  <section class="section" id="s-escolha">
+    <div class="section-eyebrow">Guia de Decisão</div>
+    <div class="section-title">🧭 Monólito ou Microsserviços?</div>
+    <p class="section-desc">Não existe resposta certa universal — existe a resposta certa <em>para o seu momento</em>. Use as perguntas abaixo para guiar a decisão.</p>
+    <div class="grid-3">
+      <div class="decision-card">
+        <div class="decision-q">"Meu time tem menos de 10 pessoas e o produto ainda está validando se vai dar certo?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">Monólito</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Diferentes partes do sistema têm necessidades de escala MUITO diferentes (ex: 1 milhão de buscas x 1000 compras)?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Microsserviços</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Vários times precisam publicar mudanças de forma independente, sem esperar uns pelos outros?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Microsserviços</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Ainda não sei exatamente onde ficam as fronteiras naturais do meu domínio de negócio?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">Monólito</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Já tenho um monólito funcionando, mas uma parte específica virou um gargalo constante?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-yellow);color:var(--accent-yellow);">Extrair só essa parte</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Não tenho time ou orçamento para investir em observabilidade, orquestração e infraestrutura extra?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">Monólito</div>
+      </div>
+    </div>
+    <div class="highlight-box"><div class="highlight-title">💡 O caminho mais comum na prática</div><p>A maioria dos sistemas de sucesso <strong>começa monólito</strong> e migra aos poucos para microsserviços, extraindo um serviço de cada vez conforme a dor de escala ou de time aparece de verdade — nunca migra tudo de uma vez, no "big bang". Chama-se essa técnica de <strong>Strangler Fig Pattern</strong> ("padrão figueira estranguladora"): o novo serviço cresce por fora, envolvendo o monólito aos poucos, até ele deixar de ser necessário naquele pedaço.</p></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🗄️ Banco de dados é sempre privado</div><div class="card-text">Nunca deixe dois serviços lerem ou escreverem na mesma tabela. Se precisar do dado de outro serviço, peça pela API dele.</div></div>
+      <div class="card"><div class="card-title">📏 Desenhe pelas fronteiras do negócio</div><div class="card-text">Divida os serviços pelo que faz sentido para o <em>negócio</em> (Catálogo, Pagamento, Entrega) — não por camada técnica (todo "banco" num serviço, todo "front" em outro).</div></div>
+      <div class="card"><div class="card-title">🔌 Sempre planeje para falha</div><div class="card-text">Em rede, tudo pode falhar: timeout, conexão caindo, resposta lenta. Use Circuit Breaker, retry com backoff e timeouts curtos em toda chamada entre serviços.</div></div>
+      <div class="card"><div class="card-title">📊 Observabilidade não é opcional</div><div class="card-text">Sem logs, métricas e tracing distribuído, depurar um bug que atravessa 6 serviços é praticamente impossível.</div></div>
+      <div class="card"><div class="card-title">🔄 Versionamento de API é contrato</div><div class="card-text">Mudar o formato de resposta de uma API sem avisar quebra todo mundo que a consome — trate a API como um contrato público, com versões.</div></div>
+      <div class="card"><div class="card-title">🐢 Comece devagar</div><div class="card-text">Não divida um sistema em 30 microsserviços no primeiro dia. Comece com poucos, aprenda com a dor real, e divida mais conforme necessário.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Microsserviços</span>
+    <span>
+      Fontes: Martin Fowler — "Microservices" · Sam Newman — "Building Microservices" · Padrões de Netflix Tech Blog
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-fundamento', icon:'🧩', label:'O que é'},
+  {id:'s-monolito', icon:'🏢', label:'Monólito x Micro'},
+  {id:'s-anatomia', icon:'🔬', label:'Anatomia'},
+  {id:'s-comunicacao', icon:'📡', label:'Comunicação'},
+  {id:'s-gateway', icon:'🚪', label:'API Gateway'},
+  {id:'s-discovery', icon:'📖', label:'Service Discovery'},
+  {id:'s-loadbalancer', icon:'⚖️', label:'Load Balancer'},
+  {id:'s-resiliencia', icon:'🔌', label:'Circuit Breaker'},
+  {id:'s-saga', icon:'🔄', label:'Saga Pattern'},
+  {id:'s-containers', icon:'📦', label:'Containers'},
+  {id:'s-observabilidade', icon:'📊', label:'Observabilidade'},
+  {id:'s-simulador', icon:'🎮', label:'Fluxo Completo'},
+  {id:'s-comparacao', icon:'📈', label:'Comparação'},
+  {id:'s-escolha', icon:'🧭', label:'Qual Escolher'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== SINCRONO / ASSÍNCRONO TOGGLE ===================== */
+function showComm(mode){
+  document.getElementById('btnSync').classList.toggle('active', mode==='sync');
+  document.getElementById('btnAsync').classList.toggle('active', mode==='async');
+  document.getElementById('commPanelSync').style.display = mode==='sync' ? '' : 'none';
+  document.getElementById('commPanelAsync').style.display = mode==='async' ? '' : 'none';
+}
+showComm('sync');
+
+/* ===================== CIRCUIT BREAKER SIMULATOR ===================== */
+let breakerState = 'closed'; // closed | open | half
+let failCount = 0;
+const THRESHOLD = 3;
+let breakerLog = [];
+
+function pushLog(type, text){
+  breakerLog.unshift({type, text});
+  breakerLog = breakerLog.slice(0, 6);
+  document.getElementById('breakerLog').innerHTML = breakerLog.map(e =>
+    `<div class="breaker-entry ${e.type}">${e.text}</div>`).join('');
+}
+
+function renderBreaker(){
+  const el = document.getElementById('breakerVisual');
+  el.className = 'breaker-state ' + breakerState;
+  const icon = document.getElementById('breakerIcon');
+  const label = document.getElementById('breakerLabel');
+  if(breakerState==='closed'){ icon.textContent='🟢'; label.textContent='FECHADO'; }
+  else if(breakerState==='open'){ icon.textContent='🔴'; label.textContent='ABERTO'; }
+  else { icon.textContent='🟡'; label.textContent='SEMIABERTO'; }
+}
+
+function callService(isError){
+  if(breakerState === 'open'){
+    pushLog('reject', '🚫 Rejeitada na hora — circuito ABERTO, nem tentou chamar o Pagamento. Testando na próxima chamada...');
+    breakerState = 'half';
+  } else if(breakerState === 'half'){
+    if(isError){
+      pushLog('fail', '❌ Chamada de teste falhou de novo — volta para ABERTO');
+      breakerState = 'open';
+    } else {
+      pushLog('ok', '✅ Chamada de teste funcionou — circuito FECHA de novo');
+      breakerState = 'closed';
+      failCount = 0;
+    }
+  } else { // closed
+    if(isError){
+      failCount++;
+      pushLog('fail', `❌ Erro na chamada (${failCount}/${THRESHOLD})`);
+      if(failCount >= THRESHOLD){
+        breakerState = 'open';
+        pushLog('reject', '⚡ Limite de falhas atingido — circuito ABRE para proteger o sistema');
+      }
+    } else {
+      failCount = 0;
+      pushLog('ok', '✅ Chamada OK');
+    }
+  }
+  renderBreaker();
+}
+function resetBreaker(){
+  breakerState = 'closed'; failCount = 0; breakerLog = [];
+  document.getElementById('breakerLog').innerHTML = '';
+  renderBreaker();
+}
+renderBreaker();
+
+/* ===================== SAGA SIMULATOR ===================== */
+const sagaHappy = [
+  {icon:'📦', label:'Reservar estoque do produto'},
+  {icon:'💳', label:'Cobrar pagamento no cartão'},
+  {icon:'🚚', label:'Agendar entrega'},
+];
+const sagaFail = [
+  {icon:'📦', label:'Reservar estoque do produto', outcome:'ok'},
+  {icon:'💳', label:'Cobrar pagamento no cartão', outcome:'fail'},
+  {icon:'↩️', label:'Compensar: estornar reserva de estoque', outcome:'undo'},
+];
+
+function renderSagaStep(step, status){
+  return `
+  <div class="saga-step">
+    <span class="saga-step-icon">${step.icon}</span>
+    <span class="saga-step-label">${step.label}</span>
+    <span class="saga-step-status ${status}">${status==='pending'?'aguardando':status==='ok'?'ok':status==='fail'?'falhou':'desfeito'}</span>
+  </div>`;
+}
+
+function runSaga(fail){
+  const steps = fail ? sagaFail : sagaHappy;
+  const flow = document.getElementById('sagaFlow');
+  flow.innerHTML = steps.map((s,i) => (i>0?'<div class="saga-connector"></div>':'') + renderSagaStep(s,'pending')).join('');
+  const stepEls = () => [...flow.querySelectorAll('.saga-step')];
+
+  steps.forEach((s, i) => {
+    setTimeout(() => {
+      const el = stepEls()[i];
+      const status = s.outcome || 'ok';
+      const badge = el.querySelector('.saga-step-status');
+      badge.className = 'saga-step-status ' + status;
+      badge.textContent = status==='ok' ? 'ok ✓' : status==='fail' ? 'falhou ✗' : 'desfeito ↩';
+      if(status==='fail') el.style.borderColor = 'var(--accent-red)';
+      if(status==='undo') el.style.borderColor = 'var(--accent-yellow)';
+      if(status==='ok') el.style.borderColor = 'var(--accent-green)';
+    }, i * 700);
+  });
+}
+// estado inicial
+document.getElementById('sagaFlow').innerHTML = sagaHappy.map((s,i) => (i>0?'<div class="saga-connector"></div>':'') + renderSagaStep(s,'pending')).join('');
+
+/* ===================== ESCALA: MONÓLITO x MICROSSERVIÇOS ===================== */
+function updateScale(){
+  const load = +document.getElementById('scaleSlider').value;
+  document.getElementById('scaleVal').textContent = load;
+  const monoCapacity = 15;   // req/s que 1 instância do monólito (pesada, carrega tudo) aguenta
+  const checkoutCapacity = 25; // req/s que 1 instância enxuta do serviço de Checkout aguenta
+  const monoInstances = Math.max(1, Math.ceil(load / monoCapacity));
+  const checkoutInstances = Math.max(1, Math.ceil(load / checkoutCapacity));
+  const wastedModules = monoInstances * 4; // catálogo+carrinho+usuário+entrega replicados à toa em cada instância do monólito
+
+  document.getElementById('scaleStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Instâncias do Monólito</div><div class="stat-card-value">${monoInstances}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Instâncias do serviço Checkout</div><div class="stat-card-value">${checkoutInstances}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">Cópias "carona" de módulos não usados</div><div class="stat-card-value">${wastedModules}</div></div>
+  `;
+  drawScaleCanvas(monoInstances, checkoutInstances);
+}
+function drawScaleCanvas(monoInstances, checkoutInstances){
+  const cv = document.getElementById('scaleCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Monólito (instâncias completas)', val:monoInstances, color:'#f86b63'},
+    {name:'Microsserviço Checkout (instâncias enxutas)', val:checkoutInstances, color:'#7dded8'},
+    {name:'Outros 4 microsserviços (fixos)', val:4, color:'#c49aff'},
+  ];
+  const padL=250, padR=30, padTop=14, barH=32, gap=20;
+  const maxVal = Math.max(1, monoInstances, checkoutInstances, 4);
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(d.val + ' instância(s)', padL+10, y+barH*0.65);
+  });
+}
+updateScale();
+window.addEventListener('resize', updateScale);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Em uma arquitetura de microsserviços, é uma boa prática dois serviços compartilharem a mesma tabela do banco de dados para evitar duplicação de dados.', a:false, e:'Falso. Cada microsserviço deve ter seu próprio banco de dados privado. Compartilhar tabelas acopla os serviços e recria os problemas do monólito.'},
+  {q:'Comunicação assíncrona (por fila ou evento) significa que quem envia a mensagem não fica esperando uma resposta imediata.', a:true, e:'Verdadeiro. Quem publica o evento segue em frente; a mensagem fica na fila até que algum consumidor a processe, quando puder.'},
+  {q:'Um API Gateway existe para que cada cliente externo precise conhecer o endereço de rede de cada microsserviço individualmente.', a:false, e:'Falso. É exatamente o contrário: o Gateway existe para que o cliente conheça só UM endereço, e o roteamento interno fica escondido atrás dele.'},
+  {q:'O padrão Circuit Breaker existe para impedir que a falha de um serviço se espalhe e derrube o sistema inteiro.', a:true, e:'Verdadeiro. Depois de falhas repetidas, o circuito "abre" e passa a rejeitar chamadas na hora, sem sobrecarregar ainda mais o serviço com problema.'},
+  {q:'O padrão Saga é usado porque, em microsserviços, não existe mais uma transação única de banco de dados cobrindo vários serviços ao mesmo tempo.', a:true, e:'Verdadeiro. Como cada serviço tem seu próprio banco, uma operação que envolve vários serviços precisa de passos compensatórios (rollback manual) em vez de um ROLLBACK de banco tradicional.'},
+  {q:'Containers como o Docker servem para deixar vários microsserviços compartilhando exatamente o mesmo ambiente de execução (mesma versão de linguagem, mesmas dependências).', a:false, e:'Falso. É o oposto: containers permitem que CADA serviço tenha seu próprio ambiente isolado (sua própria versão de linguagem e dependências), sem interferir nos outros.'},
+  {q:'Observabilidade (logs, métricas e tracing distribuído) é opcional em microsserviços, já que cada serviço é simples de entender sozinho.', a:false, e:'Falso. É justamente o contrário: como um problema pode atravessar vários serviços, observabilidade é essencial para conseguir depurar o que está acontecendo no sistema como um todo.'},
+  {q:'A recomendação geral é começar um projeto novo já dividido em dezenas de microsserviços, para evitar reescrever tudo depois.', a:false, e:'Falso. A prática mais recomendada é começar com um monólito bem organizado e extrair microsserviços aos poucos, apenas quando uma dor real de escala ou de time aparecer.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

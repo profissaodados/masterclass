@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Granularidade e Hierarquia em Data Warehouse. Grão da fato, hierarquias de tempo e geografia, drill down e drill up explicados com analogias simples, árvores interativas e SQL na prática.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Granularidade & Hierarquia (Drill Down / Drill Up)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:250px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-row.old{opacity:.55;}
+.file-chip .fc-row.new{border-color:var(--accent-green);color:var(--accent-green);font-weight:700;opacity:1;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-fade td{opacity:.55;}
+.data-table tr.row-total td{background:rgba(196,154,255,.10);color:var(--text-primary);font-weight:700;}
+.cell-old{color:var(--accent-red);text-decoration:line-through;}
+.cell-new{color:var(--accent-green);font-weight:700;}
+.badge-current{background:rgba(125,222,216,.16);color:var(--accent-green);border:1px solid var(--accent-green);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.badge-expired{background:rgba(152,162,179,.10);color:var(--text-disabled);border:1px solid var(--border-color);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- DECISION CARDS ---- */
+.decision-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.decision-q{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.decision-arrow{font-size:11px;color:var(--text-disabled);text-align:center;}
+.decision-a{font-size:14px;font-weight:800;text-align:center;padding:8px;border-radius:6px;border:1px solid;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- ZOOM ICON (drill down/up hero) ---- */
+.zoom-visual{display:flex;align-items:center;justify-content:center;gap:10px;font-size:34px;}
+.zoom-visual .zv-arrow{font-size:20px;color:var(--text-disabled);}
+
+/* ---- MATRYOSHKA NEST (hierarquia aninhada) ---- */
+.hier-nest-wrap{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:30px 20px;display:flex;align-items:center;justify-content:center;overflow-x:auto;}
+.hier-nest{border:2px dashed var(--border-strong);border-radius:16px;padding:24px 18px 18px;position:relative;display:inline-flex;}
+.hier-nest-tag{position:absolute;top:-10px;left:14px;background:var(--bg-panel);padding:0 8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+@media (max-width:960px){ .hier-nest{padding:20px 12px 12px;} .hier-nest-tag{font-size:9px;} }
+
+/* ---- DRILL PATH (drill down / drill up horizontal) ---- */
+.drillpath{display:flex;align-items:center;gap:0;overflow-x:auto;padding:6px 2px;scrollbar-width:none;}
+.drillpath::-webkit-scrollbar{display:none;}
+.drillpath-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.drillpath-box{border:2px solid var(--accent);border-radius:8px;padding:10px 16px;background:var(--bg-elevated);text-align:center;min-width:120px;}
+.drillpath-icon{font-size:20px;line-height:1;}
+.drillpath-name{font-size:11.5px;font-weight:700;color:var(--text-primary);margin-top:4px;}
+.drillpath-value{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--accent-green);margin-top:2px;}
+.drillpath-arrow{font-size:20px;color:var(--text-disabled);margin:0 8px;flex-shrink:0;}
+.drillpath-label{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.6px;text-align:center;margin-top:8px;}
+
+/* ---- DRILL TREE (interactive) ---- */
+.drill-tree{display:flex;flex-direction:column;gap:6px;}
+.drill-node.expanded{display:flex;flex-direction:column;}
+.drill-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-elevated);cursor:pointer;transition:.15s;}
+.drill-row:hover{border-color:var(--accent-blue);}
+.drill-row.leaf{cursor:default;}
+.drill-row.leaf:hover{border-color:var(--border-color);}
+.drill-toggle{width:14px;text-align:center;color:var(--accent);font-size:10px;flex-shrink:0;display:inline-block;transition:transform .15s;}
+.drill-node.expanded > .drill-row .drill-toggle{transform:rotate(90deg);}
+.drill-icon{font-size:15px;flex-shrink:0;}
+.drill-name{flex:1;font-size:12.5px;font-weight:600;color:var(--text-primary);}
+.drill-value{font-family:'Roboto Mono',monospace;font-size:11.5px;color:var(--accent-green);font-weight:700;white-space:nowrap;}
+.drill-children{margin-left:24px;padding-left:16px;border-left:1.5px dashed var(--border-strong);display:flex;flex-direction:column;gap:6px;margin-top:6px;max-height:0;overflow:hidden;transition:max-height .25s ease;}
+.drill-node.expanded > .drill-children{max-height:3000px;}
+
+/* ---- GRAIN CARDS ---- */
+.grain-card{background:var(--bg-panel);border:1px solid var(--border-color);border-top:3px solid var(--accent);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
+.grain-card.g-medium{border-top-color:var(--accent-blue);}
+.grain-card.g-coarse{border-top-color:var(--accent-purple);}
+.grain-title{font-size:13px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:8px;}
+.grain-sentence{font-size:12px;color:var(--text-secondary);line-height:1.6;background:rgba(6,182,212,.06);border-radius:6px;padding:8px 10px;}
+.grain-sentence em{color:var(--accent);font-style:normal;font-weight:700;}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.sim-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Granularidade & Hierarquia</h1><span>O nível de detalhe de cada linha, e como subir e descer entre eles</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">Grão</div><div class="hstat-label">Nível de detalhe</div></div>
+      <div class="hstat"><div class="hstat-num">↓ ↑</div><div class="hstat-label">Drill Down / Up</div></div>
+      <div class="hstat"><div class="hstat-num">Kimball</div><div class="hstat-label">Origem do conceito</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Toda tabela tem um <em>tamanho de grão</em>. A pergunta é: você sabe qual é o seu?</h2>
+      <p><strong>Granularidade</strong> é o nível de detalhe que <em>uma única linha</em> de uma tabela de fatos representa — pode ser "um item vendido", "um pedido inteiro" ou "o total do mês". <strong>Hierarquia</strong> é a forma como os atributos de uma dimensão se organizam em níveis, um dentro do outro — Ano contém Trimestres, que contêm Meses, que contêm Dias; País contém Regiões, que contêm Estados, que contêm Cidades. E <strong>drill down / drill up</strong> é o nome que se dá para navegar entre esses níveis: descer para ver mais detalhe, ou subir para ver o resumo. São três ideias que andam sempre juntas — e é exatamente isso que vamos destrinchar hoje, com muita analogia simples, árvores clicáveis e SQL de verdade.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Granularidade</span>
+        <span class="badge badge-blue">Hierarquia</span>
+        <span class="badge badge-green">Drill Down</span>
+        <span class="badge badge-purple">Drill Up (Roll-up)</span>
+        <span class="badge badge-yellow">Grain Statement</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🔍 A MESMA VENDA, 3 ZOOMS</div>
+        <div class="fc-body">
+          <div class="fc-row old">🌎 Brasil — R$ 1,24 mi <span style="opacity:.7;">(o mais resumido)</span></div>
+          <div class="fc-row">📍 Região Sudeste — R$ 620 mil</div>
+          <div class="fc-row new">🏪 Loja Paulista — R$ 180 mil <span style="opacity:.8;">(o mais detalhado)</span></div>
+        </div>
+        <div class="fc-foot">Mesmo dado, três níveis de zoom</div>
+      </div>
+      <div class="file-chip-caption">Isso, em qualquer hierarquia, é o coração da aula de hoje</div>
+    </div>
+  </section>
+
+  <!-- ============ GRANULARIDADE ============ -->
+  <section class="section" id="s-granularidade">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧒 Primeiro, o básico: o que é Granularidade?</div>
+    <p class="section-desc">
+      Imagine uma foto de satélite da sua cidade: de bem longe, cada "pontinho" da imagem (cada <em>pixel</em>) representa um bairro inteiro. Se você aproximar o zoom, cada pixel passa a representar uma rua. Se aproximar ainda mais, cada pixel representa uma casa. A foto é a mesma cidade — o que muda é <strong>quanto cada "unidade" da imagem representa</strong>. Em um Data Warehouse, essa "unidade" é a <strong>linha</strong> de uma tabela de fatos, e o nome que damos para "o que cada linha representa" é <strong>granularidade</strong> (ou simplesmente <em>grão</em>).
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧱</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Pense em construir uma casa de <strong>Lego</strong>. Se você usar blocos <em>gigantes</em>, constrói rápido, mas não consegue fazer detalhes pequenos como uma maçaneta. Se usar blocos <em>minúsculos</em>, consegue fazer qualquer detalhe, mas precisa de muito mais peças e de muito mais tempo para montar. É a mesma casa — só muda o <strong>tamanho do bloco</strong> que você usa para descrevê-la. Granularidade é exatamente isso: o "tamanho do bloco" de informação que cada linha da sua tabela guarda.</p>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Veja a mesma venda descrita em dois grãos diferentes — repare que as duas tabelas contam a <strong>mesma história</strong>, só que uma em blocos pequenos (fino) e a outra em blocos grandes (grosso):</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;color:var(--accent-green);">🧱 Grão fino — 1 linha = 1 item vendido</div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>id_pedido</th><th>produto</th><th>qtd</th><th>valor</th></tr></thead>
+            <tbody>
+              <tr><td>4521</td><td>Camiseta</td><td>2</td><td>R$ 100,00</td></tr>
+              <tr><td>4521</td><td>Tênis</td><td>1</td><td>R$ 220,00</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-text" style="margin-top:8px;">Cada linha é um produto específico dentro de um pedido — o grão mais detalhado.</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;color:var(--accent-purple);">🧊 Grão grosso — 1 linha = 1 pedido inteiro</div>
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>id_pedido</th><th>qtd_itens</th><th>valor_total</th></tr></thead>
+            <tbody>
+              <tr class="row-scan"><td>4521</td><td>3</td><td>R$ 320,00</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-text" style="margin-top:8px;">Uma única linha resume os 2 produtos acima — mais fácil de somar, mas já não dá para saber que um dos itens era uma "Camiseta".</div>
+      </div>
+    </div>
+    <div class="highlight-box"><p>📏 <strong>Definição técnica:</strong> granularidade é o nível de detalhe de uma linha de fato, definido a partir das dimensões que a descrevem. Quanto mais dimensões (e mais detalhadas) definem cada linha, mais <em>fino</em> é o grão; quanto menos, mais <em>grosso</em>.</p></div>
+  </section>
+
+  <!-- ============ HIERARQUIA ============ -->
+  <section class="section" id="s-hierarquia">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🪆 O que é Hierarquia?</div>
+    <p class="section-desc">
+      Uma <strong>hierarquia</strong> organiza os atributos de uma dimensão em <strong>níveis</strong>, do mais geral para o mais específico (ou vice-versa), onde cada nível "contém" os níveis abaixo dele. É como uma boneca russa (<em>matryoshka</em>): abre a boneca grande e tem uma menor dentro, abre essa e tem outra ainda menor — até chegar na menor de todas.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🪆</div>
+      <div>
+        <div class="highlight-title">Analogia</div>
+        <p>O <strong>Brasil</strong> (boneca grande) contém <strong>Regiões</strong> (Sudeste, Nordeste...), que contêm <strong>Estados</strong> (São Paulo, Bahia...), que contêm <strong>Cidades</strong>, que contêm <strong>Lojas</strong>. Do mesmo jeito, o <strong>Ano</strong> contém <strong>Trimestres</strong>, que contêm <strong>Meses</strong>, que contêm <strong>Dias</strong>. Cada boneca de fora sempre soma o valor de todas as bonecas de dentro dela.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <p class="section-desc" style="font-size:12.5px;margin-bottom:8px;">🗺️ Hierarquia geográfica — do maior para o menor:</p>
+        <div class="hier-nest-wrap">
+          <div class="hier-nest" style="border-color:var(--accent);">
+            <span class="hier-nest-tag" style="color:var(--accent);background:var(--bg-panel);">🌎 País</span>
+            <div class="hier-nest" style="border-color:var(--accent-blue);">
+              <span class="hier-nest-tag" style="color:var(--accent-blue);background:var(--bg-panel);">📍 Região</span>
+              <div class="hier-nest" style="border-color:var(--accent-green);">
+                <span class="hier-nest-tag" style="color:var(--accent-green);background:var(--bg-panel);">🏞️ Estado</span>
+                <div class="hier-nest" style="border-color:var(--accent-purple);">
+                  <span class="hier-nest-tag" style="color:var(--accent-purple);background:var(--bg-panel);">🏙️ Cidade</span>
+                  <div class="hier-nest" style="border-color:var(--accent-yellow);padding:16px 12px 10px;">
+                    <span class="hier-nest-tag" style="color:var(--accent-yellow);background:var(--bg-panel);">🏪 Loja</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="section-desc" style="font-size:12.5px;margin-bottom:8px;">📅 Hierarquia de tempo — do maior para o menor:</p>
+        <div class="hier-nest-wrap">
+          <div class="hier-nest" style="border-color:var(--accent);">
+            <span class="hier-nest-tag" style="color:var(--accent);background:var(--bg-panel);">📅 Ano</span>
+            <div class="hier-nest" style="border-color:var(--accent-blue);">
+              <span class="hier-nest-tag" style="color:var(--accent-blue);background:var(--bg-panel);">🗓️ Trimestre</span>
+              <div class="hier-nest" style="border-color:var(--accent-green);">
+                <span class="hier-nest-tag" style="color:var(--accent-green);background:var(--bg-panel);">📆 Mês</span>
+                <div class="hier-nest" style="border-color:var(--accent-purple);padding:16px 12px 10px;">
+                  <span class="hier-nest-tag" style="color:var(--accent-purple);background:var(--bg-panel);">📄 Dia</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📅 Hierarquia de Tempo</div><div class="card-text">Ano → Trimestre → Mês → Dia (ou até Hora/Minuto). A mais comum de todas em qualquer Data Warehouse.</div></div>
+      <div class="card"><div class="card-title">🗺️ Hierarquia Geográfica</div><div class="card-text">País → Região → Estado → Cidade → Loja. Cada nível agrupa vários itens do nível de baixo.</div></div>
+      <div class="card"><div class="card-title">📦 Hierarquia de Produto</div><div class="card-text">Categoria → Subcategoria → Produto → SKU (a variação exata: tamanho, cor). Comum em varejo.</div></div>
+    </div>
+    <div class="info-box"><p>💡 Repare que subir um nível na hierarquia é sempre uma <strong>soma</strong> (ou outra agregação) dos níveis de baixo: o total do Estado é a soma das Cidades; o total do Trimestre é a soma dos Meses. É exatamente essa propriedade que torna o drill up/down possível.</p></div>
+  </section>
+
+  <!-- ============ DRILL DOWN VS DRILL UP ============ -->
+  <section class="section" id="s-drill">
+    <div class="section-eyebrow">O Conceito Central</div>
+    <div class="section-title">🔍 Drill Down vs. Drill Up (Roll-up)</div>
+    <p class="section-desc">
+      Com uma hierarquia pronta, dá para <strong>navegar</strong> por ela em duas direções. <strong>Drill down</strong> ("perfurar para baixo") é descer de um nível mais geral para um mais detalhado — de "Brasil" para "Região", de "Ano" para "Mês". <strong>Drill up</strong> (também chamado <strong>roll-up</strong>, "enrolar para cima") é o caminho inverso: subir de um nível detalhado para um mais resumido, somando os valores no caminho.
+    </p>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">⬇️ Drill Down</div><div class="card-text">Sai do <strong>resumo</strong> e vai para o <strong>detalhe</strong>. Pergunta típica: "Vendi R$ 1,24 mi este ano... mas <em>em quais meses</em> foi mais forte?"</div></div>
+      <div class="card"><div class="card-title">⬆️ Drill Up / Roll-up</div><div class="card-text">Sai do <strong>detalhe</strong> e vai para o <strong>resumo</strong>. Pergunta típica: "Essa loja vendeu R$ 180 mil... e a <em>cidade toda</em>, quanto vendeu?"</div></div>
+    </div>
+
+    <p class="section-desc" style="font-size:12.5px;">Veja os dois caminhos na hierarquia de tempo e na hierarquia geográfica:</p>
+    <div class="interactive-panel">
+      <div class="panel-label" style="color:var(--accent-green);">⬇️ Drill Down — de Ano até Dia (mais detalhe, menos escopo por linha)</div>
+      <div class="drillpath">
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent);"><div class="drillpath-icon">📅</div><div class="drillpath-name">Ano 2024</div><div class="drillpath-value">R$ 1.240.000</div></div></div>
+        <div class="drillpath-arrow">→</div>
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent-blue);"><div class="drillpath-icon">🗓️</div><div class="drillpath-name">T1 (Jan–Mar)</div><div class="drillpath-value">R$ 280.000</div></div></div>
+        <div class="drillpath-arrow">→</div>
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent-green);"><div class="drillpath-icon">📆</div><div class="drillpath-name">Janeiro</div><div class="drillpath-value">R$ 90.000</div></div></div>
+        <div class="drillpath-arrow">→</div>
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent-yellow);"><div class="drillpath-icon">📄</div><div class="drillpath-name">10/Jan/2024</div><div class="drillpath-value">R$ 2.800</div></div></div>
+      </div>
+      <div class="panel-label" style="color:var(--accent-purple);margin-top:20px;">⬆️ Drill Up / Roll-up — de Loja até País (menos detalhe, mais escopo por linha)</div>
+      <div class="drillpath">
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent-yellow);"><div class="drillpath-icon">🏪</div><div class="drillpath-name">Loja Paulista</div><div class="drillpath-value">R$ 180.000</div></div></div>
+        <div class="drillpath-arrow">→</div>
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent-purple);"><div class="drillpath-icon">🏙️</div><div class="drillpath-name">Cidade de SP</div><div class="drillpath-value">R$ 300.000</div></div></div>
+        <div class="drillpath-arrow">→</div>
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent-green);"><div class="drillpath-icon">🏞️</div><div class="drillpath-name">Estado SP</div><div class="drillpath-value">R$ 400.000</div></div></div>
+        <div class="drillpath-arrow">→</div>
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent-blue);"><div class="drillpath-icon">📍</div><div class="drillpath-name">Região Sudeste</div><div class="drillpath-value">R$ 620.000</div></div></div>
+        <div class="drillpath-arrow">→</div>
+        <div class="drillpath-step"><div class="drillpath-box" style="border-color:var(--accent);"><div class="drillpath-icon">🌎</div><div class="drillpath-name">Brasil</div><div class="drillpath-value">R$ 1.240.000</div></div></div>
+      </div>
+    </div>
+    <div class="warn-box"><p>⚠️ Não confunda: <strong>granularidade</strong> é sobre o nível em que os dados ficam <em>gravados</em> na tabela; <strong>drill down/up</strong> é sobre <em>navegar</em> dinamicamente entre níveis de uma hierarquia ao consultar ou visualizar esses dados — normalmente numa ferramenta de BI. Uma boa modelagem de granularidade e hierarquia é o que torna esse drill possível sem reescrever a origem dos dados.</p></div>
+  </section>
+
+  <!-- ============ HIERARQUIA DE TEMPO (drill tree) ============ -->
+  <section class="section" id="s-tempo">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">📅 Simulador: suba e desça a hierarquia de Tempo</div>
+    <p class="section-desc">Clique em qualquer linha com uma seta ▶ para <strong>abrir</strong> (drill down) e ver o detalhe por dentro dela, ou clique de novo para <strong>fechar</strong> (drill up) e voltar ao resumo. Repare que o valor de cada nível é sempre a <em>soma</em> dos valores dos níveis abertos dentro dele — para caber na tela, só abrimos o detalhe por dia dentro de Janeiro.</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Vendas de 2024 — Ano → Trimestre → Mês → Dia</div>
+      <div class="drill-tree" id="drillTreeTime"></div>
+    </div>
+  </section>
+
+  <!-- ============ HIERARQUIA GEOGRÁFICA (drill tree) ============ -->
+  <section class="section" id="s-geografia">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">🗺️ Simulador: suba e desça a hierarquia Geográfica</div>
+    <p class="section-desc">A mesma R$ 1.240.000 de 2024, agora fatiada por geografia em vez de por tempo — a mesma fato_venda, outra hierarquia. Clique para abrir <strong>Sudeste → São Paulo (UF) → Cidade de São Paulo</strong> e chegar até o grão mais fino: a loja.</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Vendas de 2024 — País → Região → Estado → Cidade → Loja</div>
+      <div class="drill-tree" id="drillTreeGeo"></div>
+    </div>
+  </section>
+
+  <!-- ============ GRÃO DA FATO (GRAIN STATEMENT) ============ -->
+  <section class="section" id="s-grao">
+    <div class="section-eyebrow">Modelagem Dimensional</div>
+    <div class="section-title">🧮 O Grão da Fato — o "Grain Statement" de Kimball</div>
+    <p class="section-desc">
+      Antes de criar qualquer tabela de fatos, Ralph Kimball recomenda escrever uma <strong>frase única e sem ambiguidade</strong> descrevendo exatamente o que representa uma linha — o chamado <em>grain statement</em>. Toda a equipe (engenharia, análise, negócio) precisa concordar com essa frase <em>antes</em> de desenhar colunas, porque é ela que decide se dá para responder certas perguntas depois ou não.
+    </p>
+    <p class="section-desc" style="font-size:12.5px;">Veja o mesmo pedido do cliente Ana (loja Paulista, 10/03/2024: 2 Camisetas a R$ 50 + 1 Tênis a R$ 220) descrito em três grãos possíveis para a mesma <code>fato_venda</code>:</p>
+    <div class="grid-3">
+      <div class="grain-card">
+        <div class="grain-title">🧱 Grão fino</div>
+        <div class="grain-sentence">"Uma linha de <code>fato_venda</code> representa <em>um produto específico dentro de um pedido específico</em>."</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>pedido</th><th>produto</th><th>qtd</th><th>valor</th></tr></thead>
+        <tbody><tr><td>4521</td><td>Camiseta</td><td>2</td><td>R$ 100</td></tr><tr><td>4521</td><td>Tênis</td><td>1</td><td>R$ 220</td></tr></tbody></table></div>
+        <div class="card-text">2 linhas. Dá para responder <em>qualquer</em> pergunta futura, inclusive as que ninguém pensou ainda.</div>
+      </div>
+      <div class="grain-card g-medium">
+        <div class="grain-title">🧊 Grão médio</div>
+        <div class="grain-sentence">"Uma linha de <code>fato_venda</code> representa <em>um pedido inteiro</em>."</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>pedido</th><th>qtd_itens</th><th>valor</th></tr></thead>
+        <tbody><tr class="row-scan"><td>4521</td><td>3</td><td>R$ 320</td></tr></tbody></table></div>
+        <div class="card-text">1 linha. Perde-se o detalhe de quais produtos exatos compunham o pedido.</div>
+      </div>
+      <div class="grain-card g-coarse">
+        <div class="grain-title">🏔️ Grão grosso</div>
+        <div class="grain-sentence">"Uma linha de <code>fato_venda</code> representa <em>o total vendido por loja, por dia</em>."</div>
+        <div style="overflow-x:auto;"><table class="data-table"><thead><tr><th>loja</th><th>data</th><th>valor_dia</th></tr></thead>
+        <tbody><tr class="row-total"><td>Paulista</td><td>10/03/2024</td><td>R$ 1.850</td></tr></tbody></table></div>
+        <div class="card-text">1 linha para o dia inteiro (soma de todos os pedidos daquele dia naquela loja, não só o da Ana).</div>
+      </div>
+    </div>
+    <div class="highlight-box"><p>📝 <strong>Regra prática:</strong> se a frase do grão tiver qualquer "e também" ou "às vezes" escondido nela, o grão provavelmente está misturado — sinal de que a tabela precisa ser separada em duas tabelas de fatos, cada uma com seu próprio grão único.</p></div>
+  </section>
+
+  <!-- ============ GRANULARIDADE X TAMANHO (interativo) ============ -->
+  <section class="section" id="s-tamanho">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">📊 Quanto mais fino o grão, mais linhas a tabela tem</div>
+    <p class="section-desc">A mesma <code>fato_venda</code> pode ser gravada em qualquer um destes seis níveis de grão — todos descrevem o <strong>mesmo ano de vendas</strong>, mas o número de linhas necessário para isso muda de forma <em>drástica</em>. Clique em cada nível para ver o efeito:</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha o nível de grão da tabela</div>
+      <div class="btn-toggle-row" id="granBtns"></div>
+      <div class="stat-cards" id="granStats"></div>
+      <div class="canvas-wrap" style="margin-top:14px;"><canvas id="granCanvas" height="230"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ SQL: ROLLUP / CUBE / GROUPING SETS ============ -->
+  <section class="section" id="s-sql">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">💻 Drill Up em SQL — GROUP BY, ROLLUP, CUBE e GROUPING SETS</div>
+    <p class="section-desc">Partindo do grão mais fino disponível (<code>fato_venda_item</code>, 1 linha por produto vendido), qualquer nível mais grosso pode ser recalculado com <code>GROUP BY</code> — é o "drill up" acontecendo em SQL puro.</p>
+
+    <p class="section-desc" style="font-size:12.5px;">Drill up simples: do item para o pedido, e do pedido para a loja/dia:</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- grão fino: 1 linha por item vendido</span>
+<span class="kw">SELECT</span> id_pedido, produto, qtd, valor <span class="kw">FROM</span> fato_venda_item;
+
+<span class="cm">-- drill up 1: soma para o grão de pedido</span>
+<span class="kw">SELECT</span> id_pedido,
+       <span class="fn">COUNT</span>(*)   <span class="kw">AS</span> qtd_itens,
+       <span class="fn">SUM</span>(valor) <span class="kw">AS</span> total_pedido
+<span class="kw">FROM</span> fato_venda_item
+<span class="kw">GROUP BY</span> id_pedido;
+
+<span class="cm">-- drill up 2: soma para o grão loja + dia</span>
+<span class="kw">SELECT</span> id_loja, data_venda,
+       <span class="fn">SUM</span>(valor) <span class="kw">AS</span> total_dia
+<span class="kw">FROM</span> fato_venda_item
+<span class="kw">GROUP BY</span> id_loja, data_venda;</div>
+
+    <p class="section-desc">Quando se quer <strong>vários níveis da hierarquia de uma vez só</strong> — cada Cidade, o subtotal de cada Estado e o total geral, tudo na mesma consulta — usa-se <code>GROUP BY ROLLUP(...)</code>. Ele agrega na ordem da hierarquia, de trás para frente, e insere uma linha de subtotal a cada nível que "fecha":</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span>
+    <span class="fn">COALESCE</span>(dl.regiao, <span class="st">'TOTAL BRASIL'</span>)              <span class="kw">AS</span> regiao,
+    <span class="fn">COALESCE</span>(dl.estado, <span class="st">'  (subtotal da região)'</span>)   <span class="kw">AS</span> estado,
+    <span class="fn">SUM</span>(fvi.valor)                                    <span class="kw">AS</span> total
+<span class="kw">FROM</span> fato_venda_item fvi
+<span class="kw">JOIN</span> dim_loja dl <span class="kw">ON</span> dl.id_loja = fvi.id_loja
+<span class="kw">GROUP BY ROLLUP</span>(dl.regiao, dl.estado)
+<span class="kw">ORDER BY GROUPING</span>(dl.regiao), dl.regiao, <span class="kw">GROUPING</span>(dl.estado), dl.estado;</div>
+    <p class="section-desc" style="font-size:12.5px;">O resultado (simplificado, só com Sudeste e Nordeste) já sai com os subtotais de cada região e o total geral prontos — sem precisar rodar 3 consultas separadas e juntar na mão:</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>regiao</th><th>estado</th><th>total</th></tr></thead>
+        <tbody>
+          <tr><td>Nordeste</td><td>Bahia</td><td>R$ 120.000</td></tr>
+          <tr><td>Nordeste</td><td>Pernambuco</td><td>R$ 90.000</td></tr>
+          <tr><td>Nordeste</td><td>Ceará</td><td>R$ 50.000</td></tr>
+          <tr class="row-total"><td>Nordeste</td><td>(subtotal da região)</td><td>R$ 260.000</td></tr>
+          <tr><td>Sudeste</td><td>Minas Gerais</td><td>R$ 70.000</td></tr>
+          <tr><td>Sudeste</td><td>Rio de Janeiro</td><td>R$ 150.000</td></tr>
+          <tr><td>Sudeste</td><td>São Paulo</td><td>R$ 400.000</td></tr>
+          <tr class="row-total"><td>Sudeste</td><td>(subtotal da região)</td><td>R$ 620.000</td></tr>
+          <tr class="row-scan"><td>TOTAL BRASIL</td><td>(subtotal da região)</td><td>R$ 880.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box"><p>💡 A função <code>GROUPING(coluna)</code> retorna <code>1</code> quando aquela linha é um subtotal (a coluna foi "agregada para fora") e <code>0</code> quando é uma linha de detalhe normal — é assim que o <code>ORDER BY</code> acima consegue colocar os subtotais sempre por último dentro de cada grupo, e o <code>COALESCE</code> consegue trocar o <code>NULL</code> por um rótulo legível como "TOTAL BRASIL".</p></div>
+
+    <p class="section-desc">Quando as duas dimensões (não só uma hierarquia) precisam ser cruzadas em <strong>todas as combinações possíveis</strong>, existe o <code>CUBE</code>:</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- todas as combinações: por ano+região, só por ano, só por região, e o total geral</span>
+<span class="kw">SELECT</span> dt.ano, dl.regiao, <span class="fn">SUM</span>(fvi.valor) <span class="kw">AS</span> total
+<span class="kw">FROM</span> fato_venda_item fvi
+<span class="kw">JOIN</span> dim_tempo dt <span class="kw">ON</span> dt.id_tempo = fvi.id_tempo
+<span class="kw">JOIN</span> dim_loja  dl <span class="kw">ON</span> dl.id_loja  = fvi.id_loja
+<span class="kw">GROUP BY CUBE</span>(dt.ano, dl.regiao);</div>
+    <p class="section-desc">E quando só interessam <em>algumas</em> combinações específicas (nem todo o cubo, nem só uma hierarquia), usa-se <code>GROUPING SETS</code>, listando exatamente quais agrupamentos você quer:</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> dl.regiao, dl.estado, dl.cidade, <span class="fn">SUM</span>(fvi.valor) <span class="kw">AS</span> total
+<span class="kw">FROM</span> fato_venda_item fvi
+<span class="kw">JOIN</span> dim_loja dl <span class="kw">ON</span> dl.id_loja = fvi.id_loja
+<span class="kw">GROUP BY GROUPING SETS</span> (
+    (dl.regiao),                    <span class="cm">-- drill up até região</span>
+    (dl.regiao, dl.estado),         <span class="cm">-- drill up até estado</span>
+    (dl.regiao, dl.estado, dl.cidade), <span class="cm">-- drill down até cidade</span>
+    ()                               <span class="cm">-- drill up total (grand total)</span>
+);</div>
+    <div class="ok-box"><p>✅ Repare no padrão: <code>ROLLUP</code>, <code>CUBE</code> e <code>GROUPING SETS</code> são apenas atalhos de SQL para fazer, numa única varredura da tabela, exatamente o que uma ferramenta de BI faz quando o usuário clica para expandir ou recolher um nível numa tabela dinâmica.</p></div>
+  </section>
+
+  <!-- ============ TRADE-OFFS ============ -->
+  <section class="section" id="s-tradeoffs">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">⚖️ Grão fino x Grão grosso — os trade-offs</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Aspecto</th><th>Grão fino (ex: item do pedido)</th><th>Grão grosso (ex: total mensal por loja)</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Nº de linhas</strong></td><td>Muito maior</td><td>Muito menor</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Flexibilidade de análise</strong></td><td>Altíssima — dá para recalcular qualquer agregação depois</td><td>Baixa — se o detalhe não foi guardado, não dá para "desagregar" depois</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Performance de agregações</strong></td><td>Mais lenta (soma muitas linhas)</td><td>Mais rápida (já vem pronto)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Espaço / custo de armazenamento</strong></td><td>Maior</td><td>Menor</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Rastreabilidade / auditoria</strong></td><td>Total — dá para chegar ao item exato</td><td>Baixa — perde-se a origem do detalhe</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Regra de ouro de Kimball</strong></td><td colspan="2">Grave sempre no grão <strong>mais fino disponível</strong>. Use agregados (grão grosso) só como <em>otimização adicional</em> — nunca como substituto do grão fino.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warn-box"><p>⚠️ Uma vez que os dados são gravados <em>só</em> no grão grosso, o detalhe fino se perde para sempre — não existe consulta SQL capaz de "adivinhar" que uma venda de R$ 1.850 num dia era, na verdade, 12 pedidos diferentes de clientes diferentes.</p></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">📝 Escreva o grain statement antes de modelar</div><div class="card-text">"Uma linha de <code>fato_X</code> representa ___" precisa ser uma frase que qualquer pessoa do time repita sem ambiguidade, <em>antes</em> de desenhar qualquer coluna.</div></div>
+      <div class="card"><div class="card-title">🧱 Um grão único por tabela de fatos</div><div class="card-text">Nunca misture linhas de grãos diferentes na mesma tabela (ex: não misturar "total do pedido" com "item do pedido" na mesma <code>fato_venda</code>) — isso quebra qualquer <code>SUM()</code> feito sem cuidado.</div></div>
+      <div class="card"><div class="card-title">🪜 Modele a hierarquia como colunas da própria dimensão</div><div class="card-text">Uma <code>dim_tempo</code> desnormalizada, com colunas <code>ano</code>, <code>trimestre</code>, <code>mes</code>, <code>dia</code> todas na mesma linha, é o que permite que ferramentas de BI ofereçam drill down/up automaticamente, sem SQL novo a cada clique.</div></div>
+      <div class="card"><div class="card-title">🔀 Cuidado com hierarquias não balanceadas (ragged)</div><div class="card-text">Nem toda categoria de produto tem subcategoria; em organogramas, alguns funcionários pulam o nível de gerente e reportam direto ao diretor. Trate esses "buracos" explicitamente, em vez de assumir que todo nível sempre existe.</div></div>
+      <div class="card"><div class="card-title">📊 Agregados são otimização, nunca substituto</div><div class="card-text">Tabelas de resumo (grão grosso) aceleram dashboards pesados, mas sempre devem poder ser <em>recalculadas</em> a partir do grão fino — nunca devem ser a única fonte da verdade.</div></div>
+      <div class="card"><div class="card-title">🔍 Deixe a ferramenta de BI fazer o drill, não o usuário</div><div class="card-text">Com a hierarquia bem modelada nas dimensões (ordem clara dos níveis), ferramentas de BI (Power BI, Tableau, Looker...) já oferecem clique para expandir/recolher — sem precisar escrever uma consulta nova para cada nível.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Granularidade & Hierarquia (Drill Down / Drill Up)</span>
+    <span>
+      Fontes: <a href="https://www.kimballgroup.com/" target="_blank" rel="noopener">Kimball Group</a> ·
+      The Data Warehouse Toolkit (Ralph Kimball & Margy Ross)
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-granularidade', icon:'🧒', label:'Granularidade'},
+  {id:'s-hierarquia', icon:'🪆', label:'Hierarquia'},
+  {id:'s-drill', icon:'🔍', label:'Drill Down/Up'},
+  {id:'s-tempo', icon:'📅', label:'Hierarquia Tempo'},
+  {id:'s-geografia', icon:'🗺️', label:'Hierarquia Geo'},
+  {id:'s-grao', icon:'🧮', label:'Grain Statement'},
+  {id:'s-tamanho', icon:'📊', label:'Grão x Tamanho'},
+  {id:'s-sql', icon:'💻', label:'SQL na Prática'},
+  {id:'s-tradeoffs', icon:'⚖️', label:'Trade-offs'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function formatBR(n){ return 'R$ ' + n.toLocaleString('pt-BR'); }
+
+/* ===================== DRILL TREE — TEMPO ===================== */
+const timeTree = {
+  name:'Ano 2024', icon:'📅', value:1240000, children:[
+    {name:'T1 (Jan–Mar)', icon:'🗓️', value:280000, children:[
+      {name:'Janeiro', icon:'📆', value:90000, children:[
+        {name:'01–10 Jan', icon:'📄', value:28000},
+        {name:'11–20 Jan', icon:'📄', value:31000},
+        {name:'21–31 Jan', icon:'📄', value:31000},
+      ]},
+      {name:'Fevereiro', icon:'📆', value:85000},
+      {name:'Março', icon:'📆', value:105000},
+    ]},
+    {name:'T2 (Abr–Jun)', icon:'🗓️', value:310000, children:[
+      {name:'Abril', icon:'📆', value:95000},
+      {name:'Maio', icon:'📆', value:100000},
+      {name:'Junho', icon:'📆', value:115000},
+    ]},
+    {name:'T3 (Jul–Set)', icon:'🗓️', value:300000, children:[
+      {name:'Julho', icon:'📆', value:92000},
+      {name:'Agosto', icon:'📆', value:98000},
+      {name:'Setembro', icon:'📆', value:110000},
+    ]},
+    {name:'T4 (Out–Dez)', icon:'🗓️', value:350000, children:[
+      {name:'Outubro', icon:'📆', value:110000},
+      {name:'Novembro', icon:'📆', value:115000},
+      {name:'Dezembro', icon:'📆', value:125000},
+    ]},
+  ]
+};
+
+/* ===================== DRILL TREE — GEOGRAFIA ===================== */
+const geoTree = {
+  name:'Brasil', icon:'🌎', value:1240000, children:[
+    {name:'Sudeste', icon:'📍', value:620000, children:[
+      {name:'São Paulo (UF)', icon:'🏞️', value:400000, children:[
+        {name:'Cidade de São Paulo', icon:'🏙️', value:300000, children:[
+          {name:'Loja Paulista', icon:'🏪', value:180000},
+          {name:'Loja Shopping Ibirapuera', icon:'🏪', value:120000},
+        ]},
+        {name:'Campinas', icon:'🏙️', value:70000},
+        {name:'Santos', icon:'🏙️', value:30000},
+      ]},
+      {name:'Rio de Janeiro (UF)', icon:'🏞️', value:150000},
+      {name:'Minas Gerais (UF)', icon:'🏞️', value:70000},
+    ]},
+    {name:'Nordeste', icon:'📍', value:260000, children:[
+      {name:'Bahia (UF)', icon:'🏞️', value:120000},
+      {name:'Pernambuco (UF)', icon:'🏞️', value:90000},
+      {name:'Ceará (UF)', icon:'🏞️', value:50000},
+    ]},
+    {name:'Sul', icon:'📍', value:220000, children:[
+      {name:'Paraná (UF)', icon:'🏞️', value:100000},
+      {name:'Rio Grande do Sul (UF)', icon:'🏞️', value:90000},
+      {name:'Santa Catarina (UF)', icon:'🏞️', value:30000},
+    ]},
+    {name:'Centro-Oeste', icon:'📍', value:90000, children:[
+      {name:'Goiás (UF)', icon:'🏞️', value:50000},
+      {name:'Mato Grosso (UF)', icon:'🏞️', value:25000},
+      {name:'Distrito Federal', icon:'🏞️', value:15000},
+    ]},
+    {name:'Norte', icon:'📍', value:50000, children:[
+      {name:'Pará (UF)', icon:'🏞️', value:30000},
+      {name:'Amazonas (UF)', icon:'🏞️', value:20000},
+    ]},
+  ]
+};
+
+function renderDrillNode(node, depth){
+  const hasChildren = !!(node.children && node.children.length);
+  const childrenHtml = hasChildren ? node.children.map(c => renderDrillNode(c, depth+1)).join('') : '';
+  return `
+    <div class="drill-node${depth===0 ? ' expanded' : ''}">
+      <div class="drill-row${hasChildren ? '' : ' leaf'}" onclick="toggleDrillNode(this)">
+        <span class="drill-toggle">${hasChildren ? '▶' : ''}</span>
+        <span class="drill-icon">${node.icon}</span>
+        <span class="drill-name">${node.name}</span>
+        <span class="drill-value">${formatBR(node.value)}</span>
+      </div>
+      ${hasChildren ? `<div class="drill-children">${childrenHtml}</div>` : ''}
+    </div>
+  `;
+}
+function toggleDrillNode(rowEl){
+  const node = rowEl.parentElement;
+  if(!node.querySelector(':scope > .drill-children')) return;
+  node.classList.toggle('expanded');
+}
+document.getElementById('drillTreeTime').innerHTML = renderDrillNode(timeTree, 0);
+document.getElementById('drillTreeGeo').innerHTML = renderDrillNode(geoTree, 0);
+
+/* ===================== GRANULARIDADE X TAMANHO ===================== */
+const granLevels = [
+  {label:'Ano', rows:1, example:'1 linha = todas as vendas de 2024 somadas em um único número'},
+  {label:'Trimestre', rows:4, example:'1 linha = o total vendido em cada trimestre (T1, T2, T3, T4)'},
+  {label:'Mês', rows:12, example:'1 linha = o total vendido em cada mês do ano'},
+  {label:'Dia', rows:365, example:'1 linha = o total vendido em cada dia do ano'},
+  {label:'Pedido', rows:8400, example:'1 linha = 1 pedido/nota fiscal inteiro, não importa quantos itens tinha dentro'},
+  {label:'Item do Pedido', rows:24000, example:'1 linha = 1 produto específico dentro de 1 pedido específico — o grão mais fino e mais comum em Data Warehouses de varejo'},
+];
+let granIdx = 0;
+function buildGranBtns(){
+  document.getElementById('granBtns').innerHTML = granLevels.map((l,i) =>
+    `<button class="btn-toggle${i===granIdx?' active':''}" onclick="selectGranLevel(${i})">${l.label}</button>`
+  ).join('');
+}
+function selectGranLevel(i){
+  granIdx = i;
+  buildGranBtns();
+  const lvl = granLevels[i];
+  document.getElementById('granStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Nível de grão escolhido</div><div class="stat-card-value" style="font-size:16px;">${lvl.label}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Linhas na tabela</div><div class="stat-card-value">${lvl.rows.toLocaleString('pt-BR')}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">O que 1 linha representa</div><div class="stat-card-value" style="font-size:11px;font-weight:600;line-height:1.4;">${lvl.example}</div></div>
+  `;
+  drawGranCanvas();
+}
+function drawGranCanvas(){
+  const cv = document.getElementById('granCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 230;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL=150, padR=90, padTop=10, barH=26, gap=10;
+  const maxLog = Math.log10(granLevels[granLevels.length-1].rows + 1);
+  granLevels.forEach((l,i) => {
+    const y = padTop + i*(barH+gap);
+    const isActive = i === granIdx;
+    ctx.font = (isActive ? '700 ' : '400 ') + '11.5px Inter, sans-serif';
+    ctx.fillStyle = isActive ? '#dfe5ef' : '#98a2b3';
+    ctx.fillText(l.label, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle = 'rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const frac = Math.log10(l.rows+1) / maxLog;
+    const barW = Math.max(6, trackW * frac);
+    const color = isActive ? '#06b6d4' : '#535966';
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,color); grad.addColorStop(1, color+(isActive?'99':'55'));
+    ctx.fillStyle = grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle = isActive ? '#111216' : '#dfe5ef';
+    ctx.font = '10.5px Roboto Mono, monospace';
+    ctx.fillText(l.rows.toLocaleString('pt-BR') + ' linha(s)', padL+barW+10, y+barH*0.65);
+  });
+}
+buildGranBtns();
+selectGranLevel(0);
+window.addEventListener('resize', drawGranCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Granularidade é o nível de detalhe que cada linha de uma tabela de fatos representa.', a:true, e:'Verdadeiro. É exatamente essa a definição — do item vendido ao total do mês, tudo é uma escolha de granularidade.'},
+  {q:'Drill down significa subir na hierarquia, indo do detalhe para o resumo.', a:false, e:'Falso. É o contrário: drill down é descer, indo do resumo para mais detalhe. Quem sobe, do detalhe para o resumo, é o drill up (também chamado roll-up).'},
+  {q:'Uma hierarquia organiza os atributos de uma dimensão em níveis, onde cada nível "contém" os níveis abaixo dele (ex: Ano contém Trimestres).', a:true, e:'Verdadeiro. É a ideia da "boneca russa" — cada nível de fora soma/agrupa os níveis de dentro.'},
+  {q:'Quanto mais fino o grão de uma tabela de fatos, menor ela costuma ser em número de linhas.', a:false, e:'Falso. É o oposto: grão mais fino significa mais linhas (mais detalhe por linha, mais linhas no total), como mostrado no simulador de granularidade x tamanho.'},
+  {q:'A regra de ouro de Kimball diz para gravar a fato sempre no grão mais fino disponível, usando agregados como otimização adicional.', a:true, e:'Verdadeiro. Agregados (grão grosso) aceleram consultas, mas nunca devem substituir o grão fino, que é a única fonte capaz de responder qualquer pergunta futura.'},
+  {q:'GROUP BY ROLLUP permite calcular subtotais e o total geral em uma única consulta, subindo a hierarquia automaticamente.', a:true, e:'Verdadeiro. É um atalho de SQL para o drill up: agrega na ordem da hierarquia e insere uma linha de subtotal a cada nível que "fecha".'},
+  {q:'Se os dados forem gravados só no grão grosso (ex: total mensal), sempre é possível recalcular o grão fino (item por item) depois.', a:false, e:'Falso. Uma vez resumido, o detalhe fino se perde para sempre — não existe consulta capaz de "adivinhar" os itens individuais que compunham um total agregado.'},
+  {q:'Hierarquias podem ser "não balanceadas" (ragged), como um organograma em que alguns funcionários pulam o nível de gerente e reportam direto ao diretor.', a:true, e:'Verdadeiro. Nem toda hierarquia tem a mesma profundidade em todos os ramos — é preciso tratar esses "buracos" explicitamente na modelagem.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

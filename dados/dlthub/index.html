@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: dlt (data load tool) por dentro. Pipelines, extração, normalização de JSON aninhado, schema automático, carga incremental e destinos, com muitas demos visuais.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — dlt (data load tool) por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-orange:#f5a742;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:220px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(245,167,66,.07);border-left:4px solid var(--accent-orange);padding:16px 18px;border-radius:6px;}
+.kid-box .highlight-title{color:var(--accent-orange);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);} .dec{color:var(--accent-orange);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-new td{background:rgba(125,222,216,.14);color:var(--text-primary);}
+.data-table tr.row-gone td{background:rgba(248,107,99,.10);color:var(--text-disabled);text-decoration:line-through;}
+.mini-table-wrap{border:1px solid var(--border-color);border-radius:8px;overflow:hidden;background:var(--bg-elevated);}
+.mini-table-title{background:var(--bg-highlight);color:var(--accent);font-weight:700;font-size:11.5px;padding:8px 12px;font-family:'Roboto Mono',monospace;border-bottom:1px solid var(--border-color);}
+
+/* ---- ARCHITECTURE / EXTENSIONS CLICKABLE DIAGRAM ---- */
+.anatomy-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);text-align:center;}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:14px 10px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.pq-clickable .pqc-icon{font-size:22px;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-arrow{display:flex;align-items:center;justify-content:center;color:var(--border-strong);font-size:20px;}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+.anatomy-detail .ad-kid{color:var(--accent-orange);font-size:12.5px;line-height:1.7;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border-color);}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-orange{border-top-color:var(--accent-orange);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- TREE ---- */
+.tree{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:2;color:var(--text-secondary);}
+.tree .t0{color:var(--text-primary);font-weight:700;}
+.tree .t1{padding-left:22px;color:var(--accent-blue);}
+.tree .t2{padding-left:44px;color:var(--accent-purple);}
+.tree .t3{padding-left:66px;color:var(--text-secondary);}
+.tree .t3 .fname{color:var(--accent-green);}
+
+/* ---- JSON VISUAL ---- */
+.json-box{font-family:'Roboto Mono',monospace;font-size:12px;line-height:1.9;background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;}
+.json-key{color:var(--accent-blue);}
+.json-str{color:var(--accent-green);}
+.json-num{color:var(--accent-purple);}
+.json-punc{color:var(--text-disabled);}
+.json-hl-parent{background:rgba(6,182,212,.18);border-radius:3px;padding:0 3px;}
+.json-hl-child{background:rgba(245,167,66,.18);border-radius:3px;padding:0 3px;}
+
+/* ---- CHIP / DAY CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.day-row{display:flex;gap:8px;flex-wrap:wrap;}
+.day-chip{flex:1;min-width:78px;border:1.5px solid var(--border-color);border-radius:8px;background:var(--bg-elevated);padding:10px 8px;text-align:center;transition:.15s;}
+.day-chip .dc-date{font-size:10.5px;font-family:'Roboto Mono',monospace;color:var(--text-secondary);}
+.day-chip .dc-status{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:5px;}
+.day-chip.loaded{opacity:.45;}
+.day-chip.loaded .dc-status{color:var(--text-disabled);}
+.day-chip.new{border-color:var(--accent);background:rgba(6,182,212,.12);}
+.day-chip.new .dc-status{color:var(--accent);}
+.day-chip.cursor{border-color:var(--accent-orange);box-shadow:0 0 0 2px rgba(245,167,66,.25);}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:8px;}
+  .anatomy-arrow{transform:rotate(90deg);padding:2px 0;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>dlt</h1><span>data load tool — a esteira que organiza dados bagunçados em tabelas</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2022</div><div class="hstat-label">Origem</div></div>
+      <div class="hstat"><div class="hstat-num">100%</div><div class="hstat-label">Open Source</div></div>
+      <div class="hstat"><div class="hstat-num">Python</div><div class="hstat-label">Linguagem</div></div>
+      <div class="hstat"><div class="hstat-num">~45min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Uma <em>esteira mágica</em> que arruma a bagunça dos dados sozinha</h2>
+      <p><strong>dlt</strong> (<em>data load tool</em>) é uma biblioteca Python <strong>open source</strong> criada para resolver a parte mais chata e repetitiva de qualquer pipeline de dados: pegar dado de uma fonte (API, banco, arquivo), <strong>entender sua estrutura sozinho</strong>, organizar tudo em tabelas relacionais — mesmo quando o dado vem cheio de listas e objetos aninhados — e carregar num destino (DuckDB, BigQuery, Snowflake, Postgres...), sem que você precise desenhar o schema na mão. Lançado em 2022 pela dltHub, ele roda como uma simples biblioteca dentro do seu script Python: sem servidor, sem interface para configurar, sem cluster para gerenciar.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Schema Automático</span>
+        <span class="badge badge-green">Desaninha JSON</span>
+        <span class="badge badge-blue">Carga Incremental</span>
+        <span class="badge badge-purple">+30 Destinos</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🧸 CAIXA BAGUNÇADA → 🗄️ PRATELEIRA</div>
+        <div class="fc-body">
+          <div class="fc-row">API / Banco / Arquivo (JSON aninhado, campos que mudam)<br><span style="font-size:9.5px;opacity:.7;">a "caixa de brinquedos" bruta</span></div>
+          <div class="fc-row">pipeline = dlt.pipeline(...)<br><span style="font-size:9.5px;opacity:.7;">a esteira que organiza</span></div>
+        </div>
+        <div class="fc-foot">Vira tabelas prontas: SELECT * FROM ...</div>
+      </div>
+      <div class="file-chip-caption">Sem desenhar CREATE TABLE — o dlt olha o dado e decide sozinho</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🎁 O que é o dlt?</div>
+    <p class="section-desc">
+      Imagine que toda semana chegam <strong>caixas de brinquedos bagunçadas</strong> na sua casa: uma caixa de uma loja tem carrinhos soltos, outra caixa de outra loja tem bonecos dentro de saquinhos dentro de outros saquinhos. Você quer guardar tudo <em>organizado</em>, em prateleiras com etiquetas — uma prateleira para carrinhos, outra para bonecos — sem ter que abrir caixa por caixa e decidir isso na mão toda vez. É exatamente esse o trabalho que o <strong>dlt</strong> faz com dados: ele pega o que vem de uma <strong>fonte</strong> (API, banco de dados, arquivo, planilha), <strong>olha a forma de cada pedacinho</strong> e decide sozinho em qual "prateleira" (tabela) e "gaveta" (coluna) cada coisa cabe — inclusive quando um brinquedo tem outros brinquedos menores dentro dele (dado aninhado).
+    </p>
+
+    <div class="kid-box">
+      <div class="highlight-title">🧒 Explicando para uma criança</div>
+      <p>Pense no dlt como um <strong>robô arrumador muito esperto</strong>. Você despeja a caixa bagunçada na mesa dele. Ele olha cada peça, uma por uma: "isso é um número, vai na gaveta de números", "isso é um texto, vai na gaveta de textos", "ah, esse brinquedo tem peças penduradas nele, vou criar uma caixinha extra só pra essas peças e colar uma etiqueta ligando as duas". No fim, tudo vira gavetas certinhas, com etiqueta, prontas pra você achar qualquer coisa rapidinho.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🧠 Descobre o schema sozinho</div>
+        <div class="card-text">Você não escreve <code>CREATE TABLE</code>. O dlt olha os dados recebidos, infere o tipo de cada campo (texto, número, data, booleano...) e cria as tabelas automaticamente.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🪆 Desaninha estruturas complexas</div>
+        <div class="card-text">JSON com listas dentro de listas dentro de objetos? O dlt separa isso em tabelas relacionais ligadas por chaves — sem você escrever nenhum "achatador" manual.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔁 Sabe o que já carregou</div>
+        <div class="card-text">Guarda um "estado" entre execuções — então uma carga incremental só busca o que é novo, e reprocessar não duplica linha.</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Origem</div>
+      <p>Criado em 2022 pela <strong>dltHub</strong> (empresa fundada por Matthaus Krzykowski e Adrian Brudaru, com base na experiência do time em engenharia de dados na Scale Vector e na comunidade de "verified sources" do Airbyte). Distribuído como biblioteca Python sob licença <strong>Apache 2.0</strong> — 100% open source, instalável com um simples <code>pip install dlt</code>, sem "camada paga escondida" para usar o motor central.</p>
+    </div>
+  </section>
+
+  <!-- ============ ARQUITETURA ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Como Funciona por Dentro</div>
+    <div class="section-title">🏗️ Anatomia de um Pipeline</div>
+    <p class="section-desc">
+      Todo pipeline dlt segue a mesma esteira de 5 peças. Uma <strong>source</strong> agrupa um ou mais <strong>resources</strong> (cada resource é "um tipo de brinquedo" — um endpoint, uma tabela, um stream). O <strong>pipeline</strong> é a esteira que liga tudo a um <strong>destination</strong> (o banco onde os dados vão morar). Clique em cada peça para ver o que ela faz — em português técnico e em "modo criança".
+    </p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid" id="archGrid"></div>
+      <div class="anatomy-detail" id="archDetail">
+        <div class="ad-title">👆 Clique em qualquer peça da esteira</div>
+        <div class="ad-text">Veja o papel de cada bloco, do dado bruto até a tabela pronta.</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> dlt
+
+<span class="cm"># 1) resource: "um tipo de brinquedo" — aqui, uma lista de clientes</span>
+<span class="dec">@dlt.resource</span>(name=<span class="st">"customers"</span>)
+<span class="kw">def</span> <span class="fn">customers</span>():
+    <span class="kw">yield</span> [{<span class="st">"id"</span>: <span class="num">1</span>, <span class="st">"name"</span>: <span class="st">"Ana"</span>}, {<span class="st">"id"</span>: <span class="num">2</span>, <span class="st">"name"</span>: <span class="st">"Bruno"</span>}]
+
+<span class="cm"># 2) pipeline: a esteira, ligando fonte a destino</span>
+pipeline = dlt.<span class="fn">pipeline</span>(
+    pipeline_name=<span class="st">"loja"</span>,
+    destination=<span class="st">"duckdb"</span>,
+    dataset_name=<span class="st">"loja_dados"</span>
+)
+
+<span class="cm"># 3) run: dispara a esteira — extrai, normaliza, carrega</span>
+info = pipeline.<span class="fn">run</span>(customers())
+<span class="fn">print</span>(info)</div>
+
+    <div class="info-box">
+      <p>💡 Uma <strong>source</strong> nada mais é do que uma função decorada com <code>@dlt.source</code> que agrupa vários <code>@dlt.resource</code> relacionados (ex: "clientes", "pedidos", "produtos" da mesma API). Você pode rodar um pipeline com uma única resource solta (como no exemplo acima) ou com uma source inteira — o dlt trata os dois casos da mesma forma.</p>
+    </div>
+  </section>
+
+  <!-- ============ ETAPAS INTERNAS ============ -->
+  <section class="section" id="s-etapas">
+    <div class="section-eyebrow">O Motor por Dentro</div>
+    <div class="section-title">⚙️ As 3 Etapas Escondidas: Extract → Normalize → Load</div>
+    <p class="section-desc">Quando você chama <code>pipeline.run(...)</code>, o dlt executa três fases em sequência — como três estações de uma linha de produção de brinquedos. Clique em cada estação para ver o que ela entrega para a próxima.</p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="stageButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="stageDetail"></div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📥 Extract</div><div class="card-text">Chama sua função Python (o generator), pagina/percorre a API, e grava os dados brutos em arquivos temporários locais — sem ainda decidir tabelas ou tipos.</div></div>
+      <div class="card"><div class="card-title">🧩 Normalize</div><div class="card-text">Olha cada registro, infere tipos, <strong>desaninha</strong> listas e objetos em tabelas filhas, e gera/atualiza o schema — comparando com o schema salvo da execução anterior.</div></div>
+      <div class="card"><div class="card-title">🚚 Load</div><div class="card-text">Aplica o schema no destino (cria/altera tabelas se preciso) e insere os dados normalizados, respeitando o <em>write disposition</em> escolhido (append, replace ou merge).</div></div>
+    </div>
+  </section>
+
+  <!-- ============ PRIMEIROS PASSOS ============ -->
+  <section class="section" id="s-instalacao">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">📦 Primeiros Passos</div>
+    <p class="section-desc">Sem servidor, sem infraestrutura. Instale, escreva uma função que devolve dados, e rode.</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Instalação</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># instala o dlt com suporte a DuckDB</span>
+pip install <span class="st">"dlt[duckdb]"</span>
+
+<span class="cm"># cria um projeto inicial com um exemplo pronto</span>
+dlt init api_customers duckdb</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Pipeline mínimo — de uma lista Python ao DuckDB</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> dlt
+
+dados = [
+    {<span class="st">"id"</span>: <span class="num">1</span>, <span class="st">"produto"</span>: <span class="st">"Bola"</span>, <span class="st">"preco"</span>: <span class="num">19.9</span>},
+    {<span class="st">"id"</span>: <span class="num">2</span>, <span class="st">"produto"</span>: <span class="st">"Pipa"</span>, <span class="st">"preco"</span>: <span class="num">9.5</span>},
+]
+
+pipeline = dlt.<span class="fn">pipeline</span>(destination=<span class="st">"duckdb"</span>, dataset_name=<span class="st">"loja"</span>)
+pipeline.<span class="fn">run</span>(dados, table_name=<span class="st">"produtos"</span>)</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Consultando o resultado (DuckDB)</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">with</span> pipeline.<span class="fn">sql_client</span>() <span class="kw">as</span> client:
+    <span class="kw">with</span> client.<span class="fn">execute_query</span>(<span class="st">"SELECT * FROM produtos"</span>) <span class="kw">as</span> cur:
+        <span class="fn">print</span>(cur.<span class="fn">fetchall</span>())</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">CLI — inspecionar o que foi carregado</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># abre uma UI local no navegador com schema, tabelas e linhas carregadas</span>
+dlt pipeline loja show
+
+<span class="cm"># mostra o schema inferido em YAML</span>
+dlt pipeline loja info</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SOURCES & RESOURCES ============ -->
+  <section class="section" id="s-resource">
+    <div class="section-eyebrow">Os Blocos de Construção</div>
+    <div class="section-title">🧺 Sources &amp; Resources</div>
+    <p class="section-desc">Uma <strong>resource</strong> é uma função Python "geradora" (<code>yield</code>) decorada com <code>@dlt.resource</code> — cada <code>yield</code> pode devolver um item ou uma lista de itens, e o dlt processa em streaming, sem precisar carregar tudo na memória de uma vez. Uma <strong>source</strong> agrupa várias resources relacionadas, geralmente da mesma API.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Resource simples</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="dec">@dlt.resource</span>(name=<span class="st">"produtos"</span>, write_disposition=<span class="st">"append"</span>)
+<span class="kw">def</span> <span class="fn">produtos</span>():
+    <span class="kw">yield</span> {<span class="st">"id"</span>: <span class="num">1</span>, <span class="st">"nome"</span>: <span class="st">"Bola"</span>}
+    <span class="kw">yield</span> {<span class="st">"id"</span>: <span class="num">2</span>, <span class="st">"nome"</span>: <span class="st">"Pipa"</span>}</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Source agrupando resources</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="dec">@dlt.source</span>
+<span class="kw">def</span> <span class="fn">loja_de_brinquedos</span>():
+    <span class="kw">return</span> [produtos(), clientes(), pedidos()]
+
+pipeline.<span class="fn">run</span>(loja_de_brinquedos())</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:8px;">
+      <div class="card"><div class="card-title">🌐 REST API genérica</div><div class="card-text">Com <code>rest_api_source(...)</code>, você descreve endpoints, paginação e autenticação em um dicionário de configuração — sem escrever loop de paginação na mão.</div></div>
+      <div class="card"><div class="card-title">🗄️ Banco de dados (sql_database)</div><div class="card-text">Aponta para um banco existente (Postgres, MySQL...) e replica tabelas inteiras — ou só as linhas novas — para outro destino.</div></div>
+      <div class="card"><div class="card-title">📄 Arquivos (filesystem)</div><div class="card-text">Lê CSV, JSON, Parquet de uma pasta local, S3, GCS ou Azure como se fosse uma resource comum.</div></div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">from</span> dlt.sources.rest_api <span class="kw">import</span> rest_api_source
+
+fonte = <span class="fn">rest_api_source</span>({
+    <span class="st">"client"</span>: {<span class="st">"base_url"</span>: <span class="st">"https://api.loja.com/"</span>},
+    <span class="st">"resources"</span>: [
+        {<span class="st">"name"</span>: <span class="st">"produtos"</span>, <span class="st">"endpoint"</span>: {<span class="st">"path"</span>: <span class="st">"produtos"</span>, <span class="st">"paginator"</span>: <span class="st">"json_link"</span>}},
+    ],
+})
+pipeline.<span class="fn">run</span>(fonte)</div>
+  </section>
+
+  <!-- ============ DESANINHANDO JSON ============ -->
+  <section class="section" id="s-aninhado">
+    <div class="section-eyebrow">O Truque Mais Visual</div>
+    <div class="section-title">🪆 Desaninhando Dados: de um "brinquedo boneca-russa" a Tabelas Relacionais</div>
+    <p class="section-desc">
+      APIs adoram devolver JSON <strong>aninhado</strong>: um cliente que tem uma <em>lista</em> de pedidos dentro dele, cada pedido com seus próprios campos. Bancos relacionais não têm "coluna com lista dentro" — então o dlt <strong>desaninha</strong> automaticamente: cada lista vira uma <strong>tabela filha</strong>, ligada à tabela pai por uma chave gerada automaticamente. É como abrir a boneca russa e colocar cada bonequinha na sua própria caixinha, com um fio colorido ligando cada uma à caixa-mãe.
+    </p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">📥 O JSON que chega da API (aninhado)</div>
+        <div class="json-box">{
+  <span class="json-key">"id"</span>: <span class="json-num">1</span>,
+  <span class="json-key">"name"</span>: <span class="json-str">"Ana"</span>,
+  <span class="json-key">"orders"</span>: [
+    { <span class="json-key">"order_id"</span>: <span class="json-num">100</span>, <span class="json-key">"item"</span>: <span class="json-str">"Bola"</span> },
+    { <span class="json-key">"order_id"</span>: <span class="json-num">101</span>, <span class="json-key">"item"</span>: <span class="json-str">"Pipa"</span> }
+  ]
+}</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">🧒 Modo criança</div>
+        <div class="kid-box" style="height:calc(100% - 26px);">
+          <p>Chegou a "boneca Ana". Dentro dela tem duas bonequinhas menores: o pedido 100 e o pedido 101. O robô arrumador não consegue colar duas bonecas dentro da mesma gaveta — então ele <strong>separa</strong> a Ana numa prateleira e os pedidos dela em <em>outra</em> prateleira, colando um adesivo com o mesmo código em ambas para lembrar "esses pedidos são da Ana".</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-desc" style="text-align:center;font-size:20px;color:var(--text-disabled);">⬇️ dlt normaliza ⬇️</div>
+
+    <div class="grid-2">
+      <div class="mini-table-wrap">
+        <div class="mini-table-title">customers (tabela pai)</div>
+        <table class="data-table">
+          <thead><tr><th>id</th><th>name</th><th>_dlt_id</th></tr></thead>
+          <tbody>
+            <tr class="row-scan"><td>1</td><td>Ana</td><td>a1b2c3</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mini-table-wrap">
+        <div class="mini-table-title">customers__orders (tabela filha)</div>
+        <table class="data-table">
+          <thead><tr><th>order_id</th><th>item</th><th>_dlt_parent_id</th><th>_dlt_list_idx</th></tr></thead>
+          <tbody>
+            <tr class="row-scan"><td>100</td><td>Bola</td><td>a1b2c3</td><td>0</td></tr>
+            <tr class="row-scan"><td>101</td><td>Pipa</td><td>a1b2c3</td><td>1</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-top:8px;">
+      <div class="card"><div class="card-title">🏷️ _dlt_id</div><div class="card-text">Identificador único gerado para cada linha (hash de conteúdo ou aleatório), usado como "adesivo" para linkar pai e filho.</div></div>
+      <div class="card"><div class="card-title">🔗 _dlt_parent_id</div><div class="card-text">Nas tabelas filhas, aponta de volta para o <code>_dlt_id</code> da linha pai — é o "fio colorido" da boneca russa.</div></div>
+      <div class="card"><div class="card-title">🔢 _dlt_list_idx</div><div class="card-text">Guarda a posição original do item dentro da lista — preserva a ordem, caso ela importe.</div></div>
+    </div>
+
+    <div class="info-box"><p>💡 O nome da tabela filha é <code>tabela_pai__campo_da_lista</code> (dois underscores) — e se houver listas dentro de listas, o dlt continua descendo níveis, criando <code>pai__filho__neto</code>, sempre linkando por <code>_dlt_parent_id</code>. Você raramente precisa pensar nisso: basta fazer <code>JOIN</code> pelas colunas <code>_dlt_id</code> / <code>_dlt_parent_id</code> quando quiser reconectar os dados.</p></div>
+  </section>
+
+  <!-- ============ SCHEMA AUTOMÁTICO ============ -->
+  <section class="section" id="s-schema">
+    <div class="section-eyebrow">O Robô Medidor</div>
+    <div class="section-title">🧬 Schema Automático &amp; Evolução</div>
+    <p class="section-desc">Na primeira carga, o dlt olha os dados e <strong>cria o schema</strong> (tabelas, colunas, tipos) sozinho. Da segunda carga em diante, ele <strong>compara</strong> o novo lote com o schema salvo: se aparecer um campo novo, ele adiciona a coluna automaticamente — sem quebrar o pipeline. Simule abaixo uma segunda carga em que a API decidiu, do nada, mandar um campo novo.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: a API muda o formato entre uma carga e outra</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btnLoad1" onclick="setSchemaLoad(1)">📦 Carga 1 (formato original)</button>
+        <button class="btn-toggle" id="btnLoad2" onclick="setSchemaLoad(2)">🆕 Carga 2 (campo novo: "telefone")</button>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="ctrl-l" style="margin-bottom:6px;">JSON recebido</div>
+          <div class="json-box" id="schemaJson"></div>
+        </div>
+        <div>
+          <div class="ctrl-l" style="margin-bottom:6px;">Tabela "customers" no destino</div>
+          <div class="mini-table-wrap">
+            <div class="mini-table-title">customers</div>
+            <table class="data-table" id="schemaTable"></table>
+          </div>
+        </div>
+      </div>
+      <div class="stat-cards" id="schemaStats"></div>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px;">
+      <div class="card"><div class="card-title">📐 Inferência de tipos</div><div class="card-text">Números viram <code>bigint</code>/<code>double</code>, texto vira <code>varchar</code>, datas em formato ISO viram <code>timestamp</code>, <code>true</code>/<code>false</code> vira <code>boolean</code> — tudo detectado olhando os valores reais.</div></div>
+      <div class="card"><div class="card-title">🧾 Contrato de schema (schema contract)</div><div class="card-text">Você pode travar esse comportamento: permitir evolução livre, exigir aprovação, ou <strong>rejeitar</strong> dados com campos não esperados — útil quando uma coluna nova pode ser sinal de um bug na fonte.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ CARGA INCREMENTAL ============ -->
+  <section class="section" id="s-incremental">
+    <div class="section-eyebrow">Não Repetir o Que Já Foi Feito</div>
+    <div class="section-title">⏱️ Carga Incremental</div>
+    <p class="section-desc">Buscar <em>tudo de novo</em> a cada execução é lento e caro. O dlt guarda um <strong>estado</strong> (o "caderninho de anotações" — até onde ele já chegou, ex: a última data processada) e, na próxima execução, só busca o que é <strong>novo</strong> a partir dali. Mova o cursor abaixo para simular "até onde já carreguei" e veja quais dias seriam buscados na próxima rodada.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: onde está o "cursor" da última carga?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Último valor processado (cursor)</span><span class="ctrl-v" id="cursorVal">Dia 4</span></div>
+          <input type="range" id="cursorSlider" min="1" max="9" step="1" value="4" oninput="updateIncremental()">
+        </div>
+      </div>
+      <div class="day-row" id="dayRow"></div>
+      <div class="stat-cards" id="incStats"></div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="dec">@dlt.resource</span>(name=<span class="st">"eventos"</span>)
+<span class="kw">def</span> <span class="fn">eventos</span>(
+    atualizado_em=dlt.sources.<span class="fn">incremental</span>(<span class="st">"updated_at"</span>, initial_value=<span class="st">"2026-01-01"</span>)
+):
+    <span class="cm"># dlt injeta automaticamente o "cursor" salvo da última execução</span>
+    resposta = api.<span class="fn">get</span>(<span class="st">"/eventos"</span>, params={<span class="st">"desde"</span>: atualizado_em.last_value})
+    <span class="kw">yield</span> resposta.<span class="fn">json</span>()
+    <span class="cm"># na próxima rodada, atualizado_em.last_value já é o maior valor visto agora</span></div>
+
+    <div class="ok-box"><p>✅ O dlt também evita <strong>duplicar</strong> linhas se você rodar o mesmo pipeline duas vezes por engano (idempotência) — combinando o cursor incremental com o <em>write disposition</em> certo, que é o próximo assunto.</p></div>
+  </section>
+
+  <!-- ============ WRITE DISPOSITIONS ============ -->
+  <section class="section" id="s-writedisposition">
+    <div class="section-eyebrow">3 Formas de Reabastecer a Prateleira</div>
+    <div class="section-title">📝 Write Dispositions: append, replace, merge</div>
+    <p class="section-desc">Depois que os dados chegam normalizados, o dlt precisa decidir <strong>como escrever</strong> na tabela de destino. Essa escolha se chama <em>write disposition</em>. Pense em 3 jeitos de reabastecer a prateleira de brinquedos quando chega uma caixa nova.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha um write disposition e veja o "antes" e "depois" da tabela</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btnWdAppend" onclick="setWriteDisposition('append')">➕ append</button>
+        <button class="btn-toggle" id="btnWdReplace" onclick="setWriteDisposition('replace')">♻️ replace</button>
+        <button class="btn-toggle" id="btnWdMerge" onclick="setWriteDisposition('merge')">🔀 merge</button>
+      </div>
+      <div class="grid-2">
+        <div class="mini-table-wrap">
+          <div class="mini-table-title">Antes da carga</div>
+          <table class="data-table" id="wdBefore"></table>
+        </div>
+        <div class="mini-table-wrap">
+          <div class="mini-table-title">Depois da carga (chegou: id=2, nome="Bruno✏️")</div>
+          <table class="data-table" id="wdAfter"></table>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="wdDetail" style="margin-top:14px;"></div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Disposition</th><th>O que faz</th><th>Modo criança</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">append</strong></td><td>Só adiciona linhas novas ao fim da tabela</td><td>Empilha brinquedo novo em cima, sem mexer nos de baixo</td><td>Logs, eventos, histórico que nunca muda</td></tr>
+          <tr><td><strong style="color:var(--accent-red);">replace</strong></td><td>Apaga a tabela inteira e recarrega do zero</td><td>Joga tudo fora e reorganiza a prateleira do zero</td><td>Snapshots pequenos, tabelas de referência/dimensão</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">merge</strong></td><td>Faz upsert: atualiza quem já existe (pela chave primária), insere quem é novo</td><td>Só troca o brinquedo que mudou de etiqueta, resto fica igual</td><td>Tabelas de estado atual: clientes, pedidos, cadastros</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="dec">@dlt.resource</span>(name=<span class="st">"customers"</span>, write_disposition=<span class="st">"merge"</span>, primary_key=<span class="st">"id"</span>)
+<span class="kw">def</span> <span class="fn">customers</span>():
+    <span class="kw">yield</span> {<span class="st">"id"</span>: <span class="num">2</span>, <span class="st">"name"</span>: <span class="st">"Bruno"</span>}  <span class="cm"># atualiza o Bruno existente, não duplica</span></div>
+  </section>
+
+  <!-- ============ DESTINOS ============ -->
+  <section class="section" id="s-destinos">
+    <div class="section-eyebrow">A Prateleira Final</div>
+    <div class="section-title">🎯 Destinos Suportados</div>
+    <p class="section-desc">O mesmo pipeline pode apontar para destinos bem diferentes — trocando literalmente uma palavra na configuração. O dlt cuida das diferenças de SQL, tipos e credenciais de cada um por baixo dos panos. Clique em um destino.</p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="destButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="destDetail">
+        <div class="ad-title">👆 Clique em um destino</div>
+        <div class="ad-text">Veja como configurar e o que muda.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FONTES PRONTAS ============ -->
+  <section class="section" id="s-fontesprontas">
+    <div class="section-eyebrow">Não Reinvente a Roda</div>
+    <div class="section-title">🔌 Fontes Prontas (Verified Sources)</div>
+    <p class="section-desc">Além de escrever sua própria resource, o dlt mantém um catálogo de <strong>verified sources</strong> — conectores testados para as fontes mais comuns, prontos para usar com <code>dlt init</code>.</p>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🌐 REST APIs genéricas</div><div class="card-text"><code>rest_api_source</code> lida com paginação (offset, cursor, link header), autenticação (API key, OAuth, bearer) e retries, a partir de um dicionário declarativo.</div></div>
+      <div class="card"><div class="card-title">🗄️ Bancos relacionais</div><div class="card-text"><code>sql_database</code> replica tabelas de Postgres, MySQL, SQL Server e outros — com detecção automática de coluna incremental.</div></div>
+      <div class="card"><div class="card-title">📁 Sistemas de arquivo &amp; cloud storage</div><div class="card-text"><code>filesystem</code> lê CSV/JSON/Parquet local, S3, GCS ou Azure Blob como uma resource comum, com glob patterns.</div></div>
+      <div class="card"><div class="card-title">📊 SaaS populares</div><div class="card-text">Conectores prontos para Google Sheets, Salesforce, HubSpot, Stripe, Zendesk, Notion e dezenas de outros no repositório de verified sources.</div></div>
+      <div class="card"><div class="card-title">🤖 dlt init + LLM</div><div class="card-text">O comando <code>dlt init</code> gera um projeto inicial com boilerplate pronto; a dltHub também oferece um assistente que gera uma resource nova a partir da doc de uma API.</div></div>
+      <div class="card"><div class="card-title">🧵 Streaming &amp; filas</div><div class="card-text">Kafka, Google Pub/Sub e outras filas também têm sources prontas, tratando cada mensagem como um item da resource.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 dlt vs. Airbyte vs. Fivetran vs. Script Caseiro</div>
+    <p class="section-desc">Cada abordagem resolve o problema de "levar dado de A para B" com um trade-off diferente entre controle, custo e esforço de manutenção.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Ferramenta</th><th>Onde roda</th><th>Custo</th><th>Customização</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Script caseiro (requests + pandas)</strong></td><td>Onde você quiser</td><td>Grátis (seu tempo)</td><td>Total, mas manual</td><td>Casos únicos e simples, protótipos rápidos</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">dlt</strong></td><td>Dentro do seu código Python (biblioteca)</td><td>Grátis / open source</td><td>Alta (é código Python)</td><td>Pipelines sob medida com o boilerplate resolvido</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Airbyte</strong></td><td>Serviço/container próprio (self-host ou cloud)</td><td>Grátis (self-host) ou pago (cloud)</td><td>Média (conectores + plugins)</td><td>Catálogo grande de conectores, equipe menos técnica</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Fivetran</strong></td><td>SaaS totalmente gerenciado</td><td>Pago (por linha/uso)</td><td>Baixa (caixa-preta)</td><td>Empresas que preferem pagar para não operar nada</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="canvas-wrap"><canvas id="compareCanvas" height="150"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Esforço de manutenção <strong>ilustrativo</strong> ao longo do tempo (não um benchmark) — dlt fica no meio do caminho: menos boilerplate que um script do zero, mais controle e custo zero de licença comparado a uma ferramenta gerenciada.</div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casosuso">
+    <div class="section-eyebrow">Onde ele Brilha</div>
+    <div class="section-title">🎯 Casos de Uso</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🏗️ Camada de ingestão de um DW/lakehouse</div><div class="card-text">Extrai de APIs e bancos de origem para um data warehouse (BigQuery, Snowflake, Redshift), alimentando dbt/transformações a jusante.</div></div>
+      <div class="card"><div class="card-title">📓 Prototipagem rápida em notebook</div><div class="card-text">De uma API nova até uma tabela DuckDB consultável em poucos minutos, sem subir infraestrutura.</div></div>
+      <div class="card"><div class="card-title">🔁 Sincronização incremental entre sistemas</div><div class="card-text">Replica tabelas de um Postgres operacional para um destino analítico, só com as mudanças mais recentes.</div></div>
+      <div class="card"><div class="card-title">🧠 Ingestão para pipelines de LLM/RAG</div><div class="card-text">Carrega documentos, PDFs e páginas em destinos vetoriais (Weaviate, LanceDB, Qdrant) com o mesmo modelo de pipeline.</div></div>
+      <div class="card"><div class="card-title">🧪 Testes e ambientes locais</div><div class="card-text">Roda pipelines inteiros contra DuckDB local em CI, sem depender de credenciais de produção.</div></div>
+      <div class="card"><div class="card-title">🏢 Conectores internos sob medida</div><div class="card-text">Quando a API da empresa não existe em nenhum catálogo pronto, escrever a resource em Python é mais rápido que configurar uma ferramenta genérica.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔑 Sempre defina primary_key em merge</div><div class="card-text">Sem <code>primary_key</code>, o dlt não sabe qual linha "atualizar" — merge sem chave primária não funciona como upsert.</div></div>
+      <div class="card"><div class="card-title">⏱️ Prefira incremental a full load quando possível</div><div class="card-text">Reduz custo de API, tempo de execução e carga no destino — full load só quando o volume é pequeno ou não há coluna de corte confiável.</div></div>
+      <div class="card"><div class="card-title">🧾 Trave o schema contract em produção</div><div class="card-text">Um campo novo inesperado pode ser dado ótimo — ou sinal de bug na origem. Decida conscientemente se ele evolui sozinho ou exige revisão.</div></div>
+      <div class="card"><div class="card-title">🔐 Nunca hardcode credenciais</div><div class="card-text">Use <code>secrets.toml</code> ou variáveis de ambiente — o dlt já tem convenção nativa de configuração/segredos por ambiente.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ dlt não é um orquestrador (Airflow, Dagster) nem uma ferramenta de transformação (dbt) — ele resolve <strong>extração + carga</strong>. É comum combiná-lo: dlt para trazer o dado bruto até o warehouse, um orquestrador para agendar, e dbt para as transformações analíticas por cima.</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — dlt (data load tool)</span>
+    <span>
+      Fontes: <a href="https://dlthub.com/docs/" target="_blank" rel="noopener">dlt Docs</a> ·
+      <a href="https://dlthub.com/docs/intro" target="_blank" rel="noopener">Introdução</a> ·
+      <a href="https://github.com/dlt-hub/dlt" target="_blank" rel="noopener">GitHub</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🎁', label:'O que é'},
+  {id:'s-arquitetura', icon:'🏗️', label:'Arquitetura'},
+  {id:'s-etapas', icon:'⚙️', label:'Extract/Norm/Load'},
+  {id:'s-instalacao', icon:'📦', label:'Primeiros Passos'},
+  {id:'s-resource', icon:'🧺', label:'Sources/Resources'},
+  {id:'s-aninhado', icon:'🪆', label:'Desaninhando'},
+  {id:'s-schema', icon:'🧬', label:'Schema'},
+  {id:'s-incremental', icon:'⏱️', label:'Incremental'},
+  {id:'s-writedisposition', icon:'📝', label:'Write Disposition'},
+  {id:'s-destinos', icon:'🎯', label:'Destinos'},
+  {id:'s-fontesprontas', icon:'🔌', label:'Fontes Prontas'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-casosuso', icon:'🎯', label:'Casos de Uso'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== PIPELINE ANATOMY DIAGRAM ===================== */
+const archBlocks = [
+  {id:'src', icon:'🧸', label:'Source'},
+  {id:'res', icon:'🧩', label:'Resource'},
+  {id:'pipe', icon:'🎢', label:'Pipeline'},
+  {id:'run', icon:'▶️', label:'run()'},
+  {id:'dest', icon:'🗄️', label:'Destination'},
+];
+const archInfo = {
+  src: {t:'Source', tech:'Função Python decorada com @dlt.source que agrupa uma ou mais resources relacionadas (ex: todos os endpoints de uma mesma API).', kid:'🧒 A caixa grande que chega na porta de casa — dentro dela tem vários tipos de brinquedo misturados.'},
+  res: {t:'Resource', tech:'Função geradora (yield) decorada com @dlt.resource — representa um único fluxo de dados (uma tabela, um endpoint, um stream). Define write_disposition e primary_key.', kid:'🧒 Cada tipo de brinquedo dentro da caixa: "os carrinhos", "os bonecos" — cada um vira sua própria pilha organizada depois.'},
+  pipe: {t:'Pipeline', tech:'Objeto criado com dlt.pipeline(...) que guarda nome, destino, dataset e o estado entre execuções (schema salvo, cursores incrementais).', kid:'🧒 A esteira rolante da fábrica: liga a mesa bagunçada até a prateleira final, sempre pelo mesmo caminho.'},
+  run: {t:'run()', tech:'Dispara as 3 fases internas — extract, normalize, load — processando os dados da(s) resource(s) e aplicando o schema no destino.', kid:'🧒 O botão "liga" da esteira. Aperta o botão e o robô arrumador começa a trabalhar sozinho.'},
+  dest: {t:'Destination', tech:'O sistema onde os dados normalizados são gravados: DuckDB, BigQuery, Snowflake, Postgres, Filesystem/S3, e dezenas de outros.', kid:'🧒 A prateleira final, com etiquetas em cada gaveta — pronta para você (ou um dashboard) vir pegar o que precisar.'},
+};
+function buildArchGrid(){
+  const el = document.getElementById('archGrid');
+  el.innerHTML = archBlocks.map((b,i) => `
+    ${i>0 ? '<div class="anatomy-arrow">→</div>' : ''}
+    <div class="pq-box" style="grid-column:span 1;">
+      <div class="pq-clickable" data-id="${b.id}" onclick="pickArchBlock('${b.id}')">
+        <span class="pqc-icon">${b.icon}</span>${b.label}
+      </div>
+    </div>`).join('');
+}
+buildArchGrid();
+function pickArchBlock(id){
+  document.querySelectorAll('#archGrid .pq-clickable').forEach(el => el.classList.remove('active'));
+  document.querySelector(`#archGrid [data-id="${id}"]`).classList.add('active');
+  const info = archInfo[id];
+  document.getElementById('archDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.tech}</div><div class="ad-kid">${info.kid}</div>`;
+}
+
+/* ===================== EXTRACT/NORMALIZE/LOAD STAGES ===================== */
+const stages = {
+  extract: {t:'📥 Extract', tech:'Executa sua função Python, percorrendo cada yield. Se a fonte for uma API, cuida de paginação e retries. Os dados brutos (ainda no formato original) são gravados em arquivos temporários locais.', kid:'🧒 O caminhão descarrega a caixa bagunçada na mesa do robô — ele ainda não organizou nada, só trouxe tudo para perto.'},
+  normalize: {t:'🧩 Normalize', tech:'Para cada registro: infere o tipo de cada campo, desaninha listas/objetos em tabelas filhas ligadas por _dlt_id/_dlt_parent_id, e compara com o schema salvo da execução anterior para decidir o que mudou.', kid:'🧒 O robô abre cada brinquedo, mede, separa peças penduradas em caixinhas extras, e decide em qual gaveta cada coisa entra.'},
+  load: {t:'🚚 Load', tech:'Aplica no destino as alterações de schema necessárias (novas tabelas/colunas) e insere os dados já normalizados, respeitando o write disposition (append/replace/merge) de cada resource.', kid:'🧒 O robô finalmente guarda tudo nas gavetas certas da prateleira — seguindo a regra que você escolheu: só empilhar, trocar tudo, ou só atualizar o que mudou.'},
+};
+function buildStageButtons(){
+  document.getElementById('stageButtons').innerHTML = Object.keys(stages).map((k,i) =>
+    `<button class="btn-toggle ${i===0?'active':''}" data-stage="${k}" onclick="pickStage('${k}')">${stages[k].t}</button>`
+  ).join('');
+}
+function pickStage(key){
+  document.querySelectorAll('#stageButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.stage === key));
+  const info = stages[key];
+  document.getElementById('stageDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.tech}</div><div class="ad-kid">${info.kid}</div>`;
+}
+buildStageButtons();
+pickStage('extract');
+
+/* ===================== SCHEMA EVOLUTION DEMO ===================== */
+const schemaLoads = {
+  1: {
+    json: `{\n  <span class="json-key">"id"</span>: <span class="json-num">1</span>,\n  <span class="json-key">"name"</span>: <span class="json-str">"Ana"</span>,\n  <span class="json-key">"email"</span>: <span class="json-str">"ana@email.com"</span>\n}`,
+    cols: ['id (bigint)', 'name (varchar)', 'email (varchar)'],
+    rows: [['1','Ana','ana@email.com']],
+    newCol: null,
+    colsBefore: 0,
+  },
+  2: {
+    json: `{\n  <span class="json-key">"id"</span>: <span class="json-num">2</span>,\n  <span class="json-key">"name"</span>: <span class="json-str">"Bruno"</span>,\n  <span class="json-key">"email"</span>: <span class="json-str">"bruno@email.com"</span>,\n  <span class="json-hl-child"><span class="json-key">"telefone"</span>: <span class="json-str">"11-99999"</span></span>\n}`,
+    cols: ['id (bigint)', 'name (varchar)', 'email (varchar)', 'telefone (varchar) 🆕'],
+    rows: [['1','Ana','ana@email.com','—'],['2','Bruno','bruno@email.com','11-99999']],
+    newCol: 'telefone (varchar) 🆕',
+    colsBefore: 3,
+  },
+};
+function setSchemaLoad(n){
+  document.getElementById('btnLoad1').classList.toggle('active', n===1);
+  document.getElementById('btnLoad2').classList.toggle('active', n===2);
+  const d = schemaLoads[n];
+  document.getElementById('schemaJson').innerHTML = d.json;
+  const table = document.getElementById('schemaTable');
+  const theadCols = d.cols.map(c => `<th${c===d.newCol?' style="color:var(--accent-green);"':''}>${c}</th>`).join('');
+  const bodyRows = d.rows.map(r => `<tr>${r.map((v,i)=>`<td${d.cols[i]===d.newCol?' style="color:var(--accent-green);font-weight:700;"':''}>${v}</td>`).join('')}</tr>`).join('');
+  table.innerHTML = `<thead><tr>${theadCols}</tr></thead><tbody>${bodyRows}</tbody>`;
+  const added = d.cols.length - d.colsBefore;
+  document.getElementById('schemaStats').innerHTML = `
+    <div class="stat-card"><div class="stat-card-label">Colunas antes desta carga</div><div class="stat-card-value">${d.colsBefore || d.cols.length}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Colunas depois desta carga</div><div class="stat-card-value">${d.cols.length}</div></div>
+    <div class="stat-card ${added>0?'c-orange':''}"><div class="stat-card-label">ALTER TABLE disparado pelo dlt</div><div class="stat-card-value" style="font-size:14px;">${added>0? added+' coluna nova' : 'nenhum'}</div></div>
+  `;
+}
+setSchemaLoad(1);
+
+/* ===================== INCREMENTAL LOADING DEMO ===================== */
+function updateIncremental(){
+  const cursor = +document.getElementById('cursorSlider').value;
+  document.getElementById('cursorVal').textContent = 'Dia ' + cursor;
+  const days = Array.from({length:9}, (_,i) => i+1);
+  document.getElementById('dayRow').innerHTML = days.map(d => {
+    let cls = 'day-chip';
+    let status = '';
+    if(d < cursor){ cls += ' loaded'; status = '✔ já carregado'; }
+    else if(d === cursor){ cls += ' loaded cursor'; status = '📍 cursor salvo'; }
+    else { cls += ' new'; status = '🆕 será buscado agora'; }
+    return `<div class="${cls}"><div class="dc-date">Dia ${d}</div><div class="dc-status">${status}</div></div>`;
+  }).join('');
+  const newCount = days.filter(d => d > cursor).length;
+  const skipCount = days.filter(d => d <= cursor).length;
+  document.getElementById('incStats').innerHTML = `
+    <div class="stat-card c-green"><div class="stat-card-label">Dias buscados na próxima carga</div><div class="stat-card-value">${newCount}</div></div>
+    <div class="stat-card"><div class="stat-card-label">Dias pulados (já no destino)</div><div class="stat-card-value">${skipCount}</div></div>
+    <div class="stat-card c-orange"><div class="stat-card-label">Chamadas de API economizadas</div><div class="stat-card-value">${skipCount}</div></div>
+  `;
+}
+updateIncremental();
+
+/* ===================== WRITE DISPOSITION DEMO ===================== */
+const wdBeforeRows = [['1','Ana'],['2','Bruno']];
+const writeDispositions = {
+  append: {
+    after: [['1','Ana'],['2','Bruno'],['2','Bruno✏️']],
+    highlight: [2],
+    detail: {t:'➕ append', tech:'A nova linha (id=2, "Bruno✏️") é simplesmente adicionada ao final. Repare: agora existem DUAS linhas com id=2 — append não sabe (nem tenta saber) que já existia um registro com essa chave.', kid:'🧒 Empilhou um brinquedo novo em cima da pilha, sem olhar se já tinha um igual lá embaixo.'}
+  },
+  replace: {
+    after: [['2','Bruno✏️']],
+    highlight: [0],
+    detail: {t:'♻️ replace', tech:'A tabela inteira é truncada/recriada antes da carga — só sobra o que veio nesta execução. A Ana (id=1) desaparece, porque não fazia parte deste lote.', kid:'🧒 Jogou a prateleira inteira no chão e guardou só os brinquedos que vieram na caixa de hoje.'}
+  },
+  merge: {
+    after: [['1','Ana'],['2','Bruno✏️']],
+    highlight: [1],
+    detail: {t:'🔀 merge (upsert)', tech:'O dlt compara pela primary_key (id): como id=2 já existia, ele ATUALIZA a linha (nome vira "Bruno✏️") em vez de duplicar. Como id=1 não veio neste lote, permanece intocado.', kid:'🧒 Achou o brinquedo com a etiqueta "2", trocou só ele pela versão nova — o resto da prateleira nem foi tocado.'}
+  }
+};
+function renderWdTable(elId, rows, highlightIdx){
+  const el = document.getElementById(elId);
+  const body = rows.map((r,i) => `<tr${highlightIdx && highlightIdx.includes(i) ? ' class="row-new"':''}><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('');
+  el.innerHTML = `<thead><tr><th>id</th><th>name</th></tr></thead><tbody>${body}</tbody>`;
+}
+function setWriteDisposition(mode){
+  ['append','replace','merge'].forEach(m => document.getElementById('btnWd'+m.charAt(0).toUpperCase()+m.slice(1)).classList.toggle('active', m===mode));
+  renderWdTable('wdBefore', wdBeforeRows, null);
+  const d = writeDispositions[mode];
+  renderWdTable('wdAfter', d.after, d.highlight);
+  document.getElementById('wdDetail').innerHTML = `<div class="ad-title">${d.detail.t}</div><div class="ad-text">${d.detail.tech}</div><div class="ad-kid">${d.detail.kid}</div>`;
+}
+setWriteDisposition('append');
+
+/* ===================== DESTINATIONS PICKER ===================== */
+const destinationsInfo = {
+  duckdb: {t:'🦆 DuckDB', code:`pipeline = dlt.pipeline(destination="duckdb", dataset_name="loja")`, d:'Arquivo local, zero configuração — ideal para desenvolver e testar antes de apontar para um destino de produção.'},
+  bigquery: {t:'🔷 BigQuery', code:`pipeline = dlt.pipeline(destination="bigquery", dataset_name="loja")\n# credenciais via secrets.toml ou variável de ambiente`, d:'Data warehouse gerenciado do Google Cloud — o dlt usa a API nativa de load jobs para inserir em lote.'},
+  snowflake: {t:'❄️ Snowflake', code:`pipeline = dlt.pipeline(destination="snowflake", dataset_name="loja")`, d:'Carrega via stage interno + COPY INTO, o jeito mais eficiente de inserir grandes volumes no Snowflake.'},
+  postgres: {t:'🐘 Postgres', code:`pipeline = dlt.pipeline(destination="postgres", dataset_name="loja")`, d:'Bom para destinos operacionais ou analíticos menores — usa INSERT em lote otimizado.'},
+  redshift: {t:'🟥 Redshift', code:`pipeline = dlt.pipeline(destination="redshift", dataset_name="loja")`, d:'Carrega arquivos intermediários via S3 + COPY, seguindo o padrão recomendado pela AWS para grandes volumes.'},
+  filesystem: {t:'📁 Filesystem / S3 / GCS', code:`pipeline = dlt.pipeline(destination="filesystem", dataset_name="loja")\n# grava Parquet/JSONL particionado, sem banco nenhum`, d:'Em vez de um banco, grava arquivos Parquet ou JSONL organizados — útil como camada bruta de um data lake.'},
+  databricks: {t:'🧱 Databricks', code:`pipeline = dlt.pipeline(destination="databricks", dataset_name="loja")`, d:'Carrega para tabelas Delta no Databricks, aproveitando staging via cloud storage.'},
+  motherduck: {t:'🐤 MotherDuck', code:`pipeline = dlt.pipeline(destination="motherduck", dataset_name="loja")`, d:'DuckDB na nuvem — mesma experiência local, mas os dados ficam persistidos e compartilháveis remotamente.'},
+};
+function buildDestButtons(){
+  document.getElementById('destButtons').innerHTML = Object.keys(destinationsInfo).map(k =>
+    `<button class="btn-toggle" data-dest="${k}" onclick="pickDestination('${k}')">${destinationsInfo[k].t}</button>`
+  ).join('');
+}
+function pickDestination(key){
+  document.querySelectorAll('#destButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.dest === key));
+  const info = destinationsInfo[key];
+  document.getElementById('destDetail').innerHTML = `
+    <div class="ad-title">${info.t}</div>
+    <div class="ad-text">${info.d}</div>
+    <div class="code-block" style="margin-top:10px;"><span class="code-lang">python</span>${info.code}</div>
+  `;
+}
+buildDestButtons();
+
+/* ===================== COMPARISON CANVAS ===================== */
+function drawCompareCanvas(){
+  const cv = document.getElementById('compareCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Script caseiro', val:9, color:'#f86b63'},
+    {name:'dlt', val:4, color:'#06b6d4'},
+    {name:'Airbyte (self-host)', val:6, color:'#36a2ef'},
+    {name:'Fivetran (gerenciado)', val:1, color:'#c49aff'},
+  ];
+  const padB = 26, padTop=14, barGap=18;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = 10;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, barH, 5); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='10.5px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText('manutenção: '+d.val+'/10', x+barW/2, y-6);
+    ctx.fillStyle = '#98a2b3'; ctx.font='9.5px Inter, sans-serif';
+    ctx.fillText(d.name, x+barW/2, h-8);
+    ctx.textAlign='left';
+  });
+}
+drawCompareCanvas();
+window.addEventListener('resize', drawCompareCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'dlt é um serviço em nuvem pago, parecido com o Fivetran.', a:false, e:'Falso. dlt é uma biblioteca Python open source (Apache 2.0) que roda dentro do seu próprio código — não existe servidor obrigatório nem camada paga para usar o motor central.'},
+  {q:'O dlt consegue inferir o schema (tabelas e tipos) automaticamente, sem você escrever CREATE TABLE.', a:true, e:'Verdadeiro. Na etapa de normalize, ele analisa os dados recebidos e cria/atualiza o schema sozinho.'},
+  {q:'Quando um JSON tem uma lista aninhada, o dlt guarda a lista inteira dentro de uma única coluna de texto.', a:false, e:'Falso. O dlt desaninha listas em tabelas filhas separadas, ligadas à tabela pai pelas colunas _dlt_id / _dlt_parent_id.'},
+  {q:'write_disposition="merge" precisa de uma primary_key definida para funcionar como upsert.', a:true, e:'Verdadeiro. Sem primary_key, o dlt não tem como saber qual linha já existe para atualizar em vez de duplicar.'},
+  {q:'write_disposition="replace" mantém os dados antigos e só adiciona os novos por cima.', a:false, e:'Falso. replace apaga a tabela (ou partição) inteira antes de carregar — quem faz "só adicionar" é o append.'},
+  {q:'A carga incremental existe para evitar buscar e reprocessar dados que já foram carregados antes.', a:true, e:'Verdadeiro. O dlt guarda um cursor (estado) entre execuções e busca apenas o que é novo a partir dele.'},
+  {q:'O mesmo pipeline dlt só pode ser usado com um único destino fixo, definido no código da resource.', a:false, e:'Falso. O destino é definido no dlt.pipeline(...), fora da resource — trocar de DuckDB para BigQuery, por exemplo, é só trocar esse parâmetro.'},
+  {q:'dlt substitui completamente a necessidade de um orquestrador como Airflow ou de dbt para transformações.', a:false, e:'Falso. dlt resolve extração + carga (EL de "ELT"); orquestração e transformação analítica continuam sendo trabalho de outras ferramentas, geralmente usadas junto com o dlt.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Agosto / 2026';
+</script>
+</body>
+</html>

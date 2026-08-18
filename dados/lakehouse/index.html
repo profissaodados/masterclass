@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Lakehouse explicado do zero. Data Warehouse vs Data Lake, ACID, schema evolution, time travel, metadata log, Delta Lake vs Iceberg vs Hudi, arquitetura medalhão, com muita analogia visual e simuladores interativos.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Lakehouse: o Melhor dos Dois Mundos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --bronze:#cd8a5c; --silver:#b6bcc7; --gold:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-row.new{border-color:var(--accent-green);color:var(--accent-green);font-weight:700;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- COMPARE PAIR (dois blocos lado a lado) ---- */
+.compare-pair{display:flex;gap:20px;align-items:stretch;margin-top:6px;}
+.compare-card{flex:1;background:var(--bg-panel);border:2px solid var(--accent);border-radius:12px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.compare-card.alt{border-color:var(--accent-blue);}
+.compare-tag{position:absolute;top:-11px;left:14px;background:var(--accent);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.compare-card.alt .compare-tag{background:var(--accent-blue);}
+.compare-icon{font-size:36px;text-align:center;margin:6px 0 2px;}
+.compare-row{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:6px 10px;}
+.compare-row span{color:var(--text-secondary);}
+.compare-row strong{color:var(--text-primary);font-family:'Roboto Mono',monospace;font-weight:700;text-align:right;}
+.compare-caption{font-size:10.5px;color:var(--text-disabled);text-align:center;margin-top:4px;line-height:1.5;}
+.compare-vs{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--text-disabled);flex:0 0 30px;}
+@media (max-width:960px){ .compare-pair{flex-direction:column;} .compare-vs{padding:4px 0;} }
+
+/* ---- METADATA LOG (tabela x log de transações) ---- */
+.meta-diagram{display:flex;gap:20px;align-items:stretch;margin-top:6px;}
+.meta-card{flex:0 0 230px;background:var(--bg-panel);border:2px solid var(--accent-green);border-radius:12px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.meta-tag{position:absolute;top:-11px;left:14px;background:var(--accent-green);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.meta-photo{font-size:36px;text-align:center;margin:6px 0 2px;}
+.meta-row{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:6px 10px;}
+.meta-row span{color:var(--text-secondary);}
+.meta-row strong{color:var(--text-primary);font-family:'Roboto Mono',monospace;font-weight:700;}
+.meta-caption{font-size:10.5px;color:var(--text-disabled);text-align:center;margin-top:4px;line-height:1.5;}
+.meta-log{flex:1;background:var(--bg-panel);border:1.5px dashed var(--border-strong);border-radius:12px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.meta-log-tag{position:absolute;top:-11px;left:14px;background:var(--accent-blue);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.meta-log-entry{display:flex;align-items:center;gap:10px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 12px;font-size:11.5px;color:var(--text-secondary);flex-wrap:wrap;margin-top:6px;}
+.meta-log-entry:first-of-type{margin-top:18px;}
+.meta-log-ver{font-family:'Roboto Mono',monospace;color:var(--bg-main);background:var(--accent-blue);font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;flex-shrink:0;}
+.meta-log-entry strong{color:var(--text-primary);}
+@media (max-width:960px){ .meta-diagram{flex-direction:column;} .meta-card{flex:none;} }
+
+/* ---- MEDAL PIPELINE (Bronze / Silver / Gold) ---- */
+.medal-pipeline{display:flex;align-items:stretch;gap:0;margin-top:8px;}
+.medal-stage{flex:1;background:var(--bg-panel);border:2px solid var(--border-color);border-top:5px solid var(--border-color);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:8px;}
+.medal-stage.bronze{border-top-color:var(--bronze);}
+.medal-stage.silver{border-top-color:var(--silver);}
+.medal-stage.gold{border-top-color:var(--gold);}
+.medal-icon{font-size:32px;text-align:center;}
+.medal-title{font-size:14px;font-weight:800;text-align:center;}
+.medal-stage.bronze .medal-title{color:var(--bronze);}
+.medal-stage.silver .medal-title{color:var(--silver);}
+.medal-stage.gold .medal-title{color:var(--gold);}
+.medal-sub{font-size:11.5px;color:var(--text-secondary);line-height:1.6;text-align:center;}
+.medal-arrow{flex:0 0 44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--text-disabled);}
+@media (max-width:960px){ .medal-pipeline{flex-direction:column;} .medal-arrow{transform:rotate(90deg);padding:4px 0;} }
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-fade td{opacity:.55;}
+.cell-old{color:var(--accent-red);text-decoration:line-through;}
+.cell-new{color:var(--accent-green);font-weight:700;}
+.badge-current{background:rgba(125,222,216,.16);color:var(--accent-green);border:1px solid var(--accent-green);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.badge-expired{background:rgba(152,162,179,.10);color:var(--text-disabled);border:1px solid var(--border-color);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
+.badge-issue{background:rgba(248,107,99,.14);color:var(--accent-red);border:1px solid var(--accent-red);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:800;letter-spacing:.4px;white-space:nowrap;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CHIP / ENGINE GRID ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.engine-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.engine-chip{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:14px 12px;text-align:center;display:flex;flex-direction:column;gap:6px;transition:.15s;}
+.engine-chip:hover{border-color:var(--accent);}
+.engine-icon{font-size:24px;}
+.engine-name{font-size:12px;font-weight:700;color:var(--text-primary);}
+.engine-role{font-size:10.5px;color:var(--text-secondary);line-height:1.4;}
+
+/* ---- LAYER STACK (arquitetura clicável) ---- */
+.layer-stack{display:flex;flex-direction:column;gap:10px;}
+.layer-row{border:1.5px solid var(--border-color);border-radius:8px;padding:14px 18px;background:var(--bg-elevated);cursor:pointer;transition:.2s;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;}
+.layer-row:hover{border-color:var(--border-strong);}
+.layer-row.active{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.layer-title{font-weight:700;font-size:13px;color:var(--text-primary);display:flex;align-items:center;gap:10px;}
+.layer-row.active .layer-title{color:var(--accent);}
+.layer-sub{font-size:11px;color:var(--text-secondary);}
+.layer-tag{font-size:9.5px;padding:3px 9px;border-radius:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;border:1px solid var(--border-strong);color:var(--text-secondary);flex-shrink:0;}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- LIFELINE (simuladores clicáveis) ---- */
+.lifeline{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:8px 4px 4px;}
+.life-event{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:150px;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.life-dot-wrap{display:flex;align-items:center;width:100%;}
+.life-line{flex:1;height:2px;background:var(--border-color);}
+.life-line.first{visibility:hidden;}
+.life-dot{width:20px;height:20px;border-radius:50%;background:var(--bg-elevated);border:2.5px solid var(--border-strong);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:.15s;}
+.life-event.active .life-dot{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgba(6,182,212,.16);}
+.life-event.done .life-dot{background:var(--bg-highlight);border-color:var(--accent-green);color:var(--accent-green);}
+.life-icon{font-size:22px;}
+.life-label{font-size:11.5px;color:var(--text-secondary);text-align:center;font-weight:600;line-height:1.3;}
+.life-date{font-size:9.5px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;}
+.life-event.active .life-label{color:var(--accent);}
+.life-event:hover .life-label{color:var(--accent-blue);}
+
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
+.sim-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;}
+.sim-card-title{font-size:12.5px;font-weight:800;color:var(--text-primary);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.sim-card-sub{font-size:11px;color:var(--text-disabled);margin-bottom:10px;}
+.sim-mini-table{width:100%;border-collapse:collapse;font-size:11px;font-family:'Roboto Mono',monospace;}
+.sim-mini-table th{background:var(--bg-main);color:var(--text-disabled);padding:5px 7px;text-align:left;font-size:9px;text-transform:uppercase;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.sim-mini-table td{padding:5px 7px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.sim-mini-table tr:last-child td{border-bottom:none;}
+.sim-mini-table tr.is-current td{color:var(--text-primary);background:rgba(125,222,216,.08);}
+.sim-mini-table tr.just-added td{animation:popin .5s ease;}
+@keyframes popin{from{background:rgba(6,182,212,.35);}to{background:transparent;}}
+
+/* ---- DECISION CARDS ---- */
+.decision-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.decision-q{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.decision-arrow{font-size:11px;color:var(--text-disabled);text-align:center;}
+.decision-a{font-size:14px;font-weight:800;text-align:center;padding:8px;border-radius:6px;border:1px solid;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.sim-grid,.engine-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Lakehouse</h1><span>O melhor do Data Warehouse e do Data Lake, num lugar só</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">4</div><div class="hstat-label">Camadas</div></div>
+      <div class="hstat"><div class="hstat-num">3</div><div class="hstat-label">Formatos: Delta·Iceberg·Hudi</div></div>
+      <div class="hstat"><div class="hstat-num">🥉🥈🥇</div><div class="hstat-label">Arquitetura Medalhão</div></div>
+      <div class="hstat"><div class="hstat-num">~70min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: da biblioteca e da piscina até o lakehouse</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Um <em>Data Warehouse</em> é organizado, mas caro e rígido. Um <em>Data Lake</em> é barato, mas vira bagunça. E se desse pra ter os dois de uma vez?</h2>
+      <p><strong>Lakehouse</strong> é a resposta: uma arquitetura que guarda os dados em armazenamento barato e aberto — como um Data Lake — mas adiciona uma "camada mágica" de controle por cima — transações <em>ACID</em>, regras de <em>schema</em>, histórico de versões — que só existiam em Data Warehouses. O resultado é <strong>um lugar só</strong> onde cabe tudo: tabelas estruturadas para o financeiro, dados brutos para o time de ciência de dados, e tudo isso consultado por qualquer motor SQL que você quiser. Hoje vamos desmontar essa ideia peça por peça, com muita analogia de criança, muito gráfico e simuladores para você clicar e ver funcionando.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">🔒 ACID</span>
+        <span class="badge badge-green">🧬 Schema Evolution</span>
+        <span class="badge badge-blue">⏳ Time Travel</span>
+        <span class="badge badge-purple">📦 Parquet + Metadata</span>
+        <span class="badge badge-yellow">🥉🥈🥇 Medalhão</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🏠 TABELA LAKEHOUSE</div>
+        <div class="fc-body">
+          <div class="fc-row">📦 dados: arquivos Parquet no S3 / ADLS / GCS</div>
+          <div class="fc-row new">🗂️ regras: metadata log (Delta / Iceberg / Hudi)</div>
+        </div>
+        <div class="fc-foot">Consultado com SQL, como um banco de verdade</div>
+      </div>
+      <div class="file-chip-caption">Armazenamento barato de Data Lake + controle de Data Warehouse</div>
+    </div>
+  </section>
+
+  <!-- ============ INTRO ============ -->
+  <section class="section" id="s-intro">
+    <div class="section-eyebrow">Antes de Começar</div>
+    <div class="section-title">🏠 O que vamos aprender hoje</div>
+    <p class="section-desc">Para entender por que o Lakehouse existe, primeiro precisamos entender os dois mundos que ele veio unir. Pense assim: de um lado tem a <strong>biblioteca</strong> (Data Warehouse) — tudo catalogado, mas rígida e cara para crescer. Do outro tem a <strong>piscina</strong> (Data Lake) — aceita qualquer coisa, barata, mas vira um pântano se ninguém organizar. O Lakehouse é o que acontece quando alguém coloca etiquetas inteligentes e regras de organização <em>dentro</em> da piscina, sem perder o preço baixo dela.</p>
+    <div class="grid-4">
+      <div class="card"><div class="card-title">📚 → 🏊 Os dois mundos</div><div class="card-text">Como Warehouse e Lake nasceram e por que nenhum dos dois, sozinho, resolve tudo.</div></div>
+      <div class="card"><div class="card-title">🔒 As 3 superpotências</div><div class="card-text">ACID, schema evolution e time travel — o que faz um monte de arquivo virar uma "tabela de verdade".</div></div>
+      <div class="card"><div class="card-title">⚔️ Os 3 formatos</div><div class="card-text">Delta Lake, Apache Iceberg e Apache Hudi — as "linguagens" que implementam a mágica do Lakehouse.</div></div>
+      <div class="card"><div class="card-title">🥉🥈🥇 Medalhão na prática</div><div class="card-text">Como os dados viajam de brutos a prontos para negócio, em três paradas.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ DATA WAREHOUSE ============ -->
+  <section class="section" id="s-warehouse">
+    <div class="section-eyebrow">Fundamentos — Mundo 1</div>
+    <div class="section-title">📚 Data Warehouse — a Biblioteca Organizadíssima</div>
+    <p class="section-desc">Um <strong>Data Warehouse</strong> (Teradata, Redshift, Snowflake, BigQuery clássico) é feito para receber dados <strong>estruturados</strong> — linhas e colunas, como uma planilha — e devolver respostas rápidas para relatórios e dashboards. Antes de qualquer dado entrar, ele precisa se encaixar num <strong>schema</strong> definido: nome das colunas, tipos, tamanhos. Isso se chama <em>schema-on-write</em> — o "molde" é verificado <em>na entrada</em>.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">📚</div>
+      <div><div class="highlight-title">Pensando como criança</div><p>Um Data Warehouse é como uma <strong>biblioteca com bibliotecário rigoroso</strong>: todo livro precisa ter capa, título, autor e código catalogado <em>antes</em> de subir na estante. Se você chegar com um brinquedo, uma foto ou uma pedra, o bibliotecário não deixa entrar — "isso não é livro, não tem onde catalogar". É extremamente organizado, mas só aceita o que já nasceu no formato certo.</p></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Pontos fortes</div><div class="card-text">Consultas <strong>rapidíssimas</strong>, governança forte, dados sempre confiáveis e prontos para BI. Ótimo para o time financeiro que precisa de números exatos, todo dia, sem surpresa.</div></div>
+      <div class="card"><div class="card-title">⚠️ Limitações</div><div class="card-text">Caro para guardar grandes volumes, só aceita dados <strong>estruturados</strong> (nada de vídeo, imagem, texto livre, JSON aninhado), e crescer a capacidade costuma exigir contratos e hardware dedicados.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ DATA LAKE ============ -->
+  <section class="section" id="s-lake">
+    <div class="section-eyebrow">Fundamentos — Mundo 2</div>
+    <div class="section-title">🏊 Data Lake — A Piscina Que Aceita Tudo</div>
+    <p class="section-desc">Um <strong>Data Lake</strong> nasceu para resolver o preço e a rigidez do Warehouse: é só um <strong>armazenamento de arquivos</strong> gigante e barato (Amazon S3, Azure Data Lake Storage, Google Cloud Storage) onde você joga qualquer coisa — planilhas, imagens, vídeos, logs, JSON, Parquet — sem precisar definir um schema antes. O schema só é verificado <em>na hora de ler</em>, se é que alguém verifica: é o chamado <em>schema-on-read</em>.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🏊</div>
+      <div><div class="highlight-title">Pensando como criança</div><p>Um Data Lake é como uma <strong>piscina enorme e barata</strong> onde qualquer criança pode jogar qualquer brinquedo: bola, boneca, pedra, um pato de borracha. Não tem porteiro perguntando "isso é um livro catalogado?" — é só jogar dentro. Só que, sem ninguém organizando, depois de um tempo ninguém mais lembra o que tem lá no fundo da piscina, nem se aquele "brinquedo" ainda está inteiro.</p></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">✅ Pontos fortes</div><div class="card-text">Armazenamento <strong>barato</strong> (centavos por GB), aceita <strong>qualquer tipo de dado</strong>, escala quase sem limite, e é ótimo para times de ciência de dados e Machine Learning que precisam de dados brutos.</div></div>
+      <div class="card"><div class="card-title">⚠️ Limitações</div><div class="card-text">Sem controle nenhum por padrão: <strong>ninguém garante</strong> que dois processos escrevendo ao mesmo tempo não vão se atrapalhar, que um arquivo corrompido não vai quebrar uma consulta, ou que os dados de ontem ainda batem com os de hoje.</div></div>
+    </div>
+
+    <p class="section-desc" style="font-size:12.5px;">Quando ninguém organiza a piscina por muito tempo, ela vira o que o mercado apelidou de <strong>"pântano de dados" (data swamp)</strong> — um amontoado de arquivos que ninguém mais confia:</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Arquivo na piscina</th><th>Problema</th></tr></thead>
+        <tbody>
+          <tr><td>vendas_2024_final_v2_FINAL.csv</td><td><span class="badge-issue">duplicado?</span></td></tr>
+          <tr class="row-fade"><td>clientes_export.json</td><td><span class="badge-issue">sem schema documentado</span></td></tr>
+          <tr><td>log_evento_0001.parquet</td><td><span class="badge-issue">metade escrito, corrompido</span></td></tr>
+          <tr class="row-fade"><td>backup_antigo_nao_apagar.csv</td><td><span class="badge-issue">ninguém sabe se ainda é usado</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warn-box"><p>⚠️ Sem transações, sem schema garantido e sem histórico de versões, a piscina vira pântano — e é exatamente esse conjunto de problemas que o Lakehouse foi criado para resolver.</p></div>
+  </section>
+
+  <!-- ============ LAKEHOUSE ============ -->
+  <section class="section" id="s-lakehouse">
+    <div class="section-eyebrow">A Grande Ideia</div>
+    <div class="section-title">🏡 Nasce o Lakehouse</div>
+    <p class="section-desc">Por anos, empresas mantinham <strong>os dois sistemas ao mesmo tempo</strong>: um Data Lake barato para guardar tudo, e um Data Warehouse caro ao lado, alimentado por cópias já limpas do Lake, só para os relatórios de negócio funcionarem rápido e com confiança. Isso significa dados <strong>duplicados</strong>, pipelines de cópia constantes, e sempre a dúvida: "os dois lados estão mesmo sincronizados?"</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🏡</div>
+      <div><div class="highlight-title">Pensando como criança</div><p>O Lakehouse é o que acontece quando a <strong>piscina ganha um sistema de etiquetas e regras</strong>, como se um bibliotecário organizado se mudasse para dentro dela. Continua barata como a piscina — qualquer brinquedo pode entrar — mas agora cada brinquedo tem uma etiqueta, existe um caderno de registro dizendo o que entrou e quando, e ninguém consegue tirar um brinquedo de dentro d'água sem anotar. É a piscina virando um aquário organizado.</p></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Antes, dois sistemas separados e sincronizados manualmente. Agora, um sistema só:</p>
+    <div class="compare-pair">
+      <div class="compare-card">
+        <span class="compare-tag">Antes</span>
+        <div class="compare-icon">🏊 ➜ 🚚 ➜ 📚</div>
+        <div class="compare-row"><span>Dados brutos</span><strong>Data Lake</strong></div>
+        <div class="compare-row"><span>Cópia limpa via ETL</span><strong>pipeline extra</strong></div>
+        <div class="compare-row"><span>Relatórios de BI</span><strong>Data Warehouse</strong></div>
+        <div class="compare-caption">2 sistemas, dados duplicados, sempre a dúvida se estão sincronizados.</div>
+      </div>
+      <div class="compare-card alt">
+        <span class="compare-tag">Agora — Lakehouse</span>
+        <div class="compare-icon">🏡</div>
+        <div class="compare-row"><span>Dados brutos</span><strong>mesma tabela</strong></div>
+        <div class="compare-row"><span>ACID + schema + versões</span><strong>metadata log</strong></div>
+        <div class="compare-row"><span>Relatórios de BI</span><strong>mesma tabela</strong></div>
+        <div class="compare-caption">1 sistema, 1 cópia dos dados, qualquer motor consulta a mesma fonte da verdade.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ARQUITETURA EM CAMADAS ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Como Ele é Construído</div>
+    <div class="section-title">🧱 Arquitetura em Camadas</div>
+    <p class="section-desc">O Lakehouse não é um produto único — é uma <strong>pilha de 4 camadas</strong> que trabalham juntas. Clique em cada camada para entender o papel dela na jornada do dado.</p>
+    <div class="interactive-panel">
+      <div class="layer-stack" id="layerStack"></div>
+      <div class="anatomy-detail" id="layerDetail">
+        <div class="ad-title">👆 Clique em uma camada</div>
+        <div class="ad-text">Veja o que cada uma guarda, controla ou entrega para a próxima.</div>
+      </div>
+    </div>
+    <div class="highlight-box">
+      <div class="highlight-title">A peça-chave é a camada 2</div>
+      <p>Storage e Compute já existiam separados desde os primeiros Data Lakes. O que faltava — e é a verdadeira invenção do Lakehouse — é a <strong>camada de formato de tabela</strong> no meio: um "livro de regras" que transforma uma pasta cheia de arquivos Parquet soltos numa tabela de verdade, com transações, schema e histórico.</p>
+    </div>
+  </section>
+
+  <!-- ============ ACID ============ -->
+  <section class="section" id="s-acid">
+    <div class="section-eyebrow">Superpotência 1 de 3</div>
+    <div class="section-title">🔒 Transações ACID — Por Que Isso Importa</div>
+    <p class="section-desc">ACID é um conjunto de 4 garantias que um banco de dados de verdade oferece a cada escrita. O Lakehouse traz essas mesmas garantias para cima de arquivos num object storage — algo que um Data Lake puro, sozinho, nunca teve.</p>
+    <div class="grid-4">
+      <div class="card"><div class="card-title">🧩 Atomicidade</div><div class="card-text">Ou a escrita inteira acontece, ou nenhuma parte dela acontece. Nunca fica "meio caminho andado" — como pedir uma pizza e ela chegar inteira, ou não chegar.</div></div>
+      <div class="card"><div class="card-title">📏 Consistência</div><div class="card-text">As regras da tabela nunca são quebradas, nem no meio de uma escrita. Se toda linha precisa de uma chave, nunca aparece uma linha sem chave — nem por um segundo.</div></div>
+      <div class="card"><div class="card-title">🚧 Isolamento</div><div class="card-text">Duas pessoas escrevendo ao mesmo tempo não se atrapalham — é como se cada uma tivesse a mesa só para si até terminar sua tarefa.</div></div>
+      <div class="card"><div class="card-title">💾 Durabilidade</div><div class="card-text">Depois que a escrita foi confirmada, ela sobrevive a uma queda de energia. É como salvar o jogo de verdade, não só deixar pausado na tela.</div></div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Duas pessoas atualizando a mesma tabela ao mesmo tempo</div>
+      <div class="btn-toggle-row">
+        <button class="btn-toggle active" id="btnNoAcid" onclick="setAcidMode(false)">🥴 Sem ACID (Data Lake puro)</button>
+        <button class="btn-toggle" id="btnAcid" onclick="setAcidMode(true)">🔒 Com ACID (Lakehouse)</button>
+      </div>
+      <div class="result-display" id="acidResult"></div>
+    </div>
+  </section>
+
+  <!-- ============ SCHEMA ============ -->
+  <section class="section" id="s-schema">
+    <div class="section-eyebrow">Superpotência 2 de 3</div>
+    <div class="section-title">🧬 Schema: Enforcement & Evolution</div>
+    <p class="section-desc">O Lakehouse controla dois momentos diferentes da vida de um schema. <strong>Enforcement</strong> (aplicação) é o porteiro que barra dados fora do formato esperado. <strong>Evolution</strong> (evolução) é a capacidade de mudar o schema — como adicionar uma coluna nova — sem quebrar nada que já existia.</p>
+    <div class="grid-2">
+      <div class="kid-box">
+        <div class="kid-emoji">🚪</div>
+        <div><div class="highlight-title">Schema Enforcement — analogia</div><p>É como o <strong>porteiro de uma festa</strong> conferindo a lista de convidados: se seu nome não está lá (o dado não bate com o schema esperado), você não entra. Isso impede que um arquivo bagunçado corrompa a tabela inteira.</p></div>
+      </div>
+      <div class="kid-box">
+        <div class="kid-emoji">📋</div>
+        <div><div class="highlight-title">Schema Evolution — analogia</div><p>É como a lista de convidados ganhar um <strong>campo novo</strong> — por exemplo "alergia alimentar" — sem expulsar ninguém que já estava dentro. Quem já entrou simplesmente fica com esse campo em branco.</p></div>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Exemplo: a tabela <code>pedidos</code> ganha uma coluna nova (<code>cupom_desconto</code>) sem quebrar nenhuma linha antiga — as linhas antigas simplesmente recebem <code>NULL</code> nessa coluna:</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>id_pedido</th><th>cliente</th><th>valor</th><th>cupom_desconto</th></tr></thead>
+        <tbody>
+          <tr class="row-fade"><td>1001</td><td>Ana</td><td>199,90</td><td style="opacity:.5;">NULL (linha antiga)</td></tr>
+          <tr class="row-fade"><td>1002</td><td>Bruno</td><td>89,00</td><td style="opacity:.5;">NULL (linha antiga)</td></tr>
+          <tr class="row-scan"><td>1003</td><td>Carla</td><td>150,00</td><td class="cell-new">DESC10 (nova coluna em uso)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ok-box"><p>✅ Sem essa evolução controlada, qualquer mudança de schema exigiria reescrever a tabela inteira do zero — no Lakehouse, é só uma operação de metadata.</p></div>
+  </section>
+
+  <!-- ============ TIME TRAVEL ============ -->
+  <section class="section" id="s-timetravel">
+    <div class="section-eyebrow">Superpotência 3 de 3</div>
+    <div class="section-title">⏳ Viagem no Tempo (Time Travel)</div>
+    <p class="section-desc">Toda escrita numa tabela Lakehouse cria uma <strong>nova versão (snapshot)</strong>, sem apagar a anterior de imediato. Isso permite consultar a tabela exatamente como ela estava em qualquer ponto do passado — útil para auditoria, para desfazer um erro, ou para reproduzir exatamente o dado que treinou um modelo de Machine Learning há 3 meses.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">📝</div>
+      <div><div class="highlight-title">Analogia</div><p>É como o <strong>histórico de versões do Google Docs</strong>: você pode voltar e ver exatamente como o documento estava ontem às 15h, sem perder nada do que foi escrito hoje. Cada "salvar" vira um ponto no tempo ao qual você pode voltar.</p></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Clique numa versão da tabela <code>produto_preco</code> e veja o preço do Tênis Azul <em>naquele momento exato</em>:</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Linha do tempo do produto — clique numa versão</div>
+      <div class="lifeline" id="ttLifeline"></div>
+      <div class="result-display" id="ttResult"></div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- Delta Lake: por número de versão</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> produto_preco <span class="kw">VERSION AS OF</span> <span class="num">1</span>;
+
+<span class="cm">-- Delta Lake: por data/hora</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> produto_preco <span class="kw">TIMESTAMP AS OF</span> <span class="st">'2026-04-15'</span>;
+
+<span class="cm">-- Apache Iceberg: sintaxe equivalente</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> produto_preco <span class="kw">FOR VERSION AS OF</span> <span class="num">1</span>;</div>
+  </section>
+
+  <!-- ============ METADATA ============ -->
+  <section class="section" id="s-metadata">
+    <div class="section-eyebrow">Por Trás da Mágica</div>
+    <div class="section-title">🗂️ Por Dentro do Metadata: Como a Mágica Acontece</div>
+    <p class="section-desc">O segredo de tudo isso é simples: os arquivos de dados (Parquet) nunca são editados diretamente. Toda escrita cria <strong>arquivos novos</strong> e registra num <strong>log de transações</strong> quais arquivos, somados, formam a versão vigente da tabela. Ler a tabela não é "escanear uma pasta" — é ler o log e saber exatamente quais arquivos abrir.</p>
+    <div class="meta-diagram">
+      <div class="meta-card">
+        <span class="meta-tag">📊 o que você vê — SELECT</span>
+        <div class="meta-photo">🗃️</div>
+        <div class="meta-row"><span>tabela</span><strong>produto_preco</strong></div>
+        <div class="meta-row"><span>versão atual</span><strong>v3</strong></div>
+        <div class="meta-row"><span>arquivos ativos</span><strong>2</strong></div>
+        <div class="meta-caption">A "foto" de agora — só o que o log diz que está ativo.<br>Simples de consultar.</div>
+      </div>
+      <div class="meta-log">
+        <span class="meta-log-tag">📜 metadata log — _delta_log / manifests</span>
+        <div class="meta-log-entry"><span class="meta-log-ver">v0</span> <strong>CREATE TABLE</strong> — schema inicial definido</div>
+        <div class="meta-log-entry"><span class="meta-log-ver">v1</span> <strong>ADD</strong> parte-001.parquet (120.000 linhas)</div>
+        <div class="meta-log-entry"><span class="meta-log-ver">v2</span> <strong>ADD</strong> parte-002.parquet · <strong>REMOVE</strong> (lógico) parte-001.parquet</div>
+        <div class="meta-log-entry"><span class="meta-log-ver">v3</span> <strong>ADD COLUMN</strong> cupom_desconto (schema evolution)</div>
+        <div class="meta-caption">O "diário de bordo" — cada linha nunca é reescrita, só acrescentada.<br>Isso é o que permite time travel e ACID.</div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Quando uma linha é "atualizada" no Lakehouse, na verdade um <strong>arquivo Parquet inteiro novo</strong> é escrito com a versão corrigida, e o log só marca o arquivo antigo como removido logicamente — ele continua existindo no armazenamento até uma limpeza (<code>VACUUM</code>) apagá-lo de vez, o que é o que possibilita voltar no tempo.</p></div>
+  </section>
+
+  <!-- ============ FORMATOS ============ -->
+  <section class="section" id="s-formatos">
+    <div class="section-eyebrow">As 3 Implementações</div>
+    <div class="section-title">⚔️ Delta Lake vs Apache Iceberg vs Apache Hudi</div>
+    <p class="section-desc">"Formato de tabela aberto" não é um conceito único — existem 3 implementações principais, todas open-source, todas resolvendo o mesmo problema (ACID + schema + time travel sobre arquivos), com diferenças de origem, ecossistema e pontos fortes.</p>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔺 Delta Lake</div><div class="card-text">Criado pela <strong>Databricks</strong>, hoje projeto Linux Foundation. Integração mais profunda com Spark e com o ecossistema Databricks. É o formato com adoção mais ampla no mercado hoje.</div></div>
+      <div class="card"><div class="card-title">🧊 Apache Iceberg</div><div class="card-text">Criado na <strong>Netflix</strong>. Focado em ser <strong>neutro de motor</strong> — projetado desde o início para funcionar igualmente bem com Spark, Trino, Flink, Snowflake, entre outros, sem favorecer nenhum.</div></div>
+      <div class="card"><div class="card-title">🌊 Apache Hudi</div><div class="card-text">Criado no <strong>Uber</strong>. Focado em cargas de trabalho com muita <strong>atualização e upsert</strong> (CDC — Change Data Capture) em tempo quase real, como sincronizar um banco transacional.</div></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Critério</th><th>Delta Lake</th><th>Apache Iceberg</th><th>Apache Hudi</th></tr></thead>
+        <tbody>
+          <tr><td>Origem</td><td>Databricks</td><td>Netflix</td><td>Uber</td></tr>
+          <tr><td>Melhor cenário</td><td>Ecossistema Databricks / Spark</td><td>Multi-engine, multi-cloud</td><td>Upserts e streaming intensivo</td></tr>
+          <tr><td>Catálogos suportados</td><td>Unity Catalog, Hive Metastore</td><td>Nessie, Polaris, Glue, Hive</td><td>Hive Metastore, Glue</td></tr>
+          <tr><td>Neutralidade de motor</td><td>Boa (crescendo)</td><td>Muito alta</td><td>Boa</td></tr>
+          <tr><td>Ponto forte</td><td>Simplicidade + maturidade</td><td>Portabilidade entre nuvens</td><td>Latência baixa em upsert</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid-3">
+      <div class="decision-card">
+        <div class="decision-q">"Meu time já usa Databricks/Spark pesado e quer o caminho mais simples?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Delta Lake</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso trocar de motor de consulta livremente, sem ficar preso a um fornecedor?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">Apache Iceberg</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Recebo um fluxo constante de updates/CDC vindo de um banco transacional?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-green);color:var(--accent-green);">Apache Hudi</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MEDALHÃO ============ -->
+  <section class="section" id="s-medalhao">
+    <div class="section-eyebrow">Como Organizar as Tabelas</div>
+    <div class="section-title">🥉🥈🥇 Arquitetura Medalhão (Medallion)</div>
+    <p class="section-desc">Dentro de um Lakehouse, é comum organizar as tabelas em 3 níveis de qualidade crescente, como uma cozinha de restaurante: os ingredientes chegam crus, depois são lavados e cortados, e só então viram um prato pronto para servir.</p>
+    <div class="medal-pipeline">
+      <div class="medal-stage bronze">
+        <div class="medal-icon">🥉</div>
+        <div class="medal-title">Bronze — Cru</div>
+        <div class="medal-sub">Dado bruto, exatamente como chegou da origem. Sem limpeza, sem tipo definido, com duplicatas. Serve como "prova" auditável do que a origem enviou.</div>
+      </div>
+      <div class="medal-arrow">➜</div>
+      <div class="medal-stage silver">
+        <div class="medal-icon">🥈</div>
+        <div class="medal-title">Silver — Limpo</div>
+        <div class="medal-sub">Dado validado, tipado corretamente, deduplicado, com regras de qualidade aplicadas e junções entre fontes já resolvidas. Pronto para análise técnica.</div>
+      </div>
+      <div class="medal-arrow">➜</div>
+      <div class="medal-stage gold">
+        <div class="medal-icon">🥇</div>
+        <div class="medal-title">Gold — Pronto</div>
+        <div class="medal-sub">Dado agregado e modelado para uma pergunta de negócio específica: receita diária, clientes ativos, funil de vendas. É o que alimenta o dashboard.</div>
+      </div>
+    </div>
+    <div class="kid-box">
+      <div class="kid-emoji">🍳</div>
+      <div><div class="highlight-title">Pensando como criança</div><p>Bronze é a sacola de compras chegando da feira — cenoura com terra, alface com bicho. Silver é a bancada depois de tudo lavado, descascado e cortado do jeito certo. Gold é o prato pronto, temperado, servido na mesa — exatamente o que o convidado (o time de negócio) pediu.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ SIMULADOR ============ -->
+  <section class="section" id="s-simulador">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">🎮 Simulador: a jornada de um pedido, do Bronze ao Gold</div>
+    <p class="section-desc">Clique nas paradas abaixo e veja o mesmo pedido se transformando, camada por camada, até virar um número de negócio.</p>
+    <div class="interactive-panel">
+      <div class="panel-label">O pedido A1092 — clique numa camada</div>
+      <div class="lifeline" id="medalLifeline"></div>
+      <div class="sim-grid" style="grid-template-columns:1fr;">
+        <div class="sim-card">
+          <div class="sim-card-title" id="medalCardTitle">🥉 Bronze — Cru</div>
+          <div class="sim-card-sub" id="medalCardSub"></div>
+          <div class="code-block" id="medalCardBody" style="margin-top:4px;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ARQUIVOS PEQUENOS ============ -->
+  <section class="section" id="s-arquivos">
+    <div class="section-eyebrow">Um Problema Real</div>
+    <div class="section-title">📦 O Problema dos Arquivos Pequenos & Compactação</div>
+    <p class="section-desc">Quando dados chegam em fluxo contínuo (streaming) ou em micro-lotes muito frequentes, cada escrita cria um arquivo Parquet <strong>novo e pequeno</strong>. Ler uma tabela com milhares de arquivos minúsculos é lento — o motor gasta mais tempo <em>abrindo</em> arquivos do que <em>lendo</em> dados. A solução é <strong>compactação</strong> (<code>OPTIMIZE</code>): juntar vários arquivos pequenos em poucos arquivos grandes, por trás dos panos, sem afetar quem está consultando.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧱</div>
+      <div><div class="highlight-title">Analogia</div><p>É como guardar Lego: 500 saquinhos com 2 peças cada demoram uma eternidade para abrir um por um. Compactar é despejar tudo numa caixa organizada só — mesma quantidade de peças, muito mais rápido de pegar o que precisa.</p></div>
+    </div>
+    <div class="interactive-panel">
+      <div class="panel-label">Quantos arquivos pequenos o streaming gera por hora?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Escritas por hora (1 arquivo pequeno cada)</span><span class="ctrl-v" id="filesVal">20</span></div>
+          <input type="range" id="filesSlider" min="1" max="60" step="1" value="20" oninput="updateFiles()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="filesCanvas" height="130"></canvas></div>
+      <div class="stat-cards" id="filesStats"></div>
+      <div class="info-box" style="margin-top:12px;"><p>💡 A linha verde mostra o resultado de rodar <code>OPTIMIZE</code>: os mesmos dados, reescritos em bem menos arquivos (aqui, agrupados em blocos de ~128MB).</p></div>
+    </div>
+  </section>
+
+  <!-- ============ MOTORES ============ -->
+  <section class="section" id="s-motores">
+    <div class="section-eyebrow">Quem Consulta a Tabela</div>
+    <div class="section-title">⚙️ Motores de Consulta — Muitos Motores, Uma Tabela Só</div>
+    <p class="section-desc">Como o formato de tabela é <strong>aberto</strong> (Delta, Iceberg e Hudi são especificações públicas, não produtos fechados), qualquer motor que "fale" esse formato pode ler e escrever na mesma tabela — sem precisar copiar nada.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🅿️</div>
+      <div><div class="highlight-title">Analogia</div><p>É como um <strong>estacionamento público</strong> (a tabela) que aceita qualquer carro (motor de consulta) que respeite as regras de trânsito (o formato aberto) — não precisa ser um carro de uma marca específica para poder estacionar ali.</p></div>
+    </div>
+    <div class="engine-grid">
+      <div class="engine-chip"><div class="engine-icon">🔥</div><div class="engine-name">Apache Spark</div><div class="engine-role">ETL pesado, processamento distribuído em larga escala</div></div>
+      <div class="engine-chip"><div class="engine-icon">🔍</div><div class="engine-name">Trino / Presto</div><div class="engine-role">SQL interativo, consultas ad-hoc rápidas</div></div>
+      <div class="engine-chip"><div class="engine-icon">🌀</div><div class="engine-name">Apache Flink</div><div class="engine-role">Processamento de streaming em tempo real</div></div>
+      <div class="engine-chip"><div class="engine-icon">🦆</div><div class="engine-name">DuckDB</div><div class="engine-role">Análise local, rápida, sem cluster</div></div>
+      <div class="engine-chip"><div class="engine-icon">🧊</div><div class="engine-name">Databricks SQL</div><div class="engine-role">BI e SQL otimizado sobre Delta Lake</div></div>
+      <div class="engine-chip"><div class="engine-icon">❄️</div><div class="engine-name">Snowflake</div><div class="engine-role">Data warehouse na nuvem, lê tabelas Iceberg</div></div>
+      <div class="engine-chip"><div class="engine-icon">🏹</div><div class="engine-name">Amazon Athena</div><div class="engine-role">SQL serverless direto sobre o S3</div></div>
+      <div class="engine-chip"><div class="engine-icon">📈</div><div class="engine-name">BigQuery (BigLake)</div><div class="engine-role">SQL do Google sobre tabelas abertas</div></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama Final</div>
+    <div class="section-title">📊 Data Warehouse vs Data Lake vs Lakehouse</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Critério</th><th>📚 Data Warehouse</th><th>🏊 Data Lake</th><th>🏡 Lakehouse</th></tr></thead>
+        <tbody>
+          <tr><td>Tipo de dado</td><td>Só estruturado</td><td>Qualquer tipo</td><td>Qualquer tipo</td></tr>
+          <tr><td>Custo de armazenamento</td><td class="cell-old">Alto</td><td class="cell-new">Baixo</td><td class="cell-new">Baixo</td></tr>
+          <tr><td>Schema</td><td>Rígido (write)</td><td class="cell-old">Nenhum garantido</td><td class="cell-new">Enforcement + Evolution</td></tr>
+          <tr><td>Transações ACID</td><td class="cell-new">Sim</td><td class="cell-old">Não, por padrão</td><td class="cell-new">Sim</td></tr>
+          <tr><td>Time Travel</td><td>Raro</td><td class="cell-old">Não</td><td class="cell-new">Sim, nativo</td></tr>
+          <tr class="row-scan"><td>BI / relatórios rápidos</td><td class="cell-new">Excelente</td><td>Fraco</td><td class="cell-new">Bom / Excelente</td></tr>
+          <tr class="row-scan"><td>Machine Learning / dados brutos</td><td>Fraco</td><td class="cell-new">Excelente</td><td class="cell-new">Excelente</td></tr>
+          <tr><td>Múltiplos motores na mesma cópia</td><td class="cell-old">Não</td><td>Sim (sem regras)</td><td class="cell-new">Sim, com regras</td></tr>
+          <tr><td>Exemplos</td><td>Teradata, Redshift clássico</td><td>S3 + Hive puro</td><td>Databricks, Snowflake+Iceberg, EMR</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ QUANDO USAR ============ -->
+  <section class="section" id="s-quando">
+    <div class="section-eyebrow">Guia de Decisão</div>
+    <div class="section-title">🧭 Quando Usar Cada Um</div>
+    <div class="grid-3">
+      <div class="decision-card">
+        <div class="decision-q">"Só preciso de relatórios financeiros simples, dados 100% estruturados, time pequeno?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">Data Warehouse puro pode bastar</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso guardar barato qualquer coisa (logs, imagens, JSON) sem me preocupar com consulta ainda?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-red);color:var(--accent-red);">Data Lake cru, com disciplina de organização</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso de ACID, ML e BI, dados de vários tipos, e times diferentes consultando a mesma fonte?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-green);color:var(--accent-green);">Lakehouse</div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Na prática, a grande maioria das empresas modernas de médio/grande porte caminha para o Lakehouse — não porque o Warehouse ou o Lake "perderam", mas porque o Lakehouse entrega o que os dois faziam de melhor, sem duplicar dados.</p></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🧹 Rode compactação com regularidade</div><div class="card-text">Agende <code>OPTIMIZE</code> (ou equivalente) periodicamente em tabelas com muita escrita frequente, para evitar o problema dos arquivos pequenos.</div></div>
+      <div class="card"><div class="card-title">🗑️ Defina uma política de retenção para VACUUM</div><div class="card-text">Arquivos antigos "removidos logicamente" continuam ocupando espaço até serem limpos de verdade — mas limpar cedo demais quebra o time travel.</div></div>
+      <div class="card"><div class="card-title">🥉🥈🥇 Siga o padrão medalhão</div><div class="card-text">Nunca deixe o time de negócio consultar direto a camada Bronze — ela existe para auditoria, não para dashboard.</div></div>
+      <div class="card"><div class="card-title">🗄️ Use um catálogo central</div><div class="card-text">Unity Catalog, AWS Glue, Nessie ou Polaris centralizam permissões e descoberta de tabelas — sem isso, o Lakehouse pode virar pântano de novo.</div></div>
+      <div class="card"><div class="card-title">📐 Particione com moderação</div><div class="card-text">Particionar demais (ex: por minuto) cria excesso de pastas pequenas — prefira particionar por dia/mês e usar Z-order/clustering para o resto.</div></div>
+      <div class="card"><div class="card-title">🔐 Trate o Lakehouse como um banco de verdade</div><div class="card-text">Controle de acesso em nível de tabela e coluna, auditoria de quem escreveu o quê — as garantias de ACID não substituem governança.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Lakehouse</span>
+    <span>
+      Fontes: <a href="https://delta.io/" target="_blank" rel="noopener">Delta Lake</a> ·
+      <a href="https://iceberg.apache.org/" target="_blank" rel="noopener">Apache Iceberg</a> ·
+      <a href="https://hudi.apache.org/" target="_blank" rel="noopener">Apache Hudi</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-intro', icon:'🏠', label:'Boas-vindas'},
+  {id:'s-warehouse', icon:'📚', label:'Data Warehouse'},
+  {id:'s-lake', icon:'🏊', label:'Data Lake'},
+  {id:'s-lakehouse', icon:'🏡', label:'Nasce o Lakehouse'},
+  {id:'s-arquitetura', icon:'🧱', label:'Arquitetura'},
+  {id:'s-acid', icon:'🔒', label:'ACID'},
+  {id:'s-schema', icon:'🧬', label:'Schema'},
+  {id:'s-timetravel', icon:'⏳', label:'Time Travel'},
+  {id:'s-metadata', icon:'🗂️', label:'Metadata'},
+  {id:'s-formatos', icon:'⚔️', label:'Delta·Iceberg·Hudi'},
+  {id:'s-medalhao', icon:'🥉', label:'Medalhão'},
+  {id:'s-simulador', icon:'🎮', label:'Simulador'},
+  {id:'s-arquivos', icon:'📦', label:'Arquivos Pequenos'},
+  {id:'s-motores', icon:'⚙️', label:'Motores'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-quando', icon:'🧭', label:'Quando Usar'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== ARQUITETURA — layer stack ===================== */
+const layers = [
+  {id:'storage', icon:'📦', title:'Armazenamento (Storage)', tag:'Barato', sub:'Object storage: S3, ADLS, GCS — arquivos Parquet/ORC', d:'A base de tudo: um armazenamento de objetos barato e infinitamente escalável. Guarda os dados crus em arquivos colunares (geralmente Parquet), sem entender nada sobre "tabelas" — para ele é só um monte de arquivos numa pasta.'},
+  {id:'formato', icon:'🗂️', title:'Formato de Tabela (Table Format)', tag:'A Mágica', sub:'Delta Lake, Apache Iceberg ou Apache Hudi — o metadata log', d:'A camada que transforma arquivos soltos numa tabela de verdade: mantém o log de transações, o schema, o histórico de versões e as regras de ACID. É essa camada que garante que uma leitura nunca veja um estado "quebrado" no meio de uma escrita.'},
+  {id:'compute', icon:'⚙️', title:'Computação (Compute Engines)', tag:'Flexível', sub:'Spark, Trino, Flink, DuckDB, Snowflake, Databricks SQL...', d:'Os motores que efetivamente leem e escrevem nas tabelas, respeitando as regras da camada de formato. Como o formato é aberto, vários motores diferentes podem operar na mesma tabela, ao mesmo tempo, sem conflito.'},
+  {id:'consumo', icon:'📊', title:'Consumo (BI / ML / Apps)', tag:'O Resultado', sub:'Dashboards, notebooks de ML, aplicações, APIs', d:'A ponta final: dashboards de BI, notebooks de ciência de dados treinando modelos, aplicações lendo dados em tempo real. Todos consultando a mesma fonte da verdade, sem cópias divergentes.'},
+];
+function buildLayers(){
+  document.getElementById('layerStack').innerHTML = layers.map(l => `
+    <div class="layer-row" data-lid="${l.id}" onclick="pickLayer('${l.id}')">
+      <div><div class="layer-title">${l.icon} ${l.title}</div><div class="layer-sub">${l.sub}</div></div>
+      <span class="layer-tag">${l.tag}</span>
+    </div>`).join('');
+}
+function pickLayer(id){
+  document.querySelectorAll('.layer-row').forEach(el => el.classList.toggle('active', el.dataset.lid === id));
+  const l = layers.find(x => x.id === id);
+  document.getElementById('layerDetail').innerHTML = `<div class="ad-title">${l.icon} ${l.title}</div><div class="ad-text">${l.d}</div>`;
+}
+buildLayers();
+
+/* ===================== ACID toggle ===================== */
+function setAcidMode(acid){
+  document.getElementById('btnNoAcid').classList.toggle('active', !acid);
+  document.getElementById('btnAcid').classList.toggle('active', acid);
+  const el = document.getElementById('acidResult');
+  if(!acid){
+    el.innerHTML = `<span style="font-size:24px;">🥴</span><span style="color:var(--accent-red);">Processo A escreve metade das linhas, Processo B começa a ler no meio — resultado: uma leitura vê dados <strong>parcialmente atualizados</strong>, misturando o antes e o depois.</span>`;
+  } else {
+    el.innerHTML = `<span style="font-size:24px;">🔒</span><span style="color:var(--accent-green);">Processo A escreve um novo snapshot completo; Processo B só enxerga a versão anterior <strong>inteira</strong> até A confirmar — depois disso, todo mundo vê a versão nova, também inteira. Nunca um estado quebrado.</span>`;
+  }
+}
+setAcidMode(false);
+
+/* ===================== TIME TRAVEL — lifeline de versões ===================== */
+const ttVersions = [
+  {icon:'🆕', label:'Versão 0 — criada', date:'01/03/2026', preco:'199,90'},
+  {icon:'🏷️', label:'Versão 1 — promoção', date:'15/04/2026', preco:'179,90'},
+  {icon:'📈', label:'Versão 2 — reajuste', date:'10/06/2026', preco:'219,90'},
+];
+let ttIdx = ttVersions.length - 1;
+function buildTT(){
+  document.getElementById('ttLifeline').innerHTML = ttVersions.map((e,i) => `
+    <div class="life-event ${i===ttIdx?'active':i<ttIdx?'done':''}" onclick="selectTT(${i})">
+      <div class="life-dot-wrap">
+        <span class="life-line ${i===0?'first':''}"></span>
+        <div class="life-dot">${i<ttIdx?'✓':''}</div>
+        <span class="life-line ${i===ttVersions.length-1?'first':''}"></span>
+      </div>
+      <span class="life-icon">${e.icon}</span>
+      <span class="life-label">${e.label}</span>
+      <span class="life-date">${e.date}</span>
+    </div>`).join('');
+  const v = ttVersions[ttIdx];
+  document.getElementById('ttResult').innerHTML = `<span style="font-size:24px;">${v.icon}</span><span>Tênis Azul em <strong>${v.date}</strong> (${v.label.split(' — ')[1]}): <strong style="color:var(--accent-green);font-size:16px;">R$ ${v.preco}</strong></span>`;
+}
+function selectTT(i){ ttIdx = i; buildTT(); }
+buildTT();
+
+/* ===================== SIMULADOR MEDALHÃO — pedido A1092 ===================== */
+const medalStages = [
+  {icon:'🥉', label:'Bronze', date:'ingestão', title:'🥉 Bronze — Cru', sub:'Exatamente como chegou da API de vendas: tudo string, sem validação.',
+   body:`{
+  "order_id": "A1092",
+  "cust": "joao@exemplo.com",
+  "amt": "199,90",
+  "ts": "2026-05-01T14:32:00Z",
+  "status_raw": "PAGO "
+}`},
+  {icon:'🥈', label:'Silver', date:'limpeza', title:'🥈 Silver — Limpo e Tipado', sub:'Validado, tipado corretamente, texto sem espaços extras, deduplicado.',
+   body:`order_id       : "A1092"
+customer_email : "joao@exemplo.com"
+amount         : 199.90   (decimal)
+order_ts       : 2026-05-01 14:32:00
+status         : "PAGO"   (trim aplicado)`},
+  {icon:'🥇', label:'Gold', date:'agregação', title:'🥇 Gold — Pronto para Negócio', sub:'Agregado junto com todos os outros pedidos do dia, pronto para o dashboard.',
+   body:`data          : 2026-05-01
+total_pedidos : 1.284
+receita_total : R$ 187.402,10
+ticket_medio  : R$ 145,95`},
+];
+let medalIdx = 0;
+function buildMedalLifeline(){
+  document.getElementById('medalLifeline').innerHTML = medalStages.map((e,i) => `
+    <div class="life-event ${i===medalIdx?'active':i<medalIdx?'done':''}" onclick="selectMedal(${i})">
+      <div class="life-dot-wrap">
+        <span class="life-line ${i===0?'first':''}"></span>
+        <div class="life-dot">${i<medalIdx?'✓':''}</div>
+        <span class="life-line ${i===medalStages.length-1?'first':''}"></span>
+      </div>
+      <span class="life-icon">${e.icon}</span>
+      <span class="life-label">${e.label}</span>
+      <span class="life-date">${e.date}</span>
+    </div>`).join('');
+  const s = medalStages[medalIdx];
+  document.getElementById('medalCardTitle').textContent = s.title;
+  document.getElementById('medalCardSub').textContent = s.sub;
+  document.getElementById('medalCardBody').textContent = s.body;
+}
+function selectMedal(i){ medalIdx = i; buildMedalLifeline(); }
+buildMedalLifeline();
+
+/* ===================== ARQUIVOS PEQUENOS — canvas ===================== */
+function updateFiles(){
+  const n = +document.getElementById('filesSlider').value;
+  document.getElementById('filesVal').textContent = n;
+  const totalMB = n * 4; // cada arquivo pequeno ~4MB
+  const filesBefore = n;
+  const filesAfter = Math.max(1, Math.ceil(totalMB / 128)); // blocos de 128MB
+  document.getElementById('filesStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Arquivos antes (streaming cru)</div><div class="stat-card-value">${filesBefore}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Arquivos depois do OPTIMIZE</div><div class="stat-card-value">${filesAfter}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">Volume total de dados</div><div class="stat-card-value" style="font-size:15px;">${totalMB} MB</div></div>
+  `;
+  drawFilesCanvas(filesBefore, filesAfter);
+}
+function drawFilesCanvas(filesBefore, filesAfter){
+  const cv = document.getElementById('filesCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 130;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Antes (arquivos pequenos)', val:filesBefore, color:'#f86b63'},
+    {name:'Depois do OPTIMIZE', val:filesAfter, color:'#7dded8'},
+  ];
+  const padL=190, padR=30, padTop=14, barH=32, gap=22;
+  const maxVal = Math.max(1, filesBefore);
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(d.val + ' arquivo(s)', padL+10, y+barH*0.65);
+  });
+}
+updateFiles();
+window.addEventListener('resize', updateFiles);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Um Lakehouse guarda os dados em armazenamento de objetos barato (como S3), igual a um Data Lake.', a:true, e:'Verdadeiro. A camada de armazenamento do Lakehouse é exatamente a mesma de um Data Lake — object storage barato. A diferença está na camada de metadata por cima.'},
+  {q:'Em Data Warehouses tradicionais, o schema é verificado na hora de ler o dado (schema-on-read).', a:false, e:'Falso. Data Warehouses usam schema-on-write: o dado precisa se encaixar no schema antes de entrar. Schema-on-read é característico de Data Lakes.'},
+  {q:'ACID no Lakehouse garante que duas escritas simultâneas na mesma tabela nunca deixam a tabela num estado parcialmente corrompido.', a:true, e:'Verdadeiro. É exatamente isso que Atomicidade e Isolamento garantem — cada escrita é tudo-ou-nada, e escritas concorrentes não se misturam no meio do caminho.'},
+  {q:'Schema Evolution permite adicionar uma coluna nova numa tabela sem quebrar as linhas que já existiam.', a:true, e:'Verdadeiro. As linhas antigas simplesmente recebem NULL na coluna nova, sem precisar reescrever a tabela inteira.'},
+  {q:'Time Travel funciona porque o Lakehouse edita os arquivos Parquet diretamente a cada mudança.', a:false, e:'Falso. É o contrário: os arquivos nunca são editados. Cada mudança cria arquivos novos, e o log de transações controla quais arquivos formam cada versão — por isso dá para voltar a versões antigas.'},
+  {q:'Delta Lake, Apache Iceberg e Apache Hudi são três produtos concorrentes de empresas diferentes, sem nenhum em código aberto.', a:false, e:'Falso. Os três são projetos open-source (Delta Lake é hoje um projeto da Linux Foundation), criados por Databricks, Netflix e Uber respectivamente.'},
+  {q:'Na arquitetura medalhão, a camada Bronze já deve estar limpa e pronta para ser usada direto em um dashboard de negócio.', a:false, e:'Falso. Bronze é o dado cru, exatamente como chegou da origem — quem deve alimentar dashboards é a camada Gold, depois de passar por Silver.'},
+  {q:'O "problema dos arquivos pequenos" acontece principalmente quando dados chegam em streaming ou micro-lotes muito frequentes.', a:true, e:'Verdadeiro. Cada escrita frequente gera um arquivo novo e pequeno; sem compactação (OPTIMIZE) periódica, a tabela acumula milhares deles e as consultas ficam lentas.'},
+  {q:'Como o formato de tabela do Lakehouse é aberto, apenas um único motor de consulta pode ler e escrever numa mesma tabela por vez.', a:false, e:'Falso. Justamente por ser aberto, vários motores diferentes (Spark, Trino, DuckDB, Snowflake, etc.) podem ler e escrever na mesma tabela, cada um respeitando as regras ACID do formato.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

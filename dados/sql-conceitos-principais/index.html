@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Principais Conceitos de SQL. SELECT, WHERE, JOIN, GROUP BY, subconsultas, transações e mais, com analogias simples, diagramas visuais e simuladores interativos.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Principais Conceitos de SQL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;display:inline-flex;align-items:center;gap:4px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+.toc-lvl-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.toc-lvl-dot.lvl-basico{background:var(--accent-green);}
+.toc-lvl-dot.lvl-intermediario{background:var(--accent-blue);}
+.toc-lvl-dot.lvl-avancado{background:var(--accent-purple);}
+.toc-legend{display:flex;gap:16px;font-size:10px;color:var(--text-secondary);margin-left:auto;flex-shrink:0;}
+.toc-legend span{display:inline-flex;align-items:center;gap:5px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-row.old{opacity:.55;text-decoration:line-through;}
+.file-chip .fc-row.new{border-color:var(--accent-green);color:var(--accent-green);font-weight:700;text-decoration:none;opacity:1;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- LEVEL DIVIDER (Básico / Intermediário / Avançado) ---- */
+.level-divider{display:flex;align-items:center;gap:20px;padding:26px 30px;border-radius:10px;border:1px solid var(--border-color);}
+.level-divider .level-icon{font-size:32px;line-height:1;flex-shrink:0;}
+.level-divider .level-body{flex:1;min-width:0;}
+.level-divider .level-kicker{font-size:10.5px;text-transform:uppercase;letter-spacing:2px;font-weight:800;margin-bottom:5px;}
+.level-divider .level-title{font-size:20px;font-weight:800;letter-spacing:-.2px;}
+.level-divider .level-desc{font-size:12.5px;color:var(--text-secondary);margin-top:7px;line-height:1.65;max-width:680px;}
+.level-divider .level-count{margin-left:auto;text-align:center;flex-shrink:0;padding-left:20px;border-left:1px solid var(--border-color);}
+.level-divider .level-count-num{font-size:26px;font-weight:800;font-family:'Roboto Mono',monospace;}
+.level-divider .level-count-label{font-size:9.5px;text-transform:uppercase;letter-spacing:1px;color:var(--text-secondary);white-space:nowrap;}
+.level-divider.lvl-basico{border-color:var(--accent-green);background:linear-gradient(135deg,rgba(125,222,216,.10) 0%,rgba(125,222,216,.02) 100%);}
+.level-divider.lvl-basico .level-kicker,.level-divider.lvl-basico .level-title,.level-divider.lvl-basico .level-count-num{color:var(--accent-green);}
+.level-divider.lvl-intermediario{border-color:var(--accent-blue);background:linear-gradient(135deg,rgba(54,162,239,.10) 0%,rgba(54,162,239,.02) 100%);}
+.level-divider.lvl-intermediario .level-kicker,.level-divider.lvl-intermediario .level-title,.level-divider.lvl-intermediario .level-count-num{color:var(--accent-blue);}
+.level-divider.lvl-avancado{border-color:var(--accent-purple);background:linear-gradient(135deg,rgba(196,154,255,.10) 0%,rgba(196,154,255,.02) 100%);}
+.level-divider.lvl-avancado .level-kicker,.level-divider.lvl-avancado .level-title,.level-divider.lvl-avancado .level-count-num{color:var(--accent-purple);}
+@media (max-width:700px){.level-divider{flex-wrap:wrap;padding:20px;} .level-count{margin-left:0;padding-left:0;border-left:none;}}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- DIMENSÃO x FATO / TABELA PRINCIPAL x TABELA LIGADA — diagrama visual reutilizável ---- */
+.dimfact-diagram{display:flex;gap:20px;align-items:stretch;margin-top:6px;}
+.dimfact-card{flex:0 0 230px;background:var(--bg-panel);border:2px solid var(--accent);border-radius:12px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.dimfact-tag{position:absolute;top:-11px;left:14px;background:var(--accent);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.dimfact-photo{font-size:36px;text-align:center;margin:6px 0 2px;}
+.dimfact-row{display:flex;justify-content:space-between;gap:8px;font-size:11.5px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:6px 10px;}
+.dimfact-row span{color:var(--text-secondary);}
+.dimfact-row strong{color:var(--text-primary);font-family:'Roboto Mono',monospace;font-weight:700;}
+.dimfact-caption{font-size:10.5px;color:var(--text-disabled);text-align:center;margin-top:4px;line-height:1.5;}
+.dimfact-log{flex:1;background:var(--bg-panel);border:1.5px dashed var(--border-strong);border-radius:12px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:8px;position:relative;}
+.dimfact-log-tag{position:absolute;top:-11px;left:14px;background:var(--accent-blue);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.dimfact-log-entry{display:flex;align-items:center;gap:10px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 12px;font-size:11.5px;color:var(--text-secondary);flex-wrap:wrap;margin-top:6px;}
+.dimfact-log-entry:first-of-type{margin-top:18px;}
+.dimfact-log-date{font-family:'Roboto Mono',monospace;color:var(--text-disabled);font-size:10.5px;background:var(--bg-main);padding:2px 7px;border-radius:4px;flex-shrink:0;}
+.dimfact-log-entry strong{color:var(--text-primary);}
+.dimfact-fk{margin-left:auto;font-family:'Roboto Mono',monospace;font-size:10px;color:var(--accent);background:rgba(6,182,212,.10);border:1px solid var(--accent);border-radius:10px;padding:2px 9px;white-space:nowrap;flex-shrink:0;}
+@media (max-width:960px){ .dimfact-diagram{flex-direction:column;} .dimfact-card{flex:none;} }
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-fade td{opacity:.4;}
+.cell-old{color:var(--accent-red);text-decoration:line-through;}
+.cell-new{color:var(--accent-green);font-weight:700;}
+.cell-null{color:var(--text-disabled);font-style:italic;}
+.badge-current{background:rgba(125,222,216,.16);color:var(--accent-green);border:1px solid var(--accent-green);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.badge-expired{background:rgba(152,162,179,.10);color:var(--text-disabled);border:1px solid var(--border-color);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
+.badge-key{background:rgba(232,196,104,.14);color:var(--accent-yellow);border:1px solid var(--accent-yellow);border-radius:10px;padding:1px 7px;font-size:9px;font-weight:800;letter-spacing:.4px;white-space:nowrap;margin-left:6px;}
+.badge-fk{background:rgba(54,162,239,.14);color:var(--accent-blue);border:1px solid var(--accent-blue);border-radius:10px;padding:1px 7px;font-size:9px;font-weight:800;letter-spacing:.4px;white-space:nowrap;margin-left:6px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card.c-yellow{border-top-color:var(--accent-yellow);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CHIP / PILL ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.pill-list{display:flex;flex-wrap:wrap;gap:8px;}
+.pill{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--text-secondary);}
+.pill.hl{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);font-weight:700;}
+.pill.hl-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);font-weight:700;}
+.pill.hl-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);font-weight:700;}
+
+/* ---- SCRIPT STEP BADGE ---- */
+.script-step{display:flex;align-items:center;gap:10px;margin:22px 0 6px;}
+.script-step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--bg-main);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Roboto Mono',monospace;}
+.script-step-label{font-size:13px;font-weight:700;color:var(--text-primary);}
+.script-step-sub{font-size:12px;color:var(--text-secondary);margin:2px 0 8px 36px;line-height:1.6;}
+
+/* ---- LIFELINE TIMELINE (simuladores) ---- */
+.lifeline{display:flex;align-items:flex-start;gap:0;overflow-x:auto;padding:8px 4px 4px;}
+.life-event{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:150px;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+.life-dot-wrap{display:flex;align-items:center;width:100%;}
+.life-line{flex:1;height:2px;background:var(--border-color);}
+.life-line.first{visibility:hidden;}
+.life-dot{width:20px;height:20px;border-radius:50%;background:var(--bg-elevated);border:2.5px solid var(--border-strong);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;transition:.15s;}
+.life-event.active .life-dot{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgba(6,182,212,.16);}
+.life-event.done .life-dot{background:var(--bg-highlight);border-color:var(--accent-green);color:var(--accent-green);}
+.life-icon{font-size:22px;}
+.life-label{font-size:11.5px;color:var(--text-secondary);text-align:center;font-weight:600;line-height:1.3;}
+.life-date{font-size:9.5px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;}
+.life-event.active .life-label{color:var(--accent);}
+.life-event:hover .life-label{color:var(--accent-blue);}
+
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;}
+.sim-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;}
+.sim-card-title{font-size:12.5px;font-weight:800;color:var(--text-primary);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.sim-card-sub{font-size:11px;color:var(--text-disabled);margin-bottom:10px;}
+.sim-mini-table{width:100%;border-collapse:collapse;font-size:11px;font-family:'Roboto Mono',monospace;}
+.sim-mini-table th{background:var(--bg-main);color:var(--text-disabled);padding:5px 7px;text-align:left;font-size:9px;text-transform:uppercase;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.sim-mini-table td{padding:5px 7px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.sim-mini-table tr:last-child td{border-bottom:none;}
+.sim-mini-table tr.is-current td{color:var(--text-primary);background:rgba(125,222,216,.08);}
+.sim-mini-table tr.just-added td{animation:popin .5s ease;}
+@keyframes popin{from{background:rgba(6,182,212,.35);}to{background:transparent;}}
+
+/* ---- BASKETS (GROUP BY) ---- */
+.basket-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:6px;}
+.basket{background:var(--bg-panel);border:2px solid var(--border-color);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;transition:.25s;}
+.basket.faded{opacity:.3;transform:scale(.97);}
+.basket-title{font-weight:800;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;}
+.basket-count{font-family:'Roboto Mono',monospace;background:var(--bg-elevated);border-radius:10px;padding:2px 9px;font-size:11px;color:var(--text-primary);}
+.basket-items{display:flex;flex-wrap:wrap;gap:6px;min-height:30px;}
+.basket-chip{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:16px;padding:5px 11px;font-size:11.5px;color:var(--text-primary);}
+.basket.ouro{border-color:var(--accent-yellow);}
+.basket.prata{border-color:var(--accent-blue);}
+.basket.bronze{border-color:var(--accent-red);}
+
+/* ---- VENN / JOIN ---- */
+.venn-legend{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-top:6px;font-size:11.5px;color:var(--text-secondary);}
+.venn-legend span{display:inline-flex;align-items:center;gap:6px;}
+.venn-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+
+/* ---- CROSS JOIN grid ---- */
+.cross-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:280px;margin:10px auto 0;}
+.cross-dot{width:100%;aspect-ratio:1;border-radius:50%;background:var(--accent);opacity:.85;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.grid-5,.sim-grid,.basket-grid{grid-template-columns:1fr;}
+  .stat-cards{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Principais Conceitos de SQL</h1><span>A linguagem universal para conversar com dados</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">3</div><div class="hstat-label">Níveis (básico → avançado)</div></div>
+      <div class="hstat"><div class="hstat-num">5</div><div class="hstat-label">Famílias de comandos</div></div>
+      <div class="hstat"><div class="hstat-num">22+</div><div class="hstat-label">Conceitos na aula</div></div>
+      <div class="hstat"><div class="hstat-num">2</div><div class="hstat-label">Tabelas de exemplo</div></div>
+      <div class="hstat"><div class="hstat-num">~70min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow" style="display:flex;align-items:center;">
+      <span>A jornada da aula: dos dados crus ao SQL avançado</span>
+      <span class="toc-legend">
+        <span><span class="toc-lvl-dot lvl-basico"></span> Básico</span>
+        <span><span class="toc-lvl-dot lvl-intermediario"></span> Intermediário</span>
+        <span><span class="toc-lvl-dot lvl-avancado"></span> Avançado</span>
+      </span>
+    </div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Dados são só uma <em>tabela gigante</em>. SQL é como você <em>conversa</em> com ela.</h2>
+      <p><strong>SQL</strong> (Structured Query Language) é a linguagem que usamos para perguntar coisas para um banco de dados: "quem são meus clientes de São Paulo?", "quanto eu vendi esse mês?", "qual produto mais vendeu?". Não é uma linguagem de programação como Python ou JavaScript — é mais parecida com <em>inglês estruturado</em>: você descreve <strong>o que</strong> quer, e o banco descobre <strong>como</strong> buscar. Nesta aula vamos construir, do zero e com muita analogia visual, os conceitos que sustentam praticamente qualquer consulta SQL que você vai escrever na vida — de um simples <code>SELECT</code> até <code>JOIN</code>s, subconsultas e transações.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">DQL — Consultar</span>
+        <span class="badge badge-green">DML — Manipular</span>
+        <span class="badge badge-blue">DDL — Definir</span>
+        <span class="badge badge-purple">DCL — Controlar acesso</span>
+        <span class="badge badge-yellow">TCL — Transações</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🗂️ TABELA CLIENTES</div>
+        <div class="fc-body">
+          <div class="fc-row">1 · Ana · Recife · Ouro</div>
+          <div class="fc-row">2 · Bruno · São Paulo · Prata</div>
+          <div class="fc-row new">SELECT * FROM clientes;</div>
+        </div>
+        <div class="fc-foot">Você pergunta. O banco responde.</div>
+      </div>
+      <div class="file-chip-caption">É basicamente isso que SQL faz — a aula inteira é sobre como perguntar melhor</div>
+    </div>
+  </section>
+
+  <!-- ============ NÍVEL: BÁSICO ============ -->
+  <div class="level-divider lvl-basico" id="lvl-basico">
+    <span class="level-icon">🟢</span>
+    <div class="level-body">
+      <div class="level-kicker">Nível 1 de 3 · Básico</div>
+      <div class="level-title">Lendo dados de uma tabela só</div>
+      <p class="level-desc">O essencial pra sair do zero: o que é uma tabela, os 5 tipos de comando SQL, e como filtrar, ordenar e resumir linhas com <code>SELECT</code>, <code>WHERE</code>, <code>ORDER BY</code> e funções agregadas.</p>
+    </div>
+    <div class="level-count"><div class="level-count-num">6</div><div class="level-count-label">Seções</div></div>
+  </div>
+
+  <!-- ============ 1. TABELAS E DADOS ============ -->
+  <section class="section" id="s-fundamentos">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🗂️ Primeiro, o básico: o que é uma tabela?</div>
+    <p class="section-desc">
+      Uma tabela SQL é basicamente uma <strong>planilha organizada</strong>: um conjunto de colunas fixas (os "tipos de pergunta") e várias linhas (as "respostas" de cada registro). Ao longo desta aula inteira vamos usar sempre as <em>mesmas duas tabelas</em> — <code>clientes</code> e <code>pedidos</code> — para que cada conceito novo se encaixe no que você já viu antes, em vez de exemplos soltos e descartáveis.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🎒</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Imagine um <strong>caderno de fichas</strong> da escola. Cada <strong>coluna</strong> é uma pergunta que se repete em toda ficha ("qual seu nome?", "qual sua cidade?"). Cada <strong>linha</strong> é a ficha preenchida de uma pessoa específica. E o <strong>id</strong> é tipo o número da carteirinha: ninguém mais na escola tem aquele número.</p>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Aqui está a tabela <code>clientes</code> que vamos usar do início ao fim da aula — repare na coluna destacada (um <em>atributo</em> que se repete) e na linha destacada (um <em>registro</em> completo, a "ficha" da Ana):</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="tblClientesBase"></table>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">➡️ Uma LINHA (registro)</div><div class="card-text">A ficha completa de <strong>um</strong> cliente: id, nome, cidade e categoria juntos. Em SQL, cada linha também é chamada de <em>tupla</em> ou <em>registro</em>.</div></div>
+      <div class="card"><div class="card-title">⬇️ Uma COLUNA (atributo)</div><div class="card-text">A mesma pergunta feita para <strong>todos</strong> os clientes — por exemplo, "cidade". Em SQL, uma coluna também é chamada de <em>campo</em> ou <em>atributo</em>.</div></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">E a tabela <code>pedidos</code>, que guarda as compras — repare que ela não repete o nome nem a cidade do cliente, só guarda o <strong>id_cliente</strong>, um "elo" que aponta de volta para a tabela <code>clientes</code> (vamos explorar isso a fundo lá na frente, em Chaves Primárias e Estrangeiras):</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="tblPedidosBase"></table>
+    </div>
+    <div class="info-box"><p>💡 Repare: <strong>Diego</strong> (id 4) aparece em <code>clientes</code> mas não tem nenhuma linha em <code>pedidos</code> — ele nunca comprou nada. Isso não é acidente: vamos usar esse detalhe várias vezes na aula, principalmente em <code>JOIN</code>.</p></div>
+  </section>
+
+  <!-- ============ 2. FAMÍLIAS DE COMANDOS ============ -->
+  <section class="section" id="s-familias">
+    <div class="section-eyebrow">O Mapa Geral</div>
+    <div class="section-title">👨‍👩‍👧‍👦 As 5 "famílias" de comandos SQL</div>
+    <p class="section-desc">Todo comando SQL pertence a uma de cinco famílias, de acordo com o que ele faz. Entender isso ajuda a não confundir "criar uma tabela" com "colocar dados dentro dela" — são coisas diferentes, com comandos diferentes.</p>
+    <div class="grid-5">
+      <div class="card">
+        <div class="card-title">🔍 DQL</div>
+        <div class="card-text"><strong>Data Query Language</strong><br>Só <em>pergunta</em>, nunca altera nada.<br><code>SELECT</code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">✍️ DML</div>
+        <div class="card-text"><strong>Data Manipulation</strong><br>Manipula os <em>dados</em> dentro das tabelas.<br><code>INSERT · UPDATE · DELETE</code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏗️ DDL</div>
+        <div class="card-text"><strong>Data Definition</strong><br>Define a <em>estrutura</em> — as tabelas em si.<br><code>CREATE · ALTER · DROP</code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔐 DCL</div>
+        <div class="card-text"><strong>Data Control</strong><br>Controla <em>quem pode</em> fazer o quê.<br><code>GRANT · REVOKE</code></div>
+      </div>
+      <div class="card">
+        <div class="card-title">💾 TCL</div>
+        <div class="card-text"><strong>Transaction Control</strong><br>Confirma ou desfaz um <em>bloco</em> de mudanças.<br><code>COMMIT · ROLLBACK</code></div>
+      </div>
+    </div>
+    <div class="kid-box">
+      <div class="kid-emoji">🏠</div>
+      <div><div class="highlight-title">Analogia</div><p>Pense numa casa: <strong>DDL</strong> é construir os cômodos (a planta da casa). <strong>DML</strong> é mover móveis pra dentro, trocar de lugar ou jogar fora. <strong>DQL</strong> é só olhar e perguntar "quantas cadeiras tem na sala?". <strong>DCL</strong> é decidir quem tem a chave de cada cômodo. <strong>TCL</strong> é o "salvar" ou "desfazer" de um projeto de reforma inteiro.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 3. SELECT & FROM ============ -->
+  <section class="section" id="s-select">
+    <div class="section-eyebrow">O comando mais usado</div>
+    <div class="section-title">🔍 SELECT & FROM — a pergunta básica</div>
+    <p class="section-desc"><code>SELECT</code> diz <strong>quais colunas</strong> você quer ver; <code>FROM</code> diz <strong>de qual tabela</strong>. É a espinha dorsal de toda consulta SQL — praticamente tudo que vem depois nesta aula é sobre <em>refinar</em> essa pergunta básica.</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> nome, cidade   <span class="cm">-- quais colunas eu quero ver</span>
+<span class="kw">FROM</span> clientes;         <span class="cm">-- de qual tabela</span></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">⭐ SELECT *</div><div class="card-text">O asterisco <code>*</code> significa "todas as colunas". Ótimo para explorar, mas em produção é melhor listar as colunas que você realmente precisa — mais rápido e mais claro para quem lê depois.</div></div>
+      <div class="card"><div class="card-title">🏷️ AS (apelido)</div><div class="card-text">Renomeia uma coluna no resultado: <code>SELECT nome AS cliente FROM clientes;</code> — não muda a tabela, só como o resultado aparece.</div></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">O resultado de <code>SELECT nome, cidade FROM clientes;</code> — repare que só as duas colunas pedidas aparecem, na ordem pedida:</p>
+    <div style="overflow-x:auto;"><table class="data-table" id="tblSelectDemo"></table></div>
+  </section>
+
+  <!-- ============ 4. WHERE — INTERATIVO ============ -->
+  <section class="section" id="s-where">
+    <div class="section-eyebrow">Filtrando linhas</div>
+    <div class="section-title">🧹 WHERE — a peneira dos dados</div>
+    <p class="section-desc"><code>WHERE</code> é uma <strong>peneira</strong>: ele passa linha por linha e só deixa passar quem atende à condição. Funciona <em>antes</em> de qualquer agrupamento (isso importa lá na frente, quando compararmos com <code>HAVING</code>). Clique nos botões abaixo para trocar a condição e ver a peneira filtrar a tabela <code>clientes</code> em tempo real:</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🕳️</div>
+      <div><div class="highlight-title">Analogia</div><p>É como peneirar areia da praia procurando conchinhas: a peneira (WHERE) deixa a areia (linhas que não interessam) cair, e só ficam as conchinhas (linhas que atendem à condição).</p></div>
+    </div>
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha a condição do WHERE</div>
+      <div class="btn-toggle-row" id="whereButtons"></div>
+      <div class="code-block" id="whereCode" style="margin-top:14px;"></div>
+      <div style="overflow-x:auto;margin-top:12px;"><table class="data-table" id="whereTable"></table></div>
+      <div class="result-display" id="whereStat"></div>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔢 Comparação</div><div class="card-text"><code>= &gt; &lt; &gt;= &lt;= &lt;&gt;</code><br>Compara valores numéricos, datas ou texto.</div></div>
+      <div class="card"><div class="card-title">🧩 Lógicos</div><div class="card-text"><code>AND · OR · NOT</code><br>Combinam várias condições numa peneira só.</div></div>
+      <div class="card"><div class="card-title">🎯 Especiais</div><div class="card-text"><code>LIKE · IN · BETWEEN · IS NULL</code><br>Padrões de texto, listas de valores, faixas e ausência de valor.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ 5. ORDER BY & LIMIT ============ -->
+  <section class="section" id="s-orderby">
+    <div class="section-eyebrow">Organizando o resultado</div>
+    <div class="section-title">🔤 ORDER BY & LIMIT — colocando em fila</div>
+    <p class="section-desc"><code>ORDER BY</code> organiza as linhas do resultado numa ordem — <code>ASC</code> (crescente, o padrão) ou <code>DESC</code> (decrescente). <code>LIMIT</code> corta o resultado nas primeiras N linhas. Juntos, respondem perguntas como "quem são os 3 clientes com o pedido mais caro?".</p>
+    <div class="kid-box">
+      <div class="kid-emoji">📏</div>
+      <div><div class="highlight-title">Analogia</div><p>É a fila do lanche da escola organizada por altura: <code>ORDER BY altura ASC</code> começa pelo menorzinho. Se o professor só quer ver os <strong>3 primeiros</strong> da fila, ele usa <code>LIMIT 3</code>.</p></div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">ORDER BY valor DESC LIMIT 3 <span style="color:var(--text-disabled);">— pedidos</span></div>
+        <div style="overflow-x:auto;"><table class="data-table">
+          <thead><tr><th>produto</th><th>valor</th></tr></thead>
+          <tbody>
+            <tr class="row-scan"><td>🥇 Notebook</td><td>R$ 3.500,00</td></tr>
+            <tr class="row-scan"><td>🥈 Monitor</td><td>R$ 900,00</td></tr>
+            <tr class="row-scan"><td>🥉 Cadeira</td><td>R$ 600,00</td></tr>
+            <tr class="row-fade"><td>Teclado</td><td>R$ 250,00</td></tr>
+            <tr class="row-fade"><td>Fone</td><td>R$ 150,00</td></tr>
+            <tr class="row-fade"><td>Mouse</td><td>R$ 80,00</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">ORDER BY nome ASC <span style="color:var(--text-disabled);">— clientes</span></div>
+        <div style="overflow-x:auto;"><table class="data-table">
+          <thead><tr><th>#</th><th>nome</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Ana</td></tr>
+            <tr><td>2</td><td>Bruno</td></tr>
+            <tr><td>3</td><td>Carla</td></tr>
+            <tr><td>4</td><td>Diego</td></tr>
+            <tr><td>5</td><td>Elis</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> produto, valor
+<span class="kw">FROM</span> pedidos
+<span class="kw">ORDER BY</span> valor <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> <span class="num">3</span>;
+<span class="cm">-- os 3 pedidos mais caros, do maior pro menor</span></div>
+    <div class="info-box"><p>💡 <code>ORDER BY</code> pode usar várias colunas: <code>ORDER BY categoria ASC, valor DESC</code> primeiro agrupa visualmente por categoria e, dentro de cada categoria, ordena do mais caro pro mais barato.</p></div>
+  </section>
+
+  <!-- ============ 6. FUNÇÕES AGREGADAS ============ -->
+  <section class="section" id="s-agregacao">
+    <div class="section-eyebrow">Resumindo números</div>
+    <div class="section-title">🧮 Funções agregadas — de várias linhas para um número só</div>
+    <p class="section-desc">Funções agregadas pegam <strong>várias linhas</strong> e devolvem <strong>um valor só</strong>. São a base de qualquer relatório: "quantos pedidos?", "quanto no total?", "qual a média?". Aplicadas em cima da tabela <code>pedidos</code> inteira, sem nenhum agrupamento ainda:</p>
+    <div class="stat-cards" id="aggStats"></div>
+    <p class="section-desc" style="font-size:12px;margin-top:14px;">👇 Os cartões acima são só uma forma bonita de mostrar isto — o resultado real da consulta é uma tabela, só que com <strong>uma única linha</strong>:</p>
+    <div style="overflow-x:auto;"><table class="data-table" id="aggTable"></table></div>
+    <div class="grid-5" style="margin-top:14px;">
+      <div class="card"><div class="card-title">🔢 COUNT</div><div class="card-text">Conta quantas linhas. Como contar quantos passageiros embarcaram no ônibus.</div></div>
+      <div class="card"><div class="card-title">➕ SUM</div><div class="card-text">Soma os valores. Como juntar todas as moedinhas num cofre.</div></div>
+      <div class="card"><div class="card-title">📊 AVG</div><div class="card-text">Calcula a média. Como dividir uma pizza igualmente entre todo mundo.</div></div>
+      <div class="card"><div class="card-title">⬇️ MIN</div><div class="card-text">O menor valor. Quem é o mais baixinho da fila.</div></div>
+      <div class="card"><div class="card-title">⬆️ MAX</div><div class="card-text">O maior valor. Quem é o mais alto da fila.</div></div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span>
+    <span class="fn">COUNT</span>(*)      <span class="kw">AS</span> total_pedidos,
+    <span class="fn">SUM</span>(valor)    <span class="kw">AS</span> soma_total,
+    <span class="fn">AVG</span>(valor)    <span class="kw">AS</span> media,
+    <span class="fn">MIN</span>(valor)    <span class="kw">AS</span> menor,
+    <span class="fn">MAX</span>(valor)    <span class="kw">AS</span> maior
+<span class="kw">FROM</span> pedidos;</div>
+  </section>
+
+  <!-- ============ NÍVEL: INTERMEDIÁRIO ============ -->
+  <div class="level-divider lvl-intermediario" id="lvl-intermediario">
+    <span class="level-icon">🔵</span>
+    <div class="level-body">
+      <div class="level-kicker">Nível 2 de 3 · Intermediário</div>
+      <div class="level-title">Combinando e alterando dados</div>
+      <p class="level-desc">Agora entra o multi-tabela e o multi-linha: agrupar com <code>GROUP BY</code>, juntar tabelas com <code>JOIN</code>, aninhar consultas, combinar resultados com <code>UNION</code>, calcular sem "achatar" com <em>window functions</em>, alterar dados com <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code> e <code>CREATE TABLE</code>, e salvar consultas reutilizáveis com <code>VIEW</code>.</p>
+    </div>
+    <div class="level-count"><div class="level-count-num">9</div><div class="level-count-label">Seções</div></div>
+  </div>
+
+  <!-- ============ 7. GROUP BY & HAVING — INTERATIVO ============ -->
+  <section class="section" id="s-groupby">
+    <div class="section-eyebrow">Resumindo por grupo</div>
+    <div class="section-title">📦 GROUP BY & HAVING — separando em cestos</div>
+    <p class="section-desc"><code>GROUP BY</code> separa as linhas em <strong>cestos</strong> de acordo com um valor em comum — aqui, a categoria do cliente — para então aplicar funções agregadas <em>dentro de cada cesto</em>. <code>HAVING</code> filtra <strong>cestos inteiros</strong> depois de agrupar (diferente do <code>WHERE</code>, que filtra linhas <em>antes</em> de agrupar).</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧺</div>
+      <div><div class="highlight-title">Analogia</div><p>Imagine separar uma caixa de bolinhas coloridas em cestos por cor: um cesto de bolinhas douradas, um de prateadas, um de bronze. <code>GROUP BY</code> é essa separação. <code>COUNT(*)</code> depois conta quantas bolinhas caíram em cada cesto. <code>HAVING COUNT(*) &gt;= 2</code> é dizer "só me mostre os cestos que ficaram com 2 bolinhas ou mais".</p>
+      </div>
+    </div>
+    <div class="interactive-panel">
+      <div class="panel-label">GROUP BY categoria — com ou sem HAVING?</div>
+      <div class="btn-toggle-row" id="havingButtons"></div>
+      <div class="code-block" id="havingCode" style="margin-top:14px;"></div>
+      <div class="basket-grid" id="basketGrid" style="margin-top:14px;"></div>
+      <p class="section-desc" style="font-size:12px;margin-top:16px;">👇 É exatamente isso que a consulta devolve — uma linha por cesto (categoria), não mais uma linha por cliente:</p>
+      <div style="overflow-x:auto;"><table class="data-table" id="havingTable"></table></div>
+      <p class="card-text" id="havingStat" style="margin-top:8px;"></p>
+    </div>
+  </section>
+
+  <!-- ============ 8. JOIN — VENN INTERATIVO ============ -->
+  <section class="section" id="s-join">
+    <div class="section-eyebrow">O conceito mais poderoso do SQL</div>
+    <div class="section-title">🔗 JOIN — juntando duas tabelas</div>
+    <p class="section-desc"><code>JOIN</code> junta linhas de duas tabelas usando uma <strong>coluna em comum</strong> — aqui, <code>clientes.id</code> com <code>pedidos.id_cliente</code>. Existem 5 variações, e a diferença entre elas é só uma pergunta: <strong>o que fazer com quem não tem par do outro lado?</strong> Clique nos botões para trocar o tipo de JOIN e observar o diagrama e a tabela de resultado mudando juntos.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧦</div>
+      <div><div class="highlight-title">Analogia</div><p>Imagine juntar pares de meias: <strong>INNER JOIN</strong> só mostra as meias que <em>têm par</em>. <strong>LEFT JOIN</strong> mostra todas as suas meias, mesmo as que perderam o par (com um buraco no lugar). <strong>RIGHT JOIN</strong> é o mesmo, olhando pela gaveta do outro lado. <strong>FULL JOIN</strong> mostra tudo — pares e meias soltas dos dois lados. <strong>CROSS JOIN</strong> é experimentar combinar <em>cada</em> meia com <em>cada</em> outra meia, mesmo sem nenhuma lógica de par.</p></div>
+    </div>
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha o tipo de JOIN</div>
+      <div class="btn-toggle-row" id="joinButtons"></div>
+      <div class="grid-2" style="margin-top:16px;align-items:start;">
+        <div class="canvas-wrap">
+          <canvas id="vennCanvas" height="220"></canvas>
+          <div class="venn-legend">
+            <span><span class="venn-dot" style="background:var(--accent-blue);"></span> clientes</span>
+            <span><span class="venn-dot" style="background:var(--accent-green);"></span> pedidos</span>
+            <span><span class="venn-dot" style="background:var(--text-disabled);"></span> fora do resultado</span>
+          </div>
+        </div>
+        <div>
+          <div class="code-block" id="joinCode"></div>
+        </div>
+      </div>
+      <p class="section-desc" style="font-size:12px;margin-top:14px;">👇 Resultado linha a linha (um cliente com vários pedidos aparece várias vezes — o diagrama acima mostra <em>clientes</em>, a tabela abaixo mostra <em>pedidos</em>):</p>
+      <div style="overflow-x:auto;"><table class="data-table" id="joinTable"></table></div>
+      <div id="crossNote" class="info-box" style="margin-top:10px;display:none;"><p>💡 <code>CROSS JOIN</code> não combina por chave nenhuma — ele simplesmente multiplica <strong>tudo com tudo</strong>: 5 clientes × 7 pedidos = 35 combinações. Cada bolinha abaixo é uma combinação possível.</p></div>
+      <div class="cross-grid" id="crossGrid" style="display:none;"></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Repare que a tabela de <code>pedidos</code> usada aqui no JOIN tem uma linha extra (id 107, cliente 99) que <strong>não existe</strong> em <code>clientes</code> — um erro de integridade bem comum no mundo real, perfeito para mostrar o que <code>RIGHT JOIN</code> e <code>FULL JOIN</code> fazem com "órfãos".</p></div>
+  </section>
+
+  <!-- ============ 9. SUBCONSULTAS ============ -->
+  <section class="section" id="s-subquery">
+    <div class="section-eyebrow">Consulta dentro de consulta</div>
+    <div class="section-title">🪆 Subconsultas (Subqueries)</div>
+    <p class="section-desc">Uma <strong>subconsulta</strong> é um <code>SELECT</code> dentro de outro <code>SELECT</code> — a consulta de dentro roda primeiro, e seu resultado vira um valor (ou uma lista de valores) que a consulta de fora usa para filtrar.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🪆</div>
+      <div><div class="highlight-title">Analogia</div><p>É como uma boneca russa (matrioska): para abrir a boneca de fora, você primeiro precisa abrir a de dentro. Em SQL, o banco sempre resolve a subconsulta <strong>de dentro para fora</strong>.</p></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Pergunta simples: <strong>quais clientes já fizeram algum pedido?</strong></p>
+    <div class="script-step"><span class="script-step-num">1</span><span class="script-step-label">A subconsulta (de dentro) roda primeiro e devolve uma lista de ids</span></div>
+    <div class="script-step-sub"><code>SELECT id_cliente FROM pedidos</code> devolve: 1, 2, 1, 3, 5, 2 — ou seja, os ids que aparecem são:</div>
+    <div class="pill-list" style="margin:6px 0 0 36px;">
+      <span class="pill hl">1</span><span class="pill hl">2</span><span class="pill hl">3</span><span class="pill hl">5</span>
+    </div>
+    <div class="script-step"><span class="script-step-num">2</span><span class="script-step-label">A consulta de fora usa essa lista para filtrar clientes</span></div>
+    <div class="script-step-sub">Só passa quem tem o <code>id</code> dentro da lista devolvida no passo 1.</div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> nome, cidade
+<span class="kw">FROM</span> clientes
+<span class="kw">WHERE</span> id <span class="kw">IN</span> (
+    <span class="cm">-- subconsulta: ids de clientes que aparecem em pedidos</span>
+    <span class="kw">SELECT</span> id_cliente <span class="kw">FROM</span> pedidos
+);</div>
+    <div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>id</th><th>nome</th><th>cidade</th></tr></thead>
+      <tbody>
+        <tr class="row-scan"><td>1</td><td>Ana</td><td>Recife</td></tr>
+        <tr class="row-scan"><td>2</td><td>Bruno</td><td>São Paulo</td></tr>
+        <tr class="row-scan"><td>3</td><td>Carla</td><td>Salvador</td></tr>
+        <tr class="row-fade"><td>4</td><td>Diego</td><td>Curitiba</td></tr>
+        <tr class="row-scan"><td>5</td><td>Elis</td><td>São Paulo</td></tr>
+      </tbody>
+    </table></div>
+    <div class="ok-box"><p>✅ Resultado: <strong>Ana, Bruno, Carla e Elis</strong> aparecem — só o <strong>Diego</strong> fica de fora, porque o <code>id</code> dele (4) nunca aparece em <code>pedidos.id_cliente</code>.</p></div>
+    <div class="info-box"><p>💡 Existe também a subconsulta <strong>escalar</strong>, que devolve um número só em vez de uma lista — por exemplo <code>WHERE valor &gt; (SELECT AVG(valor) FROM pedidos)</code> filtra pedidos acima da média. A diferença é só isso: <code>IN</code> compara com uma lista, <code>=</code>/<code>&gt;</code>/<code>&lt;</code> comparam com um valor único.</p></div>
+  </section>
+
+  <!-- ============ 10. UNION / INTERSECT / EXCEPT ============ -->
+  <section class="section" id="s-setops">
+    <div class="section-eyebrow">Combinando listas</div>
+    <div class="section-title">➕ UNION, INTERSECT & EXCEPT</div>
+    <p class="section-desc">Esses três comandos combinam o resultado de <strong>duas consultas separadas</strong> (com o mesmo número de colunas) como se fossem conjuntos. Exemplo: as cidades dos nossos <code>clientes</code> comparadas com as cidades de uma tabela hipotética de <code>fornecedores</code>.</p>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🧑 Cidades dos clientes</div><div class="card-text">Recife, São Paulo, Salvador, Curitiba</div></div>
+      <div class="card"><div class="card-title">🚚 Cidades dos fornecedores</div><div class="card-text">São Paulo, Curitiba, Belo Horizonte, Fortaleza</div></div>
+    </div>
+    <div class="grid-3" style="margin-top:6px;">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:8px;">🔗 UNION — junta tudo, sem repetir</div>
+        <div class="pill-list">
+          <span class="pill hl">Recife</span><span class="pill hl">São Paulo</span><span class="pill hl">Salvador</span><span class="pill hl">Curitiba</span><span class="pill hl">Belo Horizonte</span><span class="pill hl">Fortaleza</span>
+        </div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:8px;">🎯 INTERSECT — só quem está nas duas</div>
+        <div class="pill-list">
+          <span class="pill hl-blue">São Paulo</span><span class="pill hl-blue">Curitiba</span>
+        </div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:8px;">➖ EXCEPT — só clientes, tirando fornecedores</div>
+        <div class="pill-list">
+          <span class="pill hl-red">Recife</span><span class="pill hl-red">Salvador</span>
+        </div>
+      </div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> cidade <span class="kw">FROM</span> clientes
+<span class="kw">UNION</span>
+<span class="kw">SELECT</span> cidade <span class="kw">FROM</span> fornecedores;
+<span class="cm">-- UNION ALL faria a mesma coisa, mas manteria as duplicatas</span></div>
+    <div class="info-box"><p>💡 <code>UNION</code> remove duplicatas automaticamente (como um conjunto matemático); <code>UNION ALL</code> mantém tudo, inclusive repetidos — e é mais rápido, por não precisar checar duplicidade.</p></div>
+  </section>
+
+  <!-- ============ 11. WINDOW FUNCTIONS ============ -->
+  <section class="section" id="s-window">
+    <div class="section-eyebrow">Agregação sem perder linhas</div>
+    <div class="section-title">🪟 Window Functions — calcular sem "achatar" a tabela</div>
+    <p class="section-desc">Diferente do <code>GROUP BY</code>, que reduz várias linhas a uma só por grupo, uma <strong>window function</strong> calcula algo <em>por grupo</em> mas mantém <strong>todas</strong> as linhas originais no resultado. <code>PARTITION BY</code> define a "janela" (o grupo), e <code>OVER()</code> é o que ativa esse modo especial.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🏁</div>
+      <div><div class="highlight-title">Analogia</div><p>É como dar uma <strong>medalha de posição</strong> (1º, 2º, 3º lugar) para cada corredor <em>dentro da sua própria categoria de idade</em>, sem tirar ninguém da lista de resultados — todo mundo continua aparecendo, só que agora com uma posição ao lado do nome.</p></div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> c.nome, c.categoria, <span class="fn">SUM</span>(p.valor) <span class="kw">AS</span> total_gasto,
+    <span class="fn">RANK</span>() <span class="kw">OVER</span> (
+        <span class="kw">PARTITION BY</span> c.categoria   <span class="cm">-- reinicia o ranking a cada categoria</span>
+        <span class="kw">ORDER BY</span> <span class="fn">SUM</span>(p.valor) <span class="kw">DESC</span>
+    ) <span class="kw">AS</span> posicao_na_categoria
+<span class="kw">FROM</span> clientes c
+<span class="kw">LEFT JOIN</span> pedidos p <span class="kw">ON</span> p.id_cliente <span class="kw">=</span> c.id
+<span class="kw">GROUP BY</span> c.nome, c.categoria;</div>
+    <div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>nome</th><th>categoria</th><th>total_gasto</th><th>posição na categoria</th></tr></thead>
+      <tbody>
+        <tr class="row-scan"><td>Ana</td><td>Ouro</td><td>R$ 3.750,00</td><td>🥇 1</td></tr>
+        <tr><td>Carla</td><td>Ouro</td><td>R$ 900,00</td><td>🥈 2</td></tr>
+        <tr class="row-scan"><td>Elis</td><td>Prata</td><td>R$ 600,00</td><td>🥇 1</td></tr>
+        <tr><td>Bruno</td><td>Prata</td><td>R$ 230,00</td><td>🥈 2</td></tr>
+        <tr class="row-scan"><td>Diego</td><td>Bronze</td><td>R$ 0,00</td><td>🥇 1</td></tr>
+      </tbody>
+    </table></div>
+    <div class="info-box"><p>💡 Repare: <strong>todas as 5 linhas continuam no resultado</strong> — bem diferente do que aconteceria com um <code>GROUP BY categoria</code> puro, que devolveria só 3 linhas (uma por categoria).</p></div>
+  </section>
+
+
+  <!-- ============ 12. INSERT / UPDATE / DELETE ============ -->
+  <section class="section" id="s-dml">
+    <div class="section-eyebrow">Mexendo nos dados</div>
+    <div class="section-title">✍️ INSERT, UPDATE & DELETE</div>
+    <p class="section-desc">Os três comandos que alteram os <strong>dados</strong> de uma tabela já existente — sem mudar sua estrutura. Vamos aplicar os três, em sequência, na tabela <code>clientes</code>.</p>
+
+    <div class="script-step"><span class="script-step-num">1</span><span class="script-step-label">INSERT — adiciona uma linha nova</span></div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">INSERT INTO</span> clientes (id, nome, cidade, categoria)
+<span class="kw">VALUES</span> (<span class="num">6</span>, <span class="st">'Fábio'</span>, <span class="st">'Fortaleza'</span>, <span class="st">'Bronze'</span>);</div>
+    <div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>id</th><th>nome</th><th>cidade</th><th>categoria</th></tr></thead>
+      <tbody>
+        <tr class="row-fade"><td>5</td><td>Elis</td><td>São Paulo</td><td>Prata</td></tr>
+        <tr class="row-scan"><td>6</td><td class="cell-new">Fábio</td><td class="cell-new">Fortaleza</td><td class="cell-new">Bronze</td></tr>
+      </tbody>
+    </table></div>
+
+    <div class="script-step"><span class="script-step-num">2</span><span class="script-step-label">UPDATE — altera linhas que já existem</span></div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">UPDATE</span> clientes
+<span class="kw">SET</span> categoria <span class="kw">=</span> <span class="st">'Ouro'</span>
+<span class="kw">WHERE</span> id <span class="kw">=</span> <span class="num">2</span>; <span class="cm">-- Bruno subiu de categoria</span></div>
+    <div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>id</th><th>nome</th><th>cidade</th><th>categoria</th></tr></thead>
+      <tbody><tr class="row-scan"><td>2</td><td>Bruno</td><td>São Paulo</td><td><span class="cell-old">Prata</span> → <span class="cell-new">Ouro</span></td></tr></tbody>
+    </table></div>
+    <div class="warn-box"><p>⚠️ <strong>Nunca</strong> rode um <code>UPDATE</code> ou <code>DELETE</code> sem <code>WHERE</code> — sem ele, o comando afeta <em>todas</em> as linhas da tabela de uma vez.</p></div>
+
+    <div class="script-step"><span class="script-step-num">3</span><span class="script-step-label">DELETE — remove linhas</span></div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">DELETE FROM</span> clientes
+<span class="kw">WHERE</span> id <span class="kw">=</span> <span class="num">4</span>; <span class="cm">-- Diego cancelou o cadastro</span></div>
+    <div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>id</th><th>nome</th><th>cidade</th><th>categoria</th></tr></thead>
+      <tbody>
+        <tr class="row-fade"><td>3</td><td>Carla</td><td>Salvador</td><td>Ouro</td></tr>
+        <tr><td colspan="4" style="text-align:center;"><span class="cell-old">4 · Diego · Curitiba · Bronze — linha removida</span></td></tr>
+        <tr class="row-fade"><td>5</td><td>Elis</td><td>São Paulo</td><td>Prata</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ============ 13. CREATE TABLE / DDL ============ -->
+  <section class="section" id="s-ddl">
+    <div class="section-eyebrow">Definindo a estrutura</div>
+    <div class="section-title">🏗️ CREATE TABLE — construindo a planta</div>
+    <p class="section-desc">Antes de guardar qualquer dado, alguém precisa definir a <strong>estrutura</strong>: quais colunas existem, que tipo de dado cada uma aceita, e quais regras (constraints) protegem a integridade dos dados.</p>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE TABLE</span> clientes (
+    id         <span class="kw">INTEGER</span> <span class="kw">PRIMARY KEY</span>,
+    nome       <span class="kw">VARCHAR</span>(<span class="num">100</span>) <span class="kw">NOT NULL</span>,
+    email      <span class="kw">VARCHAR</span>(<span class="num">150</span>) <span class="kw">UNIQUE</span>,
+    cidade     <span class="kw">VARCHAR</span>(<span class="num">100</span>),
+    categoria  <span class="kw">VARCHAR</span>(<span class="num">20</span>) <span class="kw">DEFAULT</span> <span class="st">'Bronze'</span>
+               <span class="kw">CHECK</span> (categoria <span class="kw">IN</span> (<span class="st">'Bronze'</span>,<span class="st">'Prata'</span>,<span class="st">'Ouro'</span>))
+);
+
+<span class="kw">CREATE TABLE</span> pedidos (
+    id          <span class="kw">INTEGER</span> <span class="kw">PRIMARY KEY</span>,
+    id_cliente  <span class="kw">INTEGER</span> <span class="kw">REFERENCES</span> clientes(id), <span class="cm">-- chave estrangeira</span>
+    produto     <span class="kw">VARCHAR</span>(<span class="num">100</span>) <span class="kw">NOT NULL</span>,
+    valor       <span class="kw">DECIMAL</span>(<span class="num">10</span>,<span class="num">2</span>) <span class="kw">CHECK</span> (valor <span class="kw">&gt;</span> <span class="num">0</span>)
+);</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔑 PRIMARY KEY</div><div class="card-text">Identifica cada linha de forma única. Não pode repetir, não pode ser nula.</div></div>
+      <div class="card"><div class="card-title">🚫 NOT NULL</div><div class="card-text">Obriga a coluna a sempre ter um valor — não aceita "vazio".</div></div>
+      <div class="card"><div class="card-title">✨ UNIQUE</div><div class="card-text">Não pode repetir entre linhas, mas (diferente da PK) pode ficar vazia.</div></div>
+      <div class="card"><div class="card-title">🎚️ DEFAULT</div><div class="card-text">Valor usado automaticamente quando ninguém informa um.</div></div>
+      <div class="card"><div class="card-title">✅ CHECK</div><div class="card-text">Regra customizada que todo valor precisa passar antes de ser aceito.</div></div>
+      <div class="card"><div class="card-title">🔗 REFERENCES (FK)</div><div class="card-text">Aponta para a chave primária de outra tabela — o assunto da próxima seção.</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔧 ALTER TABLE</div><div class="card-text">Muda a estrutura de uma tabela que já existe: <code>ALTER TABLE clientes ADD COLUMN telefone VARCHAR(20);</code></div></div>
+      <div class="card"><div class="card-title">🗑️ DROP TABLE</div><div class="card-text">Apaga a tabela inteira — estrutura <em>e</em> dados, sem volta: <code>DROP TABLE clientes;</code></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 14. PK / FK ============ -->
+  <section class="section" id="s-chaves">
+    <div class="section-eyebrow">O elo entre tabelas</div>
+    <div class="section-title">🔑 Chaves Primárias e Estrangeiras</div>
+    <p class="section-desc">A <strong>chave primária</strong> (PK) identifica cada linha de forma única dentro da própria tabela. A <strong>chave estrangeira</strong> (FK) é uma coluna que aponta para a chave primária de <em>outra</em> tabela — é o "elo" que permite fazer <code>JOIN</code>.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🎫</div>
+      <div><div class="highlight-title">Analogia</div><p>A chave primária é como o <strong>número da carteirinha</strong> de um aluno — único, ninguém mais tem igual. A chave estrangeira é como escrever esse número no canto de cada prova que o aluno fez: a prova "aponta de volta" para o dono dela.</p></div>
+    </div>
+    <div class="dimfact-diagram">
+      <div class="dimfact-card">
+        <span class="dimfact-tag">🔑 clientes — chave primária</span>
+        <div class="dimfact-photo">🧑</div>
+        <div class="dimfact-row"><span>id</span><strong>1 <span class="badge-key">PK</span></strong></div>
+        <div class="dimfact-row"><span>nome</span><strong>Ana</strong></div>
+        <div class="dimfact-row"><span>cidade</span><strong>Recife</strong></div>
+        <div class="dimfact-caption">1 linha por cliente.<br>O <code>id</code> nunca se repete.</div>
+      </div>
+      <div class="dimfact-log">
+        <span class="dimfact-log-tag">🔗 pedidos — chave estrangeira</span>
+        <div class="dimfact-log-entry">Notebook — R$ 3.500,00<span class="dimfact-fk">↩ id_cliente: 1</span></div>
+        <div class="dimfact-log-entry">Teclado — R$ 250,00<span class="dimfact-fk">↩ id_cliente: 1</span></div>
+        <div class="dimfact-caption">Cada pedido "aponta de volta" para o dono, pelo mesmo número — isso é a chave estrangeira (FK) em ação.</div>
+      </div>
+    </div>
+    <div class="ok-box"><p>✅ Graças à FK, o banco de dados <strong>recusa</strong> um pedido com <code>id_cliente = 999</code> se esse cliente não existir — essa proteção automática se chama <strong>integridade referencial</strong>.</p></div>
+  </section>
+
+  <!-- ============ 15. VIEWS ============ -->
+  <section class="section" id="s-views">
+    <div class="section-eyebrow">Consultas com nome próprio</div>
+    <div class="section-title">👁️ VIEW — uma consulta salva com nome</div>
+    <p class="section-desc">Uma <strong>view</strong> é um <code>SELECT</code> guardado sob um nome, que pode ser consultado como se fosse uma tabela — mas sem duplicar dado nenhum: toda vez que você consulta a view, ela roda o <code>SELECT</code> original por trás dos panos.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🪟</div>
+      <div><div class="highlight-title">Analogia</div><p>É como uma <strong>janela recortada</strong> na parede de um depósito cheio de caixas: você não move nenhuma caixa, só cria uma abertura que sempre mostra a mesma "fatia" da vista — e se as caixas lá dentro mudarem de lugar, a janela mostra a mudança na hora.</p></div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE VIEW</span> vw_clientes_ouro <span class="kw">AS</span>
+<span class="kw">SELECT</span> id, nome, cidade
+<span class="kw">FROM</span> clientes
+<span class="kw">WHERE</span> categoria <span class="kw">=</span> <span class="st">'Ouro'</span>;
+
+<span class="cm">-- a partir daqui, consulta-se como se fosse uma tabela normal</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> vw_clientes_ouro;</div>
+    <div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>id</th><th>nome</th><th>cidade</th></tr></thead>
+      <tbody><tr><td>1</td><td>Ana</td><td>Recife</td></tr><tr><td>3</td><td>Carla</td><td>Salvador</td></tr></tbody>
+    </table></div>
+    <div class="info-box"><p>💡 Views são ótimas para <strong>esconder complexidade</strong> — um JOIN complicado de 4 tabelas pode virar uma view simples que qualquer pessoa do time consulta com um <code>SELECT * FROM view</code>.</p></div>
+  </section>
+
+  <!-- ============ NÍVEL: AVANÇADO ============ -->
+  <div class="level-divider lvl-avancado" id="lvl-avancado">
+    <span class="level-icon">🟣</span>
+    <div class="level-body">
+      <div class="level-kicker">Nível 3 de 3 · Avançado</div>
+      <div class="level-title">Recursos de quem já manja o básico</div>
+      <p class="level-desc">Transações garantem que mudanças aconteçam tudo ou nada — sem meio-termo. <code>WITH RECURSIVE</code> navega cadeias de tamanho desconhecido, tipo hierarquias e indicações. <code>EXPLAIN</code> mostra o plano de execução por trás da consulta, pra entender por que algo está lento.</p>
+    </div>
+    <div class="level-count"><div class="level-count-num">3</div><div class="level-count-label">Seções</div></div>
+  </div>
+
+
+  <!-- ============ 16. TRANSAÇÕES ============ -->
+  <section class="section" id="s-transacoes">
+    <div class="section-eyebrow">Tudo ou nada</div>
+    <div class="section-title">💾 Transações — BEGIN, COMMIT e ROLLBACK</div>
+    <p class="section-desc">Uma <strong>transação</strong> agrupa vários comandos como se fossem um só passo: ou <strong>todos</strong> acontecem, ou <strong>nenhum</strong> acontece. Isso evita ficar "no meio do caminho" se algo falhar. Exemplo: transferir 100 pontos de fidelidade da Ana para o Bruno — clique nos passos abaixo para ver o estado dos saldos mudando:</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🏦</div>
+      <div><div class="highlight-title">Analogia</div><p>É como uma transferência bancária: tirar dinheiro da sua conta e <em>não</em> colocar na conta do amigo (por causa de uma falha no meio do caminho) seria um desastre. <code>COMMIT</code> é "confirmar a transferência de vez"; <code>ROLLBACK</code> é "desfazer tudo, como se nunca tivesse mexido em nada".</p></div>
+    </div>
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada passo da transação</div>
+      <div class="lifeline" id="txLifeline"></div>
+      <div class="sim-grid">
+        <div class="sim-card">
+          <div class="sim-card-title">🧑 Ana</div>
+          <div class="sim-card-sub">pontos de fidelidade</div>
+          <table class="sim-mini-table" id="txAna"></table>
+        </div>
+        <div class="sim-card">
+          <div class="sim-card-title">🧑 Bruno</div>
+          <div class="sim-card-sub">pontos de fidelidade</div>
+          <table class="sim-mini-table" id="txBruno"></table>
+        </div>
+      </div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">BEGIN</span>;
+
+<span class="kw">UPDATE</span> clientes <span class="kw">SET</span> pontos <span class="kw">=</span> pontos <span class="kw">-</span> <span class="num">100</span> <span class="kw">WHERE</span> id <span class="kw">=</span> <span class="num">1</span>; <span class="cm">-- debita Ana</span>
+<span class="kw">UPDATE</span> clientes <span class="kw">SET</span> pontos <span class="kw">=</span> pontos <span class="kw">+</span> <span class="num">100</span> <span class="kw">WHERE</span> id <span class="kw">=</span> <span class="num">2</span>; <span class="cm">-- credita Bruno</span>
+
+<span class="kw">COMMIT</span>; <span class="cm">-- confirma as duas mudanças de vez</span>
+<span class="cm">-- se algo desse errado antes daqui, ROLLBACK desfaria as DUAS</span></div>
+    <div class="warn-box"><p>⚠️ Sem transação, se o sistema falhasse <em>entre</em> os dois <code>UPDATE</code>s, a Ana perderia 100 pontos e o Bruno nunca os receberia — os pontos simplesmente sumiriam. É exatamente esse risco que <code>BEGIN</code>/<code>COMMIT</code>/<code>ROLLBACK</code> elimina.</p></div>
+  </section>
+
+  <!-- ============ 17. RECURSIVIDADE (WITH RECURSIVE) ============ -->
+  <section class="section" id="s-recursao">
+    <div class="section-eyebrow">Consulta que se chama de novo</div>
+    <div class="section-title">🌲 Recursividade — WITH RECURSIVE</div>
+    <p class="section-desc">Uma <strong>CTE recursiva</strong> (<code>WITH RECURSIVE</code>) é uma consulta que se refere a si mesma, repetindo em "rodadas" até não sobrar mais nenhuma linha nova pra processar. Ela resolve algo que um <code>JOIN</code> comum não resolve: navegar uma cadeia de tamanho <strong>desconhecido</strong> — uma árvore genealógica, um organograma, categorias dentro de categorias, comentários de comentários.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">📞</div>
+      <div><div class="highlight-title">Analogia</div><p>É como o telefone sem fio: você pergunta "quem te indicou?", pega a resposta e faz a <em>mesma pergunta de novo</em> pra essa pessoa, e de novo, e de novo — até alguém responder "ninguém me indicou". Você não sabia de antemão quantas rodadas ia precisar; a recursão para sozinha quando a cadeia acaba.</p></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Só para este exemplo, imagine que a tabela <code>clientes</code> ganhou uma coluna <code>indicado_por</code>, guardando quem indicou cada cliente:</p>
+    <div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>id</th><th>nome</th><th>indicado_por</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Ana</td><td><span style="color:var(--text-disabled);">— (raiz)</span></td></tr>
+        <tr><td>2</td><td>Bruno</td><td><span style="color:var(--text-disabled);">— (raiz)</span></td></tr>
+        <tr><td>3</td><td>Carla</td><td>1 (Ana)</td></tr>
+        <tr><td>4</td><td>Diego</td><td>3 (Carla)</td></tr>
+        <tr><td>5</td><td>Elis</td><td>4 (Diego)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="script-step"><span class="script-step-num">1</span><span class="script-step-label">Âncora — roda uma vez só, achando o início da cadeia</span></div>
+    <div class="script-step-sub">Pega quem não foi indicado por ninguém: Ana e Bruno, ambos no nível 1.</div>
+    <div class="script-step"><span class="script-step-num">2</span><span class="script-step-label">Passo recursivo — repete, subindo um nível a cada rodada</span></div>
+    <div class="script-step-sub">Junta <code>clientes</code> com o resultado da rodada anterior, achando quem foi indicado por alguém que já apareceu. Para sozinho quando nenhuma linha nova aparece.</div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">WITH RECURSIVE</span> cadeia <span class="kw">AS</span> (
+    <span class="cm">-- âncora: clientes sem indicação (raiz da árvore)</span>
+    <span class="kw">SELECT</span> id, nome, indicado_por, <span class="num">1</span> <span class="kw">AS</span> nivel
+    <span class="kw">FROM</span> clientes
+    <span class="kw">WHERE</span> indicado_por <span class="kw">IS NULL</span>
+
+    <span class="kw">UNION ALL</span>
+
+    <span class="cm">-- passo recursivo: sobe um nível a cada rodada</span>
+    <span class="kw">SELECT</span> c.id, c.nome, c.indicado_por, cadeia.nivel <span class="kw">+</span> <span class="num">1</span>
+    <span class="kw">FROM</span> clientes c
+    <span class="kw">JOIN</span> cadeia <span class="kw">ON</span> c.indicado_por <span class="kw">=</span> cadeia.id
+)
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> cadeia <span class="kw">ORDER BY</span> nivel;</div>
+    <div style="overflow-x:auto;"><table class="data-table">
+      <thead><tr><th>nome</th><th>nivel</th></tr></thead>
+      <tbody>
+        <tr class="row-scan"><td>Ana</td><td>1</td></tr>
+        <tr class="row-scan"><td>Bruno</td><td>1</td></tr>
+        <tr><td>Carla</td><td>2</td></tr>
+        <tr><td>Diego</td><td>3</td></tr>
+        <tr><td>Elis</td><td>4</td></tr>
+      </tbody>
+    </table></div>
+    <div class="ok-box"><p>✅ A consulta não sabia de antemão que a cadeia da Elis tinha 4 níveis — ela descobriu isso sozinha, rodando o passo recursivo até não achar mais ninguém pra encaixar.</p></div>
+    <div class="info-box"><p>💡 O mesmo padrão resolve organogramas ("quem é chefe de quem"), categorias de produto aninhadas ("Eletrônicos → Computadores → Notebooks") e threads de comentários — qualquer estrutura em árvore ou grafo guardada numa tabela só.</p></div>
+  </section>
+
+  <!-- ============ 18. EXPLAIN ============ -->
+  <section class="section" id="s-explain">
+    <div class="section-eyebrow">O que o banco fez por baixo dos panos</div>
+    <div class="section-title">🔬 EXPLAIN — o raio-x da consulta</div>
+    <p class="section-desc"><code>EXPLAIN</code> não devolve os dados — devolve o <strong>plano de execução</strong> que o banco escolheu pra rodar sua consulta: quais tabelas ele varre, em que ordem, se usa um índice ou lê a tabela inteira. É a ferramenta pra descobrir <em>por que</em> uma consulta está lenta, antes de sair mudando código no escuro.</p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧾</div>
+      <div><div class="highlight-title">Analogia</div><p>É como pedir a nota fiscal detalhada em vez de só o troco: normalmente você só quer o resultado, mas quando algo custou mais caro (ou demorou mais) do que devia, o "recibo" mostra exatamente onde o custo apareceu.</p></div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">EXPLAIN</span> <span class="kw">SELECT</span> * <span class="kw">FROM</span> pedidos <span class="kw">WHERE</span> id_cliente <span class="kw">=</span> <span class="num">1</span>;</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🐌 Sem índice</div>
+        <div class="card-text"><strong>Seq Scan</strong> em <code>pedidos</code> — o banco lê a tabela inteira, linha por linha, e descarta quem não bate com <code>id_cliente = 1</code>. Com 6 linhas isso é instantâneo; com 6 milhões, não.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ Com índice em id_cliente</div>
+        <div class="card-text"><strong>Index Scan</strong> — o banco vai direto nas linhas certas, sem varrer as que não interessam. É a diferença entre procurar um nome numa lista telefônica com índice alfabético e ler página por página.</div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 <code>EXPLAIN</code> só mostra o plano — não necessariamente executa a consulta de verdade. <code>EXPLAIN ANALYZE</code> vai além: roda a consulta de fato e cronometra cada etapa do plano, mostrando o tempo real gasto em cada passo.</p></div>
+    <div class="warn-box"><p>⚠️ O formato exato do plano varia de banco pra banco (PostgreSQL, DuckDB, MySQL...), mas a ideia é sempre a mesma: entender o <strong>caminho</strong> que a consulta percorreu antes de julgar se ela está "lenta" ou "rápida".</p></div>
+  </section>
+
+  <!-- ============ 19. CHEAT SHEET ============ -->
+  <section class="section" id="s-cheatsheet">
+    <div class="section-eyebrow">Consulta rápida</div>
+    <div class="section-title">📋 Cheat Sheet — os comandos desta aula</div>
+    <div class="grid-4" id="cheatGrid"></div>
+  </section>
+
+  <!-- ============ 20. QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Principais Conceitos de SQL</span>
+    <span>Padrão ANSI SQL · exemplos testados em sintaxe PostgreSQL/DuckDB</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== dados base — reutilizados na aula inteira ===================== */
+const clientes = [
+  {id:1, nome:'Ana',   cidade:'Recife',      categoria:'Ouro'},
+  {id:2, nome:'Bruno',  cidade:'São Paulo',   categoria:'Prata'},
+  {id:3, nome:'Carla',  cidade:'Salvador',    categoria:'Ouro'},
+  {id:4, nome:'Diego',  cidade:'Curitiba',    categoria:'Bronze'},
+  {id:5, nome:'Elis',   cidade:'São Paulo',   categoria:'Prata'},
+];
+const pedidos = [
+  {pid:101, id_cliente:1, produto:'Notebook', valor:3500},
+  {pid:102, id_cliente:2, produto:'Mouse',    valor:80},
+  {pid:103, id_cliente:1, produto:'Teclado',  valor:250},
+  {pid:104, id_cliente:3, produto:'Monitor',  valor:900},
+  {pid:105, id_cliente:5, produto:'Cadeira',  valor:600},
+  {pid:106, id_cliente:2, produto:'Fone',     valor:150},
+];
+const pedidosJoin = [...pedidos, {pid:107, id_cliente:99, produto:'Headset', valor:200}];
+
+function brl(v){ return 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+/* ===================== tabela base (fundamentos) ===================== */
+document.getElementById('tblClientesBase').innerHTML = `
+  <thead><tr><th style="background:rgba(6,182,212,.16);color:var(--accent);">id</th><th>nome</th><th style="background:rgba(6,182,212,.16);color:var(--accent);">cidade</th><th>categoria</th></tr></thead>
+  <tbody>${clientes.map(c => `<tr class="${c.id===1?'row-scan':''}"><td style="${c.id!==1?'background:rgba(6,182,212,.05);':''}">${c.id}</td><td>${c.nome}</td><td style="${c.id!==1?'background:rgba(6,182,212,.05);':''}">${c.cidade}</td><td>${c.categoria}</td></tr>`).join('')}</tbody>
+`;
+document.getElementById('tblPedidosBase').innerHTML = `
+  <thead><tr><th>id</th><th>id_cliente</th><th>produto</th><th>valor</th></tr></thead>
+  <tbody>${pedidos.map(p => `<tr><td>${p.pid}</td><td>${p.id_cliente} <span class="badge-fk">FK</span></td><td>${p.produto}</td><td>${brl(p.valor)}</td></tr>`).join('')}</tbody>
+`;
+
+/* ===================== SELECT demo ===================== */
+document.getElementById('tblSelectDemo').innerHTML = `
+  <thead><tr><th>nome</th><th>cidade</th></tr></thead>
+  <tbody>${clientes.map(c => `<tr><td>${c.nome}</td><td>${c.cidade}</td></tr>`).join('')}</tbody>
+`;
+
+/* ===================== WHERE — interativo ===================== */
+const whereConditions = [
+  {label:"cidade = 'São Paulo'", sql:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> clientes\n<span class="kw">WHERE</span> cidade <span class="kw">=</span> <span class="st">'São Paulo'</span>;`, test:c=>c.cidade==='São Paulo'},
+  {label:"categoria = 'Ouro'", sql:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> clientes\n<span class="kw">WHERE</span> categoria <span class="kw">=</span> <span class="st">'Ouro'</span>;`, test:c=>c.categoria==='Ouro'},
+  {label:"cidade LIKE 'S%'", sql:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> clientes\n<span class="kw">WHERE</span> cidade <span class="kw">LIKE</span> <span class="st">'S%'</span>; <span class="cm">-- começa com "S"</span>`, test:c=>c.cidade.startsWith('S')},
+  {label:"categoria IN ('Ouro','Prata')", sql:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> clientes\n<span class="kw">WHERE</span> categoria <span class="kw">IN</span> (<span class="st">'Ouro'</span>, <span class="st">'Prata'</span>);`, test:c=>['Ouro','Prata'].includes(c.categoria)},
+  {label:"categoria <> 'Bronze'", sql:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> clientes\n<span class="kw">WHERE</span> categoria <span class="kw">&lt;&gt;</span> <span class="st">'Bronze'</span>; <span class="cm">-- diferente de</span>`, test:c=>c.categoria!=='Bronze'},
+];
+let whereIdx = 0;
+function renderWhereButtons(){
+  document.getElementById('whereButtons').innerHTML = whereConditions.map((w,i) =>
+    `<button class="btn-toggle ${i===whereIdx?'active':''}" onclick="selectWhere(${i})">${w.label}</button>`
+  ).join('');
+}
+function selectWhere(i){ whereIdx = i; renderWhereButtons(); renderWhere(); }
+function renderWhere(){
+  const cond = whereConditions[whereIdx];
+  document.getElementById('whereCode').innerHTML = `<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>${cond.sql}`;
+  const matched = clientes.filter(cond.test);
+  document.getElementById('whereTable').innerHTML = `
+    <thead><tr><th>id</th><th>nome</th><th>cidade</th><th>categoria</th></tr></thead>
+    <tbody>${clientes.map(c => `<tr class="${cond.test(c) ? 'row-scan':'row-fade'}"><td>${c.id}</td><td>${c.nome}</td><td>${c.cidade}</td><td>${c.categoria}</td></tr>`).join('')}</tbody>
+  `;
+  document.getElementById('whereStat').innerHTML = `✅ <strong style="color:var(--accent-green);margin-left:6px;">${matched.length} de ${clientes.length}</strong>&nbsp; clientes passaram pela peneira`;
+}
+renderWhereButtons(); renderWhere();
+
+/* ===================== Funções agregadas ===================== */
+(function(){
+  const vals = pedidos.map(p=>p.valor);
+  const sum = vals.reduce((a,b)=>a+b,0);
+  const avg = sum/vals.length;
+  document.getElementById('aggStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">COUNT(*)</div><div class="stat-card-value">${vals.length}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">SUM(valor)</div><div class="stat-card-value" style="font-size:15px;">${brl(sum)}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">AVG(valor)</div><div class="stat-card-value" style="font-size:15px;">${brl(avg)}</div></div>
+    <div class="stat-card c-yellow"><div class="stat-card-label">MIN(valor)</div><div class="stat-card-value" style="font-size:15px;">${brl(Math.min(...vals))}</div></div>
+    <div class="stat-card c-red"><div class="stat-card-label">MAX(valor)</div><div class="stat-card-value" style="font-size:15px;">${brl(Math.max(...vals))}</div></div>
+  `;
+  document.getElementById('aggTable').innerHTML = `
+    <thead><tr><th>total_pedidos</th><th>soma_total</th><th>media</th><th>menor</th><th>maior</th></tr></thead>
+    <tbody><tr class="row-scan"><td>${vals.length}</td><td>${brl(sum)}</td><td>${brl(avg)}</td><td>${brl(Math.min(...vals))}</td><td>${brl(Math.max(...vals))}</td></tr></tbody>
+  `;
+})();
+
+/* ===================== GROUP BY / HAVING — interativo ===================== */
+let havingOn = false;
+function renderHavingButtons(){
+  document.getElementById('havingButtons').innerHTML = `
+    <button class="btn-toggle ${!havingOn?'active':''}" onclick="setHaving(false)">Sem HAVING</button>
+    <button class="btn-toggle ${havingOn?'active':''}" onclick="setHaving(true)">HAVING COUNT(*) &gt;= 2</button>
+  `;
+}
+function setHaving(v){ havingOn = v; renderHavingButtons(); renderBaskets(); renderHavingCode(); renderHavingTable(); }
+function renderHavingCode(){
+  document.getElementById('havingCode').innerHTML = `<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> categoria, <span class="fn">COUNT</span>(*) <span class="kw">AS</span> qtd
+<span class="kw">FROM</span> clientes
+<span class="kw">GROUP BY</span> categoria${havingOn ? `\n<span class="kw">HAVING</span> <span class="fn">COUNT</span>(*) <span class="kw">&gt;=</span> <span class="num">2</span>;` : ';'}`;
+}
+function renderBaskets(){
+  const cats = [
+    {key:'Ouro', cls:'ouro', icon:'🥇'},
+    {key:'Prata', cls:'prata', icon:'🥈'},
+    {key:'Bronze', cls:'bronze', icon:'🥉'},
+  ];
+  document.getElementById('basketGrid').innerHTML = cats.map(cat => {
+    const members = clientes.filter(c=>c.categoria===cat.key);
+    const faded = havingOn && members.length < 2;
+    return `<div class="basket ${cat.cls} ${faded?'faded':''}">
+      <div class="basket-title"><span>${cat.icon} ${cat.key}</span><span class="basket-count">COUNT = ${members.length}</span></div>
+      <div class="basket-items">${members.map(m=>`<span class="basket-chip">${m.nome}</span>`).join('') || '<span style="color:var(--text-disabled);font-size:11.5px;">vazio</span>'}</div>
+    </div>`;
+  }).join('');
+}
+function renderHavingTable(){
+  const cats = [
+    {key:'Ouro', icon:'🥇'},
+    {key:'Prata', icon:'🥈'},
+    {key:'Bronze', icon:'🥉'},
+  ];
+  const rows = cats.map(cat => ({...cat, qtd: clientes.filter(c=>c.categoria===cat.key).length}));
+  const kept = rows.filter(r => !havingOn || r.qtd >= 2);
+  document.getElementById('havingTable').innerHTML = `
+    <thead><tr><th>categoria</th><th>qtd</th></tr></thead>
+    <tbody>${rows.map(r => `<tr class="${!havingOn ? 'row-scan' : (r.qtd>=2 ? 'row-scan':'row-fade')}"><td>${r.icon} ${r.key}</td><td>${r.qtd}</td></tr>`).join('')}</tbody>
+  `;
+  document.getElementById('havingStat').innerHTML = havingOn
+    ? `⚠️ Sem HAVING seriam <strong style="color:var(--text-primary);">3 linhas</strong> no resultado; com <code>HAVING COUNT(*) &gt;= 2</code> sobram <strong style="color:var(--accent-green);">${kept.length}</strong> — o cesto esmaecido acima nem apareceria de verdade.`
+    : `✅ <strong style="color:var(--accent-green);">3 linhas</strong> no resultado — uma por categoria, sem nenhum filtro de cesto.`;
+}
+renderHavingButtons(); renderHavingCode(); renderBaskets(); renderHavingTable();
+
+/* ===================== JOIN — Venn interativo ===================== */
+const joinTypes = [
+  {key:'inner', label:'INNER JOIN'},
+  {key:'left',  label:'LEFT JOIN'},
+  {key:'right', label:'RIGHT JOIN'},
+  {key:'full',  label:'FULL JOIN'},
+  {key:'cross', label:'CROSS JOIN'},
+];
+let joinIdx = 0;
+function renderJoinButtons(){
+  document.getElementById('joinButtons').innerHTML = joinTypes.map((j,i) =>
+    `<button class="btn-toggle ${i===joinIdx?'active':''}" onclick="selectJoin(${i})">${j.label}</button>`
+  ).join('');
+}
+function selectJoin(i){ joinIdx = i; renderJoinButtons(); renderJoin(); }
+
+function computeJoin(type){
+  let rows = [];
+  if(type==='inner'){
+    pedidosJoin.forEach(p=>{ const c=clientes.find(c=>c.id===p.id_cliente); if(c) rows.push({...c, ...p}); });
+  } else if(type==='left'){
+    clientes.forEach(c=>{
+      const ps = pedidosJoin.filter(p=>p.id_cliente===c.id);
+      if(ps.length) ps.forEach(p=>rows.push({...c, ...p}));
+      else rows.push({...c, pid:null, produto:null, valor:null});
+    });
+  } else if(type==='right'){
+    pedidosJoin.forEach(p=>{
+      const c=clientes.find(c=>c.id===p.id_cliente);
+      rows.push(c ? {...c, ...p} : {id:null, nome:null, cidade:null, categoria:null, ...p});
+    });
+  } else if(type==='full'){
+    rows = computeJoin('left');
+    pedidosJoin.forEach(p=>{ if(!clientes.find(c=>c.id===p.id_cliente)) rows.push({id:null, nome:null, cidade:null, categoria:null, ...p}); });
+  } else if(type==='cross'){
+    clientes.forEach(c=>pedidosJoin.forEach(p=>rows.push({...c, ...p})));
+  }
+  return rows;
+}
+
+const joinSql = {
+  inner: `<span class="kw">SELECT</span> c.nome, p.produto, p.valor\n<span class="kw">FROM</span> clientes c\n<span class="kw">INNER JOIN</span> pedidos p\n  <span class="kw">ON</span> p.id_cliente <span class="kw">=</span> c.id;\n<span class="cm">-- só quem tem par dos dois lados</span>`,
+  left: `<span class="kw">SELECT</span> c.nome, p.produto, p.valor\n<span class="kw">FROM</span> clientes c\n<span class="kw">LEFT JOIN</span> pedidos p\n  <span class="kw">ON</span> p.id_cliente <span class="kw">=</span> c.id;\n<span class="cm">-- todo cliente aparece, com ou sem pedido</span>`,
+  right: `<span class="kw">SELECT</span> c.nome, p.produto, p.valor\n<span class="kw">FROM</span> clientes c\n<span class="kw">RIGHT JOIN</span> pedidos p\n  <span class="kw">ON</span> p.id_cliente <span class="kw">=</span> c.id;\n<span class="cm">-- todo pedido aparece, com ou sem cliente</span>`,
+  full: `<span class="kw">SELECT</span> c.nome, p.produto, p.valor\n<span class="kw">FROM</span> clientes c\n<span class="kw">FULL JOIN</span> pedidos p\n  <span class="kw">ON</span> p.id_cliente <span class="kw">=</span> c.id;\n<span class="cm">-- absolutamente tudo, pareado ou não</span>`,
+  cross: `<span class="kw">SELECT</span> c.nome, p.produto\n<span class="kw">FROM</span> clientes c\n<span class="kw">CROSS JOIN</span> pedidos p;\n<span class="cm">-- todo cliente combinado com todo pedido</span>`,
+};
+
+function renderJoin(){
+  const type = joinTypes[joinIdx].key;
+  document.getElementById('joinCode').innerHTML = `<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>${joinSql[type]}`;
+  const rows = computeJoin(type);
+  const isCross = type==='cross';
+  document.getElementById('crossNote').style.display = isCross ? 'block' : 'none';
+  document.getElementById('crossGrid').style.display = isCross ? 'grid' : 'none';
+  if(isCross){
+    document.getElementById('crossGrid').innerHTML = Array.from({length:35}).map(()=>'<div class="cross-dot"></div>').join('');
+  }
+  const shown = isCross ? rows.slice(0,6) : rows;
+  document.getElementById('joinTable').innerHTML = `
+    <thead><tr><th>nome</th><th>cidade</th><th>produto</th><th>valor</th></tr></thead>
+    <tbody>${shown.map(r => `<tr class="${(r.nome===null || r.produto===null) ? '' : ''}">
+      <td>${r.nome===null ? '<span class="cell-null">NULL</span>' : r.nome}</td>
+      <td>${r.cidade===null ? '<span class="cell-null">NULL</span>' : (r.cidade||'')}</td>
+      <td>${r.produto===null ? '<span class="cell-null">NULL</span>' : r.produto}</td>
+      <td>${r.valor==null ? '<span class="cell-null">NULL</span>' : brl(r.valor)}</td>
+    </tr>`).join('')}${isCross ? `<tr><td colspan="4" style="text-align:center;color:var(--text-disabled);">... + 29 combinações (35 no total = 5 clientes × 7 pedidos)</td></tr>` : ''}</tbody>
+  `;
+  drawVenn(type);
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function drawVenn(type){
+  const cv = document.getElementById('vennCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 220;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+
+  const r = Math.min(72, w*0.24);
+  const cy = h/2 - 6;
+  const cxA = w/2 - r*0.55;
+  const cxB = w/2 + r*0.55;
+
+  function circlePath(cx){ ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.closePath(); }
+
+  const colorA = '#36a2ef', colorB = '#7dded8';
+
+  if(type==='cross'){
+    ctx.save(); circlePath(cxA); ctx.fillStyle='rgba(54,162,239,.28)'; ctx.fill(); ctx.restore();
+    ctx.save(); circlePath(cxB); ctx.fillStyle='rgba(125,222,216,.28)'; ctx.fill(); ctx.restore();
+    ctx.font='700 26px Inter, sans-serif'; ctx.fillStyle='var(--text-primary)'.replace('var(--text-primary)','#dfe5ef');
+    ctx.textAlign='center'; ctx.fillText('✕', w/2, cy+9);
+  } else {
+    if(type==='left' || type==='full'){ ctx.save(); circlePath(cxA); ctx.fillStyle='rgba(54,162,239,.45)'; ctx.fill(); ctx.restore(); }
+    if(type==='right' || type==='full'){ ctx.save(); circlePath(cxB); ctx.fillStyle='rgba(125,222,216,.45)'; ctx.fill(); ctx.restore(); }
+    if(type==='inner'){
+      ctx.save(); circlePath(cxA); ctx.clip(); circlePath(cxB); ctx.clip();
+      ctx.fillStyle='#06b6d4'; ctx.fillRect(0,0,w,h); ctx.restore();
+    }
+  }
+
+  ctx.lineWidth = 2; ctx.strokeStyle = colorA; circlePath(cxA); ctx.stroke();
+  ctx.strokeStyle = colorB; circlePath(cxB); ctx.stroke();
+
+  const leftOnly = clientes.filter(c => !pedidosJoin.some(p=>p.id_cliente===c.id)).length;
+  const overlap = clientes.filter(c => pedidosJoin.some(p=>p.id_cliente===c.id)).length;
+  const rightOnly = [...new Set(pedidosJoin.filter(p=>!clientes.some(c=>c.id===p.id_cliente)).map(p=>p.id_cliente))].length;
+
+  const included = {
+    inner: {left:false, mid:true, right:false},
+    left:  {left:true, mid:true, right:false},
+    right: {left:false, mid:true, right:true},
+    full:  {left:true, mid:true, right:true},
+    cross: {left:false, mid:false, right:false},
+  }[type];
+
+  ctx.font='700 15px Roboto Mono, monospace'; ctx.textAlign='center';
+  if(type!=='cross'){
+    ctx.fillStyle = included.left ? '#dfe5ef' : '#515761';
+    ctx.fillText(leftOnly, cxA - r*0.55, cy+5);
+    ctx.fillStyle = included.mid ? '#dfe5ef' : '#515761';
+    ctx.fillText(overlap, (cxA+cxB)/2, cy+5);
+    ctx.fillStyle = included.right ? '#dfe5ef' : '#515761';
+    ctx.fillText(rightOnly, cxB + r*0.55, cy+5);
+  }
+
+  ctx.font='700 12px Inter, sans-serif';
+  ctx.fillStyle = colorA; ctx.fillText('clientes', cxA - r*0.15, cy - r - 12);
+  ctx.fillStyle = colorB; ctx.fillText('pedidos', cxB + r*0.15, cy - r - 12);
+}
+renderJoinButtons(); renderJoin();
+window.addEventListener('resize', () => drawVenn(joinTypes[joinIdx].key));
+
+/* ===================== Transações — lifeline ===================== */
+const txSteps = [
+  {icon:'🏁', label:'Estado inicial', ana:500, bruno:200, note:'antes de qualquer coisa'},
+  {icon:'▶️', label:'BEGIN', ana:500, bruno:200, note:'transação iniciada, nada mudou ainda'},
+  {icon:'➖', label:'UPDATE Ana', ana:400, bruno:200, note:'débito de 100 pontos (ainda não confirmado)'},
+  {icon:'➕', label:'UPDATE Bruno', ana:400, bruno:300, note:'crédito de 100 pontos (ainda não confirmado)'},
+  {icon:'✅', label:'COMMIT', ana:400, bruno:300, note:'mudanças confirmadas de vez'},
+];
+let txIdx = txSteps.length - 1;
+function buildTxLifeline(){
+  document.getElementById('txLifeline').innerHTML = txSteps.map((s,i) => `
+    <div class="life-event ${i===txIdx?'active':i<txIdx?'done':''}" onclick="selectTx(${i})">
+      <div class="life-dot-wrap">
+        <span class="life-line ${i===0?'first':''}"></span>
+        <div class="life-dot">${i<txIdx?'✓':''}</div>
+        <span class="life-line ${i===txSteps.length-1?'first':''}"></span>
+      </div>
+      <span class="life-icon">${s.icon}</span>
+      <span class="life-label">${s.label}</span>
+      <span class="life-date" style="max-width:130px;white-space:normal;text-align:center;">${s.note}</span>
+    </div>
+  `).join('');
+}
+function selectTx(i){ txIdx = i; buildTxLifeline(); renderTxState(); }
+function renderTxState(){
+  const s = txSteps[txIdx];
+  const committed = txIdx === txSteps.length - 1;
+  document.getElementById('txAna').innerHTML = `<tr><th>pontos</th><th>status</th></tr><tr class="is-current just-added"><td>${s.ana}</td><td>${committed ? '<span class="badge-current">confirmado</span>' : '<span class="badge-expired">em transação</span>'}</td></tr>`;
+  document.getElementById('txBruno').innerHTML = `<tr><th>pontos</th><th>status</th></tr><tr class="is-current just-added"><td>${s.bruno}</td><td>${committed ? '<span class="badge-current">confirmado</span>' : '<span class="badge-expired">em transação</span>'}</td></tr>`;
+}
+buildTxLifeline(); renderTxState();
+
+/* ===================== Cheat sheet ===================== */
+const cheatItems = [
+  {icon:'🔍', term:'SELECT', desc:'Escolhe quais colunas ver'},
+  {icon:'📂', term:'FROM', desc:'De qual tabela'},
+  {icon:'🧹', term:'WHERE', desc:'Filtra linhas'},
+  {icon:'🔤', term:'ORDER BY', desc:'Ordena o resultado'},
+  {icon:'✂️', term:'LIMIT', desc:'Corta as N primeiras linhas'},
+  {icon:'📦', term:'GROUP BY', desc:'Agrupa linhas em cestos'},
+  {icon:'🎯', term:'HAVING', desc:'Filtra cestos já agrupados'},
+  {icon:'🔗', term:'JOIN', desc:'Junta duas tabelas por chave'},
+  {icon:'➕', term:'INSERT INTO', desc:'Adiciona uma linha'},
+  {icon:'✏️', term:'UPDATE', desc:'Altera linhas existentes'},
+  {icon:'🗑️', term:'DELETE', desc:'Remove linhas'},
+  {icon:'🏗️', term:'CREATE TABLE', desc:'Define uma tabela nova'},
+  {icon:'🔧', term:'ALTER TABLE', desc:'Muda a estrutura existente'},
+  {icon:'💣', term:'DROP TABLE', desc:'Apaga tabela e dados'},
+  {icon:'🔑', term:'PRIMARY KEY', desc:'Identifica cada linha'},
+  {icon:'🔗', term:'FOREIGN KEY', desc:'Aponta pra chave de outra tabela'},
+  {icon:'✨', term:'DISTINCT', desc:'Remove valores repetidos'},
+  {icon:'🔀', term:'UNION', desc:'Combina resultados sem repetir'},
+  {icon:'🪆', term:'Subquery', desc:'SELECT dentro de SELECT'},
+  {icon:'👁️', term:'VIEW', desc:'Consulta salva com nome'},
+  {icon:'🪟', term:'OVER() / PARTITION BY', desc:'Calcula sem perder linhas'},
+  {icon:'💾', term:'BEGIN / COMMIT / ROLLBACK', desc:'Tudo ou nada'},
+];
+document.getElementById('cheatGrid').innerHTML = cheatItems.map(c => `
+  <div class="card"><div class="card-title">${c.icon} <code style="color:var(--accent);font-size:12.5px;">${c.term}</code></div><div class="card-text">${c.desc}</div></div>
+`).join('');
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O comando WHERE filtra linhas antes de qualquer agrupamento feito por GROUP BY.', a:true, e:'Verdadeiro. WHERE age sobre as linhas originais da tabela; quem filtra grupos já formados é o HAVING.'},
+  {q:'SELECT * FROM clientes precisa obrigatoriamente vir acompanhado de um WHERE.', a:false, e:'Falso. WHERE é opcional — sem ele, a consulta simplesmente retorna todas as linhas da tabela.'},
+  {q:'Um INNER JOIN retorna todas as linhas da tabela da esquerda, mesmo sem correspondência na tabela da direita.', a:false, e:'Falso. Isso é o que o LEFT JOIN faz. O INNER JOIN só retorna linhas que têm correspondência nas duas tabelas.'},
+  {q:'Uma PRIMARY KEY pode se repetir em mais de uma linha da mesma tabela.', a:false, e:'Falso. A chave primária existe justamente para garantir que cada linha seja identificada de forma única — valores repetidos são rejeitados pelo banco.'},
+  {q:'Uma FOREIGN KEY em uma tabela aponta para a chave primária de outra tabela, garantindo integridade referencial.', a:true, e:'Verdadeiro. É esse "elo" entre as tabelas que impede, por exemplo, um pedido referenciar um cliente que não existe.'},
+  {q:'UNION remove automaticamente linhas duplicadas do resultado combinado; UNION ALL mantém todas, inclusive repetidas.', a:true, e:'Verdadeiro. Se a duplicidade não for um problema, UNION ALL costuma ser mais rápido, pois não precisa checar duplicatas.'},
+  {q:'Uma subconsulta (subquery) sempre roda depois da consulta principal terminar.', a:false, e:'Falso. É o contrário: a subconsulta roda primeiro, "de dentro para fora", e seu resultado alimenta a consulta principal.'},
+  {q:'COMMIT desfaz as alterações feitas dentro de uma transação, voltando tudo ao estado anterior.', a:false, e:'Falso. Quem desfaz é o ROLLBACK. COMMIT faz o oposto: confirma as alterações de forma definitiva.'},
+  {q:'Uma window function (como RANK() OVER) reduz o número de linhas do resultado, assim como o GROUP BY faz.', a:false, e:'Falso. Window functions calculam um valor por grupo mas preservam todas as linhas originais — diferente do GROUP BY, que "achata" o resultado.'},
+  {q:'Uma VIEW guarda uma cópia física dos dados no momento em que foi criada.', a:false, e:'Falso. Uma view comum não duplica dado nenhum — ela roda o SELECT original toda vez que é consultada, sempre refletindo o estado atual das tabelas.'},
+];
+document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+  <div class="quiz-card" onclick="this.classList.toggle('open')">
+    <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+    <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+  </div>
+`).join('');
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-fundamentos', icon:'🗂️', label:'Tabelas e Dados', lvl:'basico'},
+  {id:'s-familias', icon:'👨‍👩‍👧', label:'Famílias de Comandos', lvl:'basico'},
+  {id:'s-select', icon:'🔍', label:'SELECT & FROM', lvl:'basico'},
+  {id:'s-where', icon:'🧹', label:'WHERE', lvl:'basico'},
+  {id:'s-orderby', icon:'🔤', label:'ORDER BY & LIMIT', lvl:'basico'},
+  {id:'s-agregacao', icon:'🧮', label:'Funções Agregadas', lvl:'basico'},
+  {id:'s-groupby', icon:'📦', label:'GROUP BY & HAVING', lvl:'intermediario'},
+  {id:'s-join', icon:'🔗', label:'JOIN', lvl:'intermediario'},
+  {id:'s-subquery', icon:'🪆', label:'Subconsultas', lvl:'intermediario'},
+  {id:'s-setops', icon:'➕', label:'UNION/INTERSECT', lvl:'intermediario'},
+  {id:'s-window', icon:'🪟', label:'Window Functions', lvl:'intermediario'},
+  {id:'s-dml', icon:'✍️', label:'INSERT/UPDATE/DELETE', lvl:'intermediario'},
+  {id:'s-ddl', icon:'🏗️', label:'CREATE TABLE', lvl:'intermediario'},
+  {id:'s-chaves', icon:'🔑', label:'PK & FK', lvl:'intermediario'},
+  {id:'s-views', icon:'👁️', label:'VIEWS', lvl:'intermediario'},
+  {id:'s-transacoes', icon:'💾', label:'Transações', lvl:'avancado'},
+  {id:'s-recursao', icon:'🌲', label:'Recursividade', lvl:'avancado'},
+  {id:'s-explain', icon:'🔬', label:'EXPLAIN', lvl:'avancado'},
+  {id:'s-cheatsheet', icon:'📋', label:'Cheat Sheet'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')} ${s.lvl ? `<span class="toc-lvl-dot lvl-${s.lvl}"></span>` : ''}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+document.getElementById('footerYear').textContent = 'Agosto / 2026';
+</script>
+</body>
+</html>

@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Motores de Consulta Distribuídos (Presto/Trino) e comparação com Dremio. Arquitetura, execução MPP, federação de dados, reflections e mais, com muitos diagramas e demos interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Trino/Presto vs Dremio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-amber:#f5a623;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-amber{border-color:var(--accent-amber);color:var(--accent-amber);background:rgba(245,166,35,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.amber-box{background:rgba(245,166,35,.07);border-left:4px solid var(--accent-amber);padding:16px 18px;border-radius:6px;}
+.amber-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.amber-box .highlight-title{color:var(--accent-amber);}
+
+/* ---- KID BOX (explicando pra criança) ---- */
+.kid-box{background:rgba(196,154,255,.07);border:1.5px dashed var(--accent-purple);border-radius:10px;padding:16px 20px;}
+.kid-box .kb-title{color:var(--accent-purple);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+.kid-box p{font-size:13.5px;color:var(--text-secondary);line-height:1.75;}
+.kid-box p strong{color:var(--text-primary);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- ARCHITECTURE / CLICKABLE DIAGRAM ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-amber{border-top-color:var(--accent-amber);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- TREE ---- */
+.tree{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:2;color:var(--text-secondary);}
+.tree .t0{color:var(--text-primary);font-weight:700;}
+.tree .t1{padding-left:22px;color:var(--accent-blue);}
+.tree .t2{padding-left:44px;color:var(--accent-purple);}
+.tree .t3{padding-left:66px;color:var(--text-secondary);}
+.tree .t3 .fname{color:var(--accent-green);}
+
+/* ---- SPLIT / PARALLELISM CELLS ---- */
+.cacheline{display:flex;gap:4px;flex-wrap:wrap;}
+.cl-cell{width:40px;height:40px;border-radius:5px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8.5px;font-family:'Roboto Mono',monospace;font-weight:700;border:1.5px solid var(--border-color);background:var(--bg-elevated);color:var(--text-disabled);line-height:1.2;padding:2px;}
+.cl-cell.used{background:rgba(6,182,212,.22);border-color:var(--accent);color:var(--accent);}
+.cl-cell.wasted{background:rgba(248,107,99,.08);border-color:var(--accent-red);color:var(--accent-red);opacity:.65;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- TIMELINE (história) ---- */
+.timeline-row{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 2px 14px;}
+.tl-item{display:flex;flex-direction:column;gap:6px;min-width:200px;max-width:220px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;flex-shrink:0;}
+.tl-item.hl{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.tl-year{font-family:'Roboto Mono',monospace;font-weight:800;color:var(--accent);font-size:13px;}
+.tl-title{font-weight:700;font-size:12.5px;color:var(--text-primary);}
+.tl-text{font-size:11.5px;color:var(--text-secondary);line-height:1.6;}
+.tl-arrow{display:flex;align-items:center;padding:0 10px;color:var(--border-strong);font-size:18px;flex-shrink:0;}
+
+/* ---- HUB / FEDERATION DIAGRAM ---- */
+.hub-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;}
+.hub-center{background:rgba(6,182,212,.14);border:2px solid var(--accent);border-radius:10px;padding:14px 30px;font-weight:800;color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:13px;letter-spacing:.5px;}
+.hub-lines{width:2px;height:18px;background:var(--border-strong);}
+.hub-spokes{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;width:100%;}
+.hub-node{cursor:pointer;border:1.5px solid var(--border-color);border-radius:8px;background:var(--bg-elevated);padding:12px 10px;text-align:center;font-size:12px;font-weight:700;color:var(--text-secondary);transition:.15s;}
+.hub-node:hover{border-color:var(--accent-blue);}
+.hub-node.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.grid-5{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Trino / Presto vs Dremio</h1><span>Motores de consulta distribuídos que trazem o SQL até os seus dados</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2012</div><div class="hstat-label">Origem (Presto)</div></div>
+      <div class="hstat"><div class="hstat-num">MPP</div><div class="hstat-label">Arquitetura</div></div>
+      <div class="hstat"><div class="hstat-num">20</div><div class="hstat-label">Seções</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à comparação prática</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>SQL que <em>viaja até os dados</em>, em vez dos dados viajarem até ele</h2>
+      <p>Trino (antigo PrestoSQL) e Dremio são <strong>motores de consulta SQL distribuídos</strong>: eles não guardam seus próprios dados como um banco tradicional — em vez disso, conectam-se a várias fontes (data lake, bancos relacionais, NoSQL, streaming) e executam uma única consulta SQL <em>espalhada</em> por dezenas ou centenas de máquinas ao mesmo tempo. Nesta aula vamos entender como o Presto nasceu no Facebook em 2012 para substituir consultas lentas do Hive, como ele virou Trino, e como o Dremio ataca o mesmo problema com uma proposta diferente: acelerar consultas automaticamente com <strong>Reflections</strong> e organizar tudo numa <strong>camada semântica</strong> de autoatendimento.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">MPP</span>
+        <span class="badge badge-blue">Sem ETL prévio</span>
+        <span class="badge badge-purple">Federação de dados</span>
+        <span class="badge badge-amber">Dremio: Reflections</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🧠 MOTOR, NÃO BANCO</div>
+        <div class="fc-body">
+          <div class="fc-row">Uma consulta SQL única<br><span style="font-size:9.5px;opacity:.7;">"SELECT ... FROM catálogo_A JOIN catálogo_B"</span></div>
+          <div class="fc-row">Distribuída entre dezenas de máquinas<br><span style="font-size:9.5px;opacity:.7;">executada em paralelo, em memória</span></div>
+        </div>
+        <div class="fc-foot">Lê S3/HDFS · MySQL · MongoDB · Kafka · Iceberg...</div>
+      </div>
+      <div class="file-chip-caption">O motor não guarda os dados — ele os visita</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🤔 O que é um Motor de Consulta Distribuído?</div>
+    <p class="section-desc">
+      Um banco de dados tradicional (PostgreSQL, MySQL) faz duas coisas ao mesmo tempo: <strong>guarda</strong> os dados em disco <em>e</em> os <strong>consulta</strong> com SQL. O Trino (e o Dremio) separam essas duas responsabilidades: eles <strong>não têm um formato de armazenamento próprio</strong> — a "verdade" dos dados continua em outro lugar (um data lake em S3, um MySQL de produção, um MongoDB de eventos). O motor apenas se conecta a essas fontes, entende cada uma através de um <strong>conector</strong>, e executa a consulta SQL de forma <strong>distribuída</strong>: divide o trabalho entre várias máquinas (workers/executors) que processam pedaços dos dados em paralelo — esse padrão se chama <strong>MPP</strong> (<em>Massively Parallel Processing</em>).
+    </p>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Imagine uma <strong>biblioteca gigante</strong> espalhada em vários prédios diferentes (um prédio é o MySQL, outro é o MongoDB, outro é uma pasta cheia de arquivos no S3). O Trino é como um <strong>bibliotecário superpoderoso</strong> que não guarda nenhum livro consigo — ele sabe exatamente em qual prédio e prateleira cada livro está, manda vários ajudantes buscarem pedaços da resposta ao mesmo tempo, e te entrega tudo já organizado numa única resposta, como se todos os livros estivessem na mesma estante.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🚫 Não é um banco de dados</div>
+        <div class="card-text">Trino não tem seu próprio formato de arquivo de armazenamento. Ele lê e escreve nas fontes que você conectar — Parquet no S3, tabelas MySQL, coleções MongoDB, tópicos Kafka.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ É um motor MPP</div>
+        <div class="card-text">Uma única consulta é fatiada em dezenas/centenas de pedaços (<em>splits</em>) processados em paralelo por várias máquinas (<em>workers</em>), como várias mãos ajudando a carregar uma mudança.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔗 SQL federado</div>
+        <div class="card-text">A mesma consulta pode juntar (<code>JOIN</code>) uma tabela do MySQL com um arquivo Parquet do data lake e uma coleção do MongoDB — sem copiar nada antes.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Dimensão</th><th>Banco de dados tradicional (ex: PostgreSQL)</th><th>Motor de consulta distribuído (Trino/Dremio)</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Armazenamento</strong></td><td>Próprio, em disco gerenciado pelo próprio servidor</td><td>Nenhum formato próprio — lê fontes externas via conectores</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Escala</strong></td><td>Um servidor (ou réplicas dele)</td><td>Cluster de várias máquinas, cresce horizontalmente</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Escrita transacional</strong></td><td>Sim, forte (ACID linha a linha)</td><td>Focado em leitura analítica; escrita depende do conector</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Pergunta típica</strong></td><td>"Insira um novo pedido"</td><td>✅ "Cruze vendas do data lake com clientes do MySQL e eventos do Kafka"</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ HISTÓRIA ============ -->
+  <section class="section" id="s-historia">
+    <div class="section-eyebrow">De Onde Veio</div>
+    <div class="section-title">📜 A História: do Presto ao Trino (e o Dremio no meio do caminho)</div>
+    <p class="section-desc">O Presto nasceu dentro do Facebook em 2012 porque as consultas analíticas via Hive/MapReduce sobre o data warehouse (na época, com dezenas de petabytes) demoravam <strong>minutos ou horas</strong>. Um pequeno time — Martin Traverso, Dain Sundstrom, David Phillips e Eric Hwang — construiu um motor novo, pensado para respostas <strong>interativas</strong>, em segundos. Anos depois, o próprio projeto passou por uma divisão que gerou o nome "Trino" que usamos hoje.</p>
+
+    <div class="timeline-row" id="timelineRow"></div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como uma <strong>banda de música</strong> que toca muito bem junta. Em 2019, parte da banda original decidiu sair da gravadora (Facebook) para tocar por conta própria, com outro nome — só que o nome antigo ("Presto") ficou preso à gravadora. Então a banda trocou de nome para <strong>Trino</strong> e continuou compondo músicas novas, enquanto a gravadora manteve sua própria versão da banda tocando as músicas antigas com o nome antigo.</p>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Hoje as duas continuam vivas: <strong>PrestoDB</strong> é mantido pela Presto Foundation (Linux Foundation), com Meta/Facebook como grande usuário e contribuidor; <strong>Trino</strong> é mantido pela Trino Software Foundation, com a Starburst como principal apoiadora comercial. As bases de código divergiram desde o fork — não são mais binariamente compatíveis — mas o SQL, os conceitos de arquitetura (coordinator/worker) e a filosofia de conectores continuam extremamente parecidos.</p>
+    </div>
+  </section>
+
+  <!-- ============ ARQUITETURA ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Como Funciona por Dentro</div>
+    <div class="section-title">🏗️ Arquitetura: Coordinator &amp; Workers</div>
+    <p class="section-desc">
+      Um cluster Trino tem dois papéis: um <strong>Coordinator</strong> (só existe um "ativo" recebendo consultas) e vários <strong>Workers</strong>. O Coordinator nunca toca nos dados das tabelas — ele só entende o SQL, monta o plano e distribui o trabalho. Quem realmente lê e processa os dados são os Workers, em paralelo. Clique nos blocos abaixo para ver o papel de cada peça.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🧭 Coordinator — planeja, não processa</div>
+          <div class="pq-clickable" data-id="co-parse" onclick="pickRole('co-parse')">Parser &amp; Analyzer</div>
+          <div class="pq-clickable" data-id="co-plan" onclick="pickRole('co-plan')">Planner &amp; Otimizador</div>
+          <div class="pq-clickable" data-id="co-sched" onclick="pickRole('co-sched')">Scheduler</div>
+          <div class="pq-clickable" data-id="co-ui" onclick="pickRole('co-ui')">Web UI &amp; API de clientes</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">⚙️ Workers — processam os dados</div>
+          <div class="pq-clickable" data-id="wk-task" onclick="pickRole('wk-task')">Tasks (execução de um estágio)</div>
+          <div class="pq-clickable" data-id="wk-op" onclick="pickRole('wk-op')">Operadores (scan, filter, join, agg)</div>
+          <div class="pq-clickable" data-id="wk-exch" onclick="pickRole('wk-exch')">Exchange Client (troca dados entre workers)</div>
+          <div class="pq-clickable" data-id="wk-conn" onclick="pickRole('wk-conn')">Conectores (leem a fonte real)</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="roleDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Veja o que o Coordinator e os Workers fazem em cada etapa de uma consulta.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Pensa numa <strong>obra de construção</strong>: o <strong>Coordinator</strong> é o engenheiro que olha a planta (seu SQL), decide quem faz o quê e em que ordem — mas ele não carrega tijolo. Os <strong>Workers</strong> são os pedreiros: cada um carrega e monta sua parte da parede (um pedaço dos dados) ao mesmo tempo que os outros, e no fim entregam a parede pronta para o engenheiro juntar tudo.</p>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Isso é bem diferente do modelo cliente-servidor de um PostgreSQL, onde um único processo atende cada conexão do início ao fim. No Trino, <strong>uma única consulta</strong> é atendida por <strong>vários processos ao mesmo tempo</strong> — daí vem a escala horizontal: para consultar mais rápido, basta adicionar mais Workers ao cluster.</p>
+    </div>
+  </section>
+
+  <!-- ============ EXECUÇÃO DA CONSULTA ============ -->
+  <section class="section" id="s-execucao">
+    <div class="section-eyebrow">O Motor por Dentro</div>
+    <div class="section-title">⚙️ Como uma Consulta é Executada: Pipeline em Memória vs Hive/MapReduce</div>
+    <p class="section-desc">
+      O motivo do Presto ter nascido é justamente este: o Hive clássico traduzia SQL em uma sequência de <strong>jobs MapReduce</strong>, e cada job escrevia seu resultado intermediário <strong>de volta no HDFS</strong> antes do próximo job poder começar — cada etapa pagava o preço de gravar e reler do disco. O Trino/Presto processa a consulta como um <strong>pipeline em memória</strong>: o resultado de uma etapa é <em>trocado</em> (<em>exchange</em>) diretamente para a próxima etapa, sem tocar o disco entre elas, sempre que possível. Compare os dois caminhos:
+    </p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🐘 Hive clássico sobre MapReduce</div>
+          <div class="pq-clickable" data-id="hv-submit" onclick="pickEngine('hv-submit')">Cliente envia HiveQL</div>
+          <div class="pq-clickable" data-id="hv-plan" onclick="pickEngine('hv-plan')">Hive traduz em vários jobs MapReduce</div>
+          <div class="pq-clickable" data-id="hv-job1" onclick="pickEngine('hv-job1')">Job 1 roda e grava resultado no HDFS</div>
+          <div class="pq-clickable" data-id="hv-job2" onclick="pickEngine('hv-job2')">Job 2 lê do HDFS, processa, grava de novo</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🚀 Trino / Presto (pipeline MPP)</div>
+          <div class="pq-clickable" data-id="tr-submit" onclick="pickEngine('tr-submit')">Cliente envia SQL ao Coordinator</div>
+          <div class="pq-clickable" data-id="tr-plan" onclick="pickEngine('tr-plan')">Coordinator monta um plano distribuído único</div>
+          <div class="pq-clickable" data-id="tr-exchange" onclick="pickEngine('tr-exchange')">Workers trocam dados direto em memória (exchange)</div>
+          <div class="pq-clickable" data-id="tr-result" onclick="pickEngine('tr-result')">Resultado final entregue ao cliente</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="engineDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Compare, passo a passo, o caminho de uma consulta em cada modelo de execução.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É a diferença entre um <strong>correio com várias paradas</strong> (Hive/MapReduce: a carta para em cada agência, é registrada, guardada, e só depois segue para a próxima) e uma <strong>fileira de amigos passando baldes de água</strong> numa brincadeira de apagar incêndio (Trino: o balde passa direto de mão em mão, sem ninguém parar para guardá-lo no chão entre uma pessoa e outra).</p>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Modelo</th><th>Onde fica o resultado intermediário</th><th>Latência típica</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Hive / MapReduce clássico</strong></td><td>Gravado em disco (HDFS) entre cada job</td><td>Minutos a horas</td><td>Jobs batch enormes, tolerantes a falha ponto a ponto</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Trino / Presto</strong></td><td>Trocado em memória entre estágios (exchange)</td><td>Segundos a poucos minutos</td><td>Consultas interativas e ad hoc sobre grandes volumes</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="warn-box"><p>⚠️ Essa velocidade tem um custo: por padrão, se um Worker cai no meio da consulta, a consulta inteira falha e precisa ser reenviada — diferente do MapReduce, que só reexecuta a tarefa que falhou. Versões recentes do Trino resolvem isso com <strong>fault-tolerant execution</strong>, um modo opcional que grava dados de troca (exchange) num armazenamento externo (ex: S3) para permitir retomar consultas longas sem perder tudo — útil para cargas de ETL grandes, não só para consultas interativas.</p></div>
+  </section>
+
+  <!-- ============ PARALELISMO MPP ============ -->
+  <section class="section" id="s-paralelismo">
+    <div class="section-eyebrow">Escala Horizontal</div>
+    <div class="section-title">🧩 Paralelismo MPP: Splits, Tasks e Workers</div>
+    <p class="section-desc">Uma tabela grande no data lake é composta por <strong>vários arquivos</strong> (ex: centenas de arquivos Parquet). O Coordinator fatia essa tabela em pedaços chamados <strong>splits</strong> — cada split vira uma unidade de trabalho que um Worker processa. Quanto mais Workers disponíveis, mais splits são processados <strong>ao mesmo tempo</strong>, em vez de um atrás do outro.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: distribuindo splits entre workers</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Splits (pedaços de arquivo) a processar</span><span class="ctrl-v" id="splitsVal">32</span></div>
+          <input type="range" id="splitsRange" min="4" max="64" step="4" value="32" oninput="updateParallel()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Workers disponíveis no cluster</span><span class="ctrl-v" id="workersVal">4</span></div>
+          <input type="range" id="workersRange" min="1" max="16" step="1" value="4" oninput="updateParallel()">
+        </div>
+      </div>
+      <div class="cacheline" id="splitGrid"></div>
+      <div class="stat-cards" id="parallelStats"></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Imagine <strong>32 caixas de brinquedo</strong> para guardar. Com <strong>1 amigo</strong> ajudando, ele guarda uma caixa de cada vez — demora bastante. Com <strong>8 amigos</strong>, cada um pega umas 4 caixinhas e todos guardam ao mesmo tempo — a arrumação termina muito mais rápido. É exatamente isso que acontece quando você aumenta o número de Workers no cluster: mais "amigos" carregando pedaços da mesma tarefa.</p>
+    </div>
+  </section>
+
+  <!-- ============ JOIN DISTRIBUÍDO ============ -->
+  <section class="section" id="s-join">
+    <div class="section-eyebrow">Coordenando Workers</div>
+    <div class="section-title">🔀 Tipos de JOIN Distribuído: Broadcast vs Shuffle</div>
+    <p class="section-desc">
+      Cada Worker só enxerga o pedaço (split) da tabela que recebeu. Para fazer um <code>JOIN</code>, as linhas com a <strong>mesma chave</strong> das duas tabelas precisam parar no <strong>mesmo Worker</strong> — senão ninguém consegue comparar nada. O otimizador escolhe entre duas estratégias principais para fazer isso acontecer, e a escolha certa muda drasticamente quanto dado trafega pela rede.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📡 Broadcast Join</div>
+        <div class="card-text">A tabela <strong>pequena</strong> (ex: uma dimensão com poucas linhas) é copiada <strong>inteira</strong> para todos os Workers que têm pedaços da tabela grande. Cada Worker já fica com as duas metades que precisa comparar, sem mexer na tabela grande.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔁 Partitioned (Shuffle) Join</div>
+        <div class="card-text">Quando <strong>as duas tabelas são grandes</strong>, ambas são redistribuídas pela rede usando uma função hash da chave de junção — cada Worker passa a receber só as linhas, dos dois lados, cuja chave "pertence" a ele.</div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: qual estratégia move menos dado pela rede?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Tabela pequena (dimensão)</span><span class="ctrl-v" id="joinSmallVal">200 MB</span></div>
+          <input type="range" id="joinSmallRange" min="10" max="2000" step="10" value="200" oninput="updateJoinDemo()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Tabela grande (fatos)</span><span class="ctrl-v" id="joinBigVal">500 GB</span></div>
+          <input type="range" id="joinBigRange" min="10" max="2000" step="10" value="500" oninput="updateJoinDemo()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Workers no cluster</span><span class="ctrl-v" id="joinWorkersVal">8</span></div>
+          <input type="range" id="joinWorkersRange" min="1" max="64" step="1" value="8" oninput="updateJoinDemo()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="joinCanvas" height="110"></canvas></div>
+      <div class="highlight-box" id="joinMsg" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Pense em dois grupos trocando figurinhas para montar um álbum. Se um grupo tem <strong>poucas figurinhas raras</strong>, é mais fácil <strong>tirar cópias</strong> delas e entregar uma cópia pra cada colega (broadcast) do que fazer todo mundo se mexer. Mas se os <strong>dois grupos são enormes</strong>, o jeito mais justo é reorganizar todo mundo em times menores por tipo de figurinha, para que quem tem a mesma figurinha sempre fique junto (shuffle) — ninguém carrega o álbum do colega inteiro à toa.</p>
+    </div>
+
+    <div class="info-box"><p>💡 É por isso que <strong>estatísticas de tabela atualizadas</strong> (seção de tuning mais à frente) importam tanto: se o otimizador não souber que uma tabela é pequena, pode escolher shuffle onde um broadcast bem mais barato resolveria — ou pior, tentar um broadcast de uma tabela que na verdade é gigante.</p></div>
+  </section>
+
+  <!-- ============ CONECTORES & FEDERAÇÃO ============ -->
+  <section class="section" id="s-conectores">
+    <div class="section-eyebrow">O Superpoder do Trino</div>
+    <div class="section-title">🔌 Conectores &amp; Federação: Um SQL, Várias Fontes</div>
+    <p class="section-desc">Cada fonte de dados é acessada através de um <strong>conector</strong> — um plugin que sabe "traduzir" entre o SQL do Trino e o protocolo daquela fonte específica (JDBC de um banco relacional, API do MongoDB, protocolo do Kafka, arquivos Parquet/ORC/Iceberg no S3...). Cada instância configurada de um conector vira um <strong>catálogo</strong>, endereçado como <code>catalogo.schema.tabela</code>. Clique em cada fonte para ver como ela aparece no SQL.</p>
+
+    <div class="interactive-panel">
+      <div class="hub-wrap">
+        <div class="hub-center">🧠 TRINO COORDINATOR</div>
+        <div class="hub-lines"></div>
+        <div class="hub-spokes" id="hubSpokes"></div>
+      </div>
+      <div class="anatomy-detail" id="hubDetail" style="margin-top:18px;">
+        <div class="ad-title">👆 Clique em uma fonte de dados</div>
+        <div class="ad-text">Veja como ela é endereçada dentro de uma consulta SQL do Trino.</div>
+      </div>
+    </div>
+
+    <p class="section-desc">O verdadeiro poder aparece quando você junta várias fontes numa <strong>única consulta federada</strong> — sem mover ou copiar nenhum dado antecipadamente:</p>
+    <div class="code-block">
+<span class="code-lang">sql — consulta federada</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> c.nome, <span class="fn">SUM</span>(p.total) <span class="kw">AS</span> total_gasto, <span class="fn">COUNT</span>(e.evento_id) <span class="kw">AS</span> cliques
+<span class="kw">FROM</span> mysql.vendas.clientes c
+<span class="kw">JOIN</span> hive.lake.pedidos p       <span class="kw">ON</span> p.cliente_id <span class="kw">=</span> c.id
+<span class="kw">JOIN</span> kafka.eventos.cliques e    <span class="kw">ON</span> e.cliente_id <span class="kw">=</span> c.id
+<span class="kw">WHERE</span> p.total <span class="kw">></span> <span class="num">1000</span>
+<span class="kw">GROUP BY</span> c.nome;
+<span class="cm">-- 3 catálogos diferentes, 3 tecnologias diferentes, 1 consulta só</span></div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como uma <strong>reunião da ONU</strong> com tradutores simultâneos: cada país (fonte de dados) fala sua própria língua (MySQL fala "SQL relacional", MongoDB fala "documentos", Kafka fala "eventos em fila"). O Trino tem um <strong>tradutor</strong> (conector) para cada língua, e consegue montar uma única "ata da reunião" (o resultado da consulta) juntando o que cada país disse — sem que ninguém precise aprender a língua dos outros antes.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📚 Mais de 50 conectores</div><div class="card-text">Data lakes (Hive, Iceberg, Delta Lake, Hudi), relacionais (MySQL, PostgreSQL, SQL Server, Oracle), NoSQL (MongoDB, Cassandra), streaming (Kafka, Pulsar) e mais.</div></div>
+      <div class="card"><div class="card-title">🧩 Pushdown por conector</div><div class="card-text">Cada conector decide o que consegue "empurrar" para a fonte (filtros, agregações, limites) — quanto mais inteligente o conector, menos dado bruto precisa trafegar até o Trino.</div></div>
+      <div class="card"><div class="card-title">🏗️ Extensível</div><div class="card-text">A interface de conector (SPI) é pública — qualquer empresa pode escrever um conector novo para uma fonte proprietária sem alterar o núcleo do Trino.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ FORMATOS LAKEHOUSE ============ -->
+  <section class="section" id="s-lakehouse">
+    <div class="section-eyebrow">O Que Realmente Está no Data Lake</div>
+    <div class="section-title">🧊 Formatos de Tabela do Lakehouse: Iceberg, Delta Lake e Hudi</div>
+    <p class="section-desc">
+      Parquet e ORC são só <strong>formatos de arquivo</strong> — ótimos para armazenar colunas de forma compacta, mas sozinhos não sabem responder "quais arquivos formam a tabela agora?", nem "como ela estava ontem?", nem garantem que uma escrita no meio de uma leitura não corrompa o resultado. Os <strong>formatos de tabela</strong> (table formats) do lakehouse adicionam uma camada de metadados transacional por cima de arquivos Parquet/ORC comuns, trazendo recursos que só bancos de dados tinham: transações <strong>ACID</strong>, <strong>time travel</strong> e evolução segura de schema. Tanto o Trino quanto o Dremio leem (e em boa parte escrevem) esses formatos diretamente.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="lakeButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="lakeDetail">
+        <div class="ad-title">👆 Clique em um formato</div>
+        <div class="ad-text">Veja origem, principais recursos e um exemplo de SQL.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Recurso</th><th>Apenas Parquet/ORC "cru"</th><th>Iceberg / Delta Lake / Hudi</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Transações ACID</strong></td><td>Não — escritas concorrentes podem corromper leituras</td><td>Sim, via log/metadados transacionais</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Time travel</strong></td><td>Não existe "versão anterior" da tabela</td><td>Sim — consulta uma tabela como ela estava num snapshot passado</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Evolução de schema</strong></td><td>Arriscada — reescrever tudo ou quebrar leitores antigos</td><td>Segura — adicionar/renomear coluna sem reescrever arquivos antigos</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Quem descobre quais arquivos formam a tabela</strong></td><td>Convenção de pastas (frágil)</td><td>Metadados versionados, lidos pelo motor de consulta</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Recurso</th><th>🧊 Iceberg</th><th>🔺 Delta Lake</th><th>🟣 Hudi</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Origem / mantenedor</strong></td><td>Netflix (2018) → Apache</td><td>Databricks (2019) → Linux Foundation Delta Kernel</td><td>Uber (2016) → Apache</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Particionamento</strong></td><td>Oculto (<em>hidden partitioning</em>) — motor calcula sozinho</td><td>Estilo Hive — colunas de partição explícitas nas pastas</td><td>Estilo Hive, com chave de registro (<em>record key</em>) obrigatória</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Upsert / Merge nativo</strong></td><td>Sim, via <code>MERGE INTO</code></td><td>Sim, via <code>MERGE INTO</code></td><td>Sim — é o principal ponto forte (upserts incrementais)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Catálogos suportados</strong></td><td>Hive Metastore, AWS Glue, Nessie, REST Catalog, JDBC</td><td>Hive Metastore, Unity Catalog, filesystem</td><td>Hive Metastore, Glue, filesystem</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Ecossistema de escrita mais forte</strong></td><td>Multi-engine (Spark, Flink, Trino, Dremio)</td><td>Spark / Databricks</td><td>Spark / Flink (CDC e streaming)</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Suporte no Trino / Dremio</strong></td><td>✅ Leitura e escrita maduras nos dois</td><td>✅ Leitura sólida nos dois; escrita mais focada em Spark</td><td>✅ Leitura nos dois; escrita mais focada em Spark/Flink</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="section-desc">Por dentro, cada formato resolve "quais arquivos formam a tabela agora?" de um jeito diferente — mas a ideia central é a mesma: um <strong>ponteiro</strong> para o estado mais recente, e uma trilha de <strong>mudanças imutáveis</strong> por trás dele. Compare como Iceberg e Delta Lake organizam essa camada de metadados:</p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🧊 Iceberg — camadas de metadados</div>
+          <div class="pq-clickable" data-id="ice-catalog" onclick="pickLakeLayer('ice-catalog')">Catálogo (ponteiro para o metadata.json atual)</div>
+          <div class="pq-clickable" data-id="ice-meta" onclick="pickLakeLayer('ice-meta')">metadata.json</div>
+          <div class="pq-clickable" data-id="ice-manifestlist" onclick="pickLakeLayer('ice-manifestlist')">Manifest List</div>
+          <div class="pq-clickable" data-id="ice-manifestfiles" onclick="pickLakeLayer('ice-manifestfiles')">Manifest Files</div>
+          <div class="pq-clickable" data-id="ice-data" onclick="pickLakeLayer('ice-data')">Arquivos de dados (Parquet/ORC/Avro)</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🔺 Delta Lake — log de transações</div>
+          <div class="pq-clickable" data-id="delta-log" onclick="pickLakeLayer('delta-log')">Pasta _delta_log/ (commits numerados)</div>
+          <div class="pq-clickable" data-id="delta-checkpoint" onclick="pickLakeLayer('delta-checkpoint')">Checkpoint Parquet (a cada N commits)</div>
+          <div class="pq-clickable" data-id="delta-actions" onclick="pickLakeLayer('delta-actions')">Ações Add/Remove por commit</div>
+          <div class="pq-clickable" data-id="delta-data" onclick="pickLakeLayer('delta-data')">Arquivos de dados (Parquet)</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="lakeLayerDetail">
+        <div class="ad-title">👆 Clique em qualquer camada</div>
+        <div class="ad-text">Veja o papel de cada peça na hora de descobrir "quais arquivos formam a tabela agora".</div>
+      </div>
+    </div>
+
+    <p class="section-desc">O <strong>time travel</strong> funciona porque cada mudança na tabela cria um novo <strong>snapshot</strong> imutável — os arquivos de dados antigos não são apagados na hora, só deixam de fazer parte do snapshot mais recente:</p>
+    <div class="timeline-row" id="snapshotRow"></div>
+    <div class="code-block">
+<span class="code-lang">sql — time travel (Iceberg no Trino)</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- consulta a tabela como ela estava no snapshot 8412...</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> iceberg.lake.pedidos <span class="kw">FOR VERSION AS OF</span> <span class="num">8412007733419</span>;
+
+<span class="cm">-- ...ou como estava numa data/hora específica</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> iceberg.lake.pedidos <span class="kw">FOR TIMESTAMP AS OF</span> <span class="kw">TIMESTAMP</span> <span class="st">'2026-07-01 00:00:00'</span>;
+
+<span class="cm">-- histórico completo de snapshots da tabela</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> iceberg.lake.<span class="fn">"pedidos$snapshots"</span>;</div>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Particionamento oculto — sem duplicar colunas</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- Hive-style clássico: precisa de coluna extra "ano_mes"</span>
+<span class="cm">-- e o usuário tem que lembrar de filtrar por ela</span>
+<span class="kw">WHERE</span> ano_mes <span class="kw">=</span> <span class="st">'2026-07'</span>
+
+<span class="cm">-- Iceberg: partição é uma função da própria coluna</span>
+<span class="kw">CREATE TABLE</span> iceberg.lake.pedidos (...)
+<span class="kw">WITH</span> (partitioning <span class="kw">=</span> <span class="kw">ARRAY</span>[<span class="st">'month(data_pedido)'</span>]);
+
+<span class="cm">-- o usuário só filtra a coluna real; o motor</span>
+<span class="cm">-- já sabe podar as partições sozinho</span>
+<span class="kw">WHERE</span> data_pedido <span class="kw">>=</span> <span class="kw">DATE</span> <span class="st">'2026-07-01'</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Upsert / MERGE — comum aos três formatos</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">MERGE INTO</span> iceberg.lake.pedidos <span class="kw">AS</span> alvo
+<span class="kw">USING</span> staging.pedidos_novos <span class="kw">AS</span> origem
+<span class="kw">ON</span> alvo.id <span class="kw">=</span> origem.id
+<span class="kw">WHEN MATCHED THEN UPDATE SET</span> total <span class="kw">=</span> origem.total
+<span class="kw">WHEN NOT MATCHED THEN INSERT</span> (id, total, data_pedido)
+  <span class="kw">VALUES</span> (origem.id, origem.total, origem.data_pedido);</div>
+      </div>
+    </div>
+
+    <div class="amber-box">
+      <div class="highlight-title">🧹 O problema dos "arquivos pequenos" e a compactação</div>
+      <p>Cada <code>INSERT</code>/<code>MERGE</code> incremental tende a criar arquivos Parquet novos e pequenos — com o tempo, uma tabela pode acumular milhares deles, o que deixa os scans mais lentos (mais arquivos para abrir, menos eficiência de I/O). Os três formatos oferecem um comando de <strong>compactação</strong> (ex: <code>ALTER TABLE ... EXECUTE optimize</code> no Iceberg via Trino) que reagrupa arquivos pequenos em arquivos maiores, sem mudar o dado lógico — só a organização física, gerando um novo snapshot.</p>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Parquet puro é como <strong>fotos soltas jogadas numa gaveta</strong>: dá pra ver cada foto, mas não dá pra saber a ordem nem "voltar no tempo". Um formato de tabela é como um <strong>álbum de fotografias com data em cada página</strong> e um índice no início — você sempre sabe exatamente quais fotos existiam em cada momento, e pode folhear o álbum "como ele estava" há um mês, sem bagunçar as fotos novas que foram coladas depois. E de vez em quando alguém "reorganiza o álbum" (compactação), juntando fotos soltas em páginas cheias — sem jogar nenhuma foto fora.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🧊 Escolha Iceberg quando...</div><div class="card-text">Vários motores diferentes (Trino, Spark, Flink, Dremio) precisam ler <strong>e escrever</strong> na mesma tabela, e você quer particionamento que não exige disciplina manual dos usuários.</div></div>
+      <div class="card"><div class="card-title">🔺 Escolha Delta Lake quando...</div><div class="card-text">Seu pipeline já vive majoritariamente no ecossistema <strong>Spark/Databricks</strong>, e Trino/Dremio entram principalmente como consumidores de leitura.</div></div>
+      <div class="card"><div class="card-title">🟣 Escolha Hudi quando...</div><div class="card-text">A carga é dominada por <strong>upserts incrementais de alta frequência</strong> vindos de CDC (ex: replicar um banco transacional quase em tempo real) via Spark ou Flink.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ OTIMIZADOR ============ -->
+  <section class="section" id="s-otimizador">
+    <div class="section-eyebrow">Inteligência do Planejamento</div>
+    <div class="section-title">🎯 Otimizador de Custo &amp; Pushdown</div>
+    <p class="section-desc">Antes de distribuir qualquer trabalho, o Coordinator usa um <strong>otimizador baseado em custo</strong> (CBO): com estatísticas das tabelas (linhas, tamanho, distribuição de valores), ele decide, por exemplo, a ordem de um <code>JOIN</code> ou se deve transmitir (<em>broadcast</em>) a tabela pequena para todos os Workers em vez de embaralhar (<em>shuffle</em>) as duas tabelas grandes pela rede. Outra técnica-chave é o <strong>pushdown</strong>: filtros e seleção de colunas são empurrados para o mais perto possível da fonte, para que menos dado precise viajar pela rede.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: quanto dado precisa viajar até o Trino, com e sem pushdown?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Tamanho total da tabela</span><span class="ctrl-v" id="tblSizeVal">200 GB</span></div>
+          <input type="range" id="tblSizeRange" min="10" max="1000" step="10" value="200" oninput="updatePushdown()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Seletividade do filtro (WHERE)</span><span class="ctrl-v" id="selVal">5%</span></div>
+          <input type="range" id="selRange" min="1" max="100" step="1" value="5" oninput="updatePushdown()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="pushdownCanvas" height="110"></canvas></div>
+      <div class="stat-cards" id="pushdownStats"></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como pedir para alguém trazer <strong>"só as maçãs vermelhas"</strong> do mercado, em vez de pedir para trazer <strong>o mercado inteiro</strong> para você escolher em casa. Sem pushdown, o Trino traz tudo e filtra depois; com pushdown, ele pede para a própria fonte (o "mercado") já separar só o que interessa antes de mandar — muito menos peso para carregar pelo caminho.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🧹 Predicate Pushdown</div><div class="card-text">Condições do <code>WHERE</code> são enviadas para a fonte quando possível — um MySQL, por exemplo, já devolve só as linhas filtradas.</div></div>
+      <div class="card"><div class="card-title">📐 Projection Pushdown</div><div class="card-text">Só as colunas realmente usadas na consulta são lidas — essencial em formatos colunares como Parquet, onde colunas não lidas nem são abertas.</div></div>
+      <div class="card"><div class="card-title">⚡ Dynamic Filtering</div><div class="card-text">Durante um JOIN, os valores encontrados no lado menor são usados como filtro em tempo real no scan do lado maior, evitando ler dados que nunca vão casar no JOIN.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ PERFORMANCE TUNING ============ -->
+  <section class="section" id="s-tuning">
+    <div class="section-eyebrow">Operando em Produção</div>
+    <div class="section-title">🎛️ Performance Tuning Avançado</div>
+    <p class="section-desc">Um cluster Trino é compartilhado por muita gente ao mesmo tempo — analistas rodando consultas rápidas, pipelines de ETL rodando consultas pesadas. Sem controle, uma única consulta gigante pode consumir toda a memória do cluster e travar todo mundo. Quatro mecanismos resolvem isso na prática.</p>
+
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🚦 Resource Groups</div><div class="card-text">Filas de prioridade com <strong>cotas de memória e concorrência</strong> por grupo de consultas (ex: "etl" vs "analistas-adhoc") — uma consulta pesada de ETL não consegue sufocar o cluster inteiro.</div></div>
+      <div class="card"><div class="card-title">💾 Spill to Disk</div><div class="card-text">Quando um <code>JOIN</code>, agregação ou <code>ORDER BY</code> excede a memória alocada, o Trino pode derramar dados para disco temporário em vez de falhar com <em>out of memory</em> — mais lento, mas termina.</div></div>
+      <div class="card"><div class="card-title">📊 Estatísticas (ANALYZE)</div><div class="card-text">Sem estatísticas atualizadas (linhas, tamanho, distribuição de valores), o otimizador de custo "voa às cegas" — pode escolher a ordem errada de JOIN ou a estratégia errada (broadcast vs shuffle).</div></div>
+      <div class="card"><div class="card-title">🗄️ Cache de resultados/segmentos</div><div class="card-text">Camadas de cache adicionais (ex: Alluxio, ou aceleradores de vendors como o Starburst Warp Speed) guardam segmentos de dados já lidos, evitando reler o mesmo arquivo do S3 em consultas repetidas.</div></div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: duas filas de resource group disputando a memória do cluster</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Memória total do cluster</span><span class="ctrl-v" id="clusterMemVal">100 GB</span></div>
+          <input type="range" id="clusterMemRange" min="20" max="500" step="10" value="100" oninput="updateResourceGroups()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Cota do grupo "etl"</span><span class="ctrl-v" id="etlQuotaVal">60%</span></div>
+          <input type="range" id="etlQuotaRange" min="10" max="90" step="5" value="60" oninput="updateResourceGroups()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Consulta de ETL pedindo</span><span class="ctrl-v" id="etlUseVal">50 GB</span></div>
+          <input type="range" id="etlUseRange" min="5" max="300" step="5" value="50" oninput="updateResourceGroups()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="resourceCanvas" height="120"></canvas></div>
+      <div class="highlight-box" id="resourceMsg" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como uma cozinha de restaurante com <strong>duas filas separadas</strong>: uma para pedidos de banquete gigante e outra para quem só quer um lanche rápido no balcão. Se as duas filas dividissem o mesmo espaço sem regras, um banquete enorme travaria o lanche rápido de todo mundo. Com filas (e cotas) separadas, o banquete tem seu próprio espaço reservado e o balcão continua atendendo rapidinho, sem esperar.</p>
+    </div>
+  </section>
+
+  <!-- ============ DREMIO ============ -->
+  <section class="section" id="s-dremio">
+    <div class="section-eyebrow">A Outra Abordagem</div>
+    <div class="section-title">🦉 O que é o Dremio?</div>
+    <p class="section-desc">O Dremio nasceu em 2015, fundado por Tomer Shiran e Jacques Nadeau — este último um dos criadores do <strong>Apache Arrow</strong>, o formato colunar em memória que virou padrão da indústria. Assim como o Trino, o Dremio é um motor de consulta MPP que se conecta a data lakes e bancos sem exigir cópia prévia dos dados. A diferença está no <em>foco</em>: o Dremio se posiciona como uma <strong>plataforma de self-service BI sobre o data lake</strong>, com duas peças centrais que o Trino não tem nativamente — <strong>Reflections</strong> (aceleração automática) e uma <strong>camada semântica</strong> (catálogo governado para usuários de negócio).</p>
+
+    <div class="grid-4">
+      <div class="card"><div class="card-title">🏹 Apache Arrow nativo</div><div class="card-text">O motor de execução do Dremio processa dados no formato colunar do Arrow do início ao fim, inclusive na troca de dados entre nós.</div></div>
+      <div class="card"><div class="card-title">⚙️ Gandiva (LLVM)</div><div class="card-text">Expressões de consulta (ex: <code>preco * (1 - desconto)</code>) são compiladas para código de máquina vetorizado em tempo real, em vez de interpretadas.</div></div>
+      <div class="card"><div class="card-title">⚡ Reflections</div><div class="card-text">Cópias otimizadas e pré-computadas dos dados, escolhidas automaticamente pelo otimizador para acelerar consultas — sem o usuário reescrever SQL.</div></div>
+      <div class="card"><div class="card-title">🗂️ Camada semântica</div><div class="card-text">Spaces, Folders e Virtual Datasets organizam o catálogo de forma amigável para analistas de negócio, com governança.</div></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Se o Trino é o "bibliotecário que corre até os livros", o Dremio é o bibliotecário que, além de correr, vai <strong>anotando um resumo</strong> das perguntas mais frequentes num caderninho de respostas prontas — da próxima vez que alguém perguntar algo parecido, ele já entrega o resumo na hora, sem precisar correr de novo até os livros.</p>
+    </div>
+  </section>
+
+  <!-- ============ REFLECTIONS ============ -->
+  <section class="section" id="s-reflections">
+    <div class="section-eyebrow">Aceleração Automática</div>
+    <div class="section-title">⚡ Reflections: o "Cola de Prova" do Dremio</div>
+    <p class="section-desc">Uma <strong>Reflection</strong> é uma cópia física, otimizada (ordenada, particionada, às vezes pré-agregada) de um conjunto de dados, mantida automaticamente pelo Dremio. O usuário continua escrevendo SQL contra a tabela ou o Virtual Dataset original — é o <strong>otimizador</strong> quem decide, sozinho, se existe uma Reflection que responde à consulta mais rápido, e a usa no lugar da tabela crua, de forma completamente transparente.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Compare: mesma consulta, com e sem Reflection</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnNoRefl" onclick="setReflMode('sem')">🐢 Sem Reflection</button>
+        <button class="btn-toggle" id="btnRefl" onclick="setReflMode('com')">🚀 Com Reflection</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="reflCanvas" height="110"></canvas></div>
+      <div class="stat-cards" id="reflStats"></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📄 Raw Reflection</div>
+        <div class="card-text">Uma cópia colunar do próprio dataset, geralmente reordenada/particionada por colunas comuns em filtros — acelera scans e filtros sem mudar a granularidade dos dados.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Aggregation Reflection</div>
+        <div class="card-text">Uma versão <strong>pré-agregada</strong> (ex: soma de vendas por mês e categoria) — se a consulta pedir algo que já está nesse nível de agregação (ou mais grosso), o Dremio responde direto dali.</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">sql — sintaxe ilustrativa</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">ALTER TABLE</span> s3.vendas.pedidos
+<span class="kw">CREATE AGGREGATE REFLECTION</span> agg_vendas_mes
+<span class="kw">USING DIMENSIONS</span> (mes, categoria)
+<span class="kw">MEASURES</span> (total_venda (<span class="fn">SUM</span>));
+
+<span class="cm">-- o analista continua consultando "pedidos" normalmente;</span>
+<span class="cm">-- o otimizador decide sozinho quando usar "agg_vendas_mes"</span></div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É igual uma <strong>cola de prova</strong> que o professor deixaria você usar — só que essa cola é feita com antecedência, com as contas mais difíceis já resolvidas. Quando cai uma pergunta parecida na prova, você não refaz a conta do zero: só olha a cola e copia a resposta certa. A Reflection é essa "cola", e o Dremio decide sozinho quando pode usá-la.</p>
+    </div>
+
+    <div class="warn-box"><p>⚠️ Reflections não são mágica grátis: elas ocupam espaço em disco e precisam ser <strong>atualizadas</strong> (refresh) conforme os dados de origem mudam — criar Reflections demais, ou com frequência de atualização muito alta, pode gerar mais custo de processamento do que a economia que elas trazem nas consultas.</p></div>
+  </section>
+
+  <!-- ============ CAMADA SEMÂNTICA ============ -->
+  <section class="section" id="s-semantica">
+    <div class="section-eyebrow">Governança para o Negócio</div>
+    <div class="section-title">🗂️ Camada Semântica: Spaces, Folders e Virtual Datasets</div>
+    <p class="section-desc">Em vez de deixar analistas de negócio navegando direto pelas tabelas cruas do data lake (Physical Datasets), o Dremio organiza um catálogo de <strong>Spaces</strong> (áreas, ex: por time ou domínio) contendo <strong>Folders</strong> e <strong>Virtual Datasets</strong> — visões SQL reutilizáveis, com nomes de negócio, documentação e controle de acesso — construídas em cima dos dados físicos.</p>
+
+    <div class="card">
+      <div class="tree">
+        <div class="t0">📁 Space: Vendas</div>
+        <div class="t1">📂 Folder: Comercial</div>
+        <div class="t2">🧩 Virtual Dataset: vw_vendas_mensais</div>
+        <div class="t3"><span class="fname">SELECT mes, categoria, SUM(total) FROM s3.vendas.pedidos GROUP BY 1,2</span></div>
+        <div class="t1">📂 Folder: Financeiro</div>
+        <div class="t2">🧩 Virtual Dataset: vw_receita_liquida</div>
+        <div class="t3"><span class="fname">baseado em vw_vendas_mensais + s3.financeiro.impostos</span></div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Pense numa <strong>gaveta bagunçada</strong> de brinquedos (os dados crus do data lake) versus uma <strong>loja organizada</strong>, com prateleiras etiquetadas por categoria (a camada semântica). Você ainda pode ir até a gaveta se quiser, mas a loja organizada deixa muito mais fácil e seguro para qualquer pessoa — mesmo quem nunca viu a gaveta — encontrar exatamente o brinquedo certo.</p>
+    </div>
+
+    <div class="info-box"><p>💡 Virtual Datasets também podem receber Reflections próprias — ou seja, você pode acelerar não só a tabela física, mas uma visão de negócio inteira (com JOINs e agregações já embutidos), e ferramentas de BI que consultam essa visão ganham a aceleração automaticamente.</p></div>
+  </section>
+
+  <!-- ============ SEGURANÇA & GOVERNANÇA ============ -->
+  <section class="section" id="s-seguranca">
+    <div class="section-eyebrow">Quem Pode Ver o Quê</div>
+    <div class="section-title">🔐 Segurança &amp; Governança</div>
+    <p class="section-desc">Como o motor de consulta se torna a "porta de entrada" única para várias fontes, ele também precisa ser o lugar onde as regras de acesso são aplicadas de forma consistente — mesmo que a fonte original (um bucket S3, um MongoDB) tenha seu próprio controle de acesso separado. O controle costuma ser <strong>em camadas</strong>: catálogo → schema → tabela → coluna/linha. Clique em cada camada.</p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="secButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="secDetail">
+        <div class="ad-title">👆 Clique em uma camada</div>
+        <div class="ad-text">Veja o que é controlado em cada nível de acesso.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Recurso</th><th style="color:var(--accent-blue);">🔵 Trino</th><th style="color:var(--accent-amber);">🟠 Dremio</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Autenticação</strong></td><td>LDAP, OAuth2, Kerberos, certificados</td><td>LDAP, OAuth2, SSO corporativo</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Controle de acesso</strong></td><td>Plugin de "system access control" — integra com Apache Ranger, Open Policy Agent (OPA) ou regras em arquivo</td><td>RBAC nativo, herdado pela estrutura de Spaces/Folders da camada semântica</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Mascaramento de coluna</strong></td><td>Via conector/plugin de segurança (mais comum em ofertas comerciais)</td><td>Nativo, configurável direto na UI/SQL sobre qualquer dataset</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Filtro de linha (row-level)</strong></td><td>Via plugin de segurança</td><td>Nativo, integrado às políticas de acesso</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como uma escola com <strong>crachás diferentes</strong>: o crachá de aluno abre a sala de aula (um schema), mas não abre a sala dos professores (outro catálogo); o crachá de diretor abre praticamente tudo. Além disso, algumas informações do boletim — tipo o CPF dos responsáveis — podem aparecer <strong>borradas</strong> mesmo para quem tem o crachá certo, a não ser que a pessoa tenha autorização especial para ver o valor de verdade. Isso é o "mascaramento de coluna".</p>
+    </div>
+
+    <div class="warn-box"><p>⚠️ Federação amplia a superfície de governança: se uma consulta junta 4 fontes diferentes, as permissões de cada uma precisam ser respeitadas ao mesmo tempo — um usuário sem acesso a uma das tabelas não pode "vazar" dados dela através do resultado de um JOIN.</p></div>
+  </section>
+
+  <!-- ============ ARROW FLIGHT ============ -->
+  <section class="section" id="s-arrowflight">
+    <div class="section-eyebrow">O Cano de Alta Vazão</div>
+    <div class="section-title">✈️ Arrow Flight em Detalhe</div>
+    <p class="section-desc">JDBC e ODBC — os protocolos clássicos para conectar ferramentas de BI a bancos de dados — foram desenhados nos anos 90 para transferir resultados <strong>linha a linha</strong>: cada valor é serializado, enviado, e desserializado de volta no cliente, geralmente reconvertendo para um formato colunar do outro lado (ex: um DataFrame do Pandas). Para poucas linhas isso não importa, mas para <strong>milhões de linhas analíticas</strong>, essa conversão vira o próprio gargalo. O <strong>Apache Arrow Flight</strong> (usado pelo Dremio) transmite os dados já no formato <strong>colunar binário do Arrow</strong>, de ponta a ponta, sobre gRPC — sem essa dupla conversão.</p>
+
+    <div class="canvas-wrap"><canvas id="flightCanvas" height="130"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Ordem de grandeza <strong>ilustrativa</strong> de vazão para extrair um resultado analítico grande — o ganho real depende do driver, da rede e do tamanho do resultado.</div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📦 Sem conversão de formato</div><div class="card-text">Os dados já estão em memória no formato Arrow no servidor — a transmissão é praticamente uma cópia de bytes, não uma tradução linha a linha.</div></div>
+      <div class="card"><div class="card-title">🚚 Streams paralelos</div><div class="card-text">Um resultado grande pode ser dividido em múltiplos streams gRPC paralelos, lidos por várias threads do cliente ao mesmo tempo.</div></div>
+      <div class="card"><div class="card-title">🔌 Flight SQL</div><div class="card-text">Um padrão sobre o Arrow Flight, parecido em espírito com o JDBC, mas colunar — permitindo que qualquer driver "Flight SQL" converse com qualquer banco compatível.</div></div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">python — pyarrow.flight (Dremio)</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> pyarrow.flight <span class="kw">as</span> flight
+
+client = flight.<span class="fn">FlightClient</span>(<span class="st">"grpc+tls://meu-dremio:32010"</span>)
+info = client.<span class="fn">get_flight_info</span>(flight.<span class="fn">FlightDescriptor</span>.<span class="fn">for_command</span>(
+    <span class="st">"SELECT categoria, SUM(total) FROM lake.vendas.pedidos GROUP BY 1"</span>
+))
+reader = client.<span class="fn">do_get</span>(info.endpoints[<span class="num">0</span>].ticket)
+tabela_arrow = reader.<span class="fn">read_all</span>()  <span class="cm"># já chega como Arrow Table, sem conversão linha a linha</span></div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É a diferença entre transportar uma <strong>construção de Lego já montada</strong> direto num caminhão (Arrow Flight) e <strong>desmontar cada peça</strong>, numerar, jogar tudo solto numa caixa (serializar linha a linha via JDBC/ODBC), levar a caixa, e remontar peça por peça do outro lado. Para poucas peças não faz diferença — mas para uma construção gigante, montar tudo de novo do zero toma um tempo enorme.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Lado a Lado</div>
+    <div class="section-title">🥊 Trino vs Dremio: Comparação</div>
+    <p class="section-desc">Os dois são motores MPP que consultam data lakes sem cópia prévia — mas resolvem prioridades diferentes. A pergunta certa não é "qual é melhor", e sim "qual problema estou resolvendo agora".</p>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Dimensão</th><th style="color:var(--accent-blue);">🔵 Trino / Presto</th><th style="color:var(--accent-amber);">🟠 Dremio</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Arquitetura</strong></td><td>Coordinator + Workers, geração de bytecode JVM</td><td>Coordinator + Executors, Apache Arrow + Gandiva (LLVM)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Conectores</strong></td><td>Ecossistema muito amplo (50+): relacional, NoSQL, streaming, lakehouse</td><td>Focado em lakehouse + principais fontes relacionais/NoSQL</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Aceleração automática</strong></td><td>Não nativa no núcleo open source (depende de cache externo/enterprise)</td><td>Reflections, escolhidas automaticamente pelo otimizador</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Camada semântica</strong></td><td>Não tem — depende de catálogos externos (Hive Metastore, Iceberg)</td><td>Nativa: Spaces, Folders, Virtual Datasets, lineage</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Protocolo cliente</strong></td><td>JDBC / ODBC / API HTTP</td><td>JDBC / ODBC / Arrow Flight (colunar, alta performance)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Tolerância a falhas</strong></td><td>Fault-tolerant execution (opcional) para ETL longo</td><td>Foco menor em ETL de longa duração</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Melhor para</strong></td><td>Federação ampla + consultas ad hoc + ETL em larga escala</td><td>Self-service BI governado direto sobre o data lake</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="canvas-wrap"><canvas id="compareCanvas" height="220"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Pontuação <strong>ilustrativa/qualitativa</strong> (não um benchmark) para orientar a decisão — cada organização deve validar com sua própria carga de trabalho.</div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="color:var(--accent-blue);">🔵 Escolha Trino quando...</div>
+        <div class="card-text">Você precisa cruzar <strong>muitas fontes heterogêneas</strong> numa mesma consulta (RDBMS + NoSQL + streaming + lake), rodar <strong>ETL federado</strong> em larga escala, ou já tem um catálogo/camada semântica resolvidos por outra ferramenta (ex: dbt, Hive Metastore, uma ferramenta de BI própria).</div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--accent-amber);">🟠 Escolha Dremio quando...</div>
+        <div class="card-text">A prioridade é <strong>self-service BI</strong> para analistas de negócio direto sobre o data lake, com <strong>governança</strong> (quem vê o quê) e <strong>aceleração automática</strong> sem precisar de um time de engenharia mantendo cubos OLAP ou extrações manuais.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casos-uso">
+    <div class="section-eyebrow">Onde Cada Um Brilha</div>
+    <div class="section-title">🎯 Casos de Uso</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔎 Consultas ad hoc federadas</div><div class="card-text">Analistas cruzando dados do data lake com um banco transacional sem esperar um pipeline de ETL rodar — resposta em segundos.</div></div>
+      <div class="card"><div class="card-title">🏭 ETL/ELT em larga escala</div><div class="card-text">Trino como motor de transformação SQL sobre petabytes no lakehouse (Iceberg/Delta), muitas vezes acionado por ferramentas como dbt.</div></div>
+      <div class="card"><div class="card-title">🌐 Motor único para várias equipes</div><div class="card-text">Grandes empresas (Meta, Netflix, LinkedIn, Uber) usam Presto/Trino como o "SQL de entrada" comum para dezenas de fontes internas.</div></div>
+      <div class="card"><div class="card-title">📊 Self-service BI</div><div class="card-text">Dremio conectado direto a Tableau/Power BI via Arrow Flight, com analistas navegando pela camada semântica sem depender de extrações.</div></div>
+      <div class="card"><div class="card-title">🏛️ Data lake governado</div><div class="card-text">Camada semântica do Dremio como "porta de entrada" única e auditável para times de negócio acessarem dados do lake com segurança.</div></div>
+      <div class="card"><div class="card-title">⚡ Substituição de cubos OLAP</div><div class="card-text">Reflections eliminam a necessidade de manter cubos ou extrações pré-calculadas só para acelerar dashboards.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ PRIMEIROS PASSOS ============ -->
+  <section class="section" id="s-primeiros-passos">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">📦 Primeiros Passos</div>
+    <p class="section-desc">Ambos sobem localmente via Docker para experimentação — em produção, cada um roda como um cluster de múltiplos nós.</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Trino — subir localmente</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># sobe um coordinator + worker no mesmo container</span>
+docker run -p 8080:8080 --name trino trinodb/trino
+
+<span class="cm"># abre o CLI dentro do container</span>
+docker exec -it trino trino
+
+trino> <span class="kw">SELECT</span> * <span class="kw">FROM</span> tpch.sf1.nation <span class="kw">LIMIT</span> <span class="num">5</span>;</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Trino — configurando um catálogo (conector)</div>
+        <div class="code-block">
+<span class="code-lang">etc/catalog/mysql.properties</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>connector.name<span class="kw">=</span>mysql
+connection-url<span class="kw">=</span>jdbc:mysql://meubanco:<span class="num">3306</span>
+connection-user<span class="kw">=</span>root
+connection-password<span class="kw">=</span>secret
+
+<span class="cm">-- agora "mysql" vira um catálogo consultável:</span>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> mysql.vendas.clientes;</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Dremio — subir localmente</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>docker run -p 9047:9047 -p 31010:31010 -p 32010:32010 \
+  dremio/dremio-oss
+
+<span class="cm"># 9047  -> UI web (criação de Spaces, fontes, Reflections)</span>
+<span class="cm"># 31010 -> ODBC/JDBC</span>
+<span class="cm"># 32010 -> Arrow Flight</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Consulta federada de exemplo (Trino)</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> p.categoria, <span class="fn">SUM</span>(p.total) <span class="kw">AS</span> receita
+<span class="kw">FROM</span> hive.lake.pedidos p
+<span class="kw">WHERE</span> p.data_pedido <span class="kw">>=</span> <span class="kw">DATE</span> <span class="st">'2026-01-01'</span>
+<span class="kw">GROUP BY ALL</span>
+<span class="kw">ORDER BY</span> receita <span class="kw">DESC</span>;</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title" style="color:var(--accent-blue);">🔵 Trino</div><div class="card-text">Particione/bucket tabelas no lake (idealmente Iceberg) para o otimizador conseguir podar partições inteiras; monitore a Web UI (porta 8080) para achar consultas com <em>skew</em>; ajuste <code>query.max-memory-per-node</code> conforme o tamanho do cluster; deixe o <em>dynamic filtering</em> ativo para JOINs seletivos.</div></div>
+      <div class="card"><div class="card-title" style="color:var(--accent-amber);">🟠 Dremio</div><div class="card-text">Curadoria da camada semântica é essencial — não deixe analistas acessando Physical Datasets crus por padrão; crie Reflections com propósito (não "para garantir"), monitorando custo de refresh; use Arrow Flight nas ferramentas de BI que suportarem, para menor latência que JDBC/ODBC tradicional.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Nem Trino nem Dremio substituem um banco transacional (OLTP) — os dois são motores de <strong>leitura analítica</strong> sobre dados que já existem em outro lugar. E nenhum dos dois é, por padrão, um sistema de armazenamento durável: o dado "de verdade" continua sendo responsabilidade da fonte conectada (data lake, banco relacional etc.).</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Trino/Presto vs Dremio</span>
+    <span>
+      Fontes: <a href="https://trino.io/docs/current/" target="_blank" rel="noopener">Trino Docs</a> ·
+      <a href="https://prestodb.io/" target="_blank" rel="noopener">PrestoDB</a> ·
+      <a href="https://docs.dremio.com/" target="_blank" rel="noopener">Dremio Docs</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🤔', label:'O que é'},
+  {id:'s-historia', icon:'📜', label:'História'},
+  {id:'s-arquitetura', icon:'🏗️', label:'Arquitetura'},
+  {id:'s-execucao', icon:'⚙️', label:'Execução'},
+  {id:'s-paralelismo', icon:'🧩', label:'Paralelismo'},
+  {id:'s-join', icon:'🔀', label:'JOIN Distribuído'},
+  {id:'s-conectores', icon:'🔌', label:'Conectores'},
+  {id:'s-lakehouse', icon:'🧊', label:'Formatos Lakehouse'},
+  {id:'s-otimizador', icon:'🎯', label:'Otimizador'},
+  {id:'s-tuning', icon:'🎛️', label:'Performance Tuning'},
+  {id:'s-dremio', icon:'🦉', label:'O que é Dremio'},
+  {id:'s-reflections', icon:'⚡', label:'Reflections'},
+  {id:'s-semantica', icon:'🗂️', label:'Camada Semântica'},
+  {id:'s-seguranca', icon:'🔐', label:'Segurança'},
+  {id:'s-arrowflight', icon:'✈️', label:'Arrow Flight'},
+  {id:'s-comparacao', icon:'🥊', label:'Comparação'},
+  {id:'s-casos-uso', icon:'🎯', label:'Casos de Uso'},
+  {id:'s-primeiros-passos', icon:'📦', label:'Primeiros Passos'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== HISTORY TIMELINE ===================== */
+const timeline = [
+  {y:'2008', t:'Hive nasce', d:'Facebook cria o Hive para rodar SQL sobre MapReduce/HDFS — poderoso, mas lento para consultas interativas.'},
+  {y:'2012', t:'Presto nasce', d:'Martin Traverso, Dain Sundstrom, David Phillips e Eric Hwang criam o Presto no Facebook, para respostas em segundos.', hl:true},
+  {y:'2013', t:'Código aberto', d:'O Facebook abre o código do Presto — outras empresas (Netflix, Airbnb, Uber) passam a adotá-lo.'},
+  {y:'2015', t:'Dremio é fundado', d:'Tomer Shiran e Jacques Nadeau fundam o Dremio, com foco em self-service BI e o então recém-criado Apache Arrow.'},
+  {y:'2019', t:'O fork acontece', d:'Parte dos criadores originais deixa o Facebook; diferenças de governança levam à criação do PrestoSQL, um fork independente.', hl:true},
+  {y:'2020', t:'PrestoSQL vira Trino', d:'Em dezembro de 2020, o PrestoSQL é renomeado para Trino — o nome "Presto" ficou como marca do Facebook.', hl:true},
+  {y:'Hoje', t:'Dois projetos vivos', d:'PrestoDB (Presto Foundation/Linux Foundation) e Trino (Trino Software Foundation) evoluem em paralelo, com bases de código próprias.'},
+];
+document.getElementById('timelineRow').innerHTML = timeline.map((it,i) => `
+  ${i>0 ? '<span class="tl-arrow">→</span>' : ''}
+  <div class="tl-item ${it.hl?'hl':''}">
+    <span class="tl-year">${it.y}</span>
+    <span class="tl-title">${it.t}</span>
+    <span class="tl-text">${it.d}</span>
+  </div>`).join('');
+
+/* ===================== COORDINATOR / WORKER ROLES ===================== */
+const roleInfo = {
+  'co-parse': {t:'Parser & Analyzer', d:'O Coordinator recebe o texto SQL, valida a sintaxe e resolve nomes de tabelas/colunas contra o catálogo de cada conector envolvido.'},
+  'co-plan': {t:'Planner & Otimizador', d:'Gera um plano lógico e, usando estatísticas das tabelas, aplica o otimizador baseado em custo: ordem de JOINs, pushdown de filtros, estratégia de shuffle vs broadcast.'},
+  'co-sched': {t:'Scheduler', d:'Divide o plano em estágios e tasks, e distribui essas tasks entre os Workers disponíveis, acompanhando o progresso de cada uma.'},
+  'co-ui': {t:'Web UI & API de clientes', d:'Expõe a interface web de monitoramento de consultas e a API que ferramentas de BI/CLI usam para enviar SQL e receber resultados.'},
+  'wk-task': {t:'Tasks (execução de um estágio)', d:'Cada Worker roda uma ou mais tasks — a unidade de execução de um estágio do plano, processando um subconjunto dos dados (splits).'},
+  'wk-op': {t:'Operadores (scan, filter, join, agg)', d:'Dentro de cada task, uma cadeia de operadores processa os dados em lotes: leitura, filtro, junção, agregação — de forma pipelinada.'},
+  'wk-exch': {t:'Exchange Client', d:'Responsável por trocar dados diretamente entre Workers pela rede, em memória, entre um estágio e o próximo — sem passar por disco.'},
+  'wk-conn': {t:'Conectores', d:'O código específico de cada fonte (Hive, MySQL, MongoDB...) roda dentro do Worker, lendo os dados reais e aplicando o pushdown que o Coordinator decidiu.'},
+};
+function pickRole(id){
+  document.querySelectorAll('#s-arquitetura .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = roleInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-arquitetura [data-id="${id}"]`).classList.add('active');
+  document.getElementById('roleDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== HIVE/MAPREDUCE vs TRINO PIPELINE ===================== */
+const engineInfo = {
+  'hv-submit': {t:'Cliente envia HiveQL', d:'A consulta chega ao HiveServer2, que vai traduzi-la em uma sequência de jobs — o cliente não sabe ainda quantas etapas vão rodar.'},
+  'hv-plan': {t:'Hive traduz em vários jobs MapReduce', d:'Uma consulta com JOIN + GROUP BY pode virar 2, 3 ou mais jobs MapReduce encadeados, cada um com fases de Map e Reduce.'},
+  'hv-job1': {t:'Job 1 roda e grava no HDFS', d:'O primeiro job processa os dados de entrada e escreve seu resultado intermediário como arquivos novos no HDFS — isso já custa I/O de disco e replicação.'},
+  'hv-job2': {t:'Job 2 lê do HDFS, processa, grava de novo', d:'O próximo job precisa reler do disco o que o job anterior gravou. Esse ciclo de "gravar → reler" se repete a cada etapa do plano.'},
+  'tr-submit': {t:'Cliente envia SQL ao Coordinator', d:'A consulta chega inteira de uma vez ao Coordinator, que já enxerga o plano completo antes de começar a distribuir qualquer trabalho.'},
+  'tr-plan': {t:'Coordinator monta um plano distribuído único', d:'Todos os estágios da consulta (scan, join, agregação) são planejados de uma vez, como um pipeline contínuo, não como jobs separados e independentes.'},
+  'tr-exchange': {t:'Workers trocam dados direto em memória', d:'O resultado de um estágio é enviado (exchange) diretamente pela rede para o próximo estágio, já em outro Worker, sem passar por disco — os estágios rodam sobrepostos no tempo (pipeline).'},
+  'tr-result': {t:'Resultado final entregue ao cliente', d:'Assim que as primeiras linhas do resultado final ficam prontas, elas já podem começar a ser enviadas de volta ao cliente — sem esperar toda a consulta terminar internamente.'},
+};
+function pickEngine(id){
+  document.querySelectorAll('#s-execucao .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = engineInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-execucao [data-id="${id}"]`).classList.add('active');
+  document.getElementById('engineDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== PARALLELISM (SPLITS x WORKERS) DEMO ===================== */
+function updateParallel(){
+  const splits = +document.getElementById('splitsRange').value;
+  const workers = +document.getElementById('workersRange').value;
+  document.getElementById('splitsVal').textContent = splits;
+  document.getElementById('workersVal').textContent = workers;
+  const palette = ['#06b6d4','#36a2ef','#c49aff','#7dded8','#f5a623','#f86b63','#8ecae6','#ffb4a2','#b8f2e6','#e0aaff','#a0c4ff','#ffd6a5','#caffbf','#fdffb6','#bdb2ff','#ffc6ff'];
+  let cells = '';
+  for(let i=0;i<splits;i++){
+    const w = i % workers;
+    cells += `<div class="cl-cell used" style="background:${palette[w % palette.length]}33;border-color:${palette[w % palette.length]};color:${palette[w % palette.length]};">W${w+1}</div>`;
+  }
+  document.getElementById('splitGrid').innerHTML = cells;
+  const rounds = Math.ceil(splits/workers);
+  const splitsPerWorkerAvg = (splits/workers).toFixed(1);
+  document.getElementById('parallelStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Splits por worker (média)</div><div class="stat-card-value">${splitsPerWorkerAvg}</div></div>
+    <div class="stat-card c-amber"><div class="stat-card-label">"Rodadas" até terminar</div><div class="stat-card-value">${rounds}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Trabalho acontecendo ao mesmo tempo</div><div class="stat-card-value">${Math.min(workers,splits)}x</div></div>
+  `;
+}
+updateParallel();
+
+/* ===================== BROADCAST vs SHUFFLE JOIN DEMO ===================== */
+function updateJoinDemo(){
+  const smallMB = +document.getElementById('joinSmallRange').value;
+  const bigGB = +document.getElementById('joinBigRange').value;
+  const workers = +document.getElementById('joinWorkersRange').value;
+  document.getElementById('joinSmallVal').textContent = smallMB + ' MB';
+  document.getElementById('joinBigVal').textContent = bigGB + ' GB';
+  document.getElementById('joinWorkersVal').textContent = workers;
+  const smallGB = smallMB/1024;
+  const broadcastGB = smallGB * workers;
+  const shuffleGB = smallGB + bigGB;
+  drawJoinCanvas(broadcastGB, shuffleGB);
+  const msg = document.getElementById('joinMsg');
+  if(broadcastGB < shuffleGB){
+    msg.className = 'ok-box';
+    msg.innerHTML = `<div class="highlight-title">✅ Otimizador provavelmente escolhe: Broadcast Join</div><p>Copiar a tabela pequena (${smallGB.toFixed(2)} GB) para os ${workers} workers custa ${broadcastGB.toFixed(2)} GB de rede — bem menos que redistribuir as duas tabelas inteiras (${shuffleGB.toFixed(1)} GB) num shuffle.</p>`;
+  } else {
+    msg.className = 'warn-box';
+    msg.innerHTML = `<div class="highlight-title">⚠️ Otimizador provavelmente escolhe: Shuffle (Partitioned) Join</div><p>Com ${workers} workers, copiar a tabela pequena para todos custaria ${broadcastGB.toFixed(1)} GB — mais caro que redistribuir as duas tabelas pela chave de junção (${shuffleGB.toFixed(1)} GB no total).</p>`;
+  }
+}
+function drawJoinCanvas(broadcastGB, shuffleGB){
+  const cv = document.getElementById('joinCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 110;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 190, padR = 20, barH = 26, gap = 20;
+  const maxVal = Math.max(broadcastGB, shuffleGB) * 1.1 || 1;
+  const cheaper = broadcastGB < shuffleGB ? 'broadcast' : 'shuffle';
+  const rows = [
+    ['Broadcast (cópia p/ cada worker)', broadcastGB, cheaper==='broadcast' ? '#7dded8' : '#f86b63'],
+    ['Shuffle (redistribui as 2 tabelas)', shuffleGB, cheaper==='shuffle' ? '#7dded8' : '#f86b63'],
+  ];
+  rows.forEach(([label,val,color],i) => {
+    const y = 10 + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(label, 0, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW*(val/maxVal));
+    ctx.fillStyle = color; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText(val.toFixed(2)+' GB', padL+8, y+barH*0.65);
+  });
+}
+updateJoinDemo();
+window.addEventListener('resize', updateJoinDemo);
+
+/* ===================== FEDERATION HUB ===================== */
+const hubSources = {
+  hive: {t:'Data Lake (S3 + Parquet/Iceberg)', code:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> hive.lake.pedidos;`, d:'O conector Hive/Iceberg lê arquivos Parquet organizados em partições no S3/HDFS, usando um catálogo (Hive Metastore, Glue ou Iceberg REST) só para metadados.'},
+  mysql: {t:'MySQL', code:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> mysql.vendas.clientes;`, d:'Uma tabela transacional do MySQL aparece como mais uma tabela consultável — sem replicar os dados para outro lugar.'},
+  postgresql: {t:'PostgreSQL', code:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> postgresql.crm.contas;`, d:'Assim como o MySQL, o PostgreSQL é acessado via conector JDBC, com pushdown de filtros sempre que possível.'},
+  mongodb: {t:'MongoDB', code:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> mongodb.eventos.cliques;`, d:'Documentos JSON do MongoDB viram linhas e colunas via SQL — inclusive campos aninhados, acessíveis com notação de ponto.'},
+  kafka: {t:'Kafka', code:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> kafka.eventos.pedidos_topic;`, d:'Cada tópico Kafka vira uma tabela "quase em tempo real" — ótimo para juntar um stream recente com o histórico do data lake.'},
+  elastic: {t:'Elasticsearch', code:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> elasticsearch.logs.acessos;`, d:'Índices do Elasticsearch tornam-se consultáveis via SQL, permitindo cruzar dados de busca/log com tabelas relacionais.'},
+};
+function buildHub(){
+  document.getElementById('hubSpokes').innerHTML = Object.keys(hubSources).map(k =>
+    `<div class="hub-node" data-src="${k}" onclick="pickHub('${k}')">${hubSources[k].t}</div>`
+  ).join('');
+}
+function pickHub(key){
+  document.querySelectorAll('#hubSpokes .hub-node').forEach(el => el.classList.toggle('active', el.dataset.src === key));
+  const info = hubSources[key];
+  document.getElementById('hubDetail').innerHTML = `
+    <div class="ad-title">${info.t}</div>
+    <div class="ad-text">${info.d}</div>
+    <div class="code-block" style="margin-top:10px;"><span class="code-lang">sql</span>${info.code}</div>
+  `;
+}
+buildHub();
+
+/* ===================== LAKEHOUSE TABLE FORMATS ===================== */
+const lakeFormats = {
+  iceberg: {t:'Apache Iceberg', origin:'Criado na Netflix (2018), hoje projeto da Apache com ampla adoção multi-engine.',
+    facts:[['Particionamento','Oculto (transform-based)'],['Upsert nativo','Sim (MERGE INTO)'],['Escrita forte em','Multi-engine'],['Catálogos','Glue · Nessie · REST · Hive']],
+    code:`<span class="kw">CREATE TABLE</span> iceberg.lake.pedidos (id <span class="kw">BIGINT</span>, data_pedido <span class="kw">DATE</span>, total <span class="kw">DOUBLE</span>)\n<span class="kw">WITH</span> (partitioning <span class="kw">=</span> <span class="kw">ARRAY</span>[<span class="st">'month(data_pedido)'</span>]);\n\n<span class="kw">SELECT</span> * <span class="kw">FROM</span> iceberg.lake.pedidos <span class="kw">FOR VERSION AS OF</span> <span class="num">8412007733419</span>;`,
+    d:'Particionamento "oculto" (o motor calcula a partição automaticamente a partir da coluna, sem o usuário precisar duplicar colunas de partição), evolução de partição sem reescrever dados antigos, e o conector com suporte de leitura/escrita mais maduro tanto no Trino quanto no Dremio.'},
+  delta: {t:'Delta Lake', origin:'Criado pela Databricks (2019), open source desde 2019, forte no ecossistema Spark.',
+    facts:[['Particionamento','Estilo Hive (colunas explícitas)'],['Upsert nativo','Sim (MERGE INTO)'],['Escrita forte em','Spark / Databricks'],['Catálogos','Unity Catalog · Hive · filesystem']],
+    code:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> delta.lake.pedidos;\n\n<span class="cm">-- histórico de versões da tabela</span>\n<span class="kw">SELECT</span> * <span class="kw">FROM</span> delta.lake.<span class="fn">"pedidos$history"</span>;`,
+    d:'Usa um log de transações (_delta_log) em JSON/Parquet para rastrear cada mudança. Muito comum em ambientes que já usam Spark/Databricks; suporte de leitura sólido no Trino e no Dremio, escrita mais focada no ecossistema Spark.'},
+  hudi: {t:'Apache Hudi', origin:'Criado no Uber (2016), doado à Apache — forte em cargas de upsert/streaming.',
+    facts:[['Particionamento','Estilo Hive + record key'],['Upsert nativo','Sim — ponto forte principal'],['Escrita forte em','Spark / Flink (CDC)'],['Modos de tabela','Copy-on-Write · Merge-on-Read']],
+    code:`<span class="kw">SELECT</span> * <span class="kw">FROM</span> hudi.lake.pedidos;\n\n<span class="cm">-- Hudi se destaca em upserts incrementais vindos de CDC/streaming</span>`,
+    d:'Otimizado para ingestão incremental (upserts/deletes frequentes vindos de CDC), com dois modos de tabela (Copy-on-Write e Merge-on-Read). Suporte de leitura no Trino e no Dremio; ecossistema historicamente mais próximo do Spark/Flink para escrita.'},
+};
+function buildLakeButtons(){
+  document.getElementById('lakeButtons').innerHTML = Object.keys(lakeFormats).map(k =>
+    `<button class="btn-toggle" data-lake="${k}" onclick="pickLakeFormat('${k}')">${lakeFormats[k].t}</button>`
+  ).join('');
+}
+function pickLakeFormat(key){
+  document.querySelectorAll('#lakeButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.lake === key));
+  const info = lakeFormats[key];
+  document.getElementById('lakeDetail').innerHTML = `
+    <div class="ad-title">${info.t}</div>
+    <div class="ad-text">${info.origin}<br><br>${info.d}</div>
+    <div class="stat-cards" style="grid-template-columns:repeat(4,1fr);">
+      ${info.facts.map(([l,v]) => `<div class="stat-card"><div class="stat-card-label">${l}</div><div class="stat-card-value" style="font-size:12.5px;">${v}</div></div>`).join('')}
+    </div>
+    <div class="code-block" style="margin-top:10px;"><span class="code-lang">sql</span>${info.code}</div>
+  `;
+}
+buildLakeButtons();
+
+/* ===================== LAKEHOUSE METADATA LAYERS (Iceberg vs Delta) ===================== */
+const lakeLayerInfo = {
+  'ice-catalog': {t:'Catálogo (ponteiro para o metadata.json atual)', d:'O catálogo (Hive Metastore, Glue, Nessie ou REST Catalog) guarda só um ponteiro: qual é o metadata.json mais recente de cada tabela. Trocar esse ponteiro de forma atômica é o que garante que leitores nunca vejam um estado "no meio do caminho" de uma escrita.'},
+  'ice-meta': {t:'metadata.json', d:'Arquivo com o schema atual, o histórico de todos os snapshots já criados, a especificação de particionamento e qual snapshot é "o atual". Cada mudança na tabela gera um metadata.json novo — o anterior continua existindo, intacto.'},
+  'ice-manifestlist': {t:'Manifest List', d:'Um arquivo Avro por snapshot, listando quais Manifest Files pertencem àquele snapshot — com estatísticas resumidas (ex: intervalo de partições) que já ajudam a podar leituras sem abrir nada mais fundo.'},
+  'ice-manifestfiles': {t:'Manifest Files', d:'Listam os arquivos de dados individuais, com estatísticas por arquivo (min/max de cada coluna, contagem de linhas, nulos). É aqui que o motor decide quais arquivos Parquet realmente precisam ser abertos para uma consulta com filtro.'},
+  'ice-data': {t:'Arquivos de dados (Parquet/ORC/Avro)', d:'Os arquivos "de verdade", no formato colunar já conhecido das aulas de Parquet/DuckDB — o Iceberg nunca reinventa como o dado é armazenado, só como ele é catalogado e versionado por cima.'},
+  'delta-log': {t:'Pasta _delta_log/ (commits numerados)', d:'Cada transação gera um arquivo JSON numerado sequencialmente (00000000000000000000.json, ...0001.json, ...) — essa sequência inteira É o histórico da tabela, lido em ordem para reconstruir o estado atual.'},
+  'delta-checkpoint': {t:'Checkpoint Parquet (a cada N commits)', d:'Reler milhares de arquivos JSON do zero a cada consulta seria caro — por isso, a cada N commits (padrão 10), o Delta consolida o log inteiro até ali num checkpoint em Parquet, e leitores só precisam ler o checkpoint + os commits JSON depois dele.'},
+  'delta-actions': {t:'Ações Add/Remove por commit', d:'Cada arquivo JSON de commit contém uma lista de ações — principalmente "add file" e "remove file" — descrevendo exatamente quais arquivos Parquet entraram ou saíram do estado lógico da tabela naquela transação.'},
+  'delta-data': {t:'Arquivos de dados (Parquet)', d:'Assim como no Iceberg, os dados continuam em arquivos Parquet comuns — o _delta_log é só a camada que decide quais desses arquivos "contam" no estado atual (ou num estado passado, para time travel).'},
+};
+function pickLakeLayer(id){
+  document.querySelectorAll('#s-lakehouse .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = lakeLayerInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-lakehouse [data-id="${id}"]`).classList.add('active');
+  document.getElementById('lakeLayerDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== SNAPSHOT TIMELINE (time travel) ===================== */
+const snapshots = [
+  {y:'Snapshot #1', t:'Carga inicial', d:'2.000 arquivos Parquet, 40M linhas — estado da tabela na criação.'},
+  {y:'Snapshot #2', t:'INSERT diário', d:'Novo lote de pedidos do dia é adicionado; arquivos antigos não são tocados.', hl:true},
+  {y:'Snapshot #3', t:'UPDATE de correção', d:'Alguns pedidos são corrigidos — Iceberg cria novos arquivos e "esquece" os antigos no snapshot atual, mas eles continuam existindo fisicamente.'},
+  {y:'Snapshot #4', t:'Compaction', d:'Job de manutenção reagrupa arquivos pequenos em arquivos maiores — dado lógico não muda, só a organização física.'},
+];
+document.getElementById('snapshotRow').innerHTML = snapshots.map((it,i) => `
+  ${i>0 ? '<span class="tl-arrow">→</span>' : ''}
+  <div class="tl-item ${it.hl?'hl':''}">
+    <span class="tl-year">${it.y}</span>
+    <span class="tl-title">${it.t}</span>
+    <span class="tl-text">${it.d}</span>
+  </div>`).join('');
+
+/* ===================== PUSHDOWN CALCULATOR ===================== */
+function updatePushdown(){
+  const tblSize = +document.getElementById('tblSizeRange').value;
+  const sel = +document.getElementById('selRange').value;
+  document.getElementById('tblSizeVal').textContent = tblSize + ' GB';
+  document.getElementById('selVal').textContent = sel + '%';
+  const semPushdown = tblSize;
+  const comPushdown = Math.max(tblSize * (sel/100), tblSize*0.01);
+  drawPushdownCanvas(semPushdown, comPushdown, tblSize);
+  const reducao = Math.round((1 - comPushdown/semPushdown) * 100);
+  document.getElementById('pushdownStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Dado que viaja — sem pushdown</div><div class="stat-card-value">${semPushdown.toFixed(1)} GB</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Dado que viaja — com pushdown</div><div class="stat-card-value">${comPushdown.toFixed(1)} GB</div></div>
+    <div class="stat-card c-blue" style="grid-column:1/-1;"><div class="stat-card-label">Redução no tráfego de rede</div><div class="stat-card-value">${reducao}%</div></div>
+  `;
+}
+function drawPushdownCanvas(sem, com, maxRef){
+  const cv = document.getElementById('pushdownCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 110;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 190, padR = 20, barH = 26, gap = 20;
+  const maxVal = maxRef * 1.05;
+  const rows = [ ['Sem pushdown (traz tudo)', sem, '#f86b63'], ['Com pushdown (traz só o filtrado)', com, '#06b6d4'] ];
+  rows.forEach(([label,val,color],i) => {
+    const y = 10 + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(label, 0, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW*(val/maxVal));
+    ctx.fillStyle = color; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText(val.toFixed(1)+' GB', padL+8, y+barH*0.65);
+  });
+}
+updatePushdown();
+window.addEventListener('resize', updatePushdown);
+
+/* ===================== RESOURCE GROUPS DEMO ===================== */
+function updateResourceGroups(){
+  const clusterMem = +document.getElementById('clusterMemRange').value;
+  const etlQuotaPct = +document.getElementById('etlQuotaRange').value;
+  const etlUse = +document.getElementById('etlUseRange').value;
+  document.getElementById('clusterMemVal').textContent = clusterMem + ' GB';
+  document.getElementById('etlQuotaVal').textContent = etlQuotaPct + '%';
+  document.getElementById('etlUseVal').textContent = etlUse + ' GB';
+  const etlQuotaGB = clusterMem * (etlQuotaPct/100);
+  const adhocQuotaGB = clusterMem - etlQuotaGB;
+  drawResourceCanvas(clusterMem, etlQuotaGB, adhocQuotaGB, etlUse);
+  const msg = document.getElementById('resourceMsg');
+  if(etlUse <= etlQuotaGB){
+    msg.className = 'ok-box';
+    msg.innerHTML = `<div class="highlight-title">✅ Dentro da cota do grupo "etl"</div><p>A consulta pediu ${etlUse} GB, dentro do limite de ${etlQuotaGB.toFixed(0)} GB reservado ao grupo "etl". O grupo "analistas-adhoc" continua com seus ${adhocQuotaGB.toFixed(0)} GB intactos, mesmo que essa consulta rode ao mesmo tempo.</p>`;
+  } else {
+    msg.className = 'warn-box';
+    msg.innerHTML = `<div class="highlight-title">⚠️ Excede a cota do grupo "etl"</div><p>A consulta pediu ${etlUse} GB, acima do limite de ${etlQuotaGB.toFixed(0)} GB. Ela fica <strong>enfileirada</strong> (ou tem sua concorrência reduzida) até liberar memória — mas mesmo assim não consegue "invadir" os ${adhocQuotaGB.toFixed(0)} GB reservados ao grupo "analistas-adhoc".</p>`;
+  }
+}
+function drawResourceCanvas(total, etlQuota, adhocQuota, etlUse){
+  const cv = document.getElementById('resourceCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 120;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 150, padR = 20, barH = 26, gap = 20;
+  const maxVal = total;
+  const etlUseCapped = Math.min(etlUse, etlQuota);
+  const rows = [
+    ['Grupo "etl" (cota)', etlQuota, 'rgba(245,166,35,.25)', '#f5a623'],
+    ['Grupo "analistas-adhoc" (cota)', adhocQuota, 'rgba(54,162,239,.25)', '#36a2ef'],
+  ];
+  rows.forEach(([label,val,trackColor,color],i) => {
+    const y = 10 + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(label, 0, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const quotaW = Math.max(2, trackW*(val/maxVal));
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash([3,3]);
+    ctx.strokeRect(padL, y, quotaW, barH); ctx.setLineDash([]);
+    if(i===0){
+      const useW = Math.max(2, trackW*(etlUseCapped/maxVal));
+      const overflow = etlUse > etlQuota;
+      ctx.fillStyle = overflow ? '#f86b63' : '#7dded8';
+      roundRect(ctx, padL, y, useW, barH, 6); ctx.fill();
+      ctx.fillStyle='#111216'; ctx.font='10.5px Roboto Mono, monospace';
+      ctx.fillText(etlUse+' GB pedidos', padL+8, y+barH*0.65);
+    } else {
+      ctx.fillStyle='#98a2b3'; ctx.font='10.5px Roboto Mono, monospace';
+      ctx.fillText('cota reservada: '+val.toFixed(0)+' GB', padL+8, y+barH*0.65);
+    }
+  });
+}
+updateResourceGroups();
+window.addEventListener('resize', updateResourceGroups);
+
+/* ===================== REFLECTIONS DEMO ===================== */
+let reflMode = 'sem';
+function setReflMode(m){
+  reflMode = m;
+  document.getElementById('btnNoRefl').classList.toggle('active', m==='sem');
+  document.getElementById('btnRefl').classList.toggle('active', m==='com');
+  drawReflCanvas();
+  document.getElementById('reflStats').innerHTML = m==='sem' ? `
+    <div class="stat-card c-red"><div class="stat-card-label">Fonte consultada</div><div class="stat-card-value" style="font-size:14px;">Tabela crua (bilhões de linhas)</div></div>
+    <div class="stat-card c-red"><div class="stat-card-label">Tempo estimado</div><div class="stat-card-value">~18 s</div></div>
+    <div class="stat-card"><div class="stat-card-label">Trabalho do otimizador</div><div class="stat-card-value" style="font-size:14px;">Scan + agregação completos</div></div>
+  ` : `
+    <div class="stat-card c-green"><div class="stat-card-label">Fonte consultada</div><div class="stat-card-value" style="font-size:14px;">Aggregation Reflection (pré-calculada)</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Tempo estimado</div><div class="stat-card-value">~0.4 s</div></div>
+    <div class="stat-card"><div class="stat-card-label">Trabalho do otimizador</div><div class="stat-card-value" style="font-size:14px;">Substituição automática e transparente</div></div>
+  `;
+}
+function drawReflCanvas(){
+  const cv = document.getElementById('reflCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 110;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 170, padR = 20, barH = 26, gap = 20;
+  const maxVal = 18;
+  const rows = [ ['Sem Reflection', reflMode==='sem'?18:18, reflMode==='sem'?'#f86b63':'rgba(255,255,255,.08)'], ['Com Reflection', reflMode==='com'?0.4:0.4, reflMode==='com'?'#7dded8':'rgba(255,255,255,.08)'] ];
+  rows.forEach(([label,val,color],i) => {
+    const y = 10 + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(label, 0, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW*(val/maxVal));
+    ctx.fillStyle = color; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText(val+' s', padL+8, y+barH*0.65);
+  });
+}
+setReflMode('sem');
+window.addEventListener('resize', drawReflCanvas);
+
+/* ===================== SECURITY LAYERS PICKER ===================== */
+const secLayers = {
+  catalog: {t:'🗄️ Catálogo', d:'Nível mais amplo: um usuário pode ter acesso total, parcial ou nenhum acesso a um catálogo inteiro (ex: bloquear completamente o catálogo "financeiro" para o time de marketing).'},
+  schema: {t:'📁 Schema', d:'Dentro de um catálogo liberado, controla quais schemas (bancos/namespaces) o usuário enxerga — ex: liberar "vendas.publico" mas esconder "vendas.interno".'},
+  table: {t:'📋 Tabela', d:'Concede ou nega SELECT/INSERT/DELETE em tabelas específicas — o controle de acesso mais parecido com o de um banco relacional tradicional.'},
+  column: {t:'🔒 Coluna / Linha', d:'O nível mais fino: mascarar uma coluna sensível (ex: mostrar "***-**-1234" no lugar do CPF completo) ou filtrar linhas automaticamente (ex: um vendedor só vê pedidos da sua própria região).'},
+};
+function buildSecButtons(){
+  document.getElementById('secButtons').innerHTML = Object.keys(secLayers).map(k =>
+    `<button class="btn-toggle" data-sec="${k}" onclick="pickSecLayer('${k}')">${secLayers[k].t}</button>`
+  ).join('');
+}
+function pickSecLayer(key){
+  document.querySelectorAll('#secButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.sec === key));
+  const info = secLayers[key];
+  document.getElementById('secDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+buildSecButtons();
+
+/* ===================== ARROW FLIGHT vs JDBC CANVAS ===================== */
+function drawFlightCanvas(){
+  const cv = document.getElementById('flightCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 130;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'JDBC / ODBC clássico', val:1, sub:'linha a linha, com (de)serialização', color:'#98a2b3'},
+    {name:'Arrow Flight', val:8, sub:'colunar, streams paralelos, sem reconversão', color:'#f5a623'},
+  ];
+  const padB = 30, padTop=16, barGap=26;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = 9;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, barH, 6); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='12px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText('~'+d.val+'x', x+barW/2, y-8);
+    ctx.fillStyle = '#98a2b3'; ctx.font='10.5px Inter, sans-serif';
+    ctx.fillText(d.name, x+barW/2, h-18);
+    ctx.font='9px Inter, sans-serif';
+    ctx.fillText(d.sub, x+barW/2, h-7);
+    ctx.textAlign='left';
+  });
+}
+drawFlightCanvas();
+window.addEventListener('resize', drawFlightCanvas);
+
+/* ===================== TRINO vs DREMIO COMPARISON CANVAS ===================== */
+function drawCompareCanvas(){
+  const cv = document.getElementById('compareCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 220;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const dims = [
+    {label:'Nº de conectores', trino:5, dremio:3},
+    {label:'Aceleração automática', trino:2, dremio:5},
+    {label:'Camada semântica', trino:1, dremio:5},
+    {label:'Federação ampla (RDBMS/NoSQL/streaming)', trino:5, dremio:3},
+    {label:'Self-service BI', trino:2, dremio:5},
+  ];
+  const padL = 240, padR = 20, rowH = 36, gap = 6, barH = 12;
+  const maxVal = 5;
+  dims.forEach((d,i) => {
+    const yBase = 8 + i*(rowH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#dfe5ef';
+    ctx.fillText(d.label, 0, yBase+barH+2);
+    const trackW = w-padL-padR;
+    // trino bar
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,yBase,trackW,barH,4); ctx.fill();
+    let barW = Math.max(3, trackW*(d.trino/maxVal));
+    ctx.fillStyle = '#36a2ef'; roundRect(ctx,padL,yBase,barW,barH,4); ctx.fill();
+    // dremio bar
+    const y2 = yBase+barH+3;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y2,trackW,barH,4); ctx.fill();
+    barW = Math.max(3, trackW*(d.dremio/maxVal));
+    ctx.fillStyle = '#f5a623'; roundRect(ctx,padL,y2,barW,barH,4); ctx.fill();
+  });
+  // legend
+  const legendY = h-14;
+  ctx.fillStyle='#36a2ef'; ctx.fillRect(padL, legendY, 10, 10);
+  ctx.fillStyle='#98a2b3'; ctx.font='10.5px Inter, sans-serif'; ctx.fillText('Trino', padL+16, legendY+9);
+  ctx.fillStyle='#f5a623'; ctx.fillRect(padL+70, legendY, 10, 10);
+  ctx.fillStyle='#98a2b3'; ctx.fillText('Dremio', padL+86, legendY+9);
+}
+drawCompareCanvas();
+window.addEventListener('resize', drawCompareCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Trino e Presto são bancos de dados que armazenam seus próprios dados em um formato de arquivo próprio.', a:false, e:'Falso. São motores de consulta — não têm formato de armazenamento próprio; eles leem e escrevem em fontes externas via conectores (S3/Parquet, MySQL, MongoDB etc.).'},
+  {q:'No Trino, o Coordinator processa os dados das tabelas, enquanto os Workers só planejam a consulta.', a:false, e:'Falso, é o contrário: o Coordinator planeja e distribui o trabalho, mas nunca toca nos dados das tabelas — quem lê e processa os dados são os Workers.'},
+  {q:'O Trino nasceu de um fork do PrestoSQL/Presto em 2019, e foi renomeado de PrestoSQL para Trino em dezembro de 2020.', a:true, e:'Verdadeiro. Parte dos criadores originais deixou o Facebook, criou o PrestoSQL como fork independente, e o renomeou para Trino no final de 2020.'},
+  {q:'Diferente do Hive clássico sobre MapReduce, o Trino processa a consulta em um pipeline majoritariamente em memória, sem gravar resultados intermediários em disco entre estágios.', a:true, e:'Verdadeiro. Os Workers trocam dados diretamente pela rede (exchange) entre estágios, o que evita o ciclo de "gravar e reler do disco" típico do MapReduce.'},
+  {q:'Um conector no Trino permite consultar fontes como MySQL, MongoDB e Kafka usando o mesmo SQL, inclusive fazendo JOIN entre elas numa única consulta (federação).', a:true, e:'Verdadeiro. Essa é a ideia central de federação: uma consulta pode juntar catálogos de tecnologias completamente diferentes sem cópia prévia dos dados.'},
+  {q:'Reflections do Dremio precisam ser referenciadas manualmente pelo nome em cada consulta para acelerar a query.', a:false, e:'Falso. O otimizador do Dremio escolhe automaticamente quando substituir a consulta original por uma Reflection compatível — o usuário continua consultando a tabela/Virtual Dataset normalmente.'},
+  {q:'O Dremio é construído sobre o Apache Arrow e usa Gandiva (compilação via LLVM) para acelerar a avaliação de expressões.', a:true, e:'Verdadeiro. O motor de execução do Dremio processa dados no formato colunar do Arrow e compila expressões de consulta em tempo real com Gandiva.'},
+  {q:'O núcleo open source do Trino tem, nativamente, uma camada semântica de Spaces/Folders equivalente à do Dremio.', a:false, e:'Falso. Essa camada semântica (Spaces, Folders, Virtual Datasets) é uma característica central do Dremio — o Trino depende de catálogos externos (ex: Hive Metastore, Iceberg REST) para metadados.'},
+  {q:'Um broadcast join copia a tabela grande inteira para todos os workers do cluster.', a:false, e:'Falso, é o contrário: no broadcast join, é a tabela pequena que é copiada inteira para os workers que já têm pedaços da tabela grande — evitando redistribuir a tabela grande pela rede.'},
+  {q:'Formatos de tabela como Iceberg, Delta Lake e Hudi adicionam uma camada de metadados sobre arquivos Parquet/ORC para viabilizar transações ACID, time travel e evolução segura de schema.', a:true, e:'Verdadeiro. Parquet/ORC sozinhos são só formatos de arquivo — quem viabiliza esses recursos é a camada de metadados transacional do table format por cima deles.'},
+  {q:'No Trino, resource groups permitem isolar e limitar memória/concorrência entre diferentes tipos de consulta (ex: ETL vs ad hoc) no mesmo cluster.', a:true, e:'Verdadeiro. Resource groups organizam consultas em filas com cotas próprias, evitando que uma carga pesada monopolize o cluster inteiro.'},
+  {q:'O Arrow Flight transmite resultados de consulta linha a linha, exatamente como o JDBC/ODBC tradicional.', a:false, e:'Falso. O Arrow Flight transmite os dados já no formato colunar binário do Arrow, evitando a serialização/desserialização linha a linha típica do JDBC/ODBC.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

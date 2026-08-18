@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: AWS Athena. SQL serverless direto no S3, Glue Data Catalog, particionamento, formatos colunares, precificação por bytes escaneados, Federated Query e mais, com muitos diagramas e demos interativas explicadas de um jeito bem simples.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — AWS Athena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-amber:#f5a623;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-amber{border-color:var(--accent-amber);color:var(--accent-amber);background:rgba(245,166,35,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.amber-box{background:rgba(245,166,35,.07);border-left:4px solid var(--accent-amber);padding:16px 18px;border-radius:6px;}
+.amber-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.amber-box .highlight-title{color:var(--accent-amber);}
+
+/* ---- KID BOX (explicando pra criança) ---- */
+.kid-box{background:rgba(196,154,255,.07);border:1.5px dashed var(--accent-purple);border-radius:10px;padding:16px 20px;}
+.kid-box .kb-title{color:var(--accent-purple);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;display:flex;align-items:center;gap:7px;}
+.kid-box p{font-size:13.5px;color:var(--text-secondary);line-height:1.75;}
+.kid-box p strong{color:var(--text-primary);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- ARCHITECTURE / CLICKABLE DIAGRAM ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-amber{border-top-color:var(--accent-amber);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- TREE ---- */
+.tree{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:2;color:var(--text-secondary);}
+.tree .t0{color:var(--text-primary);font-weight:700;}
+.tree .t1{padding-left:22px;color:var(--accent-blue);}
+.tree .t2{padding-left:44px;color:var(--accent-purple);}
+.tree .t3{padding-left:66px;color:var(--text-secondary);}
+.tree .t3 .fname{color:var(--accent-green);}
+
+/* ---- SPLIT / PARALLELISM / PARTITION CELLS ---- */
+.cacheline{display:flex;gap:4px;flex-wrap:wrap;}
+.cl-cell{width:40px;height:40px;border-radius:5px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8.5px;font-family:'Roboto Mono',monospace;font-weight:700;border:1.5px solid var(--border-color);background:var(--bg-elevated);color:var(--text-disabled);line-height:1.2;padding:2px;}
+.cl-cell.used{background:rgba(6,182,212,.22);border-color:var(--accent);color:var(--accent);}
+.cl-cell.wasted{background:rgba(248,107,99,.08);border-color:var(--accent-red);color:var(--accent-red);opacity:.65;}
+.cl-cell.skipped{opacity:.22;}
+.cl-cell.hit{background:rgba(125,222,216,.22);border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- COLUMNAR SCAN TABLE (row vs coluna) ---- */
+.rc-table{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:6px;}
+.rc-cell{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:9px 6px;text-align:center;font-size:11.5px;color:var(--text-secondary);font-family:'Roboto Mono',monospace;transition:.18s;}
+.rc-cell.head{background:transparent;border:none;color:var(--text-disabled);font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;font-family:'Inter',sans-serif;font-weight:700;}
+.rc-cell.scanned{border-color:var(--accent);background:rgba(6,182,212,.20);color:var(--accent);font-weight:700;}
+.rc-cell.skipped{opacity:.22;}
+.rc-cell.target{border-color:var(--accent-green);background:rgba(125,222,216,.20);color:var(--accent-green);font-weight:800;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- TIMELINE (história) ---- */
+.timeline-row{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:6px 2px 14px;}
+.tl-item{display:flex;flex-direction:column;gap:6px;min-width:200px;max-width:220px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:14px 16px;flex-shrink:0;}
+.tl-item.hl{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.tl-year{font-family:'Roboto Mono',monospace;font-weight:800;color:var(--accent);font-size:13px;}
+.tl-title{font-weight:700;font-size:12.5px;color:var(--text-primary);}
+.tl-text{font-size:11.5px;color:var(--text-secondary);line-height:1.6;}
+.tl-arrow{display:flex;align-items:center;padding:0 10px;color:var(--border-strong);font-size:18px;flex-shrink:0;}
+
+/* ---- HUB / FEDERATION DIAGRAM ---- */
+.hub-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;}
+.hub-center{background:rgba(6,182,212,.14);border:2px solid var(--accent);border-radius:10px;padding:14px 30px;font-weight:800;color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:13px;letter-spacing:.5px;}
+.hub-lines{width:2px;height:18px;background:var(--border-strong);}
+.hub-spokes{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;width:100%;}
+.hub-node{cursor:pointer;border:1.5px solid var(--border-color);border-radius:8px;background:var(--bg-elevated);padding:12px 10px;text-align:center;font-size:12px;font-weight:700;color:var(--text-secondary);transition:.15s;}
+.hub-node:hover{border-color:var(--accent-blue);}
+.hub-node.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+
+/* ---- BUDGET BAR (workgroups) ---- */
+.budget-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:10px;padding:4px;height:34px;position:relative;overflow:hidden;}
+.budget-fill{height:100%;border-radius:7px;transition:.2s;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;color:#111216;white-space:nowrap;}
+.budget-limit-mark{position:absolute;top:0;bottom:0;width:2px;background:var(--accent-red);}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.grid-5{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+  .rc-table{grid-template-columns:repeat(5,minmax(0,1fr));}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>AWS Athena</h1><span>SQL serverless direto no seu data lake, sem nenhum servidor pra cuidar</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2016</div><div class="hstat-label">Lançamento</div></div>
+      <div class="hstat"><div class="hstat-num">$5</div><div class="hstat-label">por TB escaneado</div></div>
+      <div class="hstat"><div class="hstat-num">18</div><div class="hstat-label">Seções</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito ao dia a dia em produção</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Você <em>nunca liga um servidor</em>. Você só faz a pergunta.</h2>
+      <p>O <strong>Amazon Athena</strong> é um serviço da AWS que deixa você rodar <strong>SQL padrão</strong> direto sobre arquivos guardados no <strong>Amazon S3</strong> — sem copiar nada para dentro de um banco de dados, sem instalar nada, sem ligar nenhuma máquina. Por trás dos panos, ele usa um motor de consulta distribuído da família <strong>Trino/Presto</strong> (o mesmo tipo de motor que vimos na aula sobre Trino), só que <em>100% gerenciado</em> pela AWS: você nunca vê um "Coordinator" ou um "Worker" — só manda a consulta e recebe a resposta. E você só paga pelos <strong>bytes que a consulta realmente leu</strong>.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Serverless</span>
+        <span class="badge badge-blue">Baseado em Trino/Presto</span>
+        <span class="badge badge-purple">Paga por bytes escaneados</span>
+        <span class="badge badge-amber">Glue Data Catalog</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🏛️ SEM SERVIDOR NENHUM</div>
+        <div class="fc-body">
+          <div class="fc-row">Um bucket S3 cheio de arquivos<br><span style="font-size:9.5px;opacity:.7;">CSV, JSON, Parquet, ORC...</span></div>
+          <div class="fc-row">Um catálogo com o "mapa" dos dados<br><span style="font-size:9.5px;opacity:.7;">AWS Glue Data Catalog</span></div>
+        </div>
+        <div class="fc-foot">SELECT ... FROM s3://seu-bucket/...</div>
+      </div>
+      <div class="file-chip-caption">Você faz a pergunta em SQL — a AWS cuida do resto</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🤔 O que é o AWS Athena?</div>
+    <p class="section-desc">
+      Athena é um serviço <strong>serverless de consulta interativa</strong>: você aponta para arquivos que já existem no S3 (o "data lake" da sua empresa), descreve o formato deles uma vez só, e a partir daí pode escrever <code>SELECT</code>, <code>JOIN</code>, <code>GROUP BY</code> como faria em qualquer banco relacional. Não existe "instância do Athena" para provisionar, escalar ou desligar — a AWS aloca um pedaço de um motor de consulta distribuído só durante os segundos em que sua consulta está rodando, e cobra apenas pela quantidade de dados <strong>escaneada</strong> nesse período (padrão de <em>US$ 5,00 por terabyte lido</em>).
+    </p>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Imagine uma <strong>biblioteca gigante</strong> (o S3) cheia de caixas de documentos empilhadas, sem nenhum bibliotecário morando lá dentro. O Athena é como um <strong>bibliotecário mágico que você chama por telefone</strong> só quando precisa: você liga, faz sua pergunta ("quantos livros de dinossauros temos?"), ele aparece do nada, corre até as caixas certas, conta só o que interessa, te entrega a resposta — e some de novo. Você nunca "contratou" um bibliotecário fixo (um servidor ligado 24 horas); você só paga pela <strong>ligação</strong> que fez, e só pelo tempo/trabalho daquela ligação específica.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🚫 Sem servidor para gerenciar</div>
+        <div class="card-text">Não existe máquina para ligar, atualizar, redimensionar ou desligar. Você não escolhe "tamanho de cluster" — a AWS decide isso por trás dos panos a cada consulta.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💰 Paga por consulta</div>
+        <div class="card-text">A cobrança é por <strong>bytes escaneados</strong>, não por hora de máquina ligada. Uma consulta que não roda, não custa nada — bem diferente de um data warehouse sempre ligado.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔍 SQL direto no data lake</div>
+        <div class="card-text">Os dados continuam no S3, no formato em que já estavam. Você não precisa de um pipeline de ETL só para "conseguir consultar" alguma coisa nova.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Dimensão</th><th>Banco de dados tradicional</th><th>Data warehouse provisionado (ex: Redshift)</th><th>Athena</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Onde ficam os dados</strong></td><td>Disco próprio do servidor de banco</td><td>Armazenamento próprio do cluster</td><td>Continuam no S3, no formato original</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Provisionamento</strong></td><td>Você escolhe e mantém a instância</td><td>Você escolhe e mantém o cluster</td><td>Nenhum — 100% gerenciado pela AWS</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Cobrança</strong></td><td>Custo fixo da instância (ligada ou não)</td><td>Custo do cluster ligado, por hora</td><td>Por bytes escaneados em cada consulta</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Melhor para</strong></td><td>Sistema transacional (OLTP)</td><td>Cargas analíticas constantes e previsíveis</td><td>✅ Consultas esporádicas/ad hoc sobre dados que já estão no data lake</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="info-box"><p>💡 O nome "Athena" é uma referência a <strong>Atena</strong>, a deusa grega da sabedoria e da estratégia — a ideia é uma ferramenta "sábia" o suficiente para você só perguntar, sem precisar planejar infraestrutura antes. Na prática, o serviço foi lançado pela AWS em <strong>novembro de 2016</strong>, construído sobre o motor open source <strong>Presto</strong> (o mesmo que deu origem ao Trino).</p></div>
+  </section>
+
+  <!-- ============ HISTÓRIA ============ -->
+  <section class="section" id="s-historia">
+    <div class="section-eyebrow">De Onde Veio</div>
+    <div class="section-title">📜 A História do Athena</div>
+    <p class="section-desc">O Athena nasceu para resolver um problema muito comum: empresas já tinham <strong>montanhas de arquivos</strong> guardadas no S3 (logs, exports, eventos), mas para consultar qualquer coisa era preciso montar um pipeline, subir um cluster Hadoop/EMR ou copiar tudo para um banco. A AWS decidiu embrulhar um motor de consulta distribuído já existente — o Presto — numa experiência "sem clicar em nada de infraestrutura".</p>
+
+    <div class="timeline-row" id="timelineRow"></div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como a diferença entre <strong>ter que montar sua própria bicicleta do zero</strong> toda vez que quiser andar (subir um cluster Hadoop) e simplesmente <strong>pegar uma bicicleta compartilhada</strong> já pronta na rua, andar até onde precisa, e devolvê-la sem se preocupar em consertar nada (Athena). Com o tempo, essas bicicletas compartilhadas foram ficando cada vez mais espertas: hoje elas "sabem" ler mapas de vários bairros diferentes ao mesmo tempo (Federated Query) e até ajudam a organizar seus próprios pertences (Athena for Apache Spark).</p>
+    </div>
+
+    <div class="info-box"><p>💡 Hoje o motor por trás do Athena é chamado de <strong>Athena engine version 3</strong> — uma evolução própria da AWS, fortemente baseada em Trino, otimizada especificamente para rodar dentro do ambiente serverless da AWS (integração nativa com Glue, IAM, S3 e CloudWatch).</p></div>
+  </section>
+
+  <!-- ============ ARQUITETURA ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Como Funciona por Dentro</div>
+    <div class="section-title">🏗️ Arquitetura: o Que é Seu e o Que a AWS Gerencia</div>
+    <p class="section-desc">
+      A grande diferença do Athena para um cluster Trino "tradicional" é que a fronteira entre "o que você mantém" e "o que é gerenciado" muda completamente. Você só é responsável por três coisas; tudo o mais — provisionar workers, escalar, desligar — é automático e invisível. Clique nos blocos para entender o papel de cada lado.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🙋 Você fornece</div>
+          <div class="pq-clickable" data-id="you-sql" onclick="pickArch('you-sql')">A consulta SQL</div>
+          <div class="pq-clickable" data-id="you-s3" onclick="pickArch('you-s3')">Os arquivos no bucket S3</div>
+          <div class="pq-clickable" data-id="you-glue" onclick="pickArch('you-glue')">O schema no Glue Data Catalog</div>
+          <div class="pq-clickable" data-id="you-out" onclick="pickArch('you-out')">Um bucket de destino para o resultado</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">☁️ AWS gerencia por baixo dos panos</div>
+          <div class="pq-clickable" data-id="aws-fleet" onclick="pickArch('aws-fleet')">Frota de workers do motor (Trino/Presto)</div>
+          <div class="pq-clickable" data-id="aws-scale" onclick="pickArch('aws-scale')">Escala automática por consulta</div>
+          <div class="pq-clickable" data-id="aws-teardown" onclick="pickArch('aws-teardown')">Desligamento ao final — sem cluster residual</div>
+          <div class="pq-clickable" data-id="aws-bill" onclick="pickArch('aws-bill')">Medição de bytes escaneados p/ cobrança</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="archDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Veja o que fica com você e o que a AWS resolve sozinha.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É a diferença entre <strong>ter carro próprio</strong> e usar <strong>aplicativo de carona</strong>. Com carro próprio, você é dono de tudo: compra, abastece, estaciona, faz manutenção — mesmo nos dias em que não usa. Com aplicativo de carona (Athena), você só diz "para onde quer ir" (o SQL); um carro aparece na hora, te leva, e vai embora. Você paga só pela viagem que fez, nunca pelo carro parado na garagem.</p>
+    </div>
+
+    <div class="info-box"><p>💡 Isso também significa que o Athena <strong>não tem "estado"</strong> entre consultas: cada consulta é isolada. Se você rodar a mesma consulta duas vezes seguidas, a segunda pode escanear exatamente a mesma quantidade de dados (e custar o mesmo) que a primeira, a não ser que você configure algum cache próprio (por exemplo, materializando o resultado em uma tabela).</p></div>
+  </section>
+
+  <!-- ============ EXECUÇÃO DA CONSULTA ============ -->
+  <section class="section" id="s-execucao">
+    <div class="section-eyebrow">O Caminho de uma Pergunta</div>
+    <div class="section-title">⚙️ O Que Acontece Quando Você Aperta "Run Query"</div>
+    <p class="section-desc">
+      Da sua perspectiva parece mágica, mas por dentro acontecem passos bem concretos, do texto SQL até o resultado aparecer na tela. Clique em cada etapa para entender o que acontece.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box" style="grid-column:1 / -1;">
+          <div class="pq-box-label">🔢 Passo a passo de uma consulta no Athena</div>
+          <div class="pq-clickable" data-id="ex-1" onclick="pickExec('ex-1')">1. Você escreve SQL no console, CLI, JDBC/ODBC ou boto3</div>
+          <div class="pq-clickable" data-id="ex-2" onclick="pickExec('ex-2')">2. Athena consulta o Glue Data Catalog: onde estão os arquivos, qual o schema, quais partições existem</div>
+          <div class="pq-clickable" data-id="ex-3" onclick="pickExec('ex-3')">3. O otimizador decide quais partições e colunas realmente precisam ser lidas (pruning)</div>
+          <div class="pq-clickable" data-id="ex-4" onclick="pickExec('ex-4')">4. Uma frota efêmera de workers é alocada e lê só os bytes necessários direto do S3, em paralelo</div>
+          <div class="pq-clickable" data-id="ex-5" onclick="pickExec('ex-5')">5. O resultado final é gravado como arquivo(s) num bucket de resultados no S3</div>
+          <div class="pq-clickable" data-id="ex-6" onclick="pickExec('ex-6')">6. Você recebe o resultado (console/API) e a frota de workers é desalocada</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="execDetail">
+        <div class="ad-title">👆 Clique em qualquer passo</div>
+        <div class="ad-text">Veja o que acontece por trás da consulta em cada etapa.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É parecido com pedir uma <strong>pizza por aplicativo</strong>: você faz o pedido (SQL); o app olha no mapa qual pizzaria fica mais perto e tem o que você quer (Glue Catalog); ele já sabe que não precisa mandar o entregador passar em bairros sem essa pizzaria (pruning de partição); o entregador pega só a pizza — não a pizzaria inteira — e traz até você (leitura otimizada no S3); a pizza chega na sua mesa (resultado); e o entregador vai embora para atender outro pedido, sem ficar esperando parado na sua porta (frota desalocada).</p>
+    </div>
+
+    <div class="warn-box"><p>⚠️ Consultas que <strong>falham</strong> ou comandos de definição de estrutura (como <code>CREATE TABLE</code> apontando metadados, sem ler dados) normalmente <strong>não são cobrados</strong> pelos bytes escaneados — mas uma consulta mal escrita que efetivamente varre a tabela inteira, sim.</p></div>
+  </section>
+
+  <!-- ============ GLUE DATA CATALOG ============ -->
+  <section class="section" id="s-glue">
+    <div class="section-eyebrow">O Mapa dos Seus Dados</div>
+    <div class="section-title">🗂️ AWS Glue Data Catalog: o Metastore do Athena</div>
+    <p class="section-desc">
+      Antes de escanear qualquer byte, o Athena precisa saber três coisas sobre uma tabela: <strong>onde</strong> estão os arquivos no S3, <strong>qual o formato/schema</strong> deles (colunas e tipos), e <strong>quais partições</strong> existem. Quem guarda esse "mapa" é o <strong>AWS Glue Data Catalog</strong> — um metastore compatível com o Hive Metastore, compartilhado também por outros serviços AWS (Glue ETL, EMR, Redshift Spectrum). O Athena nunca "adivinha" nada sozinho: ele sempre consulta o catálogo primeiro.
+    </p>
+
+    <div class="card">
+      <div class="tree">
+        <div class="t0">🗂️ Glue Data Catalog</div>
+        <div class="t1">📁 Database: vendas</div>
+        <div class="t2">📄 Table: pedidos <span style="color:var(--text-disabled);">(aponta para s3://data-lake/vendas/pedidos/)</span></div>
+        <div class="t3">Schema: <span class="fname">id BIGINT, cliente_id BIGINT, total DOUBLE, data_pedido DATE</span></div>
+        <div class="t3">Partições: <span class="fname">ano=2026/mes=07/dia=30/ ...</span></div>
+        <div class="t2">📄 Table: clientes <span style="color:var(--text-disabled);">(aponta para s3://data-lake/vendas/clientes/)</span></div>
+      </div>
+    </div>
+
+    <div class="grid-4">
+      <div class="card"><div class="card-title">🗄️ Databases &amp; Tables</div><div class="card-text">Uma <em>table</em> no Glue é só um "apontador" com metadados — não guarda dado nenhum, só descreve onde e como os arquivos reais estão organizados no S3.</div></div>
+      <div class="card"><div class="card-title">🕷️ Crawlers</div><div class="card-text">Um Glue Crawler varre um caminho no S3, infere schema e partições automaticamente, e mantém o catálogo atualizado sem você escrever o DDL na mão.</div></div>
+      <div class="card"><div class="card-title">🧩 Partições</div><div class="card-text">O catálogo guarda quais pastas de partição existem (ex: <code>dia=2026-07-30</code>), permitindo ao Athena pular pastas inteiras sem precisar "listar" o S3 toda vez.</div></div>
+      <div class="card"><div class="card-title">🔗 Compartilhado</div><div class="card-text">O mesmo catálogo é lido por Redshift Spectrum, EMR, Glue ETL Jobs e até o QuickSight — cadastre uma vez, use em vários serviços.</div></div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">sql — registrando uma tabela externa</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE EXTERNAL TABLE</span> vendas.pedidos (
+  id            <span class="kw">BIGINT</span>,
+  cliente_id    <span class="kw">BIGINT</span>,
+  total         <span class="kw">DOUBLE</span>,
+  data_pedido   <span class="kw">DATE</span>
+)
+<span class="kw">PARTITIONED BY</span> (ano <span class="kw">STRING</span>, mes <span class="kw">STRING</span>, dia <span class="kw">STRING</span>)
+<span class="kw">STORED AS PARQUET</span>
+<span class="kw">LOCATION</span> <span class="st">'s3://data-lake/vendas/pedidos/'</span>;
+
+<span class="cm">-- ensina o catálogo a "descobrir" as pastas de partição já existentes</span>
+<span class="kw">MSCK REPAIR TABLE</span> vendas.pedidos;</div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>O Glue Data Catalog é como o <strong>fichário de uma biblioteca</strong>: ele não tem os livros dentro dele, só fichas dizendo "livros de dinossauro ficam na sala 3, prateleira 2". Sem esse fichário, o bibliotecário (Athena) teria que correr sala por sala, prateleira por prateleira, abrindo tudo até achar o que você pediu. Com o fichário, ele vai direto no lugar certo.</p>
+    </div>
+  </section>
+
+  <!-- ============ FORMATOS DE ARQUIVO ============ -->
+  <section class="section" id="s-formatos">
+    <div class="section-eyebrow">O Que Realmente Custa Dinheiro</div>
+    <div class="section-title">📦 Formatos Colunares: Por Que Parquet Custa Menos que CSV</div>
+    <p class="section-desc">
+      Como o Athena cobra por <strong>bytes escaneados</strong>, o formato do arquivo tem impacto direto no seu bolso. CSV e JSON são formatos <strong>por linha</strong>: para ler <em>uma</em> coluna, o motor é obrigado a ler o arquivo inteiro, linha por linha. Parquet e ORC são <strong>colunares</strong>: cada coluna fica guardada separadamente e comprimida — se sua consulta só usa 2 colunas de uma tabela com 20, o Athena só precisa abrir os blocos daquelas 2 colunas. Clique para simular a mesma consulta nos dois formatos.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: <code>SELECT total FROM pedidos</code> — quais dados o motor precisa abrir?</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnFmtRow" onclick="setFormatDemo('row')">🧾 CSV / JSON (por linha)</button>
+        <button class="btn-toggle" id="btnFmtCol" onclick="setFormatDemo('col')">📦 Parquet / ORC (colunar)</button>
+      </div>
+      <div id="rcHeader"></div>
+      <div id="rcBody"></div>
+      <div class="highlight-box" id="fmtMsg" style="margin-top:14px;"></div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Característica</th><th>CSV / JSON</th><th>Parquet / ORC</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Organização</strong></td><td>Por linha (row-based)</td><td>Por coluna (columnar)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Leitura parcial de colunas</strong></td><td>Impossível — sempre lê a linha inteira</td><td>Lê só as colunas usadas na consulta</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Compressão nativa</strong></td><td>Nenhuma, a não ser que você compacte manualmente</td><td>Sim, por coluna (Snappy, GZIP, ZSTD)</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Impacto no custo do Athena</strong></td><td>Escaneia praticamente o arquivo inteiro sempre</td><td>✅ Pode reduzir bytes escaneados em 80–95%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Pense num <strong>jornal impresso</strong> (CSV/JSON): se você só quer ler os classificados de emprego, ainda assim o jornaleiro entrega o jornal <strong>inteiro</strong> — capa, esportes, política, tudo junto, página colada em página. Já o Parquet é como se o jornal viesse <strong>separado por seções soltas</strong>, cada uma numa pastinha própria: você pega só a pastinha de "classificados" e nem precisa tocar nas outras. Menos papel carregado, resposta mais rápida, e no caso do Athena, <strong>menos dinheiro gasto</strong>.</p>
+    </div>
+  </section>
+
+  <!-- ============ PARTICIONAMENTO ============ -->
+  <section class="section" id="s-particionamento">
+    <div class="section-eyebrow">Pular Pastas Inteiras</div>
+    <div class="section-title">🧩 Particionamento: Nem Abrir a Gaveta Errada</div>
+    <p class="section-desc">
+      Além de colunas, o Athena também pode evitar ler <strong>arquivos inteiros</strong> — se a tabela for <strong>particionada</strong> (ex: uma pasta por dia) e sua consulta filtrar por essa coluna de partição, o motor nem chega a listar os arquivos das pastas que não interessam. Esse comportamento se chama <strong>partition pruning</strong> (poda de partição). Simule abaixo o efeito de filtrar por poucos dias dentro de um ano inteiro de dados.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: <code>WHERE dia BETWEEN ...</code> sobre uma tabela particionada por dia</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Total de partições (dias) na tabela</span><span class="ctrl-v" id="totalPartVal">30</span></div>
+          <input type="range" id="totalPartRange" min="10" max="60" step="1" value="30" oninput="updatePartitionDemo()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Dias filtrados pela consulta (WHERE)</span><span class="ctrl-v" id="hitPartVal">3</span></div>
+          <input type="range" id="hitPartRange" min="1" max="30" step="1" value="3" oninput="updatePartitionDemo()">
+        </div>
+      </div>
+      <div class="cacheline" id="partGrid"></div>
+      <div class="stat-cards" id="partStats"></div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">sql — filtro que aciona o pruning</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> <span class="fn">SUM</span>(total)
+<span class="kw">FROM</span> vendas.pedidos
+<span class="kw">WHERE</span> ano <span class="kw">=</span> <span class="st">'2026'</span> <span class="kw">AND</span> mes <span class="kw">=</span> <span class="st">'07'</span> <span class="kw">AND</span> dia <span class="kw">IN</span> (<span class="st">'28'</span>,<span class="st">'29'</span>,<span class="st">'30'</span>);
+<span class="cm">-- só as pastas ano=2026/mes=07/dia=28|29|30 são lidas — o resto do ano é ignorado</span></div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>Imagine um <strong>arquivo de gavetas</strong>, uma gaveta para cada mês do ano. Se você precisa só dos papéis de julho, você abre <strong>uma única gaveta</strong> — nem chega perto das outras onze. Sem particionamento, seria como ter todos os papéis do ano jogados numa <strong>caixa só, sem gavetas</strong>: para achar os de julho, você é obrigado a folhear a caixa inteira, mês por mês, até separar o que precisa.</p>
+    </div>
+
+    <div class="warn-box"><p>⚠️ Particionar <strong>demais</strong> também tem custo: milhares de partições minúsculas (ex: particionar por minuto numa tabela pequena) deixam o catálogo mais pesado de consultar e criam muitos arquivos pequenos no S3, que também prejudicam a performance. Para tabelas com centenas de milhares de partições, a AWS recomenda <strong>Partition Projection</strong> — as regras de partição ficam declaradas na definição da tabela, sem precisar manter cada partição registrada individualmente no catálogo.</p></div>
+  </section>
+
+  <!-- ============ COMPRESSÃO ============ -->
+  <section class="section" id="s-compressao">
+    <div class="section-eyebrow">Menos Bytes, Menos Custo</div>
+    <div class="section-title">🗜️ Compressão: o Mesmo Dado, Ocupando Menos Espaço</div>
+    <p class="section-desc">Formato colunar e compressão andam juntos, mas são coisas diferentes: o formato decide <em>como organizar</em> os dados; a compressão decide <em>quantos bytes físicos</em> eles ocupam no S3 — e, consequentemente, quanto o Athena cobra para lê-los. Compare o tamanho aproximado do mesmo conjunto de dados (1 GB de dados "crus") em diferentes combinações:</p>
+
+    <div class="canvas-wrap"><canvas id="compressCanvas" height="180"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Proporções <strong>ilustrativas</strong> — a taxa de compressão real varia conforme a natureza dos dados (texto livre comprime menos que colunas repetitivas/categóricas).</div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🧾 CSV sem compressão</div><div class="card-text">Texto puro, sem nenhuma otimização — o "pior caso" em tamanho e em custo de leitura no Athena.</div></div>
+      <div class="card"><div class="card-title">📦 CSV + GZIP</div><div class="card-text">Reduz bastante o tamanho em disco, mas o Athena ainda precisa descomprimir e ler a linha inteira — não resolve o problema de colunas desnecessárias.</div></div>
+      <div class="card"><div class="card-title">🚀 Parquet + Snappy/ZSTD</div><div class="card-text">Combina o melhor dos dois mundos: leitura só das colunas necessárias <strong>e</strong> compressão eficiente por coluna — normalmente o cenário mais barato para consultar.</div></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É a diferença entre fazer uma mala <strong>jogando roupas soltas</strong> (CSV sem compressão) e usar aqueles <strong>saquinhos a vácuo</strong> que espremem o ar para fora (compressão). A mala fica bem mais leve para carregar — só que, se você quer só a camiseta azul, ainda vai ter que abrir o saquinho inteiro para achá-la. O Parquet comprimido é como ter <strong>um saquinho a vácuo separado para cada tipo de roupa</strong>: você pega só o saquinho das camisetas, sem mexer nas calças e meias.</p>
+    </div>
+  </section>
+
+  <!-- ============ PRECIFICAÇÃO ============ -->
+  <section class="section" id="s-precificacao">
+    <div class="section-eyebrow">A Calculadora</div>
+    <div class="section-title">💰 Precificação: US$ 5 por Terabyte Escaneado</div>
+    <p class="section-desc">
+      O modelo de cobrança do Athena é direto: <strong>US$ 5,00 por terabyte de dados escaneado</strong> por uma consulta, com cobrança mínima de 10 MB por consulta (consultas canceladas ou que falham antes de escanear dados não são cobradas). Formato, compressão e particionamento se combinam para determinar quantos bytes realmente precisam ser lidos — e é exatamente aí que mora a diferença entre uma consulta de centavos e uma de dezenas de dólares. Brinque com os controles abaixo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Calculadora: quanto custa escanear esse dataset?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Tamanho do dataset (dados "crus")</span><span class="ctrl-v" id="costSizeVal">500 GB</span></div>
+          <input type="range" id="costSizeRange" min="10" max="5000" step="10" value="500" oninput="updateCostCalc()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>% do dataset filtrado por partição</span><span class="ctrl-v" id="costPartVal">100%</span></div>
+          <input type="range" id="costPartRange" min="1" max="100" step="1" value="100" oninput="updateCostCalc()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btnCostCsv" onclick="setCostFormat('csv')">🧾 CSV sem compressão</button>
+        <button class="btn-toggle" id="btnCostParquet" onclick="setCostFormat('parquet')">📦 Parquet + Snappy</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="costCanvas" height="110"></canvas></div>
+      <div class="stat-cards" id="costStats"></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como pagar por <strong>quilo de fruta que você realmente pegou</strong> na feira, não pela feira inteira. Se a feira tem 500 kg de fruta espalhados, mas você só pega as maçãs da barraca "julho" (partição) e ainda por cima leva num saquinho bem compacto (Parquet comprimido), você paga por muito menos quilos do que se andasse pela feira inteira enchendo um carrinho gigante (CSV sem filtro nenhum).</p>
+    </div>
+
+    <div class="info-box"><p>💡 Armazenamento no S3 é cobrado <strong>separadamente</strong> pelo próprio S3 (por GB/mês), independente de você consultar ou não. O Athena só cobra pelo <strong>ato de ler</strong> os dados numa consulta — por isso otimizar formato/partição impacta diretamente a fatura do Athena, mas não muda o custo de armazenamento em si (que, aliás, também cai bastante com Parquet comprimido).</p></div>
+  </section>
+
+  <!-- ============ CTAS ============ -->
+  <section class="section" id="s-ctas">
+    <div class="section-eyebrow">Transformando sem Sair do SQL</div>
+    <div class="section-title">🔄 CTAS: Convertendo Formato Direto no Athena</div>
+    <p class="section-desc">
+      Você não precisa de uma ferramenta externa de ETL só para transformar uma tabela CSV legada em Parquet particionado — o próprio Athena resolve isso com <code>CREATE TABLE AS SELECT</code> (<strong>CTAS</strong>): você escreve um <code>SELECT</code> normal sobre a tabela de origem, e o Athena grava o resultado como uma <strong>tabela nova</strong>, já no formato e particionamento que você escolher.
+    </p>
+
+    <div class="code-block">
+<span class="code-lang">sql — CTAS convertendo CSV em Parquet particionado</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE TABLE</span> vendas.pedidos_otimizado
+<span class="kw">WITH</span> (
+  format <span class="kw">=</span> <span class="st">'PARQUET'</span>,
+  parquet_compression <span class="kw">=</span> <span class="st">'SNAPPY'</span>,
+  partitioned_by <span class="kw">=</span> <span class="kw">ARRAY</span>[<span class="st">'ano'</span>,<span class="st">'mes'</span>],
+  external_location <span class="kw">=</span> <span class="st">'s3://data-lake/vendas/pedidos_otimizado/'</span>
+) <span class="kw">AS</span>
+<span class="kw">SELECT</span>
+  id, cliente_id, total, data_pedido,
+  <span class="fn">year</span>(data_pedido)  <span class="kw">AS</span> ano,
+  <span class="fn">month</span>(data_pedido) <span class="kw">AS</span> mes
+<span class="kw">FROM</span> vendas.pedidos_csv_legado;
+
+<span class="cm">-- a tabela nova já nasce colunar, comprimida e particionada</span></div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🆕 CTAS</div><div class="card-text">Cria uma tabela nova (com novos arquivos no S3) a partir do resultado de um <code>SELECT</code> — ideal para conversões de formato ou "instantâneos" de uma consulta pesada.</div></div>
+      <div class="card"><div class="card-title">➕ INSERT INTO</div><div class="card-text">Adiciona linhas a uma tabela já existente (criada via CTAS ou DDL manual), útil para cargas incrementais periódicas.</div></div>
+      <div class="card"><div class="card-title">📤 UNLOAD</div><div class="card-text">Exporta o resultado de uma consulta direto para arquivos no S3 (Parquet, ORC, JSON...) sem precisar criar uma tabela — útil para entregar um extrato pontual.</div></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como <strong>fotocopiar um caderno de anotações bagunçado</strong> (CSV cru) para dentro de um <strong>fichário organizado, com divisórias por assunto</strong> (Parquet particionado) — só que em vez de você copiar página por página à mão, você dá o comando "copie assim" e a fotocopiadora (Athena) faz tudo de uma vez.</p>
+    </div>
+  </section>
+
+  <!-- ============ WORKGROUPS ============ -->
+  <section class="section" id="s-workgroups">
+    <div class="section-eyebrow">Controlando Quem Gasta o Quê</div>
+    <div class="section-title">🚦 Workgroups: Isolamento e Controle de Custo</div>
+    <p class="section-desc">
+      Como qualquer pessoa com permissão pode escrever um <code>SELECT *</code> gigante sem querer, o Athena oferece <strong>Workgroups</strong>: grupos que isolam consultas de diferentes times, aplicam <strong>limites de bytes escaneados</strong> por consulta (ou por período), forçam criptografia dos resultados, e separam métricas/custo no CloudWatch — tudo sem mexer no código da consulta em si.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: uma consulta contra o limite de bytes do workgroup "analistas"</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Limite do workgroup por consulta</span><span class="ctrl-v" id="wgLimitVal">100 GB</span></div>
+          <input type="range" id="wgLimitRange" min="10" max="500" step="10" value="100" oninput="updateWorkgroupDemo()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Bytes que a consulta tentaria escanear</span><span class="ctrl-v" id="wgQueryVal">60 GB</span></div>
+          <input type="range" id="wgQueryRange" min="5" max="600" step="5" value="60" oninput="updateWorkgroupDemo()">
+        </div>
+      </div>
+      <div class="budget-wrap"><div class="budget-fill" id="wgFill"></div><div class="budget-limit-mark" id="wgLimitMark"></div></div>
+      <div class="highlight-box" id="wgMsg" style="margin-top:14px;"></div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Workgroup</th><th>Limite de bytes/consulta</th><th>Criptografia de resultado</th><th>Uso típico</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">analistas-adhoc</strong></td><td>100 GB</td><td>Obrigatória (SSE-KMS)</td><td>Exploração de dados, dashboards pontuais</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">engenharia-etl</strong></td><td>2 TB</td><td>Obrigatória (SSE-KMS)</td><td>Cargas CTAS/INSERT programadas</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">primary (padrão)</strong></td><td>Sem limite configurado</td><td>Opcional</td><td>⚠️ Evite deixar times de negócio usando o padrão sem limites</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como quando os pais dão um <strong>cartão pré-pago com limite diferente para cada filho</strong>: um irmão mais velho pode ter um limite maior para as compras da semana, e o mais novo, um limite menorzinho — mesmo os dois usando cartões ligados à mesma conta da família. Se alguém tentar gastar mais do que o combinado, a compra simplesmente <strong>não passa</strong>, antes mesmo de sair dinheiro da conta.</p>
+    </div>
+
+    <div class="warn-box"><p>⚠️ O limite de bytes de um workgroup é aplicado <strong>antes</strong> de a consulta rodar de verdade (usando as estatísticas do planejamento) — então uma consulta bloqueada por estourar o limite não chega a gerar custo algum.</p></div>
+  </section>
+
+  <!-- ============ FEDERATED QUERY ============ -->
+  <section class="section" id="s-federated">
+    <div class="section-eyebrow">Além do S3</div>
+    <div class="section-title">🔌 Athena Federated Query: SQL Também Fora do Data Lake</div>
+    <p class="section-desc">
+      O Athena nasceu para consultar o S3, mas o <strong>Federated Query</strong> estende isso para fontes que não são arquivos: bancos relacionais (RDS/PostgreSQL, MySQL), NoSQL (DynamoDB), até outro data warehouse (Redshift) — numa única consulta, com <code>JOIN</code> entre fontes diferentes. Cada fonte é acessada por um <strong>Data Source Connector</strong>: uma função <strong>AWS Lambda</strong> que sabe "traduzir" entre o Athena e aquela fonte específica. Clique em cada fonte.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="hub-wrap">
+        <div class="hub-center">🏛️ ATHENA</div>
+        <div class="hub-lines"></div>
+        <div class="hub-spokes" id="hubSpokes"></div>
+      </div>
+      <div class="anatomy-detail" id="hubDetail" style="margin-top:18px;">
+        <div class="ad-title">👆 Clique em uma fonte de dados</div>
+        <div class="ad-text">Veja como o Athena alcança essa fonte através de um conector Lambda.</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">sql — consulta federada</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> c.nome, <span class="fn">SUM</span>(p.total) <span class="kw">AS</span> total_gasto
+<span class="kw">FROM</span> lambda_postgres.vendas.clientes c
+<span class="kw">JOIN</span> data_lake.vendas.pedidos p <span class="kw">ON</span> p.cliente_id <span class="kw">=</span> c.id
+<span class="kw">WHERE</span> p.data_pedido <span class="kw">>=</span> <span class="kw">DATE</span> <span class="st">'2026-01-01'</span>
+<span class="kw">GROUP BY</span> c.nome;
+<span class="cm">-- "clientes" vive num PostgreSQL; "pedidos" vive como Parquet no S3 — uma única consulta</span></div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como usar um <strong>fone de tradução simultânea</strong> numa reunião com gente de vários países. Você (Athena) continua falando só a sua língua (SQL); para cada país diferente (PostgreSQL, DynamoDB, Redshift), existe um <strong>tradutor especializado</strong> (uma função Lambda) que entende aquela língua específica e devolve tudo traduzido para você, na hora — sem que você precise aprender a língua de cada país.</p>
+    </div>
+
+    <div class="warn-box"><p>⚠️ Cada linha lida de uma fonte federada passa por uma <strong>invocação de Lambda</strong> — isso tem seu próprio custo (Lambda) e costuma ser mais lento que ler Parquet direto do S3. Federated Query é ótimo para <strong>juntar</strong> um pedaço pequeno de um sistema operacional com o data lake, não para substituir o data lake como fonte principal de grandes volumes.</p></div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Lado a Lado</div>
+    <div class="section-title">🥊 Athena vs Redshift vs EMR</div>
+    <p class="section-desc">Os três rodam SQL/processamento sobre grandes volumes na AWS, mas resolvem prioridades diferentes — a escolha certa depende do padrão de uso, não de qual é "mais rápido" isoladamente.</p>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Dimensão</th><th style="color:var(--accent);">🏛️ Athena</th><th style="color:var(--accent-blue);">🔴 Redshift</th><th style="color:var(--accent-purple);">🐘 EMR</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Provisionamento</strong></td><td>Nenhum — serverless</td><td>Cluster (ou Serverless) dedicado</td><td>Cluster Hadoop/Spark que você gerencia</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Cobrança</strong></td><td>Por bytes escaneados</td><td>Por hora de cluster (ou capacidade Serverless)</td><td>Por hora das instâncias EC2 do cluster</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Onde ficam os dados</strong></td><td>S3 (data lake), fora do serviço</td><td>Armazenamento otimizado próprio (ou Spectrum no S3)</td><td>HDFS local e/ou S3</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Latência típica</strong></td><td>Segundos a poucos minutos</td><td>Milissegundos a segundos (dado já otimizado)</td><td>Minutos a horas (jobs batch)</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Melhor para</strong></td><td>Consultas ad hoc/esporádicas direto no data lake</td><td>BI/dashboards com carga constante e alta concorrência</td><td>Processamento batch customizado (Spark, Hive, ML)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🏛️ Escolha Athena quando...</div><div class="card-text">Você quer respostas rápidas sobre dados que <strong>já estão</strong> no S3, com uso esporádico ou imprevisível, sem manter infraestrutura ligada.</div></div>
+      <div class="card"><div class="card-title">🔴 Escolha Redshift quando...</div><div class="card-text">Dezenas de dashboards concorrentes precisam de latência baixa e previsível o dia inteiro — o custo de um cluster ligado se paga pela constância do uso.</div></div>
+      <div class="card"><div class="card-title">🐘 Escolha EMR quando...</div><div class="card-text">Você precisa de controle fino sobre o cluster (versões específicas de Spark, jobs de Machine Learning, processamento customizado) além de SQL puro.</div></div>
+    </div>
+
+    <div class="info-box"><p>💡 Eles não são mutuamente exclusivos: é comum usar <strong>Athena</strong> para exploração e ETL leve direto no data lake, <strong>Redshift Spectrum</strong> para juntar esse mesmo S3 com tabelas nativas do Redshift, e <strong>EMR/Glue</strong> para as transformações pesadas que alimentam o data lake que o Athena consulta depois.</p></div>
+  </section>
+
+  <!-- ============ SEGURANÇA ============ -->
+  <section class="section" id="s-seguranca">
+    <div class="section-eyebrow">Quem Pode Ver o Quê</div>
+    <div class="section-title">🔐 Segurança &amp; Governança</div>
+    <p class="section-desc">Como o Athena só "empresta" acesso aos seus dados no S3, a segurança acontece em camadas — combinando o controle de acesso da AWS (IAM) com regras mais finas de quem pode ver quais colunas ou linhas (Lake Formation).</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🔑 IAM</div>
+        <div class="card-text">Controla <strong>quem pode rodar consultas</strong>, em quais workgroups, e se tem permissão de leitura/escrita nos buckets S3 envolvidos (dados de origem + bucket de resultados). É o nível "grosso" de acesso.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏛️ AWS Lake Formation</div>
+        <div class="card-text">Adiciona controle <strong>fino</strong> por cima do Glue Catalog: permissões por tabela, por <strong>coluna</strong> (ex: esconder CPF) e até por <strong>linha</strong> (ex: cada vendedor só vê seus próprios pedidos), aplicadas automaticamente a qualquer consulta do Athena.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔒 Criptografia em repouso</div><div class="card-text">Dados no S3 e resultados de consulta podem ser criptografados com SSE-S3 ou SSE-KMS — configurável, e obrigatório em workgroups mais restritos.</div></div>
+      <div class="card"><div class="card-title">🔐 Criptografia em trânsito</div><div class="card-text">Conexões JDBC/ODBC e chamadas de API usam TLS por padrão entre o cliente e o serviço Athena.</div></div>
+      <div class="card"><div class="card-title">📋 Auditoria (CloudTrail)</div><div class="card-text">Toda chamada de API do Athena (quem rodou o quê, quando) fica registrada no CloudTrail, essencial para compliance.</div></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kb-title">🧒 Explicando para uma criança</div>
+      <p>É como uma escola com <strong>crachás</strong> (IAM) que abrem certas salas e não outras — mas além disso, alguns boletins têm partes <strong>borradas</strong> mesmo para quem tem o crachá certo, tipo o telefone dos pais (Lake Formation escondendo uma coluna), ou um aluno só consegue ver a <strong>própria</strong> nota, nunca a dos colegas (Lake Formation filtrando linhas).</p>
+    </div>
+
+    <div class="warn-box"><p>⚠️ O bucket de <strong>resultados</strong> das consultas (onde o Athena grava cada saída) também guarda dado sensível — se ele não tiver as mesmas políticas de acesso e criptografia da fonte original, vira um "vazamento por atalho" mesmo com o Lake Formation configurado corretamente na tabela de origem.</p></div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casos-uso">
+    <div class="section-eyebrow">Onde o Athena Brilha</div>
+    <div class="section-title">🎯 Casos de Uso</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📜 Análise de logs</div><div class="card-text">Consultar diretamente logs de ALB, CloudFront ou CloudTrail que já caem no S3 — sem pipeline nenhum para "começar a analisar".</div></div>
+      <div class="card"><div class="card-title">🔎 Exploração ad hoc do data lake</div><div class="card-text">Analistas investigando uma pergunta pontual sobre dados que já existem, sem esperar um time de engenharia subir infraestrutura.</div></div>
+      <div class="card"><div class="card-title">📊 Fonte para BI</div><div class="card-text">Amazon QuickSight (ou Tableau/Power BI via JDBC) consultando o Athena como fonte de dashboards direto sobre o data lake.</div></div>
+      <div class="card"><div class="card-title">🔄 ETL leve entre camadas</div><div class="card-text">CTAS/INSERT INTO transformando uma camada "bronze" crua em camadas "prata/ouro" já otimizadas, sem cluster dedicado.</div></div>
+      <div class="card"><div class="card-title">💵 Auditoria de custo (CUR)</div><div class="card-text">Consultar o Cost and Usage Report da AWS direto no S3 para entender de onde vem cada centavo da fatura.</div></div>
+      <div class="card"><div class="card-title">🧪 Exploração para Machine Learning</div><div class="card-text">Cientistas de dados amostrando e explorando grandes datasets antes de decidir o que efetivamente vale a pena treinar.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ PRIMEIROS PASSOS ============ -->
+  <section class="section" id="s-primeiros-passos">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">📦 Primeiros Passos</div>
+    <p class="section-desc">Não existe "instalação" — só um bucket S3, uma tabela registrada no Glue, e você já pode consultar pelo console, CLI ou código.</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Console — editor de SQL do Athena</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- 1. defina um "query result location" nas configurações do workgroup</span>
+<span class="cm">-- 2. escreva e rode:</span>
+<span class="kw">SELECT</span> categoria, <span class="fn">COUNT</span>(*) <span class="kw">AS</span> qtd
+<span class="kw">FROM</span> vendas.pedidos_otimizado
+<span class="kw">WHERE</span> ano <span class="kw">=</span> <span class="st">'2026'</span>
+<span class="kw">GROUP BY</span> categoria
+<span class="kw">ORDER BY</span> qtd <span class="kw">DESC</span>;</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">AWS CLI</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>aws athena start-query-execution \
+  --query-string <span class="st">"SELECT COUNT(*) FROM vendas.pedidos"</span> \
+  --work-group <span class="st">"analistas-adhoc"</span> \
+  --query-execution-context Database<span class="kw">=</span>vendas
+
+<span class="cm"># retorna um QueryExecutionId — use get-query-results depois</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python — boto3</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> boto3
+
+athena = boto3.<span class="fn">client</span>(<span class="st">'athena'</span>)
+resp = athena.<span class="fn">start_query_execution</span>(
+    QueryString=<span class="st">'SELECT * FROM vendas.pedidos LIMIT 10'</span>,
+    QueryExecutionContext={<span class="st">'Database'</span>: <span class="st">'vendas'</span>},
+    WorkGroup=<span class="st">'analistas-adhoc'</span>,
+)
+query_id = resp[<span class="st">'QueryExecutionId'</span>]</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Criando um crawler (infere o schema sozinho)</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>aws glue create-crawler \
+  --name crawler-vendas \
+  --role AWSGlueServiceRole \
+  --database-name vendas \
+  --targets <span class="st">'{"S3Targets":[{"Path":"s3://data-lake/vendas/"}]}'</span>
+
+aws glue start-crawler --name crawler-vendas</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">📦 Use Parquet/ORC comprimido</div><div class="card-text">A mudança de maior impacto em custo e performance. Converta camadas legadas em CSV/JSON via CTAS assim que possível.</div></div>
+      <div class="card"><div class="card-title">🧩 Particione pelas colunas de filtro mais comuns</div><div class="card-text">Data é o clássico. Evite granularidade excessiva (ex: por minuto) em tabelas pequenas — isso cria muitos arquivos pequenos.</div></div>
+      <div class="card"><div class="card-title">🎯 Evite <code>SELECT *</code></div><div class="card-text">Liste só as colunas necessárias — em formato colunar, cada coluna a menos é literalmente menos byte escaneado (e menos custo).</div></div>
+      <div class="card"><div class="card-title">🚦 Configure Workgroups com limite de bytes</div><div class="card-text">Principalmente para times de analistas ad hoc — evita que uma consulta esquecida sem <code>WHERE</code> vire uma surpresa na fatura.</div></div>
+      <div class="card"><div class="card-title">🗺️ Use Partition Projection em tabelas com muitas partições</div><div class="card-text">Evita o overhead de manter (e consultar) centenas de milhares de partições registradas manualmente no catálogo.</div></div>
+      <div class="card"><div class="card-title">📈 Monitore pelo CloudWatch</div><div class="card-text">Acompanhe bytes escaneados e duração por workgroup/usuário para identificar consultas caras antes que virem hábito.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ O <strong>problema dos arquivos pequenos</strong> também afeta o Athena: milhares de arquivos Parquet minúsculos custam mais para abrir (overhead por arquivo) do que poucos arquivos maiores e bem compactados. Rode CTAS/compactação periodicamente em tabelas alimentadas por muitas cargas incrementais pequenas.</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — AWS Athena</span>
+    <span>
+      Fontes: <a href="https://docs.aws.amazon.com/athena/" target="_blank" rel="noopener">Athena Docs</a> ·
+      <a href="https://docs.aws.amazon.com/glue/" target="_blank" rel="noopener">Glue Docs</a> ·
+      <a href="https://trino.io/docs/current/" target="_blank" rel="noopener">Trino Docs</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🤔', label:'O que é'},
+  {id:'s-historia', icon:'📜', label:'História'},
+  {id:'s-arquitetura', icon:'🏗️', label:'Arquitetura'},
+  {id:'s-execucao', icon:'⚙️', label:'Como Funciona'},
+  {id:'s-glue', icon:'🗂️', label:'Glue Catalog'},
+  {id:'s-formatos', icon:'📦', label:'Formatos'},
+  {id:'s-particionamento', icon:'🧩', label:'Particionamento'},
+  {id:'s-compressao', icon:'🗜️', label:'Compressão'},
+  {id:'s-precificacao', icon:'💰', label:'Precificação'},
+  {id:'s-ctas', icon:'🔄', label:'CTAS'},
+  {id:'s-workgroups', icon:'🚦', label:'Workgroups'},
+  {id:'s-federated', icon:'🔌', label:'Federated Query'},
+  {id:'s-comparacao', icon:'🥊', label:'Comparação'},
+  {id:'s-seguranca', icon:'🔐', label:'Segurança'},
+  {id:'s-casos-uso', icon:'🎯', label:'Casos de Uso'},
+  {id:'s-primeiros-passos', icon:'📦', label:'Primeiros Passos'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== HISTORY TIMELINE ===================== */
+const timeline = [
+  {y:'2006', t:'S3 nasce', d:'A Amazon lança o S3 — anos depois, viraria o "chão" onde praticamente todo data lake do mundo é construído.'},
+  {y:'2012', t:'Presto nasce no Facebook', d:'O motor de consulta distribuído que, anos depois, seria embrulhado pela AWS dentro do Athena.'},
+  {y:'2016', t:'Athena é lançado', d:'No re:Invent de novembro de 2016, a AWS anuncia o Athena: SQL serverless direto sobre arquivos no S3, construído sobre o Presto.', hl:true},
+  {y:'2017', t:'Integração nativa com Glue', d:'O AWS Glue Data Catalog passa a ser o metastore padrão, compartilhado também por EMR e Redshift Spectrum.'},
+  {y:'2019', t:'Federated Query (preview)', d:'Conectores baseados em Lambda permitem consultar RDS, DynamoDB e outras fontes na mesma consulta SQL do Athena.', hl:true},
+  {y:'2021', t:'Workgroups com limite de custo', d:'Controle de bytes escaneados por consulta/workgroup, essencial para evitar surpresas na fatura em times grandes.'},
+  {y:'2022', t:'Athena for Apache Spark', d:'Notebooks Spark totalmente serverless dentro do próprio Athena, sem precisar subir um cluster EMR.', hl:true},
+  {y:'Hoje', t:'Athena engine v3', d:'Motor evoluído, fortemente baseado em Trino, com ganhos de performance e suporte maduro a formatos de tabela como Apache Iceberg.'},
+];
+document.getElementById('timelineRow').innerHTML = timeline.map((it,i) => `
+  ${i>0 ? '<span class="tl-arrow">→</span>' : ''}
+  <div class="tl-item ${it.hl?'hl':''}">
+    <span class="tl-year">${it.y}</span>
+    <span class="tl-title">${it.t}</span>
+    <span class="tl-text">${it.d}</span>
+  </div>`).join('');
+
+/* ===================== ARQUITETURA: VOCÊ vs AWS ===================== */
+const archInfo = {
+  'you-sql': {t:'A consulta SQL', d:'Você escreve o SELECT/CTAS/INSERT — é sua responsabilidade escrever consultas eficientes (filtrar por partição, evitar SELECT * desnecessário).'},
+  'you-s3': {t:'Os arquivos no bucket S3', d:'O dado "de verdade" mora no seu bucket, no formato que você escolher (CSV, JSON, Parquet, ORC) — o Athena nunca copia isso para dentro dele.'},
+  'you-glue': {t:'O schema no Glue Data Catalog', d:'Você (ou um Crawler) registra database, tabela, colunas e localização — sem isso, o Athena não sabe nem por onde começar a procurar.'},
+  'you-out': {t:'Um bucket de destino para o resultado', d:'Cada consulta grava sua saída como arquivo(s) num "query result location" no S3, que você configura no workgroup.'},
+  'aws-fleet': {t:'Frota de workers do motor', d:'A AWS aloca, só durante sua consulta, um pedaço do motor Trino/Presto gerenciado internamente — você nunca vê nem escolhe o tamanho dessa frota.'},
+  'aws-scale': {t:'Escala automática por consulta', d:'Uma consulta grande recebe mais capacidade de processamento automaticamente; uma pequena, menos — sem nenhuma configuração manual de "número de nós".'},
+  'aws-teardown': {t:'Desligamento ao final', d:'Assim que a consulta termina, a capacidade alocada é liberada — não existe cluster residual custando dinheiro parado.'},
+  'aws-bill': {t:'Medição de bytes escaneados', d:'A AWS mede exatamente quantos bytes cada consulta leu dos arquivos de origem, e usa isso como base direta da cobrança.'},
+};
+function pickArch(id){
+  document.querySelectorAll('#s-arquitetura .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = archInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-arquitetura [data-id="${id}"]`).classList.add('active');
+  document.getElementById('archDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== EXECUÇÃO DE UMA CONSULTA ===================== */
+const execInfo = {
+  'ex-1': {t:'1. Você envia o SQL', d:'Pelo console, CLI, um driver JDBC/ODBC ou boto3 — todos chamam a mesma API do Athena (start_query_execution) por baixo dos panos.'},
+  'ex-2': {t:'2. Consulta ao Glue Data Catalog', d:'O Athena pergunta ao catálogo: onde ficam os arquivos dessa tabela, qual o schema, e quais partições existem hoje.'},
+  'ex-3': {t:'3. Pruning de partição/coluna', d:'O otimizador usa o WHERE e as colunas do SELECT para decidir quais pastas de partição e quais colunas dos arquivos Parquet realmente precisam ser abertas.'},
+  'ex-4': {t:'4. Leitura paralela e efêmera', d:'Uma frota de workers, provisionada só para essa consulta, lê os bytes necessários direto do S3 em paralelo — sem copiar os dados para outro lugar antes.'},
+  'ex-5': {t:'5. Resultado gravado no S3', d:'A saída final é escrita como arquivo(s) no bucket de resultados configurado no workgroup — é esse arquivo que o console/API te mostra.'},
+  'ex-6': {t:'6. Frota desalocada', d:'Assim que a consulta termina, a capacidade usada é liberada. Você recebe o QueryExecutionId, o status e o link para o resultado.'},
+};
+function pickExec(id){
+  document.querySelectorAll('#s-execucao .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = execInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-execucao [data-id="${id}"]`).classList.add('active');
+  document.getElementById('execDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== FORMATOS: ROW vs COLUNAR (rc-table) ===================== */
+const rcCols = ['id','cliente_id','cidade','data_pedido','total'];
+const rcRows = [
+  ['1001','88','São Paulo','2026-07-28','249.90'],
+  ['1002','12','Recife','2026-07-29','119.00'],
+  ['1003','45','Curitiba','2026-07-29','899.50'],
+  ['1004','88','São Paulo','2026-07-30','59.90'],
+];
+document.getElementById('rcHeader').innerHTML = `<div class="rc-table">${rcCols.map(c => `<div class="rc-cell head">${c}</div>`).join('')}</div>`;
+document.getElementById('rcBody').innerHTML = rcRows.map((row,ri) => `
+  <div class="rc-table" data-row="${ri}">
+    ${row.map((v,ci) => `<div class="rc-cell" data-row="${ri}" data-col="${ci}">${v}</div>`).join('')}
+  </div>`).join('');
+
+function setFormatDemo(mode){
+  document.getElementById('btnFmtRow').classList.toggle('active', mode==='row');
+  document.getElementById('btnFmtCol').classList.toggle('active', mode==='col');
+  const targetColIdx = rcCols.indexOf('total');
+  document.querySelectorAll('.rc-cell:not(.head)').forEach(c => {
+    c.classList.remove('scanned','skipped','target');
+    const col = +c.dataset.col;
+    if(mode==='row'){
+      c.classList.add(col===targetColIdx ? 'target' : 'scanned');
+    } else {
+      if(col===targetColIdx) c.classList.add('target');
+      else c.classList.add('skipped');
+    }
+  });
+  const msg = document.getElementById('fmtMsg');
+  if(mode==='row'){
+    msg.innerHTML = `<div class="highlight-title">🧾 CSV/JSON: 5 de 5 colunas abertas</div><p>Mesmo pedindo só a coluna <code>total</code>, o motor precisa ler a linha inteira — todas as colunas em destaque foram escaneadas.</p>`;
+  } else {
+    msg.innerHTML = `<div class="highlight-title">📦 Parquet/ORC: 1 de 5 colunas abertas</div><p>Só o bloco da coluna <code>total</code> (em verde) precisou ser lido — as outras 4 colunas nem chegaram a ser abertas.</p>`;
+  }
+}
+setFormatDemo('row');
+
+/* ===================== PARTICIONAMENTO ===================== */
+function updatePartitionDemo(){
+  const total = +document.getElementById('totalPartRange').value;
+  let hit = +document.getElementById('hitPartRange').value;
+  const hitRangeEl = document.getElementById('hitPartRange');
+  hitRangeEl.max = total;
+  if(hit > total){ hit = total; hitRangeEl.value = total; }
+  document.getElementById('totalPartVal').textContent = total;
+  document.getElementById('hitPartVal').textContent = hit;
+  let cells = '';
+  for(let i=0;i<total;i++){
+    cells += `<div class="cl-cell ${i<hit ? 'hit' : 'skipped'}">D${i+1}</div>`;
+  }
+  document.getElementById('partGrid').innerHTML = cells;
+  const pct = (hit/total*100);
+  document.getElementById('partStats').innerHTML = `
+    <div class="stat-card c-green"><div class="stat-card-label">Partições lidas</div><div class="stat-card-value">${hit} / ${total}</div></div>
+    <div class="stat-card c-blue"><div class="stat-card-label">% do dado escaneado</div><div class="stat-card-value">${pct.toFixed(1)}%</div></div>
+    <div class="stat-card c-amber"><div class="stat-card-label">Redução por pruning</div><div class="stat-card-value">${(100-pct).toFixed(1)}%</div></div>
+  `;
+}
+updatePartitionDemo();
+
+/* ===================== COMPRESSÃO (canvas de barras) ===================== */
+function drawCompressCanvas(){
+  const cv = document.getElementById('compressCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 180;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const rows = [
+    ['CSV sem compressão', 1000, '#f86b63'],
+    ['CSV + GZIP', 250, '#f5a623'],
+    ['Parquet + Snappy', 180, '#36a2ef'],
+    ['Parquet + ZSTD', 130, '#7dded8'],
+  ];
+  const padL = 190, padR = 60, barH = 28, gap = 16;
+  const maxVal = 1000*1.08;
+  rows.forEach(([label,val,color],i) => {
+    const y = 10 + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(label, 0, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW*(val/maxVal));
+    ctx.fillStyle = color; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#98a2b3'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText('~'+val+' MB', padL+barW+8, y+barH*0.65);
+  });
+}
+drawCompressCanvas();
+window.addEventListener('resize', () => { drawCompressCanvas(); });
+
+/* ===================== CALCULADORA DE CUSTO ===================== */
+let costFormat = 'csv';
+function setCostFormat(fmt){
+  costFormat = fmt;
+  document.getElementById('btnCostCsv').classList.toggle('active', fmt==='csv');
+  document.getElementById('btnCostParquet').classList.toggle('active', fmt==='parquet');
+  updateCostCalc();
+}
+function updateCostCalc(){
+  const sizeGB = +document.getElementById('costSizeRange').value;
+  const partPct = +document.getElementById('costPartRange').value;
+  document.getElementById('costSizeVal').textContent = sizeGB + ' GB';
+  document.getElementById('costPartVal').textContent = partPct + '%';
+  const formatFactor = costFormat==='csv' ? 1.0 : 0.13;
+  const scannedGB = sizeGB * (partPct/100) * formatFactor;
+  const scannedTB = scannedGB/1024;
+  const cost = Math.max(scannedTB*5, 5*(0.01/1024));
+  const worstCaseGB = sizeGB;
+  const worstCost = (worstCaseGB/1024)*5;
+  drawCostCanvas(worstCost, cost);
+  const economyPct = worstCost>0 ? (100-(cost/worstCost*100)) : 0;
+  document.getElementById('costStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Dados escaneados</div><div class="stat-card-value">${scannedGB<1000 ? scannedGB.toFixed(1)+' GB' : (scannedGB/1024).toFixed(2)+' TB'}</div></div>
+    <div class="stat-card c-amber"><div class="stat-card-label">Custo estimado da consulta</div><div class="stat-card-value">US$ ${cost.toFixed(3)}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Economia vs "ler tudo em CSV"</div><div class="stat-card-value">${economyPct.toFixed(0)}%</div></div>
+  `;
+}
+function drawCostCanvas(worst, actual){
+  const cv = document.getElementById('costCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 110;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 230, padR = 20, barH = 26, gap = 20;
+  const maxVal = Math.max(worst, actual) * 1.1 || 1;
+  const rows = [
+    ['Pior caso: CSV, sem partição', worst, '#f86b63'],
+    ['Sua configuração atual', actual, actual<worst ? '#7dded8' : '#f86b63'],
+  ];
+  rows.forEach(([label,val,color],i) => {
+    const y = 10 + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(label, 0, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW*(val/maxVal));
+    ctx.fillStyle = color; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText('US$ '+val.toFixed(3), padL+8, y+barH*0.65);
+  });
+}
+updateCostCalc();
+window.addEventListener('resize', () => { updateCostCalc(); });
+
+/* ===================== WORKGROUPS: LIMITE DE BYTES ===================== */
+function updateWorkgroupDemo(){
+  const limit = +document.getElementById('wgLimitRange').value;
+  const query = +document.getElementById('wgQueryRange').value;
+  document.getElementById('wgLimitVal').textContent = limit + ' GB';
+  document.getElementById('wgQueryVal').textContent = query + ' GB';
+  const maxScale = Math.max(limit, query) * 1.15;
+  const fillPct = Math.min(100, (query/maxScale)*100);
+  const limitPct = (limit/maxScale)*100;
+  const fill = document.getElementById('wgFill');
+  const blocked = query > limit;
+  fill.style.width = fillPct + '%';
+  fill.style.background = blocked ? '#f86b63' : '#7dded8';
+  fill.textContent = query + ' GB';
+  document.getElementById('wgLimitMark').style.left = limitPct + '%';
+  const msg = document.getElementById('wgMsg');
+  if(blocked){
+    msg.className = 'warn-box';
+    msg.innerHTML = `<div class="highlight-title">🚫 Consulta bloqueada antes de rodar</div><p>A consulta tentaria escanear ${query} GB, acima do limite de ${limit} GB do workgroup. O Athena recusa a execução — <strong>nenhum custo é gerado</strong>.</p>`;
+  } else {
+    msg.className = 'ok-box';
+    msg.innerHTML = `<div class="highlight-title">✅ Dentro do limite do workgroup</div><p>${query} GB está dentro do limite de ${limit} GB configurado — a consulta roda normalmente.</p>`;
+  }
+}
+updateWorkgroupDemo();
+
+/* ===================== FEDERATED QUERY HUB ===================== */
+const hubSources = [
+  {id:'postgres', icon:'🐘', label:'RDS / PostgreSQL'},
+  {id:'dynamo', icon:'⚡', label:'DynamoDB'},
+  {id:'redshift', icon:'🔴', label:'Redshift'},
+  {id:'cloudwatch', icon:'📈', label:'CloudWatch Logs'},
+  {id:'hbase', icon:'🐝', label:'HBase (EMR)'},
+  {id:'custom', icon:'🧩', label:'Conector customizado'},
+];
+document.getElementById('hubSpokes').innerHTML = hubSources.map(s => `
+  <div class="hub-node" data-id="${s.id}" onclick="pickFederated('${s.id}')">${s.icon}<br>${s.label}</div>`).join('');
+const federatedInfo = {
+  'postgres': {t:'RDS / PostgreSQL', d:'Um conector Lambda oficial da AWS traduz SQL do Athena em consultas ao PostgreSQL — endereçado como um catálogo, ex: lambda_postgres.schema.tabela.'},
+  'dynamo': {t:'Amazon DynamoDB', d:'Permite JOIN entre uma tabela NoSQL do DynamoDB e o data lake no S3, útil para cruzar dados operacionais com dados analíticos.'},
+  'redshift': {t:'Amazon Redshift', d:'Consulta o data warehouse direto do Athena, útil para juntar dados já modelados no Redshift com dados crus recentes ainda só no S3.'},
+  'cloudwatch': {t:'CloudWatch Logs', d:'Investiga logs de aplicação quase em tempo real via SQL, sem precisar exportar para o S3 antes.'},
+  'hbase': {t:'HBase no EMR', d:'Alcança tabelas HBase de um cluster EMR existente, útil em arquiteturas híbridas que ainda mantêm um cluster Hadoop ativo.'},
+  'custom': {t:'Conector customizado', d:'A interface de conector é pública (Athena Query Federation SDK) — qualquer equipe pode publicar seu próprio conector Lambda para uma fonte proprietária.'},
+};
+function pickFederated(id){
+  document.querySelectorAll('.hub-node').forEach(el => el.classList.remove('active'));
+  const info = federatedInfo[id];
+  if(!info) return;
+  document.querySelector(`.hub-node[data-id="${id}"]`).classList.add('active');
+  document.getElementById('hubDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O Athena exige que você provisione e ligue um cluster antes de rodar qualquer consulta.', a:false, e:'Falso. Athena é serverless — nenhum cluster é provisionado por você; a AWS aloca capacidade automaticamente só durante a execução de cada consulta.'},
+  {q:'O Athena cobra por hora de servidor ligado, assim como o Redshift.', a:false, e:'Falso. A cobrança padrão do Athena é por bytes escaneados por consulta (US$ 5/TB), não por tempo de infraestrutura ligada.'},
+  {q:'O motor de consulta por trás do Athena é baseado na mesma família do Presto/Trino.', a:true, e:'Verdadeiro. O Athena foi lançado em 2016 sobre o Presto, e hoje roda o "Athena engine v3", fortemente baseado em Trino.'},
+  {q:'O AWS Glue Data Catalog guarda os dados de verdade das tabelas consultadas pelo Athena.', a:false, e:'Falso. O Glue Data Catalog só guarda metadados (schema, localização no S3, partições) — os dados em si continuam nos arquivos do S3.'},
+  {q:'Consultar uma coluna específica em uma tabela Parquet costuma escanear menos bytes do que a mesma consulta em CSV.', a:true, e:'Verdadeiro. Parquet é colunar — só os blocos das colunas usadas na consulta precisam ser abertos; CSV é por linha e obriga a leitura de todas as colunas.'},
+  {q:'Particionar uma tabela permite ao Athena pular pastas inteiras de arquivos quando a consulta filtra pela coluna de partição.', a:true, e:'Verdadeiro. Esse comportamento é o "partition pruning" — o motor nem lista os arquivos das partições que não interessam à consulta.'},
+  {q:'Particionar uma tabela por uma granularidade extremamente fina (ex: por minuto) é sempre a melhor prática, quanto mais partições, melhor.', a:false, e:'Falso. Partições demais geram overhead no catálogo e muitos arquivos pequenos, prejudicando performance — para volumes muito altos de partições, prefira Partition Projection.'},
+  {q:'Um comando CTAS (CREATE TABLE AS SELECT) no Athena pode converter uma tabela CSV em uma nova tabela Parquet particionada, direto em SQL.', a:true, e:'Verdadeiro. CTAS grava o resultado de um SELECT como uma tabela nova, no formato/particionamento/compressão que você especificar no WITH.'},
+  {q:'Workgroups no Athena servem apenas para organizar o histórico de consultas visualmente, sem nenhum efeito sobre custo.', a:false, e:'Falso. Workgroups podem impor limites de bytes escaneados por consulta, forçar criptografia e isolar métricas de custo por time.'},
+  {q:'O Athena Federated Query permite fazer JOIN entre uma tabela do data lake no S3 e uma tabela viva num banco relacional, na mesma consulta SQL.', a:true, e:'Verdadeiro. Usando um Data Source Connector (uma função Lambda), o Athena consegue federar fontes como RDS, DynamoDB e Redshift numa única consulta.'},
+  {q:'Redshift é sempre a escolha certa em vez do Athena, porque é mais rápido em qualquer cenário.', a:false, e:'Falso. Depende do padrão de uso: Athena costuma ser mais barato/simples para consultas esporádicas direto no data lake; Redshift compensa quando há carga constante e alta concorrência exigindo latência baixa o dia inteiro.'},
+  {q:'O AWS Lake Formation permite restringir o acesso a colunas ou linhas específicas de uma tabela consultada pelo Athena.', a:true, e:'Verdadeiro. Lake Formation adiciona controle fino (por coluna e por linha) sobre o mesmo Glue Data Catalog usado pelo Athena.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

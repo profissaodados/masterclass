@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Gráficos Sankey. O que são, anatomia, a regra da conservação de fluxo, simulador de orçamento, o Sankey original de 1898, funil de site, erros comuns e código na prática.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Gráficos Sankey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.hero-file-icon .sankey-box{width:100%;}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- SANKEY BOX (container do SVG gerado) ---- */
+.sankey-box{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:16px;}
+.sankey-box svg{width:100%;display:block;overflow:visible;}
+.sk-label{fill:var(--text-primary);font-size:11.5px;font-family:'Inter',sans-serif;font-weight:600;}
+.sk-value{fill:var(--text-disabled);font-size:9.5px;font-family:'Roboto Mono',monospace;}
+.sankey-link{transition:fill-opacity .15s;cursor:pointer;}
+.sankey-link:hover{fill-opacity:.82;}
+.sankey-node-rect{stroke:rgba(0,0,0,.3);stroke-width:1;}
+.compare-pair-title{font-size:11.5px;font-weight:800;text-align:center;margin-bottom:8px;letter-spacing:.3px;}
+
+/* ---- LEGEND ---- */
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--text-secondary);}
+.legend-dot{width:11px;height:11px;border-radius:3px;flex-shrink:0;}
+
+/* ---- ANATOMIA (diagrama estático explicativo) ---- */
+.anatomy-diagram{display:flex;align-items:center;gap:0;margin-top:10px;position:relative;}
+.anatomy-node{background:var(--bg-panel);border:2px solid var(--accent);border-radius:8px;padding:16px 20px;font-size:13px;font-weight:700;text-align:center;position:relative;z-index:2;flex-shrink:0;}
+.anatomy-node .an-sub{font-size:10px;color:var(--text-secondary);font-weight:500;margin-top:4px;}
+.anatomy-ribbon-wrap{flex:1;height:110px;position:relative;min-width:160px;}
+.anatomy-ribbon-wrap svg{width:100%;height:100%;overflow:visible;}
+.anatomy-badge{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--bg-main);font-weight:800;font-size:11px;font-family:'Roboto Mono',monospace;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px var(--bg-main);z-index:3;}
+.callout-list{display:flex;flex-direction:column;gap:9px;margin-top:14px;}
+.callout-item{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--text-secondary);line-height:1.55;}
+.callout-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--bg-main);font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Roboto Mono',monospace;}
+.callout-item strong{color:var(--text-primary);}
+
+/* ---- INTERACTIVE PANEL (compartilhado) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- PASSO A PASSO ---- */
+.step-panel{display:none;}
+.step-panel.active{display:block;}
+.script-step{display:flex;align-items:center;gap:10px;margin:22px 0 6px;}
+.script-step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--bg-main);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Roboto Mono',monospace;}
+.script-step-label{font-size:13px;font-weight:700;color:var(--text-primary);}
+.script-step-sub{font-size:12px;color:var(--text-secondary);margin:2px 0 8px 36px;line-height:1.6;}
+.plain-box-row{display:flex;gap:12px;flex-wrap:wrap;}
+.plain-box{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:12px 16px;font-size:12.5px;font-weight:700;text-align:center;min-width:110px;}
+.plain-bar-row{display:flex;align-items:flex-end;gap:16px;height:140px;padding-top:10px;}
+.plain-bar-col{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;height:100%;justify-content:flex-end;}
+.plain-bar{width:100%;border-radius:5px 5px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:4px;font-size:10px;font-family:'Roboto Mono',monospace;font-weight:700;color:var(--bg-main);}
+.plain-bar-label{font-size:11px;color:var(--text-secondary);text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- DECISION CARDS ---- */
+.decision-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.decision-q{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.decision-arrow{font-size:11px;color:var(--text-disabled);text-align:center;}
+.decision-a{font-size:14px;font-weight:800;text-align:center;padding:8px;border-radius:6px;border:1px solid;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.stat-cards{grid-template-columns:1fr;}
+  .anatomy-diagram{flex-direction:column;}
+  .anatomy-ribbon-wrap{width:100%;height:80px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Gráficos Sankey</h1><span>Como visualizar fluxos sem perder nem sobrar nada</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">1898</div><div class="hstat-label">1º diagrama Sankey</div></div>
+      <div class="hstat"><div class="hstat-num">2</div><div class="hstat-label">Peças: nó + link</div></div>
+      <div class="hstat"><div class="hstat-num">100%</div><div class="hstat-label">Regra: entra = sai</div></div>
+      <div class="hstat"><div class="hstat-num">~40min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito ao código</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Um gráfico é feito de <em>canos</em>, não de barras</h2>
+      <p><strong>Gráfico Sankey</strong> é um diagrama de fluxo: mostra como uma quantidade (dinheiro, energia, pessoas, água, cliques) se <em>divide, se move e se transforma</em> de uma etapa para outra. Em vez de barras separadas, ele desenha <strong>faixas largas</strong> conectando "de onde vem" com "para onde vai" — e a <em>espessura</em> de cada faixa é sempre proporcional à quantidade que ela carrega. Foi inventado em <strong>1898</strong> pelo engenheiro irlandês <strong>Matthew Henry Sankey</strong> para mostrar, num só desenho, onde a energia de uma máquina a vapor era aproveitada e onde ela era desperdiçada. Hoje é usado para orçamento, energia, tráfego de site, migração de pessoas e muito mais — sempre que a pergunta for "de onde veio e para onde foi essa quantidade?".</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">🌊 Fluxo, não categoria isolada</span>
+        <span class="badge badge-green">⚖️ Conservação: entra = sai</span>
+        <span class="badge badge-blue">🧩 Nós + Links</span>
+        <span class="badge badge-purple">🎨 Cor com significado</span>
+        <span class="badge badge-red">🚫 Cheio de erros comuns</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="sankey-box" id="sk-hero"></div>
+      <div class="file-chip-caption">Um cano de água se divide em dois baldes — a largura de cada faixa é exatamente proporcional à quantidade de água</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🌊 O que é um gráfico Sankey?</div>
+    <p class="section-desc">
+      Imagine a torneira da pia enchendo uma pia que se divide em três potinhos menores. Quanto mais <strong>grossa</strong> a parte do cano, mais água passa por ali — e quanto mais fina, menos água. Um gráfico Sankey é exatamente isso, desenhado: <strong>retângulos</strong> (chamados de <em>nós</em>) representam as "estações" por onde a quantidade passa, e <strong>faixas curvas</strong> (chamadas de <em>links</em> ou <em>fluxos</em>) conectam um nó a outro, com a espessura contando a história de quanto passou ali.
+    </p>
+    <div class="sankey-box" id="sk-oque"></div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>De</th><th>Para</th><th>Valor</th></tr></thead>
+        <tbody>
+          <tr><td>🚰 Torneira</td><td>🥤 Potinho 1</td><td>50 L</td></tr>
+          <tr><td>🚰 Torneira</td><td>🥤 Potinho 2</td><td>30 L</td></tr>
+          <tr><td>🚰 Torneira</td><td>🥤 Potinho 3</td><td>20 L</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="kid-box">
+      <div class="kid-emoji">🧃</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Pensa numa jarra de suco que você divide entre os amigos. Se um copo é bem cheio e outro é só um golinho, dá pra ver isso de longe só pelo <em>tamanho</em> do copo — sem precisar ler nenhum número. O Sankey faz isso com faixas: você "sente" visualmente quem ganhou mais, sem nem olhar as legendas.</p>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 <strong>De onde vem o nome?</strong> Em 1898, o capitão <strong>Matthew Henry Phineas Riall Sankey</strong> desenhou um diagrama mostrando a energia de uma máquina a vapor — quanto virava trabalho útil e quanto se perdia em calor e atrito. Décadas depois, esse estilo de diagrama de fluxo passou a levar o nome dele.</p></div>
+  </section>
+
+  <!-- ============ ANATOMIA ============ -->
+  <section class="section" id="s-anatomia">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧩 Anatomia de um Sankey: só 4 ingredientes</div>
+    <p class="section-desc">Por trás de qualquer Sankey — por mais bonito ou complicado que pareça — existem sempre os mesmos quatro ingredientes. Aprenda a enxergar essas quatro peças e você consegue ler <em>qualquer</em> Sankey do mundo.</p>
+    <div class="anatomy-diagram">
+      <div class="anatomy-node">📦 Nó A<div class="an-sub">categoria de origem</div></div>
+      <div class="anatomy-ribbon-wrap">
+        <svg viewBox="0 0 200 110" preserveAspectRatio="none">
+          <path d="M0,15 C100,15 100,25 200,25 L200,85 C100,85 100,95 0,95 Z" fill="#06b6d4" fill-opacity="0.5"></path>
+        </svg>
+        <div class="anatomy-badge" style="top:6px;left:6px;">①</div>
+        <div class="anatomy-badge" style="top:44px;left:44%;">②</div>
+        <div class="anatomy-badge" style="top:10px;left:70%;">③</div>
+      </div>
+      <div class="anatomy-node">📦 Nó B<div class="an-sub">categoria de destino</div></div>
+      <div class="anatomy-badge" style="position:static;margin-left:-14px;">④</div>
+    </div>
+    <div class="callout-list">
+      <div class="callout-item"><span class="callout-num">①</span><span><strong>Nó (node):</strong> um retângulo que representa uma categoria, etapa ou "estação" — pode ser "Renda", "Visitantes", "Combustível", qualquer coisa que a quantidade atravessa.</span></div>
+      <div class="callout-item"><span class="callout-num">②</span><span><strong>Link (fluxo/faixa):</strong> a faixa curva que liga um nó a outro, mostrando que uma quantidade "flui" de um para o outro.</span></div>
+      <div class="callout-item"><span class="callout-num">③</span><span><strong>Espessura ∝ valor:</strong> a altura da faixa em qualquer ponto é diretamente proporcional ao valor que ela representa — dobrar o valor dobra a espessura.</span></div>
+      <div class="callout-item"><span class="callout-num">④</span><span><strong>Cor:</strong> normalmente herdada do nó de origem (ou com significado próprio, como "verde = bom, vermelho = ruim") — ajuda o olho a seguir um fluxo específico em meio a vários.</span></div>
+    </div>
+  </section>
+
+  <!-- ============ CONSERVAÇÃO ============ -->
+  <section class="section" id="s-conservacao">
+    <div class="section-eyebrow">A Regra de Ouro</div>
+    <div class="section-title">⚖️ Conservação de fluxo: tudo que entra tem que sair</div>
+    <p class="section-desc">
+      Esta é <strong>a</strong> regra que separa um Sankey correto de um Sankey mentiroso: em qualquer nó do <em>meio</em> do diagrama (que não seja um ponto de partida nem um ponto final), <strong>a soma de tudo que entra deve ser igual à soma de tudo que sai</strong>. Se isso não bater, o diagrama está literalmente inventando ou escondendo dados — mesmo que pareça "só um detalhe visual".
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧺</div>
+      <div><div class="highlight-title">Analogia</div><p>É como uma cesta de roupa suja: se colocarem 10 peças na cesta, quando você for lavar, tem que sair 10 peças da máquina — nem mais, nem menos. Se só saírem 8, alguém tem que responder: "cadê as outras 2?". Num Sankey, essa pergunta não pode ficar sem resposta.</p></div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="compare-pair-title" style="color:var(--accent-green);">✅ Certo — a soma bate</div>
+        <div class="sankey-box" id="sk-conserva-certo"></div>
+        <div style="overflow-x:auto;margin-top:8px;">
+          <table class="data-table">
+            <thead><tr><th>De</th><th>Para</th><th>Valor</th></tr></thead>
+            <tbody>
+              <tr><td>💰 Salário</td><td>🏦 Conta Corrente</td><td>R$ 100</td></tr>
+              <tr><td>🏦 Conta Corrente</td><td>🏠 Aluguel</td><td>R$ 40</td></tr>
+              <tr><td>🏦 Conta Corrente</td><td>🍽️ Comida</td><td>R$ 35</td></tr>
+              <tr class="row-scan"><td>🏦 Conta Corrente</td><td>💤 Saldo</td><td>R$ 25</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="card-text" style="margin-top:8px;">O Salário (100) vira Conta Corrente (100), que se divide em Aluguel (40) + Comida (35) + <strong>Saldo/Não gasto (25)</strong> = 100. Todo real foi contabilizado, inclusive o que <em>sobrou</em>.</p>
+      </div>
+      <div>
+        <div class="compare-pair-title" style="color:var(--accent-red);">❌ Errado — a soma não bate</div>
+        <div class="sankey-box" id="sk-conserva-errado"></div>
+        <div style="overflow-x:auto;margin-top:8px;">
+          <table class="data-table">
+            <thead><tr><th>De</th><th>Para</th><th>Valor</th></tr></thead>
+            <tbody>
+              <tr><td>💰 Salário</td><td>🏦 Conta Corrente</td><td>R$ 100</td></tr>
+              <tr><td>🏦 Conta Corrente</td><td>🏠 Aluguel</td><td>R$ 40</td></tr>
+              <tr><td>🏦 Conta Corrente</td><td>🍽️ Comida</td><td>R$ 40</td></tr>
+              <tr><td colspan="2" style="color:var(--accent-red);">Total explicado: só R$ 80 de R$ 100</td><td style="color:var(--accent-red);">❓ R$ 20</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="card-text" style="margin-top:8px;">A Conta Corrente recebe 100, mas as categorias somam só Aluguel (40) + Comida (40) = 80. Repare no "buraco" na base do nó do meio: <strong style="color:var(--accent-red);">R$ 20 sumiram</strong> e ninguém sabe para onde foram.</p>
+      </div>
+    </div>
+    <div class="warn-box"><p>⚠️ Esse é o erro mais comum ao montar um Sankey na prática: esquecer de incluir <strong>todos</strong> os destinos possíveis — inclusive quando o destino é "não aconteceu nada com essa parte" (saldo, estoque parado, visitante que saiu do site). A correção quase sempre é simples: <em>adicionar o nó que faltava</em>.</p></div>
+  </section>
+
+  <!-- ============ PASSO A PASSO ============ -->
+  <section class="section" id="s-passoapasso">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🛠️ Do zero ao Sankey: passo a passo</div>
+    <p class="section-desc">Todo Sankey nasce de uma tabela simples com três colunas: <strong>de onde</strong>, <strong>para onde</strong> e <strong>quanto</strong>. Clique nos passos abaixo, na ordem, e veja o diagrama nascer peça por peça a partir dessa tabela — usando as vendas de uma lojinha como exemplo.</p>
+    <div class="btn-toggle-row" id="stepBtns"></div>
+    <div class="step-panel active" data-step="1">
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>De</th><th>Para</th><th>Valor (R$)</th></tr></thead>
+          <tbody>
+            <tr><td>Loja</td><td>👟 Calçados</td><td>500</td></tr>
+            <tr><td>Loja</td><td>👕 Roupas</td><td>350</td></tr>
+            <tr><td>Loja</td><td>🎒 Acessórios</td><td>150</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="card-text" style="margin-top:10px;">Essa é a matéria-prima de <em>qualquer</em> Sankey: uma lista de "arestas" (de → para → valor). Repare que 500 + 350 + 150 = 1000 — a soma das saídas já bate com o total vendido pela loja.</p>
+    </div>
+    <div class="step-panel" data-step="2">
+      <p class="card-text" style="margin-bottom:10px;">Primeiro, transforme cada nome único (na coluna "De" e na coluna "Para") em uma caixinha — ainda sem se preocupar com tamanho.</p>
+      <div class="plain-box-row">
+        <div class="plain-box">🏪 Loja</div>
+        <div class="plain-box">👟 Calçados</div>
+        <div class="plain-box">👕 Roupas</div>
+        <div class="plain-box">🎒 Acessórios</div>
+      </div>
+    </div>
+    <div class="step-panel" data-step="3">
+      <p class="card-text" style="margin-bottom:10px;">Agora o tamanho de cada caixinha passa a valer alguma coisa: quanto maior o valor associado, mais alta (ou mais larga) fica a caixa.</p>
+      <div class="plain-bar-row">
+        <div class="plain-bar-col"><div class="plain-bar" style="height:100%;background:var(--accent);">1000</div><div class="plain-bar-label">🏪 Loja</div></div>
+        <div class="plain-bar-col"><div class="plain-bar" style="height:50%;background:var(--accent-blue);">500</div><div class="plain-bar-label">👟 Calçados</div></div>
+        <div class="plain-bar-col"><div class="plain-bar" style="height:35%;background:var(--accent-purple);">350</div><div class="plain-bar-label">👕 Roupas</div></div>
+        <div class="plain-bar-col"><div class="plain-bar" style="height:15%;background:var(--accent-yellow);">150</div><div class="plain-bar-label">🎒 Acessórios</div></div>
+      </div>
+    </div>
+    <div class="step-panel" data-step="4">
+      <p class="card-text" style="margin-bottom:10px;">Por fim, ligue cada caixinha à sua origem com uma faixa cuja espessura repete o mesmo valor. Pronto — nasceu o Sankey.</p>
+      <div class="sankey-box" id="sk-passo4"></div>
+    </div>
+  </section>
+
+  <!-- ============ SIMULADOR ============ -->
+  <section class="section" id="s-simulador">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">🎮 Simulador: o orçamento doméstico da Ana</div>
+    <p class="section-desc">Mexa nos controles abaixo e veja o Sankey do orçamento de Ana mudar <strong>ao vivo</strong>. Repare que a "Renda" (o nó de origem) nunca precisa ser digitada — ela é sempre a <em>soma automática</em> das categorias, exatamente como manda a regra da conservação de fluxo.</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Quanto Ana gasta em cada categoria por mês (R$)</div>
+      <div class="ctrl-row" id="budgetCtrls"></div>
+      <div class="sankey-box" id="sk-budget"></div>
+      <div style="overflow-x:auto;margin-top:14px;">
+        <table class="data-table">
+          <thead><tr><th>De</th><th>Para</th><th>Valor</th></tr></thead>
+          <tbody id="budgetTableBody"></tbody>
+        </table>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Renda total</div><div class="stat-card-value" id="budgetTotal">—</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Vai para Poupança</div><div class="stat-card-value" id="budgetSavePct">—</div></div>
+        <div class="stat-card c-red"><div class="stat-card-label">Maior categoria</div><div class="stat-card-value" id="budgetMax">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ENERGIA ============ -->
+  <section class="section" id="s-energia">
+    <div class="section-eyebrow">O Original de 1898</div>
+    <div class="section-title">⚡ O Sankey original: energia (e desperdício) de uma máquina a vapor</div>
+    <p class="section-desc">O primeiro uso famoso deste tipo de diagrama foi para mostrar algo desconfortável: de toda a energia de um combustível, só uma fração vira <strong>trabalho útil</strong> — o resto se perde em calor e atrito. É por isso que Sankey é tão bom para mostrar <em>desperdício</em>, não só sucesso: ele dá o mesmo peso visual para onde as coisas <strong>deram certo</strong> e para onde elas <strong>vazaram</strong>.</p>
+    <div class="sankey-box" id="sk-energia"></div>
+    <div id="legendEnergia"></div>
+    <div style="overflow-x:auto;margin-top:10px;">
+      <table class="data-table">
+        <thead><tr><th>De</th><th>Para</th><th>Valor</th></tr></thead>
+        <tbody>
+          <tr><td>⛽ Combustível</td><td>⚙️ Energia útil</td><td>25%</td></tr>
+          <tr><td>⛽ Combustível</td><td>🔥 Perda de calor</td><td>50%</td></tr>
+          <tr><td>⛽ Combustível</td><td>🌀 Perda de atrito</td><td>25%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="warn-box"><p>⚠️ Valores simplificados para fins didáticos, inspirados no espírito do diagrama original de 1898. O ponto pedagógico continua válido até hoje: em relatórios de energia, custo ou processo, o Sankey brilha exatamente por deixar as <strong>perdas</strong> tão visíveis quanto os <strong>ganhos</strong>.</p></div>
+  </section>
+
+  <!-- ============ FUNIL DE SITE ============ -->
+  <section class="section" id="s-funil">
+    <div class="section-eyebrow">Multi-etapas</div>
+    <div class="section-title">🌐 Funil de um site, em 3 etapas</div>
+    <p class="section-desc">Sankey também é ótimo para funis de conversão com <strong>várias etapas</strong> — cada pessoa que "sai" em uma etapa também precisa virar um nó, senão a conservação de fluxo quebra. Veja como 1.000 visitantes se distribuem até virarem clientes fiéis:</p>
+    <div class="sankey-box" id="sk-funil"></div>
+    <div id="legendFunil"></div>
+    <div style="overflow-x:auto;margin-top:10px;">
+      <table class="data-table">
+        <thead><tr><th>De</th><th>Para</th><th>Valor</th></tr></thead>
+        <tbody>
+          <tr><td>👀 Visitantes</td><td>📝 Cadastrou</td><td>400</td></tr>
+          <tr><td>👀 Visitantes</td><td>🚪 Saiu (sem cadastrar)</td><td>600</td></tr>
+          <tr><td>📝 Cadastrou</td><td>🛒 Comprou</td><td>150</td></tr>
+          <tr><td>📝 Cadastrou</td><td>🚪 Saiu (sem comprar)</td><td>250</td></tr>
+          <tr><td>🛒 Comprou</td><td>🏆 Recomprou</td><td>60</td></tr>
+          <tr><td>🛒 Comprou</td><td>🚪 Não voltou</td><td>90</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid-3" style="margin-top:6px;">
+      <div class="card"><div class="card-title">1️⃣ Visita → Cadastro</div><div class="card-text">De 1.000 visitantes, <strong>400 se cadastram</strong> e <strong>600 saem sem cadastrar</strong>. As duas pontas juntas sempre voltam a somar 1.000.</div></div>
+      <div class="card"><div class="card-title">2️⃣ Cadastro → Compra</div><div class="card-text">Dos 400 cadastrados, <strong>150 compram</strong> e <strong>250 saem sem comprar</strong>. O nó "Cadastrou" também é 100% contabilizado.</div></div>
+      <div class="card"><div class="card-title">3️⃣ Compra → Recompra</div><div class="card-text">Dos 150 que compraram, <strong>60 voltam a comprar</strong> e <strong>90 não voltam</strong> — a etapa final do funil.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ ERROS COMUNS ============ -->
+  <section class="section" id="s-erros">
+    <div class="section-eyebrow">Cuidado</div>
+    <div class="section-title">🚫 Erros comuns ao montar um Sankey</div>
+    <p class="section-desc">Os mesmos dados podem virar um Sankey fácil de ler ou uma bagunça de faixas cruzadas. A diferença quase sempre está em duas escolhas simples: <strong>a ordem dos nós</strong> e <strong>o significado das cores</strong>.</p>
+
+    <p class="section-desc" style="font-size:12.5px;"><strong>Erro 1 — ordenar os nós sem pensar nos cruzamentos.</strong> Os mesmos três fluxos, só trocando a ordem vertical dos nós de destino:</p>
+    <div class="grid-2">
+      <div><div class="compare-pair-title" style="color:var(--accent-red);">❌ Confuso — faixas se cruzando à toa</div><div class="sankey-box" id="sk-erro-cross-bad"></div></div>
+      <div><div class="compare-pair-title" style="color:var(--accent-green);">✅ Organizado — mesma ordem dos dois lados</div><div class="sankey-box" id="sk-erro-cross-good"></div></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>De</th><th>Para</th><th>Valor</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>X</td><td>30</td></tr>
+          <tr><td>B</td><td>Y</td><td>30</td></tr>
+          <tr><td>C</td><td>Z</td><td>30</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box"><p>💡 São exatamente os mesmos 3 fluxos e os mesmos 3 valores nos dois diagramas — a única diferença é a <strong>ordem vertical</strong> dos nós à direita. Antes de finalizar um Sankey, sempre vale reordenar os nós para minimizar cruzamentos.</p></div>
+
+    <p class="section-desc" style="font-size:12.5px;margin-top:10px;"><strong>Erro 2 — cores que não significam nada.</strong> Mesma estrutura ("Avaliação" que aprova ou reprova alguém), cores diferentes:</p>
+    <div class="grid-2">
+      <div><div class="compare-pair-title" style="color:var(--accent-red);">❌ Cores arbitrárias</div><div class="sankey-box" id="sk-erro-color-bad"></div></div>
+      <div><div class="compare-pair-title" style="color:var(--accent-green);">✅ Cor carrega significado</div><div class="sankey-box" id="sk-erro-color-good"></div></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>De</th><th>Para</th><th>Valor</th></tr></thead>
+        <tbody>
+          <tr><td>📋 Avaliação</td><td>Aprovado</td><td>70</td></tr>
+          <tr><td>📋 Avaliação</td><td>Reprovado</td><td>30</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box"><p>💡 Na versão "certa", verde e vermelho reforçam instantaneamente "isso é bom" e "isso é ruim" — o leitor entende o diagrama antes mesmo de ler os rótulos. Na versão "errada", as cores são só decoração e não ajudam em nada.</p></div>
+  </section>
+
+  <!-- ============ SANKEY VS OUTROS ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 Sankey vs. outros gráficos</div>
+    <p class="section-desc">Sankey não é sempre a resposta certa. Ele resolve um problema bem específico — <em>fluxo entre etapas</em> — e perde para outros gráficos em outros cenários.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Gráfico</th><th>Mostra fluxo entre etapas?</th><th>Bom com poucas categorias (2-3)?</th><th>Bom com muitas etapas?</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">🌊 Sankey</strong></td><td>Sim — é o ponto forte</td><td>Overkill, use barra</td><td>Sim, até um limite razoável</td><td>Orçamento, energia, funil, migração — "de onde veio, para onde foi"</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">📊 Barras</strong></td><td>Não (compara totais isolados)</td><td>Ótimo</td><td>Fica poluído</td><td>Comparar poucas categorias sem relação de fluxo entre elas</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">🥧 Pizza</strong></td><td>Não</td><td>Ótimo (até 5-6 fatias)</td><td>Péssimo</td><td>Parte de um todo, num só nível, sem etapas</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">🚰 Funil</strong></td><td>Parcial (só a "sobra" que segue adiante)</td><td>Ótimo</td><td>Ótimo, mas sem ramificações</td><td>Conversão sequencial linear, sem múltiplos destinos por etapa</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ QUANDO USAR ============ -->
+  <section class="section" id="s-escolha">
+    <div class="section-eyebrow">Guia de Decisão</div>
+    <div class="section-title">🧭 Quando usar um Sankey?</div>
+    <div class="grid-3">
+      <div class="decision-card">
+        <div class="decision-q">"Preciso mostrar como uma quantidade se <strong>divide</strong> em múltiplos destinos, e talvez se divida de novo?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-green);color:var(--accent-green);">Use Sankey</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Só tenho 2 ou 3 números para comparar, sem nenhuma relação de 'fluxo' entre eles?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-red);color:var(--accent-red);">Use Barra</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Tenho dezenas de nós e centenas de conexões cruzadas entre eles?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-yellow);color:var(--accent-yellow);">Cuidado — vira "espaguete"</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Quero mostrar 'perdas' ou 'desperdício' junto com o que deu certo, no mesmo desenho?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-green);color:var(--accent-green);">Use Sankey</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"É só uma sequência linear de etapas, sem ramificações (uma etapa por vez)?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">Use Funil</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"A soma de tudo que entra e sai de cada etapa realmente bate (conservação de fluxo)?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-green);color:var(--accent-green);">Se sim, Sankey funciona bem</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CÓDIGO ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">💻 Construindo um Sankey no código</div>
+    <p class="section-desc">Por trás de qualquer ferramenta que desenha Sankey — seja Python, JavaScript, Power BI ou Tableau — a estrutura de dados é sempre a mesma que usamos a aula inteira: uma lista de <strong>nós</strong> e uma lista de <strong>links</strong> (origem, destino, valor). Veja como isso fica em código de verdade, com <strong>Plotly</strong> (a biblioteca mais usada em Python para este gráfico):</p>
+    <div class="code-block">
+<span class="code-lang">python · plotly</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> plotly.graph_objects <span class="kw">as</span> go
+
+<span class="cm"># 1. a lista de nós — na mesma ordem que vamos referenciar pelo índice</span>
+labels <span class="kw">=</span> [<span class="st">"Renda"</span>, <span class="st">"Aluguel"</span>, <span class="st">"Alimentação"</span>, <span class="st">"Transporte"</span>, <span class="st">"Poupança"</span>]
+
+<span class="cm"># 2. os links: de qual índice, para qual índice, com qual valor</span>
+source <span class="kw">=</span> [<span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>, <span class="num">0</span>]   <span class="cm"># tudo sai da Renda (índice 0)</span>
+target <span class="kw">=</span> [<span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>]   <span class="cm"># Aluguel, Alimentação, Transporte, Poupança</span>
+value  <span class="kw">=</span> [<span class="num">1200</span>, <span class="num">800</span>, <span class="num">400</span>, <span class="num">600</span>]
+
+fig <span class="kw">=</span> go.Figure(go.Sankey(
+    node<span class="kw">=</span><span class="fn">dict</span>(label<span class="kw">=</span>labels, pad<span class="kw">=</span><span class="num">20</span>, thickness<span class="kw">=</span><span class="num">18</span>),
+    link<span class="kw">=</span><span class="fn">dict</span>(source<span class="kw">=</span>source, target<span class="kw">=</span>target, value<span class="kw">=</span>value)
+))
+fig.show()
+<span class="cm"># repare: 1200 + 800 + 400 + 600 = 3000 → esse É o valor da Renda,</span>
+<span class="cm"># calculado automaticamente pela soma dos links — a conservação de fluxo em ação</span></div>
+    <p class="section-desc">Perceba: essa estrutura — <code>labels</code>, <code>source</code>, <code>target</code>, <code>value</code> — é <strong>exatamente</strong> a mesma que este site usa nos bastidores para desenhar todos os diagramas desta aula, só que em JavaScript puro:</p>
+    <div class="code-block">
+<span class="code-lang">javascript</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">// a "receita" de qualquer Sankey: nós com coluna, links com origem/destino/valor</span>
+<span class="kw">const</span> nodes <span class="kw">=</span> [
+  { id: <span class="st">'renda'</span>,   label: <span class="st">'💰 Renda'</span>,       col: <span class="num">0</span>, color: <span class="st">'#36a2ef'</span> },
+  { id: <span class="st">'aluguel'</span>, label: <span class="st">'🏠 Aluguel'</span>,     col: <span class="num">1</span>, color: <span class="st">'#f86b63'</span> },
+  { id: <span class="st">'comida'</span>,  label: <span class="st">'🍽️ Alimentação'</span>, col: <span class="num">1</span>, color: <span class="st">'#e8c468'</span> },
+];
+<span class="kw">const</span> links <span class="kw">=</span> [
+  { source: <span class="st">'renda'</span>, target: <span class="st">'aluguel'</span>, value: <span class="num">1200</span> },
+  { source: <span class="st">'renda'</span>, target: <span class="st">'comida'</span>,  value: <span class="num">800</span>  },
+];
+renderSankey(<span class="st">'meuContainer'</span>, nodes, links);</div>
+    <div class="info-box"><p>💡 <strong>Outras ferramentas populares:</strong> além de Plotly (Python/JS), você encontra Sankey nativo em <strong>D3.js</strong> (plugin <code>d3-sankey</code>), <strong>Google Charts</strong>, <strong>Power BI</strong> e <strong>Tableau</strong> (via extensões), e em ferramentas sem código como o <strong>SankeyMATIC</strong>. A parte difícil nunca é a biblioteca — é montar a tabela de <code>source</code>/<code>target</code>/<code>value</code> respeitando a conservação de fluxo.</p></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">⚖️ Sempre confira a conservação de fluxo</div><div class="card-text">Antes de publicar, some tudo que entra e tudo que sai de cada nó do meio. Se não bater, falta um nó — geralmente algo como "sobra", "saiu" ou "não se aplica".</div></div>
+      <div class="card"><div class="card-title">🔀 Ordene os nós para minimizar cruzamentos</div><div class="card-text">Coloque nós de destino na mesma ordem vertical dos seus principais nós de origem sempre que possível — isso reduz faixas se cruzando e deixa o diagrama muito mais legível.</div></div>
+      <div class="card"><div class="card-title">🎨 Use cor com significado, não decoração</div><div class="card-text">Prefira mapear cor para algo que o leitor já entende (verde = bom, vermelho = ruim, uma cor por categoria de origem) em vez de cores aleatórias.</div></div>
+      <div class="card"><div class="card-title">🔢 Rotule nós e, se couber, os valores</div><div class="card-text">Espessura ajuda a comparar visualmente, mas números exatos ao lado dos nós evitam que o leitor precise "medir com o olho".</div></div>
+      <div class="card"><div class="card-title">🚫 Não use para poucas categorias sem fluxo</div><div class="card-text">Se você só tem 2-3 números para comparar e eles não representam etapas de um processo, um gráfico de barras é mais direto e ocupa menos espaço.</div></div>
+      <div class="card"><div class="card-title">🍝 Cuidado com o "espaguete"</div><div class="card-text">Muitos nós e conexões cruzadas transformam o Sankey num emaranhado ilegível. Se isso acontecer, considere agrupar categorias pequenas em um nó "Outros".</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Gráficos Sankey</span>
+    <span>
+      Inspirado no diagrama original de Matthew H. Sankey (1898) · Estrutura de dados compatível com Plotly / d3-sankey
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🌊', label:'O que é'},
+  {id:'s-anatomia', icon:'🧩', label:'Anatomia'},
+  {id:'s-conservacao', icon:'⚖️', label:'Conservação'},
+  {id:'s-passoapasso', icon:'🛠️', label:'Passo a Passo'},
+  {id:'s-simulador', icon:'🎮', label:'Simulador'},
+  {id:'s-energia', icon:'⚡', label:'Energia (1898)'},
+  {id:'s-funil', icon:'🌐', label:'Funil de Site'},
+  {id:'s-erros', icon:'🚫', label:'Erros Comuns'},
+  {id:'s-comparacao', icon:'📊', label:'Sankey vs Outros'},
+  {id:'s-escolha', icon:'🧭', label:'Quando Usar'},
+  {id:'s-codigo', icon:'💻', label:'Código'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const tocSections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of tocSections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ============================================================
+   MOTOR GENÉRICO DE SANKEY (SVG puro, sem dependências)
+   ============================================================ */
+const svgNS = 'http://www.w3.org/2000/svg';
+
+function fmtNum(v){ return Math.round(v).toLocaleString('pt-BR'); }
+function fmtMoney(v){ return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+
+function renderSankey(containerId, nodesIn, linksIn, opts={}){
+  const width = opts.width || 720;
+  const height = opts.height || 260;
+  const nodeWidth = opts.nodeWidth || 16;
+  const nodePad = opts.nodePad || 22;
+  const showValues = opts.showValues !== false;
+  const fmt = opts.fmt || fmtNum;
+
+  const nodes = nodesIn.map(n => Object.assign({}, n));
+  const links = linksIn.map(l => Object.assign({}, l));
+  const byId = {};
+  nodes.forEach(n => { byId[n.id] = n; n.inLinks = []; n.outLinks = []; });
+  links.forEach(l => {
+    l._s = byId[l.source]; l._t = byId[l.target];
+    l._s.outLinks.push(l); l._t.inLinks.push(l);
+  });
+  nodes.forEach(n => {
+    const sumIn = n.inLinks.reduce((s,l) => s + l.value, 0);
+    const sumOut = n.outLinks.reduce((s,l) => s + l.value, 0);
+    n.value = Math.max(sumIn, sumOut, 0.0001);
+  });
+
+  const cols = {};
+  nodes.forEach(n => { (cols[n.col] = cols[n.col] || []).push(n); });
+  const colKeys = Object.keys(cols).map(Number).sort((a,b) => a-b);
+  const maxCol = Math.max(...colKeys);
+
+  let scale = Infinity;
+  colKeys.forEach(c => {
+    const arr = cols[c];
+    const total = arr.reduce((s,n) => s + n.value, 0);
+    const avail = height - nodePad * Math.max(0, arr.length - 1);
+    scale = Math.min(scale, avail / total);
+  });
+
+  const xStep = maxCol > 0 ? (width - nodeWidth) / maxCol : 0;
+  colKeys.forEach(c => {
+    const arr = cols[c];
+    const totalH = arr.reduce((s,n) => s + n.value*scale, 0) + nodePad * Math.max(0, arr.length - 1);
+    let y = (height - totalH) / 2;
+    arr.forEach(n => {
+      n.x0 = c * xStep; n.x1 = n.x0 + nodeWidth;
+      n.y0 = y; n.h = n.value * scale; n.y1 = n.y0 + n.h;
+      y += n.h + nodePad;
+    });
+  });
+
+  nodes.forEach(n => {
+    n.outLinks.sort((a,b) => a._t.y0 - b._t.y0);
+    n.inLinks.sort((a,b) => a._s.y0 - b._s.y0);
+    let oy = n.y0;
+    n.outLinks.forEach(l => { l.sy0 = oy; l.thick = l.value*scale; oy += l.thick; });
+    let iy = n.y0;
+    n.inLinks.forEach(l => { l.ty0 = iy; l.thick = l.value*scale; iy += l.thick; });
+  });
+
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', opts.pxHeight || height);
+
+  links.forEach(l => {
+    const s = l._s, t = l._t;
+    const x0 = s.x1, x1 = t.x0;
+    const y0t = l.sy0, y0b = l.sy0 + l.thick;
+    const y1t = l.ty0, y1b = l.ty0 + l.thick;
+    const cx = x0 + (x1 - x0) / 2;
+    const d = `M${x0},${y0t} C${cx},${y0t} ${cx},${y1t} ${x1},${y1t} L${x1},${y1b} C${cx},${y1b} ${cx},${y0b} ${x0},${y0b} Z`;
+    const path = document.createElementNS(svgNS, 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', l.color || t.color || s.color || '#06b6d4');
+    path.setAttribute('fill-opacity', l.opacity != null ? l.opacity : 0.45);
+    path.setAttribute('class', 'sankey-link');
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = `${s.label} → ${t.label}: ${fmt(l.value)}`;
+    path.appendChild(title);
+    svg.appendChild(path);
+  });
+
+  nodes.forEach(n => {
+    const rect = document.createElementNS(svgNS, 'rect');
+    rect.setAttribute('x', n.x0); rect.setAttribute('y', n.y0);
+    rect.setAttribute('width', nodeWidth); rect.setAttribute('height', Math.max(1, n.h));
+    rect.setAttribute('rx', 3);
+    rect.setAttribute('fill', n.color || '#98a2b3');
+    rect.setAttribute('class', 'sankey-node-rect');
+    const title = document.createElementNS(svgNS, 'title');
+    title.textContent = `${n.label}: ${fmt(n.value)}`;
+    rect.appendChild(title);
+    svg.appendChild(rect);
+
+    const text = document.createElementNS(svgNS, 'text');
+    let tx, ty, anchor;
+    if(n.col === 0){ tx = n.x1 + 8; ty = n.y0 + n.h/2; anchor = 'start'; }
+    else if(n.col === maxCol){ tx = n.x0 - 8; ty = n.y0 + n.h/2; anchor = 'end'; }
+    else { tx = n.x0 + nodeWidth/2; ty = n.y0 - 8; anchor = 'middle'; }
+    text.setAttribute('x', tx); text.setAttribute('y', ty);
+    text.setAttribute('text-anchor', anchor);
+    if(n.col === 0 || n.col === maxCol) text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('class', 'sk-label');
+    text.textContent = n.label;
+    svg.appendChild(text);
+
+    if(showValues){
+      const vtext = document.createElementNS(svgNS, 'text');
+      vtext.setAttribute('x', tx);
+      vtext.setAttribute('y', (n.col === 0 || n.col === maxCol) ? ty + 14 : ty + 11);
+      vtext.setAttribute('text-anchor', anchor);
+      vtext.setAttribute('class', 'sk-value');
+      vtext.textContent = fmt(n.value);
+      svg.appendChild(vtext);
+    }
+  });
+
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  container.appendChild(svg);
+  return { nodes, links, scale };
+}
+
+function renderLegend(containerId, items){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = `<div class="legend-row">${items.map(it => `
+    <div class="legend-item"><span class="legend-dot" style="background:${it.color};"></span>${it.label}</div>
+  `).join('')}</div>`;
+}
+
+/* ===================== HERO — cano de água em 2 baldes ===================== */
+renderSankey('sk-hero', [
+  { id:'torneira', label:'🚰 Torneira', col:0, color:'#36a2ef' },
+  { id:'baldeA', label:'🪣 Balde A', col:1, color:'#7dded8' },
+  { id:'baldeB', label:'🪣 Balde B', col:1, color:'#e8c468' },
+], [
+  { source:'torneira', target:'baldeA', value:60 },
+  { source:'torneira', target:'baldeB', value:40 },
+], { height:190, fmt:v => fmtNum(v)+'L' });
+
+/* ===================== O QUE É — cano em 3 potinhos ===================== */
+renderSankey('sk-oque', [
+  { id:'pia', label:'🚰 Torneira', col:0, color:'#36a2ef' },
+  { id:'pote1', label:'🥤 Potinho 1', col:1, color:'#7dded8' },
+  { id:'pote2', label:'🥤 Potinho 2', col:1, color:'#e8c468' },
+  { id:'pote3', label:'🥤 Potinho 3', col:1, color:'#c49aff' },
+], [
+  { source:'pia', target:'pote1', value:50 },
+  { source:'pia', target:'pote2', value:30 },
+  { source:'pia', target:'pote3', value:20 },
+], { height:230, fmt:v => fmtNum(v)+'L' });
+
+/* ===================== CONSERVAÇÃO — certo vs errado ===================== */
+renderSankey('sk-conserva-certo', [
+  { id:'salario', label:'💰 Salário', col:0, color:'#36a2ef' },
+  { id:'conta', label:'🏦 Conta Corrente', col:1, color:'#98a2b3' },
+  { id:'aluguel', label:'🏠 Aluguel', col:2, color:'#f86b63' },
+  { id:'comida', label:'🍽️ Comida', col:2, color:'#e8c468' },
+  { id:'saldo', label:'💤 Saldo', col:2, color:'#7dded8' },
+], [
+  { source:'salario', target:'conta', value:100 },
+  { source:'conta', target:'aluguel', value:40 },
+  { source:'conta', target:'comida', value:35 },
+  { source:'conta', target:'saldo', value:25 },
+], { height:230, fmt:v => fmtMoney(v) });
+
+renderSankey('sk-conserva-errado', [
+  { id:'salario', label:'💰 Salário', col:0, color:'#36a2ef' },
+  { id:'conta', label:'🏦 Conta Corrente', col:1, color:'#98a2b3' },
+  { id:'aluguel', label:'🏠 Aluguel', col:2, color:'#f86b63' },
+  { id:'comida', label:'🍽️ Comida', col:2, color:'#e8c468' },
+], [
+  { source:'salario', target:'conta', value:100 },
+  { source:'conta', target:'aluguel', value:40 },
+  { source:'conta', target:'comida', value:40 },
+], { height:230, fmt:v => fmtMoney(v) });
+
+/* ===================== PASSO A PASSO — vendas da loja ===================== */
+const stepBtnsEl = document.getElementById('stepBtns');
+const stepLabels = ['1. A tabela', '2. Vira nó', '3. Vira tamanho', '4. Vira Sankey'];
+stepBtnsEl.innerHTML = stepLabels.map((l,i) => `<button class="btn-toggle ${i===0?'active':''}" data-step="${i+1}" onclick="goStep(${i+1})">${l}</button>`).join('');
+function goStep(n){
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.toggle('active', +p.dataset.step === n));
+  document.querySelectorAll('#stepBtns .btn-toggle').forEach(b => b.classList.toggle('active', +b.dataset.step === n));
+}
+renderSankey('sk-passo4', [
+  { id:'loja', label:'🏪 Loja', col:0, color:'#06b6d4' },
+  { id:'calcados', label:'👟 Calçados', col:1, color:'#36a2ef' },
+  { id:'roupas', label:'👕 Roupas', col:1, color:'#c49aff' },
+  { id:'acessorios', label:'🎒 Acessórios', col:1, color:'#e8c468' },
+], [
+  { source:'loja', target:'calcados', value:500 },
+  { source:'loja', target:'roupas', value:350 },
+  { source:'loja', target:'acessorios', value:150 },
+], { height:230, fmt:v => fmtMoney(v) });
+
+/* ===================== SIMULADOR — orçamento da Ana ===================== */
+const budgetCats = [
+  { id:'aluguel', label:'🏠 Aluguel', color:'#f86b63', min:0, max:3000, step:50, val:1200 },
+  { id:'comida', label:'🍽️ Alimentação', color:'#e8c468', min:0, max:2000, step:50, val:800 },
+  { id:'transporte', label:'🚌 Transporte', color:'#36a2ef', min:0, max:1500, step:50, val:400 },
+  { id:'lazer', label:'🎮 Lazer', color:'#c49aff', min:0, max:1500, step:50, val:300 },
+  { id:'poupanca', label:'💰 Poupança', color:'#7dded8', min:0, max:2000, step:50, val:300 },
+];
+const budgetCtrls = document.getElementById('budgetCtrls');
+budgetCtrls.innerHTML = budgetCats.map(c => `
+  <div class="ctrl-g">
+    <div class="ctrl-l"><span>${c.label}</span><span class="ctrl-v" id="bv-${c.id}">${fmtMoney(c.val)}</span></div>
+    <input type="range" id="bs-${c.id}" min="${c.min}" max="${c.max}" step="${c.step}" value="${c.val}" oninput="updateBudget()">
+  </div>
+`).join('');
+
+function updateBudget(){
+  const nodes = [{ id:'renda', label:'💰 Renda', col:0, color:'#dfe5ef' }];
+  const links = [];
+  let total = 0, maxCat = null;
+  let rows = '';
+  budgetCats.forEach(c => {
+    const v = +document.getElementById(`bs-${c.id}`).value;
+    document.getElementById(`bv-${c.id}`).textContent = fmtMoney(v);
+    total += v;
+    if(!maxCat || v > maxCat.v) maxCat = { label:c.label, v };
+    nodes.push({ id:c.id, label:c.label, col:1, color:c.color });
+    links.push({ source:'renda', target:c.id, value: v || 0.0001 });
+    rows += `<tr><td>💰 Renda</td><td>${c.label}</td><td>${fmtMoney(v)}</td></tr>`;
+  });
+  renderSankey('sk-budget', nodes, links, { height:260, fmt:v => fmtMoney(v) });
+  document.getElementById('budgetTableBody').innerHTML = rows + `<tr class="row-scan"><td colspan="2"><strong>Total (= Renda)</strong></td><td><strong>${fmtMoney(total)}</strong></td></tr>`;
+  document.getElementById('budgetTotal').textContent = fmtMoney(total);
+  const poup = +document.getElementById('bs-poupanca').value;
+  document.getElementById('budgetSavePct').textContent = total > 0 ? Math.round(poup/total*100) + '%' : '0%';
+  document.getElementById('budgetMax').textContent = maxCat ? maxCat.label.replace(/^\S+\s/, '') : '—';
+}
+updateBudget();
+
+/* ===================== ENERGIA — máquina a vapor de 1898 ===================== */
+renderSankey('sk-energia', [
+  { id:'combustivel', label:'⛽ Combustível', col:0, color:'#e8c468' },
+  { id:'util', label:'⚙️ Energia útil', col:1, color:'#7dded8' },
+  { id:'calor', label:'🔥 Perda de calor', col:1, color:'#f86b63' },
+  { id:'atrito', label:'🌀 Perda de atrito', col:1, color:'#535966' },
+], [
+  { source:'combustivel', target:'util', value:25 },
+  { source:'combustivel', target:'calor', value:50 },
+  { source:'combustivel', target:'atrito', value:25 },
+], { height:230, fmt:v => fmtNum(v)+'%' });
+renderLegend('legendEnergia', [
+  { color:'#7dded8', label:'Energia útil (aproveitada)' },
+  { color:'#f86b63', label:'Perda de calor' },
+  { color:'#535966', label:'Perda de atrito' },
+]);
+
+/* ===================== FUNIL DE SITE ===================== */
+renderSankey('sk-funil', [
+  { id:'visitantes', label:'👀 Visitantes', col:0, color:'#36a2ef' },
+  { id:'cadastrou', label:'📝 Cadastrou', col:1, color:'#7dded8' },
+  { id:'saiu1', label:'🚪 Saiu (sem cadastrar)', col:1, color:'#535966' },
+  { id:'comprou', label:'🛒 Comprou', col:2, color:'#06b6d4' },
+  { id:'saiu2', label:'🚪 Saiu (sem comprar)', col:2, color:'#535966' },
+  { id:'recomprou', label:'🏆 Recomprou', col:3, color:'#7dded8' },
+  { id:'naovoltou', label:'🚪 Não voltou', col:3, color:'#535966' },
+], [
+  { source:'visitantes', target:'cadastrou', value:400 },
+  { source:'visitantes', target:'saiu1', value:600 },
+  { source:'cadastrou', target:'comprou', value:150 },
+  { source:'cadastrou', target:'saiu2', value:250 },
+  { source:'comprou', target:'recomprou', value:60 },
+  { source:'comprou', target:'naovoltou', value:90 },
+], { height:280, fmt:v => fmtNum(v) });
+renderLegend('legendFunil', [
+  { color:'#7dded8', label:'Segue no funil' },
+  { color:'#535966', label:'Saiu do funil' },
+]);
+
+/* ===================== ERROS COMUNS — cruzamento ===================== */
+renderSankey('sk-erro-cross-bad', [
+  { id:'a', label:'A', col:0, color:'#36a2ef' },
+  { id:'b', label:'B', col:0, color:'#7dded8' },
+  { id:'c', label:'C', col:0, color:'#e8c468' },
+  { id:'z', label:'Z', col:1, color:'#98a2b3' },
+  { id:'y', label:'Y', col:1, color:'#98a2b3' },
+  { id:'x', label:'X', col:1, color:'#98a2b3' },
+], [
+  { source:'a', target:'x', value:30, color:'#36a2ef' },
+  { source:'b', target:'y', value:30, color:'#7dded8' },
+  { source:'c', target:'z', value:30, color:'#e8c468' },
+], { height:180 });
+
+renderSankey('sk-erro-cross-good', [
+  { id:'a', label:'A', col:0, color:'#36a2ef' },
+  { id:'b', label:'B', col:0, color:'#7dded8' },
+  { id:'c', label:'C', col:0, color:'#e8c468' },
+  { id:'x', label:'X', col:1, color:'#98a2b3' },
+  { id:'y', label:'Y', col:1, color:'#98a2b3' },
+  { id:'z', label:'Z', col:1, color:'#98a2b3' },
+], [
+  { source:'a', target:'x', value:30, color:'#36a2ef' },
+  { source:'b', target:'y', value:30, color:'#7dded8' },
+  { source:'c', target:'z', value:30, color:'#e8c468' },
+], { height:180 });
+
+/* ===================== ERROS COMUNS — cor sem significado ===================== */
+renderSankey('sk-erro-color-bad', [
+  { id:'aval', label:'📋 Avaliação', col:0, color:'#98a2b3' },
+  { id:'aprovado', label:'Aprovado', col:1, color:'#c49aff' },
+  { id:'reprovado', label:'Reprovado', col:1, color:'#36a2ef' },
+], [
+  { source:'aval', target:'aprovado', value:70 },
+  { source:'aval', target:'reprovado', value:30 },
+], { height:180 });
+
+renderSankey('sk-erro-color-good', [
+  { id:'aval', label:'📋 Avaliação', col:0, color:'#98a2b3' },
+  { id:'aprovado', label:'✅ Aprovado', col:1, color:'#7dded8' },
+  { id:'reprovado', label:'❌ Reprovado', col:1, color:'#f86b63' },
+], [
+  { source:'aval', target:'aprovado', value:70 },
+  { source:'aval', target:'reprovado', value:30 },
+], { height:180 });
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Em um gráfico Sankey, a espessura de uma faixa representa a quantidade que flui, e não a distância entre os nós.', a:true, e:'Verdadeiro. A espessura (altura da faixa) é sempre proporcional ao valor do fluxo — o comprimento horizontal só existe para ligar visualmente origem e destino.'},
+  {q:'O gráfico Sankey foi inventado em 1898 para mostrar dados de vendas em uma loja.', a:false, e:'Falso. Foi criado por Matthew H. Sankey para mostrar a energia (útil e desperdiçada) de uma máquina a vapor — só depois passou a ser usado para orçamento, tráfego, vendas etc.'},
+  {q:'Pela regra da conservação de fluxo, a soma do que entra em um nó do meio deve ser igual à soma do que sai dele.', a:true, e:'Verdadeiro. É a regra mais importante do Sankey — se não bater, o diagrama está escondendo ou inventando dados, mesmo que pareça só um detalhe visual.'},
+  {q:'As cores dos links devem sempre ser escolhidas aleatoriamente, sem relação com a origem ou o significado do fluxo.', a:false, e:'Falso. Boas práticas recomendam cor com significado — por exemplo, herdada do nó de origem, ou usando convenções como verde=bom e vermelho=ruim.'},
+  {q:'Um Sankey é a melhor escolha quando você só tem 2 ou 3 números para comparar, sem nenhuma relação de fluxo entre eles.', a:false, e:'Falso. Nesse caso um gráfico de barras é mais direto e claro — Sankey brilha quando existe de fato uma relação de "de onde veio, para onde foi".'},
+  {q:'Reordenar os nós verticalmente pode reduzir o número de faixas se cruzando e deixar o diagrama mais fácil de ler.', a:true, e:'Verdadeiro. Mantendo a mesma ordem relativa entre nós de origem e de destino, você minimiza cruzamentos desnecessários — puro ganho de legibilidade.'},
+  {q:'Em um funil de conversão bem construído como Sankey, os nós de "saída"/"abandonou" em cada etapa também precisam existir, para preservar a conservação de fluxo.', a:true, e:'Verdadeiro. Sem esses nós de saída, a soma de quem "sai" do funil em cada etapa desaparece do diagrama e a conservação de fluxo é quebrada.'},
+  {q:'Gráficos Sankey não conseguem representar perdas ou desperdício — só fluxos que chegam a um destino útil.', a:false, e:'Falso. Pelo contrário: o próprio diagrama original de 1898 foi feito justamente para mostrar perdas de energia lado a lado com o uso útil — é um dos pontos fortes do Sankey.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+window.addEventListener('resize', () => { updateBudget(); });
+</script>
+</body>
+</html>

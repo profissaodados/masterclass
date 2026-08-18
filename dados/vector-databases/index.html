@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Vector Databases & Embeddings explicados do zero, com dezenas de gráficos e analogias visuais, como se fosse para uma criança.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Vector Databases &amp; Embeddings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- ARCHITECTURE / EXTENSIONS CLICKABLE DIAGRAM ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.chip-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+
+/* ---- NUMBER LINE (1D embedding) ---- */
+.numberline{position:relative;height:96px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;margin-top:4px;}
+.numberline-track{position:absolute;top:56%;left:26px;right:26px;height:2px;background:var(--border-strong);}
+.numberline-dot{position:absolute;top:56%;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;gap:5px;}
+.numberline-dot .dot{width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg-elevated);box-shadow:0 0 0 1px var(--accent);}
+.numberline-dot .lbl{font-size:10.5px;color:var(--text-primary);white-space:nowrap;font-weight:600;background:var(--bg-panel);padding:2px 7px;border-radius:10px;border:1px solid var(--border-color);}
+.numberline-endlabel{position:absolute;bottom:8px;font-size:9.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.6px;}
+
+/* ---- HNSW LAYERS ---- */
+.hnsw-layers{display:flex;flex-direction:column;gap:0;}
+.hnsw-layer{cursor:pointer;border:1.5px solid var(--border-color);border-radius:8px;padding:14px 18px;background:var(--bg-elevated);transition:.15s;}
+.hnsw-layer:hover{border-color:var(--accent-blue);}
+.hnsw-layer.active{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.hnsw-layer-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.hnsw-layer-label{font-size:12px;font-weight:700;color:var(--text-primary);}
+.hnsw-layer-count{font-size:10px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;text-transform:uppercase;letter-spacing:.5px;}
+.hnsw-nodes{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.hnsw-node{width:13px;height:13px;border-radius:50%;background:var(--accent);flex-shrink:0;opacity:.85;}
+.hnsw-connector{text-align:center;color:var(--border-strong);font-size:15px;padding:4px 0;}
+
+/* ---- PIPELINE (RAG / geração de embedding) ---- */
+.pipeline-row{display:flex;gap:8px;flex-wrap:wrap;}
+.pipeline-step{flex:1;min-width:140px;cursor:pointer;border:1.5px solid var(--border-color);border-radius:8px;padding:12px 14px;background:var(--bg-elevated);text-align:center;transition:.15s;position:relative;}
+.pipeline-step:hover{border-color:var(--accent-blue);}
+.pipeline-step.active{border-color:var(--accent);background:rgba(6,182,212,.12);}
+.pipeline-step-num{font-size:9.5px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;font-weight:700;}
+.pipeline-step-label{font-size:11.5px;font-weight:700;color:var(--text-primary);margin-top:4px;line-height:1.3;}
+.pipeline-arrow{display:flex;align-items:center;justify-content:center;color:var(--border-strong);font-size:16px;flex:0 0 auto;padding:0 2px;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+  .pipeline-row{flex-direction:column;}
+  .pipeline-arrow{transform:rotate(90deg);padding:2px 0;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Vector Databases &amp; Embeddings</h1><span>O mapa mágico que ensina o computador a entender significado</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2013</div><div class="hstat-label">Origem (Word2Vec)</div></div>
+      <div class="hstat"><div class="hstat-num">15+</div><div class="hstat-label">Gráficos Interativos</div></div>
+      <div class="hstat"><div class="hstat-num">O(log n)</div><div class="hstat-label">Busca ANN</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do significado ao banco de dados</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Ensinando o computador a entender <em>o que as coisas significam</em></h2>
+      <p>Computadores só sabem lidar com números. Mas nós queremos que eles entendam <strong>significado</strong>: que "cachorro" é parecido com "cão" e bem diferente de "geladeira". A solução é um truque elegante chamado <strong>embedding</strong>: transformar cada palavra, frase, imagem ou som em uma lista de números — um <em>vetor</em> — de um jeito tão esperto que coisas parecidas ganham números parecidos. Um <strong>vector database</strong> é a "biblioteca" especializada em guardar bilhões desses vetores e responder, em milissegundos, à pergunta: <em>"o que mais se parece com isso?"</em>. Vamos construir essa ideia do zero, com bastante desenho.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Embeddings</span>
+        <span class="badge badge-green">Similaridade</span>
+        <span class="badge badge-blue">Busca Semântica</span>
+        <span class="badge badge-purple">RAG</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🧭 TEXTO → VETOR</div>
+        <div class="fc-body">
+          <div class="fc-row">"cachorro"<br><span style="font-size:9.5px;opacity:.7;">entra como palavra</span></div>
+          <div class="fc-row">[0.12, -0.45, 0.88, …]<br><span style="font-size:9.5px;opacity:.7;">sai como 768 números</span></div>
+        </div>
+        <div class="fc-foot">Coisas parecidas → números parecidos</div>
+      </div>
+      <div class="file-chip-caption">É assim que a máquina "sente" o significado</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É UM EMBEDDING ============ -->
+  <section class="section" id="s-embeddings">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧭 O que é um Embedding?</div>
+    <p class="section-desc">
+      Imagine um mapa mágico gigante e invisível onde <strong>tudo</strong> — palavras, frases, fotos, músicas — ganha um <em>endereço</em>. A regra desse mapa é simples: coisas parecidas moram <strong>perto</strong> uma da outra, e coisas diferentes moram <strong>longe</strong>. "Cachorro" mora perto de "cão" e de "gato", mas bem longe de "geladeira". Esse endereço é uma lista de números — chamamos isso de <strong>vetor</strong> — e o processo de descobrir esse endereço para cada palavra se chama <strong>embedding</strong>.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🔢 É só uma lista de números</div>
+        <div class="card-text">Um embedding de "cachorro" pode ser algo como <code>[0.12, -0.45, 0.88, ...]</code>. Cada número sozinho não significa nada óbvio para nós — mas juntos, formam um <em>endereço</em> único no mapa do significado.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏘️ Parecido mora perto</div>
+        <div class="card-text">O que faz um embedding ser útil não é o valor de cada número, e sim a <strong>distância</strong> entre dois vetores. Perto = parecido. Longe = diferente. Essa é a regra de ouro de tudo que vem a seguir.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧠 Aprendido, não escrito à mão</div>
+        <div class="card-text">Ninguém senta e decide "cachorro = 0.12". Um modelo de <em>machine learning</em> lê milhões de textos e aprende sozinho quais palavras aparecem em contextos parecidos — e as posiciona perto no mapa.</div>
+      </div>
+    </div>
+
+    <p class="section-desc">Vamos começar do jeito mais simples possível: um mapa com <strong>1 dimensão só</strong>. Imagine que cada palavra ganha uma nota de "o quão positiva ela soa", de -1 (bem negativa) a +1 (bem positiva). Isso já é um embedding — só que bem pobre, porque captura uma única característica.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Embedding de 1 dimensão: "quão positiva a palavra soa"</div>
+      <div class="numberline" id="sentimentLine"></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">O problema de só 1 dimensão</div>
+      <p>Com 1 número só, "sentimento" é tudo que conseguimos capturar. Mas "cachorro" e "gato" são igualmente neutros nessa escala — ficariam colados um no outro, mesmo sendo conceitos diferentes! Precisamos de <strong>mais dimensões</strong> para capturar mais tipos de parecença ao mesmo tempo. É exatamente aí que a próxima seção entra.</p>
+    </div>
+  </section>
+
+  <!-- ============ MAPA DE SIGNIFICADOS (2D) ============ -->
+  <section class="section" id="s-mapa">
+    <div class="section-eyebrow">Visualizando</div>
+    <div class="section-title">🗺️ O Mapa de Significados em 2 Dimensões</div>
+    <p class="section-desc">
+      Agora, em vez de 1 número, damos <strong>2 números</strong> a cada palavra — uma coordenada (x, y), como num mapa de verdade. Repare como as palavras se agrupam sozinhas em "bairros" de significado parecido: animais de um lado, frutas de outro, veículos em outro canto. Ninguém desenhou esses grupos à mão — eles surgem porque palavras parecidas aparecem em frases parecidas.
+    </p>
+    <div class="interactive-panel">
+      <div class="panel-label">Mapa de palavras — cada bolinha é o "endereço" de uma palavra</div>
+      <div class="canvas-wrap"><canvas id="wordMapCanvas" height="360"></canvas></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;" id="wordMapLegend"></div>
+    </div>
+
+    <p class="section-desc">Um detalhe surpreendente: as <em>direções</em> nesse mapa também têm significado. O exemplo mais famoso da história dos embeddings mostra isso — a "distância e direção" entre "homem" e "rei" é quase a mesma entre "mulher" e "rainha". Em outras palavras: <code>rei − homem + mulher ≈ rainha</code>.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Aritmética de vetores: rei − homem + mulher ≈ rainha</div>
+      <div class="canvas-wrap"><canvas id="vectorMathCanvas" height="300"></canvas></div>
+      <div class="info-box" style="margin-top:14px;">
+        <p>💡 A seta de "homem" até "rei" representa a ideia de <strong>realeza</strong>. Somar essa mesma seta a partir de "mulher" aterrissa quase exatamente em cima de "rainha" — o modelo nunca foi ensinado explicitamente sobre realeza ou gênero, ele descobriu esse padrão sozinho só de ler muito texto.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DIMENSÕES ============ -->
+  <section class="section" id="s-dimensoes">
+    <div class="section-eyebrow">Escalando a Ideia</div>
+    <div class="section-title">📐 De 1 Dimensão a Centenas Delas</div>
+    <p class="section-desc">
+      Uma linha (1D) só captura 1 característica. Um mapa (2D) captura 2. E se quisermos capturar centenas de características ao mesmo tempo — se é fofo, se é comida, se é um verbo, se é formal, se rima, se é sobre tecnologia...? A resposta é simples de dizer e impossível de desenhar: usamos <strong>centenas ou milhares de dimensões</strong>. Clique para ver a progressão.
+    </p>
+    <div class="interactive-panel">
+      <div class="panel-label">Escolha quantas dimensões o mapa tem</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btnDim1" onclick="setDim('1d')">1 Dimensão</button>
+        <button class="btn-toggle" id="btnDim2" onclick="setDim('2d')">2 Dimensões</button>
+        <button class="btn-toggle" id="btnDim3" onclick="setDim('3d')">3 Dimensões</button>
+        <button class="btn-toggle" id="btnDimN" onclick="setDim('nd')">300+ Dimensões</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="dimCanvas" height="260"></canvas></div>
+      <div class="section-desc" style="font-size:12.5px;margin-top:10px;" id="dimDesc"></div>
+    </div>
+
+    <p class="section-desc">Modelos de verdade não usam 300 dimensões só por capricho — cada modelo escolhe um tamanho diferente, que é sempre uma troca entre <strong>qualidade</strong> (mais dimensões, mais nuance capturada) e <strong>custo</strong> (mais dimensões, mais memória e mais tempo de busca).</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Quantas dimensões modelos famosos usam</div>
+      <div class="canvas-wrap"><canvas id="dimsBarCanvas" height="190"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ SIMILARIDADE ============ -->
+  <section class="section" id="s-similaridade">
+    <div class="section-eyebrow">A Régua do Significado</div>
+    <div class="section-title">📏 Medindo o Quão Parecidos Dois Vetores São</div>
+    <p class="section-desc">
+      Se "perto = parecido", precisamos de um jeito matemático de medir "perto". A forma mais usada com embeddings de texto é a <strong>similaridade de cosseno</strong>: em vez de medir a <em>distância</em> entre dois vetores, ela mede o <strong>ângulo</strong> entre eles. Dois vetores apontando para a mesma direção são "iguais" em significado, não importa o tamanho da seta.
+    </p>
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste para mudar o ângulo entre dois vetores e veja a similaridade de cosseno</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Ângulo entre os vetores</span><span class="ctrl-v" id="angleVal">30°</span></div>
+          <input type="range" id="angleSlider" min="0" max="180" step="1" value="30" oninput="updateCosine()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="cosineCanvas" height="240"></canvas></div>
+      <div class="result-display" id="cosineResult"></div>
+    </div>
+
+    <p class="section-desc">Já a <strong>distância euclidiana</strong> mede o "tamanho da régua" entre dois pontos — ela se importa com a <em>magnitude</em> (o comprimento) dos vetores, não só a direção. Isso pode fazer toda a diferença: veja o exemplo abaixo, onde as duas métricas discordam completamente.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Quando cosseno e distância euclidiana discordam</div>
+      <div class="canvas-wrap"><canvas id="compareMetricCanvas" height="260"></canvas></div>
+      <div class="stat-cards" id="compareMetricStats" style="grid-template-columns:repeat(2,1fr);"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 O vetor <strong>B</strong> é o vetor <strong>A</strong> só que "3x maior" — mesma direção. Para o cosseno, eles são <strong>idênticos</strong> em significado (similaridade = 1.0). Já o vetor <strong>C</strong> aponta para uma direção bem diferente de A, mas fisicamente está mais perto de A do que B está. É por isso que, para embeddings de texto, o cosseno costuma ser a escolha preferida: um documento longo repetindo o mesmo assunto não deveria "parecer diferente" de uma versão curta dele só por ser maior.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMO É GERADO ============ -->
+  <section class="section" id="s-geracao">
+    <div class="section-eyebrow">Por Dentro do Modelo</div>
+    <div class="section-title">🏭 Como um Embedding é Gerado</div>
+    <p class="section-desc">Um embedding não nasce pronto — ele é o resultado de um pipeline. Clique em cada etapa para entender o que acontece.</p>
+
+    <div class="interactive-panel">
+      <div class="pq-box" style="max-width:520px;">
+        <div class="pq-box-label">🏭 Pipeline: da palavra ao vetor</div>
+        <div class="pq-clickable active" data-id="gen-texto" onclick="pickGen('gen-texto')">1. Texto bruto — "cachorros são leais"</div>
+        <div class="pq-clickable" data-id="gen-token" onclick="pickGen('gen-token')">2. Tokenização — quebra em pedaços</div>
+        <div class="pq-clickable" data-id="gen-modelo" onclick="pickGen('gen-modelo')">3. Modelo (rede neural treinada)</div>
+        <div class="pq-clickable" data-id="gen-vetor" onclick="pickGen('gen-vetor')">4. Vetor de saída — centenas de números</div>
+      </div>
+      <div class="anatomy-detail" id="genDetail"></div>
+    </div>
+
+    <p class="section-desc">Uma evolução importante: os primeiros modelos (como <strong>Word2Vec</strong> e <strong>GloVe</strong>, por volta de 2013) davam <strong>um único vetor fixo</strong> por palavra, ignorando o contexto. Modelos modernos baseados em <strong>Transformers</strong> (como BERT e os modelos da OpenAI/Cohere) geram embeddings <strong>contextuais</strong> — a mesma palavra pode ganhar vetores diferentes dependendo da frase. Experimente com a palavra ambígua "banco":</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Estático vs. contextual — a palavra "banco"</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnStatic" onclick="setEmbType('static')">Word2Vec (estático)</button>
+        <button class="btn-toggle" id="btnContext" onclick="setEmbType('context')">BERT / Transformer (contextual)</button>
+      </div>
+      <div id="embTypeBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ VECTOR DATABASE ============ -->
+  <section class="section" id="s-vectordb">
+    <div class="section-eyebrow">A Biblioteca do Significado</div>
+    <div class="section-title">🗄️ O que é um Vector Database?</div>
+    <p class="section-desc">
+      Um banco de dados tradicional é ótimo em achar coisas <strong>exatas</strong>: "me dê o usuário com <code>id = 42</code>". Mas ele não sabe responder "me dê os 5 produtos mais <em>parecidos</em> com este aqui" — porque isso exige comparar significados, não valores exatos. Um <strong>vector database</strong> é uma biblioteca reorganizada: em vez de guardar livros em ordem alfabética, ela guarda vetores de um jeito que faz achar os "vizinhos mais próximos" no mapa de significados ser muito rápido, mesmo entre bilhões de itens.
+    </p>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Dimensão</th><th>Banco Tradicional (SQL)</th><th>Vector Database</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Pergunta típica</strong></td><td>"Ache o registro onde <code>id = 42</code>"</td><td>"Ache os 5 registros mais parecidos com este vetor"</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Tipo de busca</strong></td><td>Exata (match / comparação)</td><td>Aproximada (vizinho mais próximo)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Índice típico</strong></td><td>B-Tree, Hash</td><td>HNSW, IVF</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Onde entra</strong></td><td>—</td><td>✅ Busca semântica, recomendação, RAG</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔍 Busca por significado</div><div class="card-text">Encontra "coisas parecidas", não só "coisas iguais". Perguntar por "tênis para correr na chuva" pode achar produtos que nem usam essas palavras exatas.</div></div>
+      <div class="card"><div class="card-title">📈 Escala para bilhões</div><div class="card-text">Comparar um vetor com cada um dos outros (busca "força bruta") funciona para milhares de itens, mas não para bilhões — por isso existem índices especializados (próxima seção).</div></div>
+      <div class="card"><div class="card-title">🤝 Trabalha junto com SQL</div><div class="card-text">Muitos vector databases combinam busca por vetor <em>com</em> filtros tradicionais — "os mais parecidos, mas só em estoque e com preço &lt; R$100" (busca híbrida).</div></div>
+    </div>
+  </section>
+
+  <!-- ============ ANN ============ -->
+  <section class="section" id="s-ann">
+    <div class="section-eyebrow">Buscando Rápido</div>
+    <div class="section-title">⚡ Busca Aproximada (ANN): Por que não Comparar com Tudo?</div>
+    <p class="section-desc">
+      A forma mais óbvia de achar os vizinhos mais parecidos é a <strong>força bruta</strong>: comparar o vetor de busca com <em>todos</em> os outros vetores, um por um, e ficar com os mais próximos. É simples e sempre correto — mas fica lento rapidinho conforme o número de vetores cresce. A solução é a <strong>ANN</strong> (<em>Approximate Nearest Neighbor</em>): estruturas de índice que acham vizinhos <em>quase</em> perfeitos, abrindo mão de um pouquinho de precisão para ganhar uma velocidade gigantesca — como perguntar para o vizinho mais provável de saber a resposta, em vez de perguntar para a cidade inteira.
+    </p>
+    <div class="interactive-panel">
+      <div class="panel-label">Calculadora ilustrativa: força bruta vs. índice aproximado (ANN)</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Número de vetores no banco</span><span class="ctrl-v" id="annNVal">1.000.000</span></div>
+          <input type="range" id="annN" min="1000" max="100000000" step="1000" value="1000000" oninput="updateAnn()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Dimensões por vetor</span><span class="ctrl-v" id="annDVal">768</span></div>
+          <input type="range" id="annD" min="32" max="3072" step="32" value="768" oninput="updateAnn()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="annCanvas" height="150"></canvas></div>
+      <div class="stat-cards" id="annStats"></div>
+      <div class="section-desc" style="font-size:12px;text-align:center;margin-top:10px;">Números <strong>ilustrativos</strong> (ordem de grandeza), assumindo um throughput fixo de comparações por segundo — servem para mostrar a tendência, não como benchmark real.</div>
+    </div>
+  </section>
+
+  <!-- ============ HNSW ============ -->
+  <section class="section" id="s-hnsw">
+    <div class="section-eyebrow">O Índice Mais Popular</div>
+    <div class="section-title">🕸️ HNSW: Metrô Expresso para Vetores</div>
+    <p class="section-desc">
+      <strong>HNSW</strong> (<em>Hierarchical Navigable Small World</em>) é o índice ANN mais usado hoje. A analogia perfeita é o <strong>metrô de uma grande cidade</strong>: existem linhas expressas com poucas estações bem espalhadas, e linhas locais que passam em cada esquina. Uma busca começa pegando a linha expressa (poucos saltos, cobrindo grande distância), e vai "descendo" para linhas cada vez mais locais até chegar bem perto do destino exato. Clique em cada camada.
+    </p>
+    <div class="interactive-panel">
+      <div class="hnsw-layers" id="hnswLayers"></div>
+      <div class="anatomy-detail" id="hnswDetail"></div>
+    </div>
+    <div class="info-box">
+      <p>💡 Esse desenho em camadas é o motivo do nome "hierárquico": poucos nós existem em várias camadas ao mesmo tempo (as "estações expressas"), enquanto todo nó existe pelo menos na camada 0 (a "rua local"). Isso permite achar um vizinho muito próximo em <code>O(log n)</code> saltos, em vez de <code>O(n)</code> comparações da força bruta.</p>
+    </div>
+  </section>
+
+  <!-- ============ IVF ============ -->
+  <section class="section" id="s-ivf">
+    <div class="section-eyebrow">Outra Estratégia de Índice</div>
+    <div class="section-title">🗂️ IVF: Separando Vetores em Gavetas</div>
+    <p class="section-desc">
+      <strong>IVF</strong> (<em>Inverted File Index</em>) usa uma ideia diferente: antes de qualquer busca, os vetores são <strong>pré-agrupados</strong> em "gavetas" (clusters) de vetores parecidos entre si. Na hora de buscar, em vez de vasculhar a biblioteca inteira, primeiro descobrimos qual gaveta é a mais provável de conter a resposta — e só procuramos <em>dentro dela</em>.
+    </p>
+    <div class="interactive-panel">
+      <div class="panel-label">Clique para alternar a estratégia de busca</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnIvfAll" onclick="setIvfMode('all')">🔎 Buscar em tudo (força bruta)</button>
+        <button class="btn-toggle" id="btnIvfCluster" onclick="setIvfMode('cluster')">🗂️ Buscar só na gaveta mais próxima (IVF)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="ivfCanvas" height="320"></canvas></div>
+      <div class="stat-cards" id="ivfStats" style="grid-template-columns:repeat(2,1fr);"></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Se a "pergunta" cair bem na fronteira entre duas gavetas, o vizinho mais próximo de verdade pode estar na gaveta vizinha! Por isso, implementações reais de IVF costumam buscar nas <code>n</code> gavetas mais próximas, não só na primeira — outra troca entre velocidade e precisão.</p></div>
+  </section>
+
+  <!-- ============ QUANTIZAÇÃO ============ -->
+  <section class="section" id="s-quantizacao">
+    <div class="section-eyebrow">Economizando Espaço</div>
+    <div class="section-title">🗜️ Quantização: Comprimindo Vetores</div>
+    <p class="section-desc">
+      Cada número de um embedding normalmente ocupa 4 bytes (<code>float32</code>). Multiplique isso por centenas de dimensões e por bilhões de vetores, e o espaço em memória explode. A <strong>quantização</strong> é como salvar uma foto em resolução menor: ainda dá para reconhecer do que se trata, só que ocupando bem menos espaço — trocando um pouquinho de precisão por muito menos memória (e buscas mais rápidas, porque cabe mais dado na memória rápida).
+    </p>
+    <div class="interactive-panel">
+      <div class="panel-label">Tamanho de 1 milhão de vetores de 768 dimensões, por tipo de precisão</div>
+      <div class="canvas-wrap"><canvas id="quantCanvas" height="180"></canvas></div>
+      <div class="stat-cards" id="quantStats" style="grid-template-columns:repeat(3,1fr);"></div>
+    </div>
+  </section>
+
+  <!-- ============ MÉTRICAS ============ -->
+  <section class="section" id="s-metricas">
+    <div class="section-eyebrow">Referência Rápida</div>
+    <div class="section-title">📊 As 3 Métricas de Distância Mais Usadas</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Métrica</th><th>O que mede</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Similaridade de Cosseno</strong></td><td>O ângulo entre dois vetores (ignora o tamanho)</td><td>Padrão para embeddings de texto e busca semântica</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Distância Euclidiana (L2)</strong></td><td>A distância "em linha reta" entre dois pontos</td><td>Quando a magnitude do vetor também carrega informação (ex: alguns embeddings de imagem)</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Produto Escalar (Dot Product)</strong></td><td>Combina direção e magnitude — mais barato de calcular</td><td>Sistemas de recomendação, ou quando os vetores já são normalizados (aí equivale ao cosseno)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box"><p>💡 Se todos os vetores tiverem o mesmo tamanho (forem "normalizados"), o produto escalar e a similaridade de cosseno dão exatamente o mesmo resultado, só que o produto escalar é mais barato de calcular — por isso muitos modelos de embedding já entregam vetores normalizados de fábrica.</p></div>
+  </section>
+
+  <!-- ============ RAG ============ -->
+  <section class="section" id="s-rag">
+    <div class="section-eyebrow">O Grande Caso de Uso</div>
+    <div class="section-title">🔗 RAG: Dando "Memória de Verdade" para um LLM</div>
+    <p class="section-desc">
+      Um LLM (como o ChatGPT) só sabe o que aprendeu durante o treino — e pode "inventar" respostas quando não sabe algo (alucinação). <strong>RAG</strong> (<em>Retrieval-Augmented Generation</em>) resolve isso combinando um vector database com um LLM: antes de responder, o sistema <strong>busca</strong> trechos de documentos reais relacionados à pergunta e os entrega ao LLM como contexto — como dar uma "cola" com fontes confiáveis antes da prova. Clique em cada etapa.
+    </p>
+    <div class="interactive-panel">
+      <div class="pipeline-row" id="ragPipeline"></div>
+      <div class="anatomy-detail" id="ragDetail" style="margin-top:16px;"></div>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Por que isso importa</div>
+      <p>Sem RAG, o LLM responde só com o que "decorou" no treinamento — que pode estar desatualizado ou simplesmente não incluir os seus documentos internos. Com RAG, a resposta é <strong>fundamentada</strong> em fontes reais e atualizáveis, sem precisar retreinar o modelo do zero toda vez que um documento novo aparece.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO DE BANCOS ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama do Ecossistema</div>
+    <div class="section-title">⚖️ Comparando os Principais Vector Databases</div>
+    <p class="section-desc">Não existe "o melhor" — a escolha certa depende de escala, infraestrutura disponível e o quanto de controle você quer sobre o índice.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Ferramenta</th><th>Tipo</th><th>Open Source</th><th>Índice padrão</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Pinecone</strong></td><td>Totalmente gerenciado</td><td>Não</td><td>Proprietário (ANN)</td><td>Começar rápido sem operar infraestrutura</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Weaviate</strong></td><td>Self-host ou gerenciado</td><td>Sim</td><td>HNSW</td><td>Busca híbrida (vetor + texto) out-of-the-box</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Milvus</strong></td><td>Self-host ou gerenciado</td><td>Sim</td><td>IVF / HNSW</td><td>Escala massiva, bilhões de vetores</td></tr>
+          <tr><td><strong style="color:var(--accent-green);">Qdrant</strong></td><td>Self-host ou gerenciado</td><td>Sim</td><td>HNSW</td><td>Filtros ricos de metadados junto da busca</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Chroma</strong></td><td>Embutido / self-host</td><td>Sim</td><td>HNSW</td><td>Prototipagem rápida, projetos pequenos</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">pgvector</strong></td><td>Extensão do PostgreSQL</td><td>Sim</td><td>IVFFlat / HNSW</td><td>Você já usa Postgres e quer 1 banco só</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">FAISS</strong></td><td>Biblioteca (não é um servidor)</td><td>Sim (Meta)</td><td>IVF / HNSW / PQ</td><td>Pesquisa e controle fino sobre o índice</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casos">
+    <div class="section-eyebrow">Onde Isso Aparece no Mundo Real</div>
+    <div class="section-title">🎯 Casos de Uso</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔍 Busca semântica</div><div class="card-text">Buscar por "roupa quentinha para inverno" e achar "casaco de lã", mesmo sem nenhuma palavra em comum.</div></div>
+      <div class="card"><div class="card-title">🛍️ Recomendação</div><div class="card-text">"Quem comprou/assistiu isto, também gostou de..." — encontrando itens com embeddings próximos do seu histórico.</div></div>
+      <div class="card"><div class="card-title">🔗 RAG para chatbots</div><div class="card-text">Responder perguntas com base em documentos internos da empresa, manuais ou bases de conhecimento atualizadas.</div></div>
+      <div class="card"><div class="card-title">🧹 Detecção de duplicados</div><div class="card-text">Achar registros ou textos quase idênticos (ex: e-mails duplicados, produtos repetidos num catálogo).</div></div>
+      <div class="card"><div class="card-title">🖼️ Busca por imagem</div><div class="card-text">Modelos multimodais (como CLIP) colocam imagens e textos no <em>mesmo</em> mapa — buscar uma foto usando uma frase.</div></div>
+      <div class="card"><div class="card-title">🚨 Moderação de conteúdo</div><div class="card-text">Comparar um novo conteúdo com exemplos conhecidos de spam ou abuso, mesmo com variações no texto.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ NA PRÁTICA ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">💻 Na Prática</div>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Gerando embeddings localmente (sentence-transformers)</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># pip install sentence-transformers</span>
+<span class="kw">from</span> sentence_transformers <span class="kw">import</span> SentenceTransformer
+
+modelo = SentenceTransformer(<span class="st">'all-MiniLM-L6-v2'</span>)
+vetores = modelo.<span class="fn">encode</span>([<span class="st">"cachorro"</span>, <span class="st">"cão"</span>, <span class="st">"geladeira"</span>])
+<span class="cm"># vetores.shape == (3, 384)</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Gerando embeddings via API (OpenAI)</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">from</span> openai <span class="kw">import</span> OpenAI
+client = OpenAI()
+
+resp = client.embeddings.<span class="fn">create</span>(
+    model=<span class="st">"text-embedding-3-small"</span>,
+    input=<span class="st">"cachorros são leais"</span>
+)
+vetor = resp.data[<span class="num">0</span>].embedding  <span class="cm"># 1536 números</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">pgvector — busca dentro do próprio Postgres</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE EXTENSION</span> vector;
+
+<span class="kw">CREATE TABLE</span> documentos (
+  id <span class="kw">SERIAL PRIMARY KEY</span>,
+  conteudo <span class="kw">TEXT</span>,
+  embedding vector(<span class="num">1536</span>)
+);
+
+<span class="cm">-- os 5 mais parecidos com a pergunta, por cosseno</span>
+<span class="kw">SELECT</span> conteudo <span class="kw">FROM</span> documentos
+<span class="kw">ORDER BY</span> embedding <span class="kw">&lt;=&gt;</span> <span class="st">'[0.12,-0.45,...]'</span>
+<span class="kw">LIMIT</span> <span class="num">5</span>;</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Chroma — vector database embutido, sem servidor</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># pip install chromadb</span>
+<span class="kw">import</span> chromadb
+
+client = chromadb.<span class="fn">Client</span>()
+colecao = client.<span class="fn">create_collection</span>(<span class="st">"docs"</span>)
+
+colecao.<span class="fn">add</span>(documents=[<span class="st">"cachorros são leais"</span>], ids=[<span class="st">"1"</span>])
+colecao.<span class="fn">query</span>(query_texts=[<span class="st">"animais fiéis"</span>], n_results=<span class="num">3</span>)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">📐 Escolha a dimensão certa</div><div class="card-text">Mais dimensões = mais nuance, mas também mais custo de armazenamento e busca mais lenta. Comece pequeno e meça a qualidade antes de subir de modelo.</div></div>
+      <div class="card"><div class="card-title">🎯 Meça recall@k ao trocar de índice</div><div class="card-text">Índices ANN trocam precisão por velocidade — sempre compare os resultados aproximados contra a força bruta numa amostra, antes de confiar cegamente.</div></div>
+      <div class="card"><div class="card-title">🤝 Combine com filtros de metadados</div><div class="card-text">Busca híbrida ("parecido com X, mas só categoria Y e em estoque") costuma dar resultados muito mais úteis do que busca vetorial pura.</div></div>
+      <div class="card"><div class="card-title">🔄 Monitore o "drift" do modelo</div><div class="card-text">Se você trocar de modelo de embedding, precisa reprocessar (re-indexar) todos os vetores antigos — eles não são compatíveis entre versões.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Embeddings gerados por modelos diferentes vivem em "mapas" diferentes e <strong>não podem ser comparados entre si</strong> — nunca misture, no mesmo índice, vetores gerados por dois modelos diferentes (ou até duas versões do mesmo modelo).</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Vector Databases &amp; Embeddings</span>
+    <span>
+      Fontes: <a href="https://www.pinecone.io/learn/" target="_blank" rel="noopener">Pinecone Learning Center</a> ·
+      <a href="https://github.com/pgvector/pgvector" target="_blank" rel="noopener">pgvector</a> ·
+      <a href="https://www.sbert.net/" target="_blank" rel="noopener">Sentence-Transformers</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-embeddings', icon:'🧭', label:'O que é Embedding'},
+  {id:'s-mapa', icon:'🗺️', label:'Mapa de Significados'},
+  {id:'s-dimensoes', icon:'📐', label:'Dimensões'},
+  {id:'s-similaridade', icon:'📏', label:'Medindo Semelhança'},
+  {id:'s-geracao', icon:'🏭', label:'Como é Gerado'},
+  {id:'s-vectordb', icon:'🗄️', label:'Vector Database'},
+  {id:'s-ann', icon:'⚡', label:'Busca ANN'},
+  {id:'s-hnsw', icon:'🕸️', label:'HNSW'},
+  {id:'s-ivf', icon:'🗂️', label:'IVF & Clusters'},
+  {id:'s-quantizacao', icon:'🗜️', label:'Quantização'},
+  {id:'s-metricas', icon:'📊', label:'Métricas'},
+  {id:'s-rag', icon:'🔗', label:'RAG'},
+  {id:'s-comparacao', icon:'⚖️', label:'Bancos Vetoriais'},
+  {id:'s-casos', icon:'🎯', label:'Casos de Uso'},
+  {id:'s-codigo', icon:'💻', label:'Na Prática'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+function drawArrow(ctx, x1, y1, x2, y2, color, width){
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width || 2.5;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const angle = Math.atan2(y2-y1, x2-x1);
+  const headLen = 10;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - headLen*Math.cos(angle-Math.PI/6), y2 - headLen*Math.sin(angle-Math.PI/6));
+  ctx.lineTo(x2 - headLen*Math.cos(angle+Math.PI/6), y2 - headLen*Math.sin(angle+Math.PI/6));
+  ctx.closePath(); ctx.fill();
+}
+
+/* ===================== 1D SENTIMENT NUMBER LINE ===================== */
+const sentimentWords = [
+  {w:'horrível', v:-0.92}, {w:'ruim', v:-0.55}, {w:'ok', v:0.0}, {w:'bom', v:0.5}, {w:'incrível', v:0.95},
+];
+function buildSentimentLine(){
+  const el = document.getElementById('sentimentLine');
+  const track = document.createElement('div');
+  track.className = 'numberline-track';
+  el.appendChild(track);
+  sentimentWords.forEach(item => {
+    const left = 50 + item.v*44;
+    const dot = document.createElement('div');
+    dot.className = 'numberline-dot';
+    dot.style.left = left + '%';
+    dot.innerHTML = `<span class="lbl">${item.w}</span><span class="dot"></span>`;
+    el.appendChild(dot);
+  });
+  const l = document.createElement('div'); l.className='numberline-endlabel'; l.style.left='10px'; l.textContent='-1 (negativo)';
+  const r = document.createElement('div'); r.className='numberline-endlabel'; r.style.right='10px'; r.textContent='+1 (positivo)';
+  el.appendChild(l); el.appendChild(r);
+}
+buildSentimentLine();
+
+/* ===================== 2D WORD MAP ===================== */
+const wordClusters = [
+  {name:'Animais', color:'#06b6d4', words:[
+    {w:'gato', x:0.15, y:0.24}, {w:'cachorro', x:0.23, y:0.16}, {w:'leão', x:0.09, y:0.10}, {w:'tigre', x:0.05, y:0.19}, {w:'cavalo', x:0.19, y:0.32},
+  ]},
+  {name:'Frutas', color:'#7dded8', words:[
+    {w:'maçã', x:0.76, y:0.14}, {w:'banana', x:0.84, y:0.21}, {w:'morango', x:0.70, y:0.07}, {w:'uva', x:0.88, y:0.10},
+  ]},
+  {name:'Veículos', color:'#36a2ef', words:[
+    {w:'carro', x:0.58, y:0.76}, {w:'ônibus', x:0.67, y:0.83}, {w:'avião', x:0.53, y:0.91}, {w:'bicicleta', x:0.47, y:0.68},
+  ]},
+  {name:'Emoções', color:'#c49aff', words:[
+    {w:'feliz', x:0.24, y:0.74}, {w:'triste', x:0.14, y:0.85}, {w:'bravo', x:0.09, y:0.92}, {w:'animado', x:0.32, y:0.67},
+  ]},
+  {name:'Realeza', color:'#f86b63', words:[
+    {w:'rei', x:0.85, y:0.53}, {w:'rainha', x:0.93, y:0.46}, {w:'homem', x:0.77, y:0.60}, {w:'mulher', x:0.85, y:0.40},
+  ]},
+];
+function drawWordMap(){
+  const cv = document.getElementById('wordMapCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 360;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const pad = 30;
+  wordClusters.forEach(cluster => {
+    cluster.words.forEach(item => {
+      const x = pad + item.x*(w-2*pad);
+      const y = pad + item.y*(h-2*pad);
+      ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2);
+      ctx.fillStyle = cluster.color; ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth=1; ctx.stroke();
+      ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle='#dfe5ef';
+      ctx.fillText(item.w, x+11, y+4);
+    });
+  });
+}
+function buildWordMapLegend(){
+  document.getElementById('wordMapLegend').innerHTML = wordClusters.map(c =>
+    `<span class="chip"><span class="chip-dot" style="background:${c.color};"></span>${c.name}</span>`
+  ).join('');
+}
+drawWordMap();
+buildWordMapLegend();
+window.addEventListener('resize', drawWordMap);
+
+/* ===================== VECTOR MATH (king - man + woman = queen) ===================== */
+function drawVectorMath(){
+  const cv = document.getElementById('vectorMathCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 300;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const pad = 60;
+  const pts = {
+    homem:  {x:0.20, y:0.72}, rei: {x:0.30, y:0.20},
+    mulher: {x:0.68, y:0.78}, rainha: {x:0.78, y:0.26},
+  };
+  const toXY = p => [pad + p.x*(w-2*pad), pad*0.6 + p.y*(h-pad*1.2)];
+  // grid
+  ctx.strokeStyle = 'rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  for(let i=0;i<=8;i++){
+    const x = pad + i*(w-2*pad)/8;
+    ctx.beginPath(); ctx.moveTo(x,10); ctx.lineTo(x,h-10); ctx.stroke();
+  }
+  for(let i=0;i<=6;i++){
+    const y = 10 + i*(h-20)/6;
+    ctx.beginPath(); ctx.moveTo(pad-20,y); ctx.lineTo(w-pad+20,y); ctx.stroke();
+  }
+  const [hx,hy] = toXY(pts.homem);
+  const [rx,ry] = toXY(pts.rei);
+  const [wx,wy] = toXY(pts.mulher);
+  const [qx,qy] = toXY(pts.rainha);
+  // relationship arrows (dashed)
+  ctx.setLineDash([5,4]);
+  drawArrow(ctx, hx, hy, rx, ry, '#f86b63', 2);
+  drawArrow(ctx, wx, wy, qx, qy, '#f86b63', 2);
+  ctx.setLineDash([]);
+  // points
+  const drawPt = (x,y,label,color) => {
+    ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.3)'; ctx.stroke();
+    ctx.font='13px Inter, sans-serif'; ctx.fillStyle='#dfe5ef'; ctx.fontWeight='700';
+    ctx.fillText(label, x+12, y-8);
+  };
+  drawPt(hx,hy,'homem','#36a2ef');
+  drawPt(rx,ry,'rei','#06b6d4');
+  drawPt(wx,wy,'mulher','#c49aff');
+  drawPt(qx,qy,'rainha','#7dded8');
+  ctx.font='11px Roboto Mono, monospace'; ctx.fillStyle='#f86b63';
+  ctx.fillText('+ "realeza"', (hx+rx)/2+10, (hy+ry)/2);
+  ctx.fillText('+ "realeza"', (wx+qx)/2+10, (wy+qy)/2);
+}
+drawVectorMath();
+window.addEventListener('resize', drawVectorMath);
+
+/* ===================== DIMENSION PROGRESSION ===================== */
+const dimDescriptions = {
+  '1d': 'Com 1 número, só conseguimos posicionar palavras numa reta — captura só 1 característica (ex: sentimento). Palavras com essa característica igual ficam grudadas, mesmo sendo bem diferentes.',
+  '2d': 'Com 2 números, ganhamos um plano — já dá para separar "bairros" de significado, como vimos no mapa de palavras acima.',
+  '3d': 'Com 3 números, imaginamos um espaço com profundidade. Ainda é possível desenhar (com esforço), mas já é o limite do que nossos olhos conseguem visualizar diretamente.',
+  'nd': 'Modelos de verdade usam de 300 a mais de 3.000 dimensões. Ninguém consegue desenhar ou imaginar isso — o computador não precisa "ver" o espaço, só calcular distâncias matematicamente nele.',
+};
+const dimBtnIds = {'1d':'btnDim1', '2d':'btnDim2', '3d':'btnDim3', 'nd':'btnDimN'};
+function setDim(mode){
+  Object.keys(dimBtnIds).forEach(m => document.getElementById(dimBtnIds[m]).classList.toggle('active', m===mode));
+  document.getElementById('dimDesc').textContent = dimDescriptions[mode];
+  drawDimCanvas(mode);
+}
+function drawDimCanvas(mode){
+  const cv = document.getElementById('dimCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 260;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h/2;
+  if(mode === '1d'){
+    ctx.strokeStyle = '#535966'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(40,cy); ctx.lineTo(w-40,cy); ctx.stroke();
+    const pts = [{v:-0.8,l:'triste'},{v:-0.1,l:'cachorro'},{v:0.05,l:'gato'},{v:0.7,l:'feliz'}];
+    pts.forEach(p => {
+      const x = cx + p.v*(w/2-60);
+      ctx.beginPath(); ctx.arc(x,cy,7,0,Math.PI*2); ctx.fillStyle='#06b6d4'; ctx.fill();
+      ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#dfe5ef'; ctx.textAlign='center';
+      ctx.fillText(p.l, x, cy-14);
+      ctx.textAlign='left';
+    });
+  } else if(mode === '2d'){
+    ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(40,cy); ctx.lineTo(w-40,cy); ctx.moveTo(cx,20); ctx.lineTo(cx,h-20); ctx.stroke();
+    const pts = [{x:-0.55,y:-0.5,l:'cachorro'},{x:-0.4,y:-0.65,l:'gato'},{x:0.6,y:0.4,l:'feliz'},{x:0.5,y:0.6,l:'incrível'}];
+    pts.forEach(p => {
+      const x = cx + p.x*(w/2-60), y = cy - p.y*(h/2-40);
+      ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2); ctx.fillStyle='#06b6d4'; ctx.fill();
+      ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#dfe5ef'; ctx.textAlign='center';
+      ctx.fillText(p.l, x, y-12);
+      ctx.textAlign='left';
+    });
+  } else if(mode === '3d'){
+    // pseudo-3D: depth encoded as size + vertical offset
+    const pts = [
+      {x:-0.5,y:-0.4,z:0.8,l:'cachorro'}, {x:-0.35,y:-0.55,z:0.3,l:'gato'},
+      {x:0.55,y:0.35,z:-0.5,l:'feliz'}, {x:0.15,y:0.05,z:0.9,l:'ok'}, {x:0.45,y:0.55,z:-0.9,l:'incrível'},
+    ];
+    // draw pseudo-axes
+    ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(40,cy); ctx.lineTo(w-40,cy); ctx.moveTo(cx,20); ctx.lineTo(cx,h-20); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-70,cy+50); ctx.lineTo(cx+70,cy-50); ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
+    pts.sort((a,b)=>a.z-b.z).forEach(p => {
+      const depthFactor = (p.z+1)/2; // 0..1
+      const x = cx + p.x*(w/2-70) + p.z*18;
+      const y = cy - p.y*(h/2-50) - p.z*12;
+      const r = 5 + depthFactor*6;
+      ctx.globalAlpha = 0.45 + depthFactor*0.55;
+      ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='#06b6d4'; ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#dfe5ef'; ctx.textAlign='center';
+      ctx.fillText(p.l, x, y-r-6);
+      ctx.textAlign='left';
+    });
+  } else {
+    ctx.font='15px Inter, sans-serif'; ctx.fillStyle='#98a2b3'; ctx.textAlign='center';
+    ctx.fillText('🌀 300+ dimensões não têm um desenho possível', cx, cy-20);
+    ctx.font='12px Inter, sans-serif'; ctx.fillStyle='#515761';
+    ctx.fillText('...mas o computador calcula distâncias nesse espaço perfeitamente bem.', cx, cy+8);
+    ctx.textAlign='left';
+  }
+}
+document.getElementById('dimDesc').textContent = dimDescriptions['1d'];
+drawDimCanvas('1d');
+window.addEventListener('resize', () => {
+  const active = Object.keys(dimBtnIds).find(m => document.getElementById(dimBtnIds[m]).classList.contains('active')) || '1d';
+  drawDimCanvas(active);
+});
+
+/* ===================== REAL MODEL DIMENSIONS BAR CHART ===================== */
+function drawDimsBarChart(){
+  const cv = document.getElementById('dimsBarCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 190;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Word2Vec', dims:300, color:'#98a2b3'},
+    {name:'GloVe', dims:300, color:'#98a2b3'},
+    {name:'BERT-base', dims:768, color:'#36a2ef'},
+    {name:'Cohere embed-v3', dims:1024, color:'#c49aff'},
+    {name:'OpenAI ada-002', dims:1536, color:'#06b6d4'},
+    {name:'OpenAI text-embed-3-large', dims:3072, color:'#7dded8'},
+  ];
+  const padL=190, padR=60, padTop=10, barH=20, gap=8;
+  const maxVal = 3072;
+  data.forEach((d,i) => {
+    const y = padTop + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+    ctx.fillText(d.name, padL-10, y+barH*0.68);
+    ctx.textAlign='left';
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,5); ctx.fill();
+    const barW = Math.max(4, trackW*(d.dims/maxVal));
+    ctx.fillStyle=d.color; roundRect(ctx,padL,y,barW,barH,5); ctx.fill();
+    ctx.fillStyle='#dfe5ef'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText(d.dims + 'd', padL+barW+8, y+barH*0.68);
+  });
+}
+drawDimsBarChart();
+window.addEventListener('resize', drawDimsBarChart);
+
+/* ===================== COSINE SIMILARITY DEMO ===================== */
+function updateCosine(){
+  const angle = +document.getElementById('angleSlider').value;
+  document.getElementById('angleVal').textContent = angle + '°';
+  const cos = Math.cos(angle * Math.PI/180);
+  let interp, color;
+  if(cos > 0.85){ interp='Praticamente idênticos em significado'; color='#7dded8'; }
+  else if(cos > 0.4){ interp='Bem parecidos'; color='#06b6d4'; }
+  else if(cos > -0.4){ interp='Pouco relacionados'; color='#98a2b3'; }
+  else { interp='Praticamente opostos'; color='#f86b63'; }
+  document.getElementById('cosineResult').innerHTML = `
+    <div><span class="rl">Similaridade de cosseno</span><span class="rv" style="color:${color};">${cos.toFixed(2)}</span></div>
+    <div><span class="rl">Interpretação</span><span class="rv" style="font-size:14px;color:${color};">${interp}</span></div>
+  `;
+  drawCosineCanvas(angle, cos);
+}
+function drawCosineCanvas(angle, cos){
+  const cv = document.getElementById('cosineCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 240;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const ox = w/2, oy = h - 40;
+  const len = Math.min(w/2, h) - 50;
+  // base vector (fixed, pointing up)
+  const ax = ox, ay = oy - len;
+  drawArrow(ctx, ox, oy, ax, ay, '#06b6d4', 3);
+  ctx.font='12px Inter, sans-serif'; ctx.fillStyle='#06b6d4';
+  ctx.fillText('Vetor A ("cachorro")', ax+8, ay);
+  // rotating vector
+  const rad = (90 - angle) * Math.PI/180;
+  const bx = ox + len*Math.cos(rad);
+  const by = oy - len*Math.sin(rad);
+  drawArrow(ctx, ox, oy, bx, by, '#f86b63', 3);
+  ctx.fillStyle='#f86b63';
+  ctx.fillText('Vetor B', bx+8, by);
+  // angle arc
+  ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(ox,oy,40,-Math.PI/2,-Math.PI/2+angle*Math.PI/180);
+  ctx.stroke();
+  ctx.font='11px Roboto Mono, monospace'; ctx.fillStyle='#dfe5ef';
+  ctx.fillText(angle+'°', ox+46*Math.cos(-Math.PI/2+angle*Math.PI/360), oy+46*Math.sin(-Math.PI/2+angle*Math.PI/360));
+}
+document.getElementById('angleSlider').addEventListener('input', updateCosine);
+updateCosine();
+window.addEventListener('resize', updateCosine);
+
+/* ===================== COSINE VS EUCLIDEAN DISAGREEMENT ===================== */
+function drawCompareMetric(){
+  const cv = document.getElementById('compareMetricCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 260;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const ox = 70, oy = h-30;
+  const scale = 22;
+  const A = {x:2,y:1}, B = {x:6,y:3}, C = {x:1,y:-2};
+  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(20,oy); ctx.lineTo(w-20,oy); ctx.moveTo(ox,10); ctx.lineTo(ox,h-10); ctx.stroke();
+  const toXY = p => [ox + p.x*scale, oy - p.y*scale];
+  const [ax,ay] = toXY(A), [bx,by] = toXY(B), [cx,cy] = toXY(C);
+  drawArrow(ctx, ox, oy, ax, ay, '#06b6d4', 3);
+  drawArrow(ctx, ox, oy, bx, by, '#7dded8', 3);
+  drawArrow(ctx, ox, oy, cx, cy, '#f86b63', 3);
+  ctx.font='12px Inter, sans-serif';
+  ctx.fillStyle='#06b6d4'; ctx.fillText('A (2,1)', ax+8, ay-4);
+  ctx.fillStyle='#7dded8'; ctx.fillText('B (6,3) — mesma direção de A, 3x maior', bx+8, by-4);
+  ctx.fillStyle='#f86b63'; ctx.fillText('C (1,-2) — direção bem diferente', cx+8, cy+14);
+}
+function statsCompareMetric(){
+  document.getElementById('compareMetricStats').innerHTML = `
+    <div class="stat-card c-green"><div class="stat-card-label">A vs B — cosseno</div><div class="stat-card-value">1.00</div></div>
+    <div class="stat-card c-red"><div class="stat-card-label">A vs B — distância euclidiana</div><div class="stat-card-value">4.47</div></div>
+    <div class="stat-card c-red"><div class="stat-card-label">A vs C — cosseno</div><div class="stat-card-value">0.00</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">A vs C — distância euclidiana</div><div class="stat-card-value">3.16 (menor!)</div></div>
+  `;
+}
+drawCompareMetric();
+statsCompareMetric();
+window.addEventListener('resize', drawCompareMetric);
+
+/* ===================== EMBEDDING GENERATION PIPELINE ===================== */
+const genInfo = {
+  'gen-texto': {t:'1. Texto bruto', d:'A frase original, como uma pessoa escreveria: "cachorros são leais". Nesse ponto ainda não existe nenhum número — só caracteres.'},
+  'gen-token': {t:'2. Tokenização', d:'O texto é quebrado em pedaços menores (tokens) — podem ser palavras inteiras ou pedaços de palavras (ex: "cachorr" + "os"). Cada token vira um número de identificação (ID) baseado num vocabulário fixo do modelo.'},
+  'gen-modelo': {t:'3. Modelo (rede neural treinada)', d:'Os IDs dos tokens passam por várias camadas de uma rede neural (hoje, quase sempre um Transformer) que já foi treinada lendo bilhões de frases. Essas camadas combinam informações de contexto de cada token com os vizinhos da frase.'},
+  'gen-vetor': {t:'4. Vetor de saída', d:'A última camada produz uma lista de números (ex: 384, 768 ou 1536 valores) que resume o significado da frase inteira nesse "mapa" — pronta para ser guardada e comparada num vector database.'},
+};
+function pickGen(id){
+  document.querySelectorAll('#s-geracao .pq-clickable').forEach(el => el.classList.remove('active'));
+  document.querySelector(`#s-geracao [data-id="${id}"]`).classList.add('active');
+  const info = genInfo[id];
+  document.getElementById('genDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+pickGen('gen-texto');
+
+/* ===================== STATIC VS CONTEXTUAL EMBEDDINGS ===================== */
+const embTypeInfo = {
+  static: `
+    <div class="grid-2">
+      <div class="card"><div class="card-title">💰 "Fui ao banco sacar dinheiro"</div><div class="card-text">Vetor de "banco": <code>[0.31, -0.12, 0.77, ...]</code></div></div>
+      <div class="card"><div class="card-title">🌳 "Sentei no banco da praça"</div><div class="card-text">Vetor de "banco": <code>[0.31, -0.12, 0.77, ...]</code> <strong style="color:var(--accent-red);">(o mesmo vetor!)</strong></div></div>
+    </div>
+    <div class="warn-box" style="margin-top:14px;"><p>⚠️ Um modelo estático dá <strong>sempre o mesmo vetor</strong> para "banco", não importa a frase — ele ignora completamente o contexto.</p></div>`,
+  context: `
+    <div class="grid-2">
+      <div class="card"><div class="card-title">💰 "Fui ao banco sacar dinheiro"</div><div class="card-text">Vetor de "banco": <code>[0.85, 0.21, -0.44, ...]</code> — próximo de "agência", "dinheiro"</div></div>
+      <div class="card"><div class="card-title">🌳 "Sentei no banco da praça"</div><div class="card-text">Vetor de "banco": <code>[-0.30, 0.62, 0.15, ...]</code> — próximo de "assento", "parque"</div></div>
+    </div>
+    <div class="ok-box" style="margin-top:14px;"><p>✅ Um modelo contextual (Transformer) gera um vetor <strong>diferente</strong> para "banco" em cada frase, porque olha para as palavras ao redor antes de decidir o significado.</p></div>`,
+};
+function setEmbType(mode){
+  document.getElementById('btnStatic').classList.toggle('active', mode==='static');
+  document.getElementById('btnContext').classList.toggle('active', mode==='context');
+  document.getElementById('embTypeBody').innerHTML = embTypeInfo[mode];
+}
+setEmbType('static');
+
+/* ===================== ANN CALCULATOR ===================== */
+const ANN_THROUGHPUT = 200000000; // comparações de dimensão/seg, ilustrativo
+function formatTime(sec){
+  if(sec < 0.001) return (sec*1e6).toFixed(0) + ' µs';
+  if(sec < 1) return (sec*1000).toFixed(1) + ' ms';
+  if(sec < 60) return sec.toFixed(2) + ' s';
+  if(sec < 3600) return (sec/60).toFixed(1) + ' min';
+  return (sec/3600).toFixed(1) + ' h';
+}
+function updateAnn(){
+  const n = +document.getElementById('annN').value;
+  const d = +document.getElementById('annD').value;
+  document.getElementById('annNVal').textContent = n.toLocaleString('pt-BR');
+  document.getElementById('annDVal').textContent = d.toLocaleString('pt-BR');
+  const bruteOps = n * d;
+  const annOps = Math.ceil(Math.log2(Math.max(2,n))) * d * 40;
+  const bruteTime = bruteOps / ANN_THROUGHPUT;
+  const annTime = annOps / ANN_THROUGHPUT;
+  const speedup = Math.max(1, Math.round(bruteTime/annTime));
+  document.getElementById('annStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Força bruta — tempo estimado</div><div class="stat-card-value">${formatTime(bruteTime)}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">ANN (HNSW) — tempo estimado</div><div class="stat-card-value">${formatTime(annTime)}</div></div>
+    <div class="stat-card c-blue" style="grid-column:1/-1;"><div class="stat-card-label">ANN é cerca de quantas vezes mais rápido</div><div class="stat-card-value">${speedup.toLocaleString('pt-BR')}x</div></div>
+  `;
+  drawAnnCanvas(bruteTime, annTime);
+}
+function drawAnnCanvas(bruteTime, annTime){
+  const cv = document.getElementById('annCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Força bruta (compara com tudo)', val: Math.log10(bruteTime*1000+2), raw: bruteTime, color:'#f86b63'},
+    {name:'ANN — índice aproximado', val: Math.log10(annTime*1000+2), raw: annTime, color:'#06b6d4'},
+  ];
+  const padL=220, padR=20, padTop=14, barH=32, gap=22;
+  const maxVal = Math.max(...data.map(d=>d.val)) || 1;
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(formatTime(d.raw), padL+10, y+barH*0.65);
+  });
+}
+document.getElementById('annN').addEventListener('input', updateAnn);
+document.getElementById('annD').addEventListener('input', updateAnn);
+updateAnn();
+window.addEventListener('resize', updateAnn);
+
+/* ===================== HNSW LAYERS ===================== */
+const hnswLayersData = [
+  {id:'l2', label:'Camada 2 — linha expressa', count:'3 nós', nodes:3, t:'Camada 2 (topo) — a linha expressa', d:'Poucos nós, bem espalhados. Uma busca começa aqui e dá um "salto" gigante na direção certa, cobrindo boa parte do mapa em 1 ou 2 movimentos — como pegar o trem-bala até a região certa da cidade.'},
+  {id:'l1', label:'Camada 1 — linha semi-expressa', count:'6 nós', nodes:6, t:'Camada 1 (meio) — refinando a direção', d:'Mais nós que a camada 2, cobrindo uma área menor com mais detalhe. A busca "desce" para essa camada a partir do nó mais próximo encontrado lá em cima, e refina a posição.'},
+  {id:'l0', label:'Camada 0 — rua local (todos os nós)', count:'12 nós (todos)', nodes:12, t:'Camada 0 (base) — todo mundo está aqui', d:'Toda palavra/vetor do banco existe nesta camada. É aqui que a busca termina, examinando só a vizinhança local ao redor do ponto encontrado nas camadas de cima — rápido, porque a área a explorar já foi bastante reduzida.'},
+];
+function buildHnswLayers(){
+  const el = document.getElementById('hnswLayers');
+  el.innerHTML = hnswLayersData.map((layer,i) => `
+    ${i>0 ? '<div class="hnsw-connector">↓ desce um nível ↓</div>' : ''}
+    <div class="hnsw-layer" data-id="${layer.id}" onclick="pickHnsw('${layer.id}')">
+      <div class="hnsw-layer-top"><span class="hnsw-layer-label">${layer.label}</span><span class="hnsw-layer-count">${layer.count}</span></div>
+      <div class="hnsw-nodes">${Array.from({length:layer.nodes}, () => '<span class="hnsw-node"></span>').join('')}</div>
+    </div>
+  `).join('');
+}
+function pickHnsw(id){
+  document.querySelectorAll('.hnsw-layer').forEach(el => el.classList.toggle('active', el.dataset.id===id));
+  const layer = hnswLayersData.find(l => l.id===id);
+  document.getElementById('hnswDetail').innerHTML = `<div class="ad-title">${layer.t}</div><div class="ad-text">${layer.d}</div>`;
+}
+buildHnswLayers();
+pickHnsw('l2');
+
+/* ===================== IVF CLUSTERING DEMO ===================== */
+const ivfClusters = [
+  {color:'#06b6d4', cx:0.25, cy:0.28, pts:[[0.20,0.22],[0.28,0.20],[0.18,0.32],[0.30,0.30],[0.24,0.36],[0.15,0.26],[0.33,0.24]]},
+  {color:'#36a2ef', cx:0.75, cy:0.25, pts:[[0.70,0.18],[0.80,0.22],[0.73,0.30],[0.82,0.30],[0.68,0.28],[0.78,0.15],[0.85,0.26]]},
+  {color:'#c49aff', cx:0.28, cy:0.75, pts:[[0.22,0.70],[0.32,0.68],[0.24,0.80],[0.34,0.78],[0.18,0.76],[0.30,0.82],[0.20,0.66]]},
+  {color:'#7dded8', cx:0.75, cy:0.72, pts:[[0.70,0.66],[0.80,0.70],[0.72,0.78],[0.82,0.76],[0.68,0.74],[0.78,0.64],[0.85,0.72]]},
+];
+const ivfQuery = {x:0.30, y:0.30};
+let ivfMode = 'all';
+function nearestCluster(){
+  let best=0, bestD=Infinity;
+  ivfClusters.forEach((c,i) => {
+    const d = Math.hypot(c.cx-ivfQuery.x, c.cy-ivfQuery.y);
+    if(d<bestD){bestD=d; best=i;}
+  });
+  return best;
+}
+function setIvfMode(mode){
+  ivfMode = mode;
+  document.getElementById('btnIvfAll').classList.toggle('active', mode==='all');
+  document.getElementById('btnIvfCluster').classList.toggle('active', mode==='cluster');
+  drawIvf();
+}
+function drawIvf(){
+  const cv = document.getElementById('ivfCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 320;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const pad = 40;
+  const toXY = (x,y) => [pad + x*(w-2*pad), pad + y*(h-2*pad)];
+  const nearest = nearestCluster();
+  let totalPts = 0, searchedPts = 0;
+  const [qx,qy] = toXY(ivfQuery.x, ivfQuery.y);
+  ivfClusters.forEach((c,ci) => {
+    const searched = (ivfMode==='all') || (ci===nearest);
+    c.pts.forEach(p => {
+      totalPts++;
+      if(searched) searchedPts++;
+      const [x,y] = toXY(p[0], p[1]);
+      if(searched){
+        ctx.strokeStyle = c.color+'55'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(qx,qy); ctx.lineTo(x,y); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2);
+      ctx.fillStyle = searched ? c.color : 'rgba(152,162,179,.25)';
+      ctx.fill();
+    });
+    const [ccx,ccy] = toXY(c.cx, c.cy);
+    ctx.beginPath(); ctx.arc(ccx,ccy, searched ? 46 : 40, 0, Math.PI*2);
+    ctx.strokeStyle = searched ? c.color : 'rgba(152,162,179,.2)';
+    ctx.setLineDash([4,4]); ctx.lineWidth=1.5; ctx.stroke(); ctx.setLineDash([]);
+  });
+  // query point
+  ctx.beginPath(); ctx.arc(qx,qy,9,0,Math.PI*2);
+  ctx.fillStyle='#f86b63'; ctx.fill();
+  ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.font='12px Inter, sans-serif'; ctx.fillStyle='#f86b63';
+  ctx.fillText('🔍 pergunta', qx+12, qy-10);
+
+  document.getElementById('ivfStats').innerHTML = `
+    <div class="stat-card"><div class="stat-card-label">Total de vetores no banco</div><div class="stat-card-value">${totalPts}</div></div>
+    <div class="stat-card ${ivfMode==='cluster'?'c-green':'c-red'}"><div class="stat-card-label">Vetores realmente comparados</div><div class="stat-card-value">${searchedPts} (${Math.round(searchedPts/totalPts*100)}%)</div></div>
+  `;
+}
+drawIvf();
+window.addEventListener('resize', drawIvf);
+
+/* ===================== QUANTIZATION ===================== */
+function drawQuant(){
+  const cv = document.getElementById('quantCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 180;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'float32 (padrão)', bytes:768*4, color:'#f86b63'},
+    {name:'int8 (quantizado)', bytes:768*1, color:'#36a2ef'},
+    {name:'binário (1 bit/dim)', bytes:768/8, color:'#7dded8'},
+  ];
+  const padL=190, padR=60, padTop=14, barH=30, gap=18;
+  const maxVal = data[0].bytes;
+  data.forEach((d,i) => {
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle='#98a2b3'; ctx.textAlign='right';
+    ctx.fillText(d.name, padL-10, y+barH*0.65);
+    ctx.textAlign='left';
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW*(d.bytes/maxVal));
+    ctx.fillStyle=d.color; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(d.bytes.toLocaleString('pt-BR') + ' bytes/vetor', padL+10, y+barH*0.65);
+  });
+}
+function quantStats(){
+  const mb = bytes => (bytes/1e9).toFixed(2) + ' GB';
+  document.getElementById('quantStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">float32 — 1M vetores</div><div class="stat-card-value">${mb(768*4*1000000)}</div></div>
+    <div class="stat-card c-blue"><div class="stat-card-label">int8 — 1M vetores (4x menor)</div><div class="stat-card-value">${mb(768*1*1000000)}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">binário — 1M vetores (32x menor)</div><div class="stat-card-value">${mb(768/8*1000000)}</div></div>
+  `;
+}
+drawQuant();
+quantStats();
+window.addEventListener('resize', drawQuant);
+
+/* ===================== RAG PIPELINE ===================== */
+const ragSteps = [
+  {t:'1. Pergunta do usuário', d:'Tudo começa com uma pergunta em linguagem natural, ex: "qual a política de reembolso da empresa?" — texto puro, do jeito que uma pessoa escreveria.'},
+  {t:'2. Embedding da pergunta', d:'A pergunta é transformada em vetor pelo mesmo modelo de embedding usado para indexar os documentos — para que ambos "falem a mesma língua numérica".'},
+  {t:'3. Busca no Vector DB (top-k)', d:'O vetor da pergunta é comparado com os vetores dos documentos já indexados, e os "k" mais parecidos (ex: os 5 mais próximos) são recuperados.'},
+  {t:'4. Monta o prompt com contexto', d:'Os trechos recuperados são inseridos junto da pergunta original, formando um prompt do tipo: "Com base nestes trechos: [...], responda: [pergunta]".'},
+  {t:'5. LLM gera a resposta', d:'O modelo de linguagem lê a pergunta + o contexto recuperado e escreve uma resposta fundamentada nos documentos reais, em vez de "chutar" algo da memória do treinamento.'},
+];
+function buildRagPipeline(){
+  const el = document.getElementById('ragPipeline');
+  el.innerHTML = ragSteps.map((s,i) => `
+    ${i>0 ? '<span class="pipeline-arrow">→</span>' : ''}
+    <div class="pipeline-step" data-idx="${i}" onclick="pickRag(${i})">
+      <div class="pipeline-step-num">PASSO ${i+1}</div>
+      <div class="pipeline-step-label">${s.t.replace(/^\d+\.\s*/,'')}</div>
+    </div>
+  `).join('');
+}
+function pickRag(i){
+  document.querySelectorAll('.pipeline-step').forEach(el => el.classList.toggle('active', +el.dataset.idx===i));
+  document.getElementById('ragDetail').innerHTML = `<div class="ad-title">${ragSteps[i].t}</div><div class="ad-text">${ragSteps[i].d}</div>`;
+}
+buildRagPipeline();
+pickRag(0);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Um embedding é uma lista de números que representa o significado de algo (palavra, frase, imagem).', a:true, e:'Verdadeiro. Coisas com significados parecidos recebem vetores (listas de números) próximos nesse "mapa" — é essa proximidade que torna o embedding útil.'},
+  {q:'Quanto mais perto dois vetores estão nesse mapa, mais diferentes são os significados que eles representam.', a:false, e:'Falso. É o oposto: perto = parecido, longe = diferente. Essa é a regra fundamental por trás de todo o resto da aula.'},
+  {q:'A similaridade de cosseno mede o ângulo entre dois vetores, ignorando o tamanho (magnitude) deles.', a:true, e:'Verdadeiro. Por isso ela é tão usada em busca de texto: um documento repetido várias vezes não deveria "parecer diferente" de uma versão mais curta dele mesmo.'},
+  {q:'Modelos como Word2Vec dão um vetor diferente para a mesma palavra dependendo da frase em que ela aparece.', a:false, e:'Falso. Word2Vec é um modelo estático — dá sempre o mesmo vetor para uma palavra, ignorando o contexto. Isso é uma característica de modelos contextuais como BERT.'},
+  {q:'Um vector database sempre encontra o vizinho mais próximo com 100% de precisão matemática.', a:false, e:'Falso. A maioria usa índices ANN (Approximate Nearest Neighbor), que trocam um pouco de precisão por muito mais velocidade — o resultado é "quase sempre" o mais próximo, não garantidamente.'},
+  {q:'HNSW organiza vetores em camadas hierárquicas, parecido com linhas expressas e locais de metrô.', a:true, e:'Verdadeiro. A busca começa nas camadas de cima (poucos nós, saltos grandes) e desce progressivamente até a camada 0, onde todos os vetores existem.'},
+  {q:'IVF reduz o trabalho de busca agrupando vetores em clusters e só buscando dentro do(s) cluster(s) mais próximo(s) da pergunta.', a:true, e:'Verdadeiro. É como pré-organizar uma biblioteca em seções antes de qualquer busca, em vez de vasculhar todos os livros toda vez.'},
+  {q:'Quantização é o processo de aumentar a precisão dos vetores para deixar as buscas mais exatas.', a:false, e:'Falso. Quantização faz o oposto: reduz a precisão numérica (ex: de float32 para int8 ou binário) para economizar memória e ganhar velocidade, trocando um pouco de exatidão por eficiência.'},
+  {q:'Em RAG, o LLM responde só com base no que aprendeu no treinamento, sem consultar nenhum documento externo.', a:false, e:'Falso. É exatamente o contrário — RAG busca documentos reais e relevantes num vector database e os entrega como contexto ao LLM antes de gerar a resposta, reduzindo alucinações.'},
+  {q:'Embeddings gerados por dois modelos diferentes podem ser misturados livremente no mesmo índice de busca.', a:false, e:'Falso. Cada modelo cria seu próprio "mapa" de significados — vetores de modelos diferentes não são comparáveis entre si e nunca devem ser misturados no mesmo índice.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Local Lakehouse. Como montar um lakehouse dentro do seu notebook com DuckDB, Python e Apache Iceberg — snapshots, time travel, escrita versionada, tudo sem servidor.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Local Lakehouse (DuckDB + Iceberg + Python)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- CLICKABLE DIAGRAM (anatomia / arquitetura) ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- DIRECTORY TREE ---- */
+.tree{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:2;color:var(--text-secondary);}
+.tree .t0{color:var(--text-primary);font-weight:700;}
+.tree .t1{padding-left:22px;color:var(--accent-blue);}
+.tree .t2{padding-left:44px;color:var(--accent-purple);}
+.tree .t3{padding-left:66px;color:var(--text-secondary);}
+.tree .t3 .fname{color:var(--accent-green);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- SNAPSHOT TIMELINE ---- */
+.snap-track{display:flex;align-items:center;overflow-x:auto;padding:18px 6px 8px;}
+.snap-node{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;flex-shrink:0;padding:0 2px;}
+.snap-dot{width:38px;height:38px;border-radius:50%;background:var(--bg-elevated);border:2px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--text-secondary);transition:.15s;}
+.snap-node:hover .snap-dot{border-color:var(--accent-blue);}
+.snap-node.active .snap-dot{border-color:var(--accent);background:rgba(6,182,212,.18);color:var(--accent);box-shadow:0 0 0 4px rgba(6,182,212,.12);}
+.snap-label{font-size:9.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.4px;text-align:center;max-width:80px;line-height:1.4;}
+.snap-node.active .snap-label{color:var(--accent);}
+.snap-line{width:38px;height:2px;background:var(--border-color);flex-shrink:0;margin:0 2px 22px;}
+.snap-line.done{background:var(--accent);}
+
+/* ---- NOTEBOOK PAGE (merge vs copy) ---- */
+.notebook-page{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:16px;font-family:'Roboto Mono',monospace;font-size:12px;line-height:2;color:var(--text-secondary);}
+.notebook-page .ln{opacity:.55;margin-right:8px;}
+.notebook-page .strike{text-decoration:line-through;color:var(--accent-red);opacity:.55;}
+.notebook-page .added{color:var(--accent-green);}
+.notebook-page .sticky{background:rgba(6,182,212,.14);border:1px dashed var(--accent);border-radius:5px;padding:3px 9px;display:inline-block;margin-top:8px;color:var(--accent);font-size:11px;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Local Lakehouse</h1><span>DuckDB + Apache Iceberg + Python, rodando no seu notebook</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">3</div><div class="hstat-label">Camadas</div></div>
+      <div class="hstat"><div class="hstat-num">100%</div><div class="hstat-label">Local</div></div>
+      <div class="hstat"><div class="hstat-num">Zero</div><div class="hstat-label">Cluster</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: da pasta bagunçada ao lakehouse com histórico</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Um <em>lago organizado</em> que mora no seu notebook</h2>
+      <p>Até pouco tempo atrás, o combo "DuckDB + arquivos Parquet" resolvia metade do problema: você conseguia <strong>consultar</strong> um data lake local em segundos, mas não conseguia <em>escrever</em> nele de verdade — não existia histórico, versão, nem jeito seguro de atualizar uma linha sem reprocessar tudo. Isso mudou. Com suporte a escrita em <strong>Apache Iceberg</strong>, o DuckDB virou um <em>escritor de verdade</em> no lakehouse: cada <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code> vira um novo <strong>snapshot</strong> — uma foto versionada da tabela — tudo isso rodando dentro do processo Python, sem cluster, sem warehouse na nuvem. Esta aula mostra como montar esse lakehouse local, peça por peça.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Apache Iceberg</span>
+        <span class="badge badge-blue">DuckDB</span>
+        <span class="badge badge-green">Python</span>
+        <span class="badge badge-purple">Zero Cluster</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🧊 LAKEHOUSE LOCAL</div>
+        <div class="fc-body">
+          <div class="fc-row">DuckDB (motor SQL, mesmo processo)<br><span style="font-size:9.5px;opacity:.7;">consulta e agora também escreve</span></div>
+          <div class="fc-row">Apache Iceberg (histórico + snapshots)<br><span style="font-size:9.5px;opacity:.7;">metadata.json · manifests</span></div>
+        </div>
+        <div class="fc-foot">Arquivos .parquet na sua própria pasta</div>
+      </div>
+      <div class="file-chip-caption">Sem servidor para instalar, sem cluster para manter no ar</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🏠 O que é um Lakehouse (e por que "local")?</div>
+    <p class="section-desc">
+      Pensa em três jeitos de guardar brinquedos. O <strong>Data Warehouse</strong> é um <em>cofre trancado</em>: tudo super organizado, em caixinhas etiquetadas, mas só entra brinquedo novo se alguém arrumar um espaço certinho pra ele primeiro — é caro e lento pra mudar. O <strong>Data Lake</strong> é o <em>baú gigante</em>: joga qualquer brinquedo lá dentro, rapidinho e barato, mas depois de um tempo ninguém sabe mais o que tem lá no fundo nem se aquele brinquedo ainda funciona. O <strong>Lakehouse</strong> é o meio-termo esperto: um baú grande e barato (o lake, cheio de arquivos Parquet) só que com um <em>caderninho de controle</em> em cima dele — o <strong>table format</strong> — anotando exatamente o que tem, quando mudou, e uma cópia de segurança de cada estado anterior.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🏦 Data Warehouse</div>
+        <div class="card-text">Tudo pré-organizado em tabelas rígidas, ótimo desempenho para relatórios — mas caro, fechado, e mudar o esquema (schema) dói. Geralmente vive só na nuvem.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌊 Data Lake</div>
+        <div class="card-text">Qualquer arquivo (CSV, JSON, Parquet) jogado numa pasta ou bucket. Barato e flexível, mas sem controle de versão, sem transação seguras: um <code>UPDATE</code> malfeito pode corromper tudo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🛥️ Lakehouse</div>
+        <div class="card-text">Arquivos abertos do Data Lake (Parquet) + um caderninho de metadados por cima (Iceberg/Delta) que dá transações, versões e schema — sem abrir mão do custo baixo.</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Dimensão</th><th>Data Warehouse</th><th>Data Lake (arquivos soltos)</th><th>Lakehouse</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Formato dos dados</strong></td><td>Proprietário / interno</td><td>Aberto (Parquet, CSV, JSON)</td><td>Aberto (Parquet) + metadados abertos</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Histórico / versões</strong></td><td>Depende do produto</td><td>Nenhum — o arquivo é o arquivo</td><td>Snapshots versionados de verdade</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Transações (ACID)</strong></td><td>Sim</td><td>Não</td><td>Sim, via metadados (Iceberg/Delta)</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Onde roda</strong></td><td>Servidor/cluster dedicado</td><td>Qualquer disco ou bucket</td><td>Qualquer disco ou bucket</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Lakehouse local</strong></td><td>—</td><td>—</td><td>✅ Tudo isso na pasta do seu notebook, com DuckDB fazendo o papel do motor</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">O que muda quando ele é "local"?</div>
+      <p>Um lakehouse na nuvem normalmente envolve Spark, um catálogo gerenciado (Glue, Unity Catalog) e um bucket S3 — várias peças, várias contas, vários minutos de espera. Um lakehouse <strong>local</strong> troca isso por <strong>DuckDB</strong> (motor de consultas + agora também de escrita), <strong>Apache Iceberg</strong> (o caderninho de metadados) e uma <strong>pasta no seu disco</strong> — as mesmas ideias, sem infraestrutura para provisionar. É o mesmo "lakehouse", só que cabendo no seu laptop.</p>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMIA (CAMADAS) ============ -->
+  <section class="section" id="s-anatomia">
+    <div class="section-eyebrow">Como as Peças se Encaixam</div>
+    <div class="section-title">🧱 Anatomia de um Lakehouse Local</div>
+    <p class="section-desc">
+      Um lakehouse local é um <strong>sanduíche de três camadas</strong>, cada uma resolvendo um problema diferente. Da base para o topo: onde os bytes moram, o que descreve a história da tabela, e o motor que fala SQL com você. Clique em cada camada para ver o papel dela.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="pq-box" style="max-width:560px;margin:0 auto;">
+        <div class="pq-box-label">🥪 De cima para baixo</div>
+        <div class="pq-clickable active" data-id="layer-engine" onclick="pickLayer('layer-engine')">🦆 Motor de consultas — DuckDB</div>
+        <div class="pq-clickable" data-id="layer-table" onclick="pickLayer('layer-table')">🧊 Table format — Apache Iceberg</div>
+        <div class="pq-clickable" data-id="layer-file" onclick="pickLayer('layer-file')">📦 File format — Parquet</div>
+        <div class="pq-clickable" data-id="layer-storage" onclick="pickLayer('layer-storage')">💽 Armazenamento — disco local / bucket</div>
+      </div>
+      <div class="anatomy-detail" id="layerDetail">
+        <div class="ad-title">🦆 Motor de consultas — DuckDB</div>
+        <div class="ad-text">Roda dentro do seu processo Python (in-process): lê e agora também escreve nas camadas de baixo via SQL comum — <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>. É o "rosto" com quem você conversa.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">💽 Armazenamento — só bytes</div><div class="card-text">Uma pasta, um disco, um bucket S3. Não sabe nada sobre "tabelas" — só guarda arquivos.</div></div>
+      <div class="card"><div class="card-title">🧊 Table format — a memória</div><div class="card-text">Iceberg (ou Delta Lake) anota quais arquivos formam a tabela <em>agora</em>, e guarda o registro de como ela era antes — sem isso, um data lake nunca teria "antes".</div></div>
+      <div class="card"><div class="card-title">🦆 Motor — a conversa</div><div class="card-text">DuckDB traduz seu SQL em leituras/escritas dessas duas camadas — e faz isso na sua própria máquina, sem round-trip de rede.</div></div>
+    </div>
+
+    <p class="section-desc">Essa última parte — "sem round-trip de rede" — parece detalhe, mas é a diferença entre perguntar pro coleguinha do lado (resposta na hora) e escrever uma carta pra nuvem e esperar o correio voltar. Veja a escala:</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Do pedido à resposta: local vs. remoto (escala logarítmica, ilustrativo)</div>
+      <div class="canvas-wrap"><canvas id="latencyCanvas" height="190"></canvas></div>
+      <div class="section-desc" style="font-size:12px;text-align:center;margin-top:6px;">Números <strong>ilustrativos</strong> — a proporção entre as barras é o que importa: cada salto de rede custa ordens de grandeza a mais que ficar no mesmo processo.</div>
+    </div>
+  </section>
+
+  <!-- ============ ICEBERG POR DENTRO ============ -->
+  <section class="section" id="s-iceberg">
+    <div class="section-eyebrow">O Caderninho de Metadados</div>
+    <div class="section-title">📸 Apache Iceberg por Dentro: Snapshots e Manifests</div>
+    <p class="section-desc">
+      Imagina que sua caixa de brinquedos (a tabela) é fotografada toda vez que algo muda — um brinquedo entra, sai, ou troca de lugar. Cada foto é um <strong>snapshot</strong>: uma versão completa e válida da tabela num instante exato. O Iceberg não guarda a foto inteira de novo a cada vez (isso seria um desperdício) — ele guarda uma <strong>lista do que mudou</strong> e aponta para os arquivos de dados que continuam valendo. É esse índice de fotos + apontadores que transforma um monte de arquivos Parquet soltos em uma tabela com <em>histórico de verdade</em>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique e desça pela pilha de metadados — de "qual é a foto atual?" até o arquivo de dados de verdade</div>
+      <div class="pq-box" style="max-width:620px;margin:0 auto;">
+        <div class="pq-clickable active" data-id="meta-metadata" onclick="pickMeta('meta-metadata')">📇 metadata.json — "qual é a versão atual?"</div>
+        <div class="pq-clickable" data-id="meta-snaplist" onclick="pickMeta('meta-snaplist')">📚 Lista de snapshots — o álbum inteiro</div>
+        <div class="pq-clickable" data-id="meta-manifestlist" onclick="pickMeta('meta-manifestlist')">🗂️ Manifest list — o índice desta foto</div>
+        <div class="pq-clickable" data-id="meta-manifest" onclick="pickMeta('meta-manifest')">📋 Manifest file — quais caixas (arquivos) entram</div>
+        <div class="pq-clickable" data-id="meta-data" onclick="pickMeta('meta-data')">🧱 Arquivo de dados .parquet — as linhas de verdade</div>
+      </div>
+      <div class="anatomy-detail" id="metaDetail">
+        <div class="ad-title">📇 metadata.json</div>
+        <div class="ad-text">O ponteiro raiz da tabela: diz qual é o <strong>snapshot atual</strong>, o schema vigente e o histórico de schemas. É o único arquivo que qualquer leitor precisa achar primeiro.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🗂️ Como fica no disco</div>
+        <div class="tree">
+          <div class="t0">vendas/</div>
+          <div class="t1">metadata/</div>
+          <div class="t2"><span class="fname">v3.metadata.json</span></div>
+          <div class="t2"><span class="fname">snap-8821-1-a1b2.avro</span> <span style="opacity:.6;">(manifest list)</span></div>
+          <div class="t2"><span class="fname">a1b2-m0.avro</span> <span style="opacity:.6;">(manifest file)</span></div>
+          <div class="t1">data/</div>
+          <div class="t2"><span class="fname">00000-0-9f3c.parquet</span></div>
+          <div class="t2"><span class="fname">00001-0-7e21.parquet</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔎 Consultando o álbum de fotos</div>
+        <div class="card-text" style="margin-bottom:10px;">Toda tabela Iceberg expõe seu próprio histórico via SQL — sem precisar de nenhum log externo.</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="fn">iceberg_snapshots</span>(iceberg_catalog.default.vendas);
+
+<span class="cm">-- snapshot_id | timestamp_ms | operation | summary</span></div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">A sacada do Iceberg</div>
+      <p>Nada de reescrever a tabela inteira a cada mudança. Um <code>INSERT</code> pequeno cria só um arquivo de dados novo + um manifest novo + um metadata.json novo apontando pra ele — os arquivos antigos continuam lá, intactos, formando o snapshot anterior. É "controle de versão" (tipo git) aplicado a tabelas.</p>
+    </div>
+  </section>
+
+  <!-- ============ DUCKDB ESCRITOR ============ -->
+  <section class="section" id="s-duckdb-escritor">
+    <div class="section-eyebrow">A Virada Recente</div>
+    <div class="section-title">✍️ DuckDB Como Escritor no Iceberg</div>
+    <p class="section-desc">
+      Por muito tempo, o DuckDB era um ótimo <em>leitor</em> de tabelas Iceberg (via <code>iceberg_scan</code>) mas não um <em>escritor</em>. O fluxo comum era: prototipar localmente e depois "entregar" para outro sistema (Spark, um serviço gerenciado) fazer a escrita de verdade. Isso mudou — o DuckDB agora participa do <strong>caminho de commit</strong> do Iceberg como um escritor de primeira classe, não um "exportador" por fora. Um <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code> no DuckDB agora produz arquivos de dados, arquivos de delete (quando necessário) e um novo snapshot de metadados — igualzinho a qualquer outro motor Iceberg faria.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">O caminho de uma escrita, do seu script até o snapshot novo</div>
+      <div class="pq-box" style="max-width:620px;margin:0 auto;">
+        <div class="pq-clickable active" data-id="flow-files" onclick="pickFlow('flow-files')">📄 Arquivos/streams locais (CSV, Parquet, JSON)</div>
+        <div class="pq-clickable" data-id="flow-duckdb" onclick="pickFlow('flow-duckdb')">🦆 DuckDB — SQL in-process</div>
+        <div class="pq-clickable" data-id="flow-catalog" onclick="pickFlow('flow-catalog')">📖 Catálogo REST do Iceberg</div>
+        <div class="pq-clickable" data-id="flow-storage" onclick="pickFlow('flow-storage')">💽 Armazenamento de objetos (dados + deletes + metadados)</div>
+      </div>
+      <div class="anatomy-detail" id="flowDetail">
+        <div class="ad-title">📄 Arquivos/streams locais</div>
+        <div class="ad-text">Tudo começa num CSV bagunçado, num Parquet já limpo, ou num stream de eventos — a matéria-prima que ainda não tem histórico nenhum.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">1. Conectar num catálogo REST Iceberg</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">LOAD</span> httpfs;
+
+<span class="kw">CREATE SECRET</span> iceberg_secret (
+    <span class="kw">TYPE</span> iceberg,
+    <span class="kw">TOKEN</span> <span class="st">'bearer_token'</span>
+);
+
+<span class="kw">ATTACH</span> <span class="st">'warehouse'</span> <span class="kw">AS</span> iceberg_catalog (
+   <span class="kw">TYPE</span> iceberg,
+   <span class="kw">SECRET</span> iceberg_secret,
+   <span class="kw">ENDPOINT</span> <span class="st">'https://rest_endpoint.com'</span>
+);</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">2. Criar, inserir, atualizar, apagar — SQL comum</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">CREATE TABLE</span> iceberg_catalog.default.simple_table (
+  col1 <span class="kw">INTEGER</span>,
+  col2 <span class="kw">VARCHAR</span>
+);
+
+<span class="kw">INSERT INTO</span> iceberg_catalog.default.simple_table
+<span class="kw">VALUES</span> (<span class="num">1</span>, <span class="st">'hello'</span>), (<span class="num">2</span>, <span class="st">'world'</span>);
+
+<span class="kw">UPDATE</span> iceberg_catalog.default.simple_table
+<span class="kw">SET</span> col1 = col1 + <span class="num">5</span>
+<span class="kw">WHERE</span> col1 = <span class="num">1</span>;
+
+<span class="kw">DELETE FROM</span> iceberg_catalog.default.simple_table
+<span class="kw">WHERE</span> col1 = <span class="num">2</span>;</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Note que cada um desses comandos é <strong>SQL padrão</strong> — nada de API especial. A mágica acontece nos bastidores: o DuckDB conversa com o <strong>catálogo REST</strong> para reservar o próximo número de snapshot, escreve os arquivos Parquet (e de delete, quando aplicável) no armazenamento de objetos, e só então <em>comita</em> o novo <code>metadata.json</code> — tornando o lakehouse <strong>compartilhado</strong> mesmo com a computação ficando local.</p>
+    </div>
+  </section>
+
+  <!-- ============ CATÁLOGOS ============ -->
+  <section class="section" id="s-catalogos">
+    <div class="section-eyebrow">Quem Sabe Onde Cada Coisa Está</div>
+    <div class="section-title">📖 Catálogos REST: o Bibliotecário do Lakehouse</div>
+    <p class="section-desc">
+      Se o metadata.json é o "índice" de uma tabela, o <strong>catálogo</strong> é o bibliotecário que sabe, entre <em>todas</em> as tabelas do lakehouse, qual é o <code>metadata.json</code> mais recente de cada uma — e garante que só um commit vence quando duas escritas competem ao mesmo tempo. Sem catálogo, cada motor teria que adivinhar sozinho qual arquivo é o "atual". Escolha uma opção para ver como rodar (ou usar) um catálogo REST.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="btn-toggle-row" id="catalogButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="catalogDetail">
+        <div class="ad-title">👆 Clique em um catálogo</div>
+        <div class="ad-text">Veja como subir ou conectar em cada opção.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRIMEIROS PASSOS ============ -->
+  <section class="section" id="s-instalacao">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">📦 Primeiros Passos</div>
+    <p class="section-desc">Três instalações e você já tem as três camadas na sua máquina: o motor, a biblioteca de tabelas, e (opcionalmente) um catálogo local via Docker.</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python — DuckDB + PyIceberg</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># motor de consultas</span>
+pip install duckdb
+
+<span class="cm"># biblioteca Python para manipular catálogos/tabelas Iceberg</span>
+pip install pyiceberg[sql-sqlite,pyarrow]</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Extensão Iceberg dentro do DuckDB</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> duckdb
+con = duckdb.<span class="fn">connect</span>()
+con.<span class="fn">sql</span>(<span class="st">"INSTALL iceberg"</span>)
+con.<span class="fn">sql</span>(<span class="st">"LOAD iceberg"</span>)</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Catálogo REST local via Docker (opcional)</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># um catálogo REST rodando em localhost, sem nuvem</span>
+docker run -p <span class="num">8181</span>:8181 apache/iceberg-rest-fixture</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Conectando o DuckDB nele</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">ATTACH</span> <span class="st">'warehouse'</span> <span class="kw">AS</span> lakehouse (
+   <span class="kw">TYPE</span> iceberg,
+   <span class="kw">ENDPOINT</span> <span class="st">'http://localhost:8181'</span>
+);</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MÃO NA MASSA COMPLETA ============ -->
+  <section class="section" id="s-mao-na-massa">
+    <div class="section-eyebrow">Script Completo</div>
+    <div class="section-title">🧪 Construindo seu Lakehouse Local, do Zero</div>
+    <p class="section-desc">O mesmo fluxo, em dois sabores: um script Python completo e o equivalente digitado direto no shell interativo do DuckDB. Os dois fazem exatamente a mesma coisa — lêem um CSV bagunçado, criam uma tabela Iceberg versionada, inserem/atualizam dados e confirmam que virou um snapshot de verdade.</p>
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> duckdb
+
+con = duckdb.<span class="fn">connect</span>()
+con.<span class="fn">sql</span>(<span class="st">"INSTALL iceberg; LOAD iceberg; LOAD httpfs;"</span>)
+
+<span class="cm"># conecta no catálogo REST (local via Docker ou remoto)</span>
+con.<span class="fn">sql</span>(<span class="st">"""
+    ATTACH 'warehouse' AS lakehouse (
+        TYPE iceberg,
+        ENDPOINT 'http://localhost:8181'
+    )
+"""</span>)
+
+<span class="cm"># cria a tabela versionada a partir de um CSV cru</span>
+con.<span class="fn">sql</span>(<span class="st">"""
+    CREATE TABLE lakehouse.default.vendas AS
+    SELECT * FROM read_csv_auto('vendas_bruto.csv')
+"""</span>)
+
+<span class="cm"># operações do dia a dia viram novos snapshots automaticamente</span>
+con.<span class="fn">sql</span>(<span class="st">"INSERT INTO lakehouse.default.vendas VALUES (101, 'Ana', 250.0)"</span>)
+con.<span class="fn">sql</span>(<span class="st">"UPDATE lakehouse.default.vendas SET valor = valor * 1.1 WHERE cliente = 'Ana'"</span>)
+
+<span class="cm"># consulta comum — igual a qualquer tabela</span>
+con.<span class="fn">sql</span>(<span class="st">"SELECT * FROM lakehouse.default.vendas"</span>).show()
+
+<span class="cm"># prova de que existe histórico agora</span>
+con.<span class="fn">sql</span>(<span class="st">"SELECT * FROM iceberg_snapshots(lakehouse.default.vendas)"</span>).show()</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">CLI — shell interativo do DuckDB</div>
+        <div class="code-block">
+<span class="code-lang">cli</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>$ duckdb
+
+D <span class="kw">INSTALL</span> iceberg; <span class="kw">LOAD</span> iceberg; <span class="kw">LOAD</span> httpfs;
+
+<span class="cm">-- conecta no catálogo REST (local via Docker ou remoto)</span>
+D <span class="kw">ATTACH</span> <span class="st">'warehouse'</span> <span class="kw">AS</span> lakehouse (
+      <span class="kw">TYPE</span> iceberg,
+      <span class="kw">ENDPOINT</span> <span class="st">'http://localhost:8181'</span>
+  );
+
+<span class="cm">-- cria a tabela versionada a partir de um CSV cru</span>
+D <span class="kw">CREATE TABLE</span> lakehouse.default.vendas <span class="kw">AS</span>
+      <span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="fn">read_csv_auto</span>(<span class="st">'vendas_bruto.csv'</span>);
+
+<span class="cm">-- operações do dia a dia viram novos snapshots automaticamente</span>
+D <span class="kw">INSERT INTO</span> lakehouse.default.vendas <span class="kw">VALUES</span> (<span class="num">101</span>, <span class="st">'Ana'</span>, <span class="num">250.0</span>);
+D <span class="kw">UPDATE</span> lakehouse.default.vendas <span class="kw">SET</span> valor = valor * <span class="num">1.1</span> <span class="kw">WHERE</span> cliente = <span class="st">'Ana'</span>;
+
+<span class="cm">-- consulta comum — igual a qualquer tabela</span>
+D <span class="kw">SELECT</span> * <span class="kw">FROM</span> lakehouse.default.vendas;
+
+<span class="cm">-- prova de que existe histórico agora</span>
+D <span class="kw">SELECT</span> * <span class="kw">FROM</span> <span class="fn">iceberg_snapshots</span>(lakehouse.default.vendas);</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">O que aconteceu nos bastidores</div>
+      <p>Cada <code>CREATE TABLE</code>, <code>INSERT</code> e <code>UPDATE</code> gerou um snapshot novo no catálogo — três "fotos" da tabela <code>vendas</code>, cada uma reconstruível a qualquer momento. Nada disso precisou de Spark, de um cluster, ou de subir a tabela pra nuvem antes de poder trabalhar nela. E não importa se você chegou lá pelo Python ou pelo CLI — o histórico gerado no catálogo é exatamente o mesmo.</p>
+    </div>
+  </section>
+
+  <!-- ============ TIME TRAVEL ============ -->
+  <section class="section" id="s-time-travel">
+    <div class="section-eyebrow">Voltando no Tempo</div>
+    <div class="section-title">⏳ Time Travel: Viajando Entre Snapshots</div>
+    <p class="section-desc">Como cada mudança vira uma foto guardada, você pode "voltar no tempo" e consultar a tabela exatamente como ela estava em qualquer commit anterior — sem restaurar backup, sem reprocessar nada. Clique em cada ponto da linha do tempo abaixo.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Linha do tempo da tabela "vendas" — clique em um snapshot</div>
+      <div class="snap-track" id="snapTrack"></div>
+      <div style="overflow-x:auto;margin-top:10px;">
+        <table class="data-table" id="snapTable"></table>
+      </div>
+      <div class="code-block" id="snapCode" style="margin-top:12px;"></div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Duas formas de "viajar": por <strong>versão</strong> (o ID exato do snapshot) ou por <strong>timestamp</strong> (a foto mais próxima daquele instante). Ambas são só uma cláusula <code>AT</code> a mais no <code>SELECT</code> — nenhuma tabela paralela, nenhum backup manual.</p>
+    </div>
+  </section>
+
+  <!-- ============ MERGE VS COPY ============ -->
+  <section class="section" id="s-merge-copy">
+    <div class="section-eyebrow">O Preço de Mudar uma Linha</div>
+    <div class="section-title">📝 Copy-on-Write vs. Merge-on-Read</div>
+    <p class="section-desc">
+      Quando você faz <code>UPDATE</code> ou <code>DELETE</code> numa tabela versionada, alguém precisa registrar "essas linhas não valem mais". Existem duas filosofias para isso — pensa em duas formas de corrigir um caderno de anotações:
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📓 Copy-on-Write — reescreve a página inteira</div>
+        <div class="notebook-page">
+<span class="ln">1</span>101, Ana, 250.0
+<span class="ln">2</span>102, Bruno, 180.0
+<span class="ln">3</span>103, Carla, 90.0</div>
+        <div class="card-text" style="margin-top:10px;">Pra mudar só a linha da Ana, um novo arquivo de dados <strong>inteiro</strong> é escrito do zero, sem ela — mesmo que o arquivo tenha 100 mil outras linhas intocadas. Simples de ler depois, caro de escrever.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🩹 Merge-on-Read — cola um post-it</div>
+        <div class="notebook-page">
+<span class="ln">1</span><span class="strike">101, Ana, 250.0</span>
+<span class="ln">2</span>102, Bruno, 180.0
+<span class="ln">3</span>103, Carla, 90.0
+<div class="sticky">🗒️ delete file: linha 1 não vale mais</div></div>
+        <div class="card-text" style="margin-top:10px;">O arquivo de dados original <strong>não é tocado</strong> — só nasce um pequeno "arquivo de delete" apontando quais linhas ignorar. Quem lê depois junta (faz o merge) os dois na hora. Escrita barata, leitura com um pouquinho mais de trabalho.</div>
+      </div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: quantos bytes são reescritos ao atualizar linhas de uma tabela de 1 milhão de linhas em 10 arquivos?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Linhas atualizadas</span><span class="ctrl-v" id="mergeRowsVal">1.000</span></div>
+          <input type="range" id="mergeRows" min="1" max="1000000" step="1" value="1000" oninput="updateMergeDemo()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="mergeCanvas" height="150"></canvas></div>
+      <div class="stat-cards" id="mergeStats"></div>
+    </div>
+
+    <div class="warn-box"><p>⚠️ Hoje, o suporte de escrita do DuckDB para <code>UPDATE</code>/<code>DELETE</code> só funciona em tabelas <strong>sem particionamento e sem ordenação</strong>, usando exclusivamente <strong>positional deletes</strong> (merge-on-read) — não copy-on-write. Veremos mais no bloco de Limitações.</p></div>
+  </section>
+
+  <!-- ============ CRESCIMENTO E LIMPEZA ============ -->
+  <section class="section" id="s-crescimento">
+    <div class="section-eyebrow">O Preço de Nunca Apagar Fotos</div>
+    <div class="section-title">📈 Crescimento do Histórico e Limpeza (expire_snapshots)</div>
+    <p class="section-desc">
+      Se você nunca joga fora fotos antigas do álbum, ele fica gigante — mesmo que ninguém mais olhe pra maioria delas. É a mesma coisa com snapshots: cada escrita deixa arquivos antigos <em>intactos</em> no disco (é assim que o time travel funciona!), mas isso significa que o armazenamento só cresce, a menos que você rode uma limpeza periódica que "esquece" fotos velhas demais para importar.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Simule: quantos snapshots antigos você decide manter?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Snapshots mantidos (retenção)</span><span class="ctrl-v" id="retentionVal">5</span></div>
+          <input type="range" id="retentionSlider" min="1" max="30" step="1" value="5" oninput="updateGrowthCanvas()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="growthCanvas" height="180"></canvas></div>
+      <div class="section-desc" style="font-size:12px;text-align:center;margin-top:6px;">Linha <span style="color:var(--accent-red);font-weight:700;">vermelha</span>: sem limpeza, o armazenamento cresce sem parar a cada escrita. Linha <span style="color:var(--accent-green);font-weight:700;">verde</span>: rodando <code>expire_snapshots</code> periodicamente, o tamanho se estabiliza.</div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- "esquece" snapshots mais antigos que N dias, liberando os arquivos órfãos</span>
+<span class="kw">CALL</span> lakehouse.system.<span class="fn">expire_snapshots</span>(<span class="st">'default.vendas'</span>, older_than =&gt; <span class="num">7</span>);</div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 Arquivos Soltos vs. Data Lake vs. Warehouse vs. Lakehouse</div>
+    <p class="section-desc">Cada opção resolve uma dor diferente — a pergunta certa não é "qual é melhor", e sim "quanto histórico e quanta infraestrutura eu realmente preciso agora".</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Solução</th><th>Versionamento</th><th>Precisa de cluster?</th><th>Escreve com SQL comum</th><th>Onde roda</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">CSV/Parquet soltos</strong></td><td>❌ Nenhum</td><td>Não</td><td>Parcial (sem transação)</td><td>Qualquer disco</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Data Lake bruto</strong></td><td>❌ Nenhum</td><td>Depende do motor</td><td>Parcial</td><td>Bucket / disco</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Data Warehouse cloud</strong></td><td>✅ Sim (interno)</td><td>Sim (gerenciado)</td><td>✅ Sim</td><td>Nuvem do fornecedor</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Lakehouse local (DuckDB + Iceberg)</strong></td><td>✅ Snapshots abertos</td><td>❌ Não</td><td>✅ Sim</td><td>Seu notebook</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Lakehouse cloud (Spark + Iceberg)</strong></td><td>✅ Snapshots abertos</td><td>Sim</td><td>✅ Sim</td><td>Cluster gerenciado</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="canvas-wrap"><canvas id="panoramaCanvas" height="160"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Complexidade de <strong>setup</strong> (ilustrativa, 0–10) até você conseguir rodar a primeira consulta/escrita — não é benchmark de performance.</div>
+  </section>
+
+  <!-- ============ LIMITAÇÕES ============ -->
+  <section class="section" id="s-limitacoes">
+    <div class="section-eyebrow">Nem Tudo São Flores (Ainda)</div>
+    <div class="section-title">⚠️ Limitações Atuais</div>
+    <p class="section-desc">Escrita Iceberg no DuckDB é uma capacidade recente — poderosa, mas com bordas. Vale conhecer antes de depender dela em produção.</p>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🚫 Tabelas particionadas/ordenadas</div><div class="card-text"><code>UPDATE</code> e <code>DELETE</code> só funcionam hoje em tabelas <strong>sem particionamento e sem ordenação</strong>.</div></div>
+      <div class="card"><div class="card-title">📍 Só positional deletes</div><div class="card-text">Somente <strong>merge-on-read</strong> via arquivos de delete posicionais — nada de copy-on-write nas operações de escrita.</div></div>
+      <div class="card"><div class="card-title">🚫 Sem MERGE INTO</div><div class="card-text">A sintaxe upsert clássica não é suportada ainda — é preciso desenhar em torno dela.</div></div>
+      <div class="card"><div class="card-title">🚫 Sem ALTER TABLE</div><div class="card-text">Mudanças de schema exigem um padrão de <em>create/replace</em> em vez de alterar a tabela existente.</div></div>
+    </div>
+    <div class="warn-box">
+      <p>⚠️ Contorno prático: use padrões de <strong>append</strong> (só inserir), <strong>create/replace</strong> (recriar a tabela quando o schema muda) e <code>UPDATE</code>/<code>DELETE</code> controlados apenas onde as regras acima permitem. Para operações mais avançadas (merge, tabelas particionadas), combine com outro motor Iceberg (Spark, Trino) enquanto o suporte do DuckDB amadurece.</p>
+    </div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casos-uso">
+    <div class="section-eyebrow">Onde ele Brilha</div>
+    <div class="section-title">🎯 Casos de Uso</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">💻 Staging no laptop</div><div class="card-text">Construa agregados diários, tabelas de features ou camadas semânticas localmente, antes de qualquer consumo downstream.</div></div>
+      <div class="card"><div class="card-title">🕵️ Debug com snapshot</div><div class="card-text">Troque especulação ("acho que os dados mudaram") por verdade histórica: consulte exatamente o estado de ontem às 14h.</div></div>
+      <div class="card"><div class="card-title">🧩 Compute plugável</div><div class="card-text">Padronize em Iceberg sem forçar uma única stack de computação — DuckDB hoje, Spark amanhã, mesmo dado.</div></div>
+      <div class="card"><div class="card-title">🔁 Prototipagem sem "handoff"</div><div class="card-text">Antes: prototipar local e entregar pra outro sistema fazer a escrita real. Agora: a escrita real já acontece local.</div></div>
+      <div class="card"><div class="card-title">🧪 Testes e CI com histórico</div><div class="card-text">Valide pipelines que dependem de time travel ou de comparar snapshots, sem subir infraestrutura de nuvem no CI.</div></div>
+      <div class="card"><div class="card-title">🌐 Lakehouse compartilhado, compute local</div><div class="card-text">Anexe um catálogo REST remoto: sua escrita local vira parte do histórico oficial da tabela, visível para outros times.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🧹 Rode expire_snapshots periodicamente</div><div class="card-text">Sem isso, cada escrita deixa arquivos órfãos acumulando — seu "lago" vira um baú sem fundo.</div></div>
+      <div class="card"><div class="card-title">📐 Prefira append quando possível</div><div class="card-text">Dado o suporte ainda parcial a <code>UPDATE</code>/<code>DELETE</code>, padrões de inserção (append) e create/replace são mais previsíveis hoje.</div></div>
+      <div class="card"><div class="card-title">📖 Combine com um catálogo REST desde cedo</div><div class="card-text">Mesmo em experimentos locais, anexar um catálogo (mesmo que local via Docker) já te acostuma com o fluxo "de verdade" de commit.</div></div>
+      <div class="card"><div class="card-title">🔍 Use iceberg_snapshots() para auditar</div><div class="card-text">Antes de confiar num pipeline, confira se cada etapa está de fato gerando um snapshot novo — é sua prova de que a escrita comitou.</div></div>
+    </div>
+    <div class="info-box"><p>💡 Um lakehouse local não substitui um lakehouse compartilhado em produção com muitos escritores concorrentes — para isso, um catálogo remoto de verdade (Glue, Nessie, Polaris) continua sendo a peça central. Use o modelo local para <strong>desenvolver, prototipar e depurar</strong> mais rápido, sabendo que o mesmo formato de tabela funciona nos dois mundos.</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Local Lakehouse</span>
+    <span>
+      Fontes: <a href="https://duckdb.org/docs/" target="_blank" rel="noopener">DuckDB Docs</a> ·
+      <a href="https://iceberg.apache.org/docs/latest/" target="_blank" rel="noopener">Apache Iceberg Docs</a> ·
+      <a href="https://medium.com/@Praxen/duckdb-iceberg-writes-local-lakehouse-upgrade-ce2842d0aae5" target="_blank" rel="noopener">DuckDB Iceberg Writes — Medium</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🏠', label:'O que é'},
+  {id:'s-anatomia', icon:'🧱', label:'Anatomia'},
+  {id:'s-iceberg', icon:'📸', label:'Iceberg por Dentro'},
+  {id:'s-duckdb-escritor', icon:'✍️', label:'DuckDB Escritor'},
+  {id:'s-catalogos', icon:'📖', label:'Catálogos'},
+  {id:'s-instalacao', icon:'📦', label:'Primeiros Passos'},
+  {id:'s-mao-na-massa', icon:'🧪', label:'Mão na Massa'},
+  {id:'s-time-travel', icon:'⏳', label:'Time Travel'},
+  {id:'s-merge-copy', icon:'📝', label:'Merge vs Copy'},
+  {id:'s-crescimento', icon:'📈', label:'Crescimento'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-limitacoes', icon:'⚠️', label:'Limitações'},
+  {id:'s-casos-uso', icon:'🎯', label:'Casos de Uso'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== LAYER STACK (anatomia) ===================== */
+const layerInfo = {
+  'layer-engine': {t:'🦆 Motor de consultas — DuckDB', d:'Roda dentro do seu processo Python (in-process): lê e agora também escreve nas camadas de baixo via SQL comum — SELECT, INSERT, UPDATE, DELETE. É o "rosto" com quem você conversa.'},
+  'layer-table': {t:'🧊 Table format — Apache Iceberg', d:'A camada de metadados: snapshots, manifests e schema. Transforma um punhado de arquivos Parquet em uma tabela com histórico, transações e versão — sem isso, "voltar no tempo" seria impossível.'},
+  'layer-file': {t:'📦 File format — Parquet', d:'O formato colunar que guarda as linhas de verdade, comprimidas e organizadas por coluna. O Iceberg aponta para arquivos Parquet; ele mesmo não reinventa como os bytes são armazenados.'},
+  'layer-storage': {t:'💽 Armazenamento — disco local / bucket', d:'A camada mais burra e mais barata: só bytes numa pasta ou bucket S3. Não sabe nada sobre "tabela" — essa inteligência mora inteira nas camadas de cima.'},
+};
+function pickLayer(id){
+  document.querySelectorAll('#s-anatomia .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = layerInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-anatomia [data-id="${id}"]`).classList.add('active');
+  document.getElementById('layerDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== LATENCY CANVAS (local vs remoto) ===================== */
+const latencyStages = [
+  {name:'DuckDB local (mesmo processo)', ms:0.8, color:'#7dded8'},
+  {name:'Disco local (SSD)', ms:2, color:'#06b6d4'},
+  {name:'Catálogo REST local (localhost)', ms:8, color:'#06b6d4'},
+  {name:'Catálogo REST remoto (nuvem)', ms:180, color:'#36a2ef'},
+  {name:'Cluster remoto (submissão de job Spark)', ms:25000, color:'#f86b63'},
+];
+function formatMs(ms){
+  if(ms < 1000) return ms.toFixed(1) + ' ms';
+  return (ms/1000).toFixed(1) + ' s';
+}
+function drawLatencyCanvas(){
+  const cv = document.getElementById('latencyCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 190;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 210, padR = 90, padTop = 8, barH = 24, gap = 10;
+  const maxLog = Math.log10(latencyStages[latencyStages.length-1].ms) - Math.log10(latencyStages[0].ms);
+  const minLog = Math.log10(latencyStages[0].ms);
+  latencyStages.forEach((d,i) => {
+    const y = padTop + i*(barH+gap);
+    ctx.font='11px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(d.name, 0, y+barH*0.68);
+    const trackW = w - padL - padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,5); ctx.fill();
+    const frac = (Math.log10(d.ms) - minLog) / maxLog;
+    const barW = Math.max(4, trackW * frac);
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle = grad; roundRect(ctx,padL,y,barW,barH,5); ctx.fill();
+    ctx.fillStyle='#dfe5ef'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText(formatMs(d.ms), padL+barW+8, y+barH*0.68);
+  });
+}
+drawLatencyCanvas();
+window.addEventListener('resize', drawLatencyCanvas);
+
+/* ===================== ICEBERG METADATA STACK ===================== */
+const metaInfo = {
+  'meta-metadata': {t:'📇 metadata.json', d:'O ponteiro raiz da tabela: diz qual é o snapshot atual, o schema vigente e o histórico de schemas. É o único arquivo que qualquer leitor precisa achar primeiro.'},
+  'meta-snaplist': {t:'📚 Lista de snapshots', d:'O álbum inteiro: todos os snapshots já criados para esta tabela, cada um com seu ID, timestamp e a operação que o gerou (append, overwrite, delete...).'},
+  'meta-manifestlist': {t:'🗂️ Manifest list', d:'O índice de UMA foto específica: lista quais arquivos de manifest compõem aquele snapshot, com estatísticas resumidas (min/max, contagem de linhas) para acelerar o planejamento de consultas.'},
+  'meta-manifest': {t:'📋 Manifest file', d:'Lista, arquivo por arquivo de dados, quais entram naquele snapshot — incluindo estatísticas por coluna que permitem pular arquivos inteiros sem abri-los (igual ao pruning de partições).'},
+  'meta-data': {t:'🧱 Arquivo de dados .parquet', d:'As linhas de verdade, no formato colunar Parquet. O Iceberg nunca reescreve o "significado" desses arquivos — só decide, via metadados, quais deles valem em cada snapshot.'},
+};
+function pickMeta(id){
+  document.querySelectorAll('#s-iceberg .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = metaInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-iceberg [data-id="${id}"]`).classList.add('active');
+  document.getElementById('metaDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== DUCKDB WRITE FLOW ===================== */
+const flowInfo = {
+  'flow-files': {t:'📄 Arquivos/streams locais', d:'Tudo começa num CSV bagunçado, num Parquet já limpo, ou num stream de eventos — a matéria-prima que ainda não tem histórico nenhum.'},
+  'flow-duckdb': {t:'🦆 DuckDB — SQL in-process', d:'Executa o INSERT/UPDATE/DELETE localmente, decide quais arquivos de dados (e de delete) precisam ser escritos, e prepara o novo estado da tabela — tudo sem sair do seu processo.'},
+  'flow-catalog': {t:'📖 Catálogo REST do Iceberg', d:'Vira a "autoridade": reserva o próximo snapshot_id, valida que ninguém mais commitou uma mudança conflitante, e registra o novo metadata.json como o atual.'},
+  'flow-storage': {t:'💽 Armazenamento de objetos', d:'Recebe os arquivos de dados (Parquet), os arquivos de delete (quando aplicável) e os artefatos de metadados — local ou em S3/GCS, dependendo de onde o warehouse aponta.'},
+};
+function pickFlow(id){
+  document.querySelectorAll('#s-duckdb-escritor .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = flowInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-duckdb-escritor [data-id="${id}"]`).classList.add('active');
+  document.getElementById('flowDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== CATALOG PICKER ===================== */
+const catalogsInfo = {
+  local: {t:'REST local (Docker)', code:`docker run -p 8181:8181 apache/iceberg-rest-fixture\n\nATTACH 'warehouse' AS lakehouse (TYPE iceberg, ENDPOINT 'http://localhost:8181');`,
+    d:'Um catálogo REST de referência rodando na sua própria máquina — ótimo para aprender e prototipar sem depender de nada externo.'},
+  nessie: {t:'Nessie', code:`docker run -p 19120:19120 projectnessie/nessie\n\nATTACH 'warehouse' AS lakehouse (TYPE iceberg, ENDPOINT 'http://localhost:19120/iceberg');`,
+    d:'Catálogo com versionamento "estilo git": branches e tags para tabelas inteiras, útil quando vários pipelines precisam experimentar sem afetar a tabela principal.'},
+  glue: {t:'AWS Glue', code:`ATTACH 'warehouse' AS lakehouse (\n  TYPE iceberg,\n  ENDPOINT 'https://glue.us-east-1.amazonaws.com'\n);`,
+    d:'Catálogo gerenciado da AWS — bom caminho quando o lakehouse local precisa "conversar" com um warehouse já existente na nuvem.'},
+  polaris: {t:'Unity Catalog / Polaris', code:`ATTACH 'warehouse' AS lakehouse (\n  TYPE iceberg,\n  ENDPOINT 'https://<seu-catalogo>/api/2.1/unity-catalog/iceberg'\n);`,
+    d:'Catálogos abertos mais recentes com foco em governança multi-engine — permitem que DuckDB, Spark e outros motores compartilhem as mesmas tabelas com controle de acesso central.'},
+};
+let catalogKey = 'local';
+function buildCatalogButtons(){
+  document.getElementById('catalogButtons').innerHTML = Object.keys(catalogsInfo).map(k =>
+    `<button class="btn-toggle ${k===catalogKey?'active':''}" onclick="pickCatalog('${k}')">${catalogsInfo[k].t}</button>`
+  ).join('');
+}
+function pickCatalog(key){
+  catalogKey = key;
+  buildCatalogButtons();
+  const info = catalogsInfo[key];
+  document.getElementById('catalogDetail').innerHTML = `
+    <div class="ad-title">${info.t}</div>
+    <div class="ad-text">${info.d}</div>
+    <div class="code-block" style="margin-top:10px;"><span class="code-lang">cli</span>${info.code.replace(/\n/g,'\n')}</div>
+  `;
+}
+buildCatalogButtons();
+pickCatalog('local');
+
+/* ===================== SNAPSHOT TIMELINE (time travel) ===================== */
+const snapshots = [
+  {id:8801, op:'CREATE', label:'Tabela criada', rows:[]},
+  {id:8802, op:'APPEND', label:'+3 linhas', rows:[[101,'Ana',250.0],[102,'Bruno',180.0],[103,'Carla',90.0]]},
+  {id:8803, op:'APPEND', label:'+2 linhas', rows:[[101,'Ana',250.0],[102,'Bruno',180.0],[103,'Carla',90.0],[104,'Diego',310.0],[105,'Elis',75.0]]},
+  {id:8804, op:'UPDATE', label:'Ana +10%', rows:[[101,'Ana',275.0],[102,'Bruno',180.0],[103,'Carla',90.0],[104,'Diego',310.0],[105,'Elis',75.0]]},
+  {id:8805, op:'DELETE', label:'Bruno saiu', rows:[[101,'Ana',275.0],[103,'Carla',90.0],[104,'Diego',310.0],[105,'Elis',75.0]]},
+];
+let activeSnap = snapshots.length - 1;
+function buildTimeline(){
+  const track = document.getElementById('snapTrack');
+  track.innerHTML = snapshots.map((s,i) => `
+    ${i>0 ? `<div class="snap-line ${i<=activeSnap?'done':''}"></div>` : ''}
+    <div class="snap-node ${i===activeSnap?'active':''}" onclick="pickSnapshot(${i})">
+      <div class="snap-dot">${i+1}</div>
+      <div class="snap-label">${s.op}<br>${s.label}</div>
+    </div>
+  `).join('');
+}
+function pickSnapshot(i){
+  activeSnap = i;
+  buildTimeline();
+  const s = snapshots[i];
+  const table = document.getElementById('snapTable');
+  if(s.rows.length === 0){
+    table.innerHTML = `<thead><tr><th>id</th><th>cliente</th><th>valor</th></tr></thead><tbody><tr><td colspan="3" style="text-align:center;color:var(--text-disabled);">tabela vazia neste snapshot</td></tr></tbody>`;
+  } else {
+    table.innerHTML = `<thead><tr><th>id</th><th>cliente</th><th>valor</th></tr></thead><tbody>${
+      s.rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2].toFixed(2)}</td></tr>`).join('')
+    }</tbody>`;
+  }
+  document.getElementById('snapCode').innerHTML = `<span class="code-lang">sql</span><span class="kw">SELECT</span> * <span class="kw">FROM</span> lakehouse.default.vendas
+<span class="kw">AT</span> (<span class="kw">VERSION</span> =&gt; <span class="num">${s.id}</span>); <span class="cm">-- snapshot: ${s.op} · ${s.label}</span>`;
+}
+buildTimeline();
+pickSnapshot(snapshots.length - 1);
+
+/* ===================== MERGE VS COPY DEMO ===================== */
+function updateMergeDemo(){
+  const rows = +document.getElementById('mergeRows').value;
+  document.getElementById('mergeRowsVal').textContent = rows.toLocaleString('pt-BR');
+  const rowsPerFile = 100000;
+  const filesTouched = Math.min(10, Math.max(1, Math.ceil(rows / rowsPerFile)));
+  const cowMB = filesTouched * 128; // reescreve o arquivo Parquet inteiro (~128MB) por arquivo tocado
+  const morKB = Math.max(0.5, (rows * 16) / 1024); // ~16 bytes por marcador de delete posicional
+  document.getElementById('mergeStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Copy-on-Write reescreveria</div><div class="stat-card-value">${cowMB.toLocaleString('pt-BR')} MB</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Merge-on-Read escreve</div><div class="stat-card-value">${morKB < 1024 ? morKB.toFixed(1)+' KB' : (morKB/1024).toFixed(2)+' MB'}</div></div>
+    <div class="stat-card c-blue"><div class="stat-card-label">Arquivos de dados tocados</div><div class="stat-card-value">${filesTouched} / 10</div></div>
+  `;
+  drawMergeCanvas(cowMB, morKB/1024);
+}
+function drawMergeCanvas(cowMB, morMB){
+  const cv = document.getElementById('mergeCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Copy-on-Write (reescreve arquivo)', val: Math.log10(cowMB+1), raw: cowMB.toFixed(1)+' MB', color:'#f86b63'},
+    {name:'Merge-on-Read (delete file)', val: Math.log10(Math.max(morMB,0.001)+1), raw: (morMB<1 ? (morMB*1024).toFixed(1)+' KB' : morMB.toFixed(2)+' MB'), color:'#7dded8'},
+  ];
+  const padL=230, padR=20, padTop=14, barH=32, gap=22;
+  const maxVal = Math.max(...data.map(d=>d.val)) || 1;
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 0, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(d.raw + ' escritos', padL+10, y+barH*0.65);
+  });
+}
+updateMergeDemo();
+window.addEventListener('resize', updateMergeDemo);
+
+/* ===================== GROWTH & CLEANUP CANVAS ===================== */
+function updateGrowthCanvas(){
+  const retention = +document.getElementById('retentionSlider').value;
+  document.getElementById('retentionVal').textContent = retention;
+  drawGrowthCanvas(retention);
+}
+function drawGrowthCanvas(retention){
+  const cv = document.getElementById('growthCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 180;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const ops = 40;
+  const mbPerOp = 8;
+  const padL = 50, padR = 20, padTop = 16, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padTop - padB;
+  const maxVal = ops * mbPerOp * 1.1;
+  function toXY(i, val){
+    const x = padL + (i/ops) * plotW;
+    const y = padTop + plotH - (val/maxVal) * plotH;
+    return [x,y];
+  }
+  // eixo
+  ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padTop); ctx.lineTo(padL, padTop+plotH); ctx.lineTo(padL+plotW, padTop+plotH); ctx.stroke();
+  ctx.fillStyle = '#98a2b3'; ctx.font = '9.5px Roboto Mono, monospace';
+  ctx.fillText('0', padL-6, padTop+plotH+4);
+  ctx.fillText(Math.round(maxVal)+' MB', 2, padTop+8);
+  ctx.fillText(ops+' escritas', padL+plotW-52, padTop+plotH+18);
+
+  // sem limpeza (linear, vermelho)
+  ctx.strokeStyle = '#f86b63'; ctx.lineWidth = 2.5; ctx.beginPath();
+  for(let i=0;i<=ops;i++){
+    const val = i*mbPerOp;
+    const [x,y] = toXY(i,val);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // com limpeza (plateau, verde) - cresce até a retenção, depois estabiliza com leve serrote
+  ctx.strokeStyle = '#7dded8'; ctx.lineWidth = 2.5; ctx.beginPath();
+  for(let i=0;i<=ops;i++){
+    const capped = Math.min(i, retention);
+    const val = capped*mbPerOp;
+    const [x,y] = toXY(i,val);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // legenda final
+  ctx.font = '10px Roboto Mono, monospace';
+  ctx.fillStyle = '#f86b63'; ctx.fillText('sem limpeza: ' + (ops*mbPerOp) + ' MB', padL+plotW-150, padTop+14);
+  ctx.fillStyle = '#7dded8'; ctx.fillText('com limpeza: ~' + (retention*mbPerOp) + ' MB', padL+plotW-150, padTop+28);
+}
+updateGrowthCanvas();
+window.addEventListener('resize', updateGrowthCanvas);
+
+/* ===================== PANORAMA CANVAS (comparação) ===================== */
+function drawPanoramaCanvas(){
+  const cv = document.getElementById('panoramaCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 160;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'CSV/Parquet soltos', val:1, color:'#98a2b3'},
+    {name:'Data Lake bruto', val:2, color:'#98a2b3'},
+    {name:'Lakehouse local (DuckDB+Iceberg)', val:3, color:'#06b6d4'},
+    {name:'Data Warehouse cloud', val:7, color:'#36a2ef'},
+    {name:'Lakehouse cloud (Spark+Iceberg)', val:9, color:'#c49aff'},
+  ];
+  const padB = 30, padTop=14, barGap=16;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = 10;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, barH, 5); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='11px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText(d.val + '/10', x+barW/2, y-6);
+    ctx.fillStyle = '#98a2b3'; ctx.font='8.7px Inter, sans-serif';
+    const words = d.name.split(' ');
+    const mid = Math.ceil(words.length/2);
+    ctx.fillText(words.slice(0,mid).join(' '), x+barW/2, h-20);
+    ctx.fillText(words.slice(mid).join(' '), x+barW/2, h-10);
+    ctx.textAlign='left';
+  });
+}
+drawPanoramaCanvas();
+window.addEventListener('resize', drawPanoramaCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'Um Lakehouse local roda inteiramente na sua máquina, sem precisar de um cluster ou de um data warehouse na nuvem.', a:true, e:'Verdadeiro. É exatamente a combinação DuckDB (motor local) + Apache Iceberg (metadados) + Parquet (arquivos) rodando na sua própria pasta.'},
+  {q:'O DuckDB sempre conseguiu escrever (INSERT/UPDATE/DELETE) diretamente em tabelas Iceberg.', a:false, e:'Falso. Por muito tempo o DuckDB só lia tabelas Iceberg (iceberg_scan); o suporte a escrita, criando novos snapshots de verdade, é uma capacidade recente.'},
+  {q:'Um snapshot no Iceberg é uma cópia completa e redundante de todos os arquivos de dados da tabela.', a:false, e:'Falso. Um snapshot aponta para os arquivos de dados que continuam válidos e para os manifests que descrevem a mudança — arquivos não tocados são reaproveitados, não duplicados.'},
+  {q:'O catálogo REST do Iceberg é responsável por garantir que apenas um commit vença quando duas escritas competem ao mesmo tempo.', a:true, e:'Verdadeiro. É o catálogo que atua como autoridade de commits, coordenando concorrência entre escritores diferentes.'},
+  {q:'Hoje, o suporte de escrita do DuckDB para UPDATE/DELETE em Iceberg funciona em qualquer tabela, inclusive particionada e ordenada.', a:false, e:'Falso. Atualmente só funciona em tabelas sem particionamento e sem ordenação, usando exclusivamente positional deletes (merge-on-read).'},
+  {q:'Merge-on-read tende a ser mais barato na escrita, mas exige um pouco mais de trabalho na hora da leitura.', a:true, e:'Verdadeiro. Em vez de reescrever o arquivo de dados inteiro, só um pequeno arquivo de delete é criado — quem lê depois precisa juntar (merge) os dois.'},
+  {q:'Sem rodar uma limpeza como o expire_snapshots periodicamente, o armazenamento de um lakehouse Iceberg só tende a crescer.', a:true, e:'Verdadeiro. Cada escrita preserva arquivos antigos intactos (é assim que o time travel funciona) — sem expirar snapshots antigos, eles nunca são liberados.'},
+  {q:'O DuckDB já suporta MERGE INTO e ALTER TABLE completos em tabelas Iceberg.', a:false, e:'Falso. Ambos ainda não são suportados — é preciso usar padrões alternativos como append e create/replace enquanto o suporte amadurece.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: BI Conversacional. A 4ª geração do Business Intelligence explicada com analogias simples, muitos gráficos e demos interativas: NL2SQL, mapa semântico, federação de dados com DuckDB e segurança.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — BI Conversacional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- ELI5 (explica pra criança) ---- */
+.eli5-box{background:rgba(232,196,104,.08);border-left:4px solid var(--accent-yellow);border-radius:0 8px 8px 0;padding:16px 18px;}
+.eli5-title{color:var(--accent-yellow);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.eli5-box p{font-size:13.5px;color:var(--text-secondary);line-height:1.75;}
+.eli5-box strong{color:var(--text-primary);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- CLICKABLE ANATOMY DIAGRAM (arquitetura / federação) ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- PIPELINE (fluxo horizontal clicável) ---- */
+.pipeline-row{display:flex;align-items:center;overflow-x:auto;gap:0;padding-bottom:6px;}
+.pipeline-step{min-width:148px;flex-shrink:0;text-align:center;margin-bottom:0 !important;}
+.pipeline-arrow{font-size:18px;color:var(--border-strong);flex-shrink:0;padding:0 6px;}
+
+/* ---- STAIRS (evolução do BI) ---- */
+.stair-row{display:flex;align-items:flex-end;gap:12px;}
+.stair-block{flex:1;cursor:pointer;border:1.5px solid var(--border-color);border-radius:8px 8px 0 0;background:var(--bg-elevated);padding:14px 10px 12px;text-align:center;transition:.15s;}
+.stair-block:hover{border-color:var(--accent-blue);}
+.stair-block.active{border-color:var(--accent);background:rgba(6,182,212,.14);}
+.stair-icon{font-size:24px;margin-bottom:6px;}
+.stair-label{font-size:11px;font-weight:700;color:var(--text-secondary);line-height:1.3;}
+.stair-block.active .stair-label{color:var(--accent);}
+.stair-period{font-size:9.5px;color:var(--text-disabled);margin-top:4px;font-family:'Roboto Mono',monospace;}
+
+/* ---- SILO CARDS (cartórios) ---- */
+.silo-card{background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:8px;padding:18px 14px;text-align:center;position:relative;}
+.silo-emoji{font-size:32px;margin-bottom:8px;}
+.silo-name{font-weight:700;font-size:13px;margin-bottom:4px;color:var(--text-primary);}
+.silo-desc{font-size:11px;color:var(--text-disabled);margin-bottom:10px;}
+.silo-id{display:inline-block;background:var(--bg-panel);border:1px dashed var(--border-strong);border-radius:20px;padding:5px 12px;font-family:'Roboto Mono',monospace;font-size:11px;color:var(--accent);}
+.silo-vs{display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text-disabled);}
+
+/* ---- VALIDATION TRAFFIC LIGHT ---- */
+.validate-panel{border-radius:8px;padding:18px 20px;border:1.5px solid;transition:.2s;}
+.validate-panel.ok{border-color:var(--accent-green);background:rgba(125,222,216,.08);}
+.validate-panel.blocked{border-color:var(--accent-red);background:rgba(248,107,99,.08);}
+.validate-tag{font-size:11px;font-weight:800;letter-spacing:.6px;padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:10px;}
+.validate-tag.ok{background:rgba(125,222,216,.18);color:var(--accent-green);}
+.validate-tag.blocked{background:rgba(248,107,99,.18);color:var(--accent-red);}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-yellow{border-top-color:var(--accent-yellow);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+  .stair-row{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>BI Conversacional</h1><span>Pergunte aos dados como quem conversa com um colega</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">4ª</div><div class="hstat-label">Geração do BI</div></div>
+      <div class="hstat"><div class="hstat-num">100%</div><div class="hstat-label">Roda Local</div></div>
+      <div class="hstat"><div class="hstat-num">NL→SQL</div><div class="hstat-label">Tradução</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Dados fragmentados, <em>uma pergunta só</em></h2>
+      <p><strong>BI Conversacional</strong> é a ideia de perguntar aos seus dados em português — "quais clientes compraram e depois reclamaram?" — e receber uma resposta certa, na hora, mesmo que essa resposta esteja escondida em três sistemas diferentes que nunca conversaram entre si. Por trás da mágica não existe adivinhação: existe um <strong>LLM</strong> (um modelo de linguagem) que traduz sua pergunta em <strong>SQL</strong> de verdade, guiado por um <strong>mapa</strong> de como os dados se conectam, e um motor como o <strong>DuckDB</strong> que executa essa consulta cruzando as fontes na hora. Nesta aula, vamos abrir essa caixinha em gráficos, comparações e exemplos bem visuais — como se estivéssemos explicando para uma criança de 8 anos.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">NL2SQL</span>
+        <span class="badge badge-green">Camada Semântica</span>
+        <span class="badge badge-blue">Federação de Dados</span>
+        <span class="badge badge-purple">Somente Leitura</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">💬 VOCÊ PERGUNTA</div>
+        <div class="fc-body">
+          <div class="fc-row">"Quais clientes de Varejo compraram<br>e depois abriram chamado?"<br><span style="font-size:9.5px;opacity:.7;">linguagem natural, sem SQL</span></div>
+          <div class="fc-row">🧠 LLM + mapa semântico → SQL<br>🦆 DuckDB cruza 3 fontes<br><span style="font-size:9.5px;opacity:.7;">tudo em segundos</span></div>
+        </div>
+        <div class="fc-foot">Resposta: "Padaria Aurora — R$ 3.080, 2 chamados"</div>
+      </div>
+      <div class="file-chip-caption">Nenhum dashboard precisou ser desenhado antes</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🤔 O Que É BI Conversacional?</div>
+    <p class="section-desc">
+      "BI" é sigla de <strong>Business Intelligence</strong> — o conjunto de ferramentas e processos que transforma dados brutos em respostas para decisões de negócio. Durante décadas, isso significou construir <strong>dashboards</strong>: telas fixas, com gráficos prontos, para perguntas que alguém já previu com antecedência. O <strong>BI Conversacional</strong> muda essa lógica: em vez de você ir até um dashboard pronto, você faz a pergunta — <em>com suas próprias palavras</em> — e um agente de IA descobre, na hora, onde estão os dados e como combiná-los para responder.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📊 BI Tradicional</div>
+        <div class="card-text">Alguém desenha um dashboard <strong>antes</strong> de você precisar dele. Se a pergunta não estava prevista, é preciso pedir para um time de dados construir algo novo — e esperar.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💬 BI Conversacional</div>
+        <div class="card-text">Você pergunta em linguagem natural <strong>no momento em que precisa</strong>. Um LLM traduz a pergunta em SQL, um motor executa contra as fontes, e a resposta chega em segundos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗺️ O Segredo Não É Mágica</div>
+        <div class="card-text">É um <strong>mapa semântico</strong> bem feito + um <strong>LLM</strong> que segue esse mapa + um motor de consulta (como o <strong>DuckDB</strong>) que sabe federar várias fontes ao mesmo tempo.</div>
+      </div>
+    </div>
+
+    <div class="eli5-box">
+      <div class="eli5-title">🧒 Explica pra criança</div>
+      <p>Imagine que você tem um <strong>amigo tradutor</strong> que mora dentro do computador. Você fala "quero saber quantos brinquedos o João comprou", e ele não inventa uma resposta — ele vai até as gavetas certas, conta de verdade, e te conta o número exato. Ele só faz isso direito se alguém <strong>já tiver explicado pra ele</strong> onde fica cada gaveta e como elas se conectam. É disso que esta aula trata!</p>
+    </div>
+  </section>
+
+  <!-- ============ EVOLUÇÃO ============ -->
+  <section class="section" id="s-evolucao">
+    <div class="section-eyebrow">Linha do Tempo</div>
+    <div class="section-title">🏛️ A Evolução do BI em 4 Degraus</div>
+    <p class="section-desc">O BI Conversacional não surgiu do nada — ele é o <strong>4º degrau</strong> de uma escada que vem sendo construída há mais de 50 anos. Cada geração resolveu o problema da anterior, mas criou um novo. Clique em cada degrau para subir a escada.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique nos degraus, do mais antigo (1) ao mais novo (4)</div>
+      <div class="stair-row" id="stairRow"></div>
+      <div class="anatomy-detail" id="genDetail">
+        <div class="ad-title">👆 Clique em um degrau</div>
+        <div class="ad-text">Veja o que cada geração de BI resolveu — e o que ela deixou faltando para a próxima.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Repare que <strong>nenhuma geração substituiu a anterior por completo</strong> — os sistemas transacionais (1ª) continuam existindo, os Data Warehouses (2ª) continuam sendo úteis, os dashboards (3ª) continuam no ar. O BI Conversacional (4ª) se apoia em cima de todas elas: é uma <strong>camada cognitiva</strong> nova, não uma substituição.</p>
+    </div>
+  </section>
+
+  <!-- ============ CARTÓRIOS ============ -->
+  <section class="section" id="s-cartorios">
+    <div class="section-eyebrow">O Problema Real</div>
+    <div class="section-title">📇 A Herança Silenciosa: Três Cartórios na Mesma Cidade</div>
+    <p class="section-desc">
+      Imagine três cartórios numa mesma cidade: um registra <strong>nascimentos</strong>, outro <strong>imóveis</strong>, outro <strong>empresas abertas</strong>. Cada um funciona perfeitamente sozinho. Mas a pergunta <em>"quais moradores que compraram um imóvel também abriram uma empresa?"</em> é impossível de responder — porque cada cartório usa um jeito diferente de identificar a mesma pessoa, e nenhuma ponte foi construída entre eles. Isso é exatamente o que acontece dentro de uma empresa com <strong>CRM</strong>, <strong>ERP</strong> e sistema de <strong>Suporte</strong>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">A mesma cliente, três "apelidos" diferentes em três sistemas</div>
+      <div class="grid-3">
+        <div class="silo-card">
+          <div class="silo-emoji">🧾</div>
+          <div class="silo-name">CRM (Vendas)</div>
+          <div class="silo-desc">guarda segmento, nome, contato</div>
+          <div class="silo-id">id_cliente = 482</div>
+        </div>
+        <div class="silo-card">
+          <div class="silo-emoji">💰</div>
+          <div class="silo-name">ERP (Financeiro)</div>
+          <div class="silo-desc">guarda vendas e valores pagos</div>
+          <div class="silo-id">cod_cli = "AS-19"</div>
+        </div>
+        <div class="silo-card">
+          <div class="silo-emoji">🎧</div>
+          <div class="silo-name">Suporte</div>
+          <div class="silo-desc">guarda chamados e reclamações</div>
+          <div class="silo-id">cliente_ref = "cli_0482x"</div>
+        </div>
+      </div>
+      <div class="result-display" style="margin-top:16px;">
+        <div><span class="rl">as três linhas acima são</span><span class="rv">🧑 A mesma pessoa: Ana Silva</span></div>
+      </div>
+    </div>
+
+    <div class="eli5-box">
+      <div class="eli5-title">🧒 Explica pra criança</div>
+      <p>É como se seu <strong>melhor amigo</strong> tivesse um apelido diferente em cada lugar: a vó chama de "Zezinho", a escola chama de "José" e o time de futebol chama de "Camisa 9". Se alguém perguntar "quantos gols o Zezinho fez na escola?", ninguém consegue responder direto — <strong>é preciso primeiro descobrir que os três nomes são a mesma pessoa</strong>.</p>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A pergunta de negócio impossível — isoladamente</div>
+      <p>"Quais clientes de <strong>Varejo</strong> compraram e depois abriram chamados? Mostre total gasto e quantidade de chamados." — o segmento "Varejo" só existe no CRM, "quanto gastou" só existe no ERP, "abriu chamado" só existe no Suporte. Nenhuma fonte sozinha responde. É preciso <strong>cruzar as três ao mesmo tempo</strong> — e é exatamente isso que o BI Conversacional automatiza.</p>
+    </div>
+  </section>
+
+  <!-- ============ ARQUITETURA / PIPELINE ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Como Funciona por Dentro</div>
+    <div class="section-title">🧩 O Caminho de Uma Pergunta</div>
+    <p class="section-desc">Da sua pergunta em português até a resposta em tabela, o texto passa por 6 estações. Clique em cada uma para entender o que acontece ali dentro.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique em cada estação do fluxo</div>
+      <div class="pipeline-row" id="pipelineRow"></div>
+      <div class="anatomy-detail" id="pipeDetail">
+        <div class="ad-title">👆 Clique em uma estação</div>
+        <div class="ad-text">Acompanhe o trajeto completo: da pergunta em texto até a tabela de resposta.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <p>⚠️ Repare que o LLM <strong>nunca inventa o número</strong>. Ele não "sabe" quanto a Ana Silva gastou — ele descobre o <em>caminho SQL</em> até esse número. Quem calcula o valor de verdade é o motor de banco de dados (DuckDB), não o modelo de linguagem.</p>
+    </div>
+  </section>
+
+  <!-- ============ MAPA SEMÂNTICO ============ -->
+  <section class="section" id="s-mapa">
+    <div class="section-eyebrow">A Peça Mais Importante</div>
+    <div class="section-title">🗺️ O Mapa Semântico: O Que o LLM Precisa Saber</div>
+    <p class="section-desc">
+      Um LLM sozinho não sabe que <code>cod_cli</code> no ERP é a mesma coisa que <code>id_cliente</code> no CRM. Alguém precisa entregar esse conhecimento por escrito — isso é o <strong>contexto semântico</strong> (ou "mapa executivo"): um texto que descreve schema, relações e armadilhas antes de qualquer pergunta ser feita.
+    </p>
+
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">📐 Schema das Tabelas</div>
+        <div class="card-text">Quais tabelas existem, quais colunas cada uma tem e o que cada coluna significa de verdade — não só o nome técnico.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔗 Regras de Junção</div>
+        <div class="card-text">Como cruzar as fontes: <code>crm.id_cliente = erp.cod_cli</code>, <code>crm.id_cliente = suporte.cliente_ref</code>. Sem isso, o LLM "chuta" o join errado.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧮 Dicas de Agregação</div>
+        <div class="card-text">Avisos para evitar armadilhas de contagem — por exemplo, qual coluna usar num <code>COUNT(DISTINCT ...)</code> para não contar a coisa errada.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔒 Restrições de Segurança</div>
+        <div class="card-text">Deixar explícito que só é permitido <code>SELECT</code> — nenhuma escrita, nenhuma alteração de dado é aceitável vinda de SQL gerado por IA.</div>
+      </div>
+    </div>
+
+    <div class="eli5-box">
+      <div class="eli5-title">🧒 Explica pra criança</div>
+      <p>É como dar um <strong>mapa do tesouro</strong> para o tradutor antes de ele sair procurando. Sem o mapa, ele pode até encontrar alguma coisa — mas pode ser a caixa errada. Com o mapa certo ("o baú de brinquedos do João fica no quarto azul, não no verde"), ele acha exatamente o que você pediu.</p>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Frase que resume tudo</div>
+      <p>"O LLM é tão bom quanto o mapa que você entrega." Com 300 tabelas corporativas de nomes crípticos, um mapa semântico ruim ou incompleto torna esse problema <strong>exponencialmente</strong> mais difícil — não é sobre o modelo ser mais "inteligente", é sobre o mapa ser mais completo.</p>
+    </div>
+  </section>
+
+  <!-- ============ NL2SQL NA PRÁTICA ============ -->
+  <section class="section" id="s-nl2sql">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">💬 NL2SQL na Prática</div>
+    <p class="section-desc">Escolha uma pergunta em linguagem natural abaixo e veja o SQL que o LLM gera a partir dela, seguindo o mapa semântico das três fontes (CRM, ERP, Suporte).</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Perguntas de exemplo</div>
+      <div class="btn-toggle-row" id="nlqButtons" style="margin-bottom:16px;"></div>
+      <div class="code-block" id="nlqCode"></div>
+      <div class="section-desc" style="font-size:12.5px;margin-top:10px;" id="nlqDesc"></div>
+    </div>
+  </section>
+
+  <!-- ============ SEGURANÇA ============ -->
+  <section class="section" id="s-seguranca">
+    <div class="section-eyebrow">Confiança &amp; Controle</div>
+    <div class="section-title">🛡️ Segurança: Somente Leitura</div>
+    <p class="section-desc">
+      Um LLM gera <strong>texto</strong> — inclusive texto que parece SQL perigoso. Antes de qualquer comando gerado tocar o banco de dados, uma etapa de <strong>validação</strong> verifica: o comando começa com <code>SELECT</code> ou <code>WITH</code> (para CTEs)? Se contiver <code>INSERT</code>, <code>DELETE</code>, <code>DROP</code>, <code>UPDATE</code> ou <code>ALTER</code> em qualquer lugar, é <strong>bloqueado</strong> antes de rodar.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Clique num comando gerado pelo LLM e veja se ele passa na validação</div>
+      <div class="btn-toggle-row" id="valButtons" style="margin-bottom:16px;"></div>
+      <div class="code-block" id="valCode"></div>
+      <div class="validate-panel" id="valResult" style="margin-top:14px;"></div>
+    </div>
+
+    <div class="eli5-box">
+      <div class="eli5-title">🧒 Explica pra criança</div>
+      <p>É como um <strong>segurança na porta da biblioteca</strong>: ele deixa qualquer um entrar para <em>ler</em> um livro, mas nunca deixa ninguém <em>rasgar página</em> ou <em>levar o livro embora</em>. Não importa quão educado o pedido pareça — se não for "só olhar", a porta não abre.</p>
+    </div>
+  </section>
+
+  <!-- ============ FEDERAÇÃO ============ -->
+  <section class="section" id="s-federacao">
+    <div class="section-eyebrow">O Motor por Baixo do Capô</div>
+    <div class="section-title">🦆 DuckDB Como Federador: Consultar Sem Copiar</div>
+    <p class="section-desc">
+      "Federar" significa <strong>consultar várias fontes como se fossem uma só</strong>, sem duplicar os dados num lugar central. É a diferença entre a abordagem clássica de Data Warehouse (copiar tudo antes) e a abordagem de federação (consultar direto, na hora). Compare os dois caminhos abaixo.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">🏗️ Abordagem Clássica (Copiar Primeiro — ETL)</div>
+          <div class="pq-clickable" data-id="etl-extract" onclick="pickFed('etl-extract')">1. Extrair dados de cada fonte</div>
+          <div class="pq-clickable" data-id="etl-transform" onclick="pickFed('etl-transform')">2. Transformar e padronizar</div>
+          <div class="pq-clickable" data-id="etl-load" onclick="pickFed('etl-load')">3. Carregar num Data Warehouse central</div>
+          <div class="pq-clickable" data-id="etl-query" onclick="pickFed('etl-query')">4. Consultar a cópia (não a fonte original)</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">🦆 Federação com DuckDB (Consultar Direto)</div>
+          <div class="pq-clickable" data-id="fed-ask" onclick="pickFed('fed-ask')">1. Pergunta chega em linguagem natural</div>
+          <div class="pq-clickable" data-id="fed-connect" onclick="pickFed('fed-connect')">2. DuckDB se conecta a cada fonte, na hora</div>
+          <div class="pq-clickable" data-id="fed-join" onclick="pickFed('fed-join')">3. Executa o SQL cruzando as fontes sem copiar</div>
+          <div class="pq-clickable" data-id="fed-return" onclick="pickFed('fed-return')">4. Resultado combinado retorna na mesma consulta</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="fedDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Compare o caminho dos dados nos dois modelos, passo a passo.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Federação não substitui o Data Warehouse em todos os casos — pipelines de ETL continuam essenciais para dados que precisam de histórico, qualidade tratada e alta performance repetida. Mas para <strong>perguntas ad hoc</strong>, que ninguém previu, esperar um pipeline novo ser construído pode levar dias; federar com DuckDB responde em segundos.</p>
+    </div>
+  </section>
+
+  <!-- ============ ARMADILHAS DE AGREGAÇÃO ============ -->
+  <section class="section" id="s-armadilhas">
+    <div class="section-eyebrow">Cuidado Aqui</div>
+    <div class="section-title">⚠️ A Armadilha do COUNT(DISTINCT ...)</div>
+    <p class="section-desc">Mesmo com um SQL que "roda sem erro", o número pode estar contando a <strong>coisa errada</strong>. Este é o tipo de engano que só um bom mapa semântico evita. Compare:</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Pergunta: "quantos chamados os clientes de Varejo abriram?"</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnAggWrong" onclick="setAggMode('wrong')">❌ SQL Errado</button>
+        <button class="btn-toggle" id="btnAggRight" onclick="setAggMode('right')">✅ SQL Correto</button>
+      </div>
+      <div class="code-block" id="aggCode"></div>
+      <div class="result-display" id="aggResult" style="margin-top:12px;"></div>
+      <div class="section-desc" style="font-size:12.5px;margin-top:10px;" id="aggDesc"></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Lado a Lado</div>
+    <div class="section-title">📊 BI Tradicional vs. BI Conversacional</div>
+    <p class="section-desc">O ganho mais visível não é só "mais bonito" — é o <strong>tempo até a primeira resposta</strong> de uma pergunta que ninguém previu.</p>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Aspecto</th><th>BI Tradicional</th><th>BI Conversacional</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Pergunta</strong></td><td>Esperada e pré-materializada num dashboard</td><td>Arbitrária, em tempo real</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Conhecimento necessário</strong></td><td>SQL, ferramenta específica de BI</td><td>Linguagem natural</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Integração</strong></td><td>ETL pesado, pré-planejado</td><td>Federação na hora da consulta</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">Flexibilidade</strong></td><td>Limitada ao que o dashboard mostra</td><td>Praticamente ilimitada</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Governança de dados</strong></td><td>Desejável</td><td>✅ Essencial (sem mapa bom, não funciona)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Tempo até responder uma pergunta nova (escala logarítmica)</div>
+      <div class="canvas-wrap"><canvas id="compareCanvas" height="150"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ LIMITAÇÕES ============ -->
+  <section class="section" id="s-limitacoes">
+    <div class="section-eyebrow">Honestidade Técnica</div>
+    <div class="section-title">💡 Limites e Riscos: Onde Isso Pode Quebrar</div>
+    <p class="section-desc">Nenhuma tecnologia resolve problema de fundação sozinha. Três pontos merecem atenção séria antes de colocar isso em produção:</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🎯 Confiança no SQL Gerado</div>
+        <div class="card-text">Um SQL pode ser <strong>sintaticamente válido</strong> mas <strong>semanticamente errado</strong> — roda sem erro e devolve um número, só que o número responde a pergunta errada. Em produção: conexão somente leitura, allowlist de tabelas, validação do plano de execução.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗺️ Qualidade do Mapa Semântico</div>
+        <div class="card-text">Contexto incompleto ou dicas erradas geram respostas "certas no formato, erradas no significado". Com centenas de tabelas de nomes crípticos, isso piora exponencialmente.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🏚️ Herança Não Resolvida</div>
+        <div class="card-text">Chaves inconsistentes, datas em formatos diferentes, duplicatas — tudo isso continua lá embaixo. A IA <strong>multiplica</strong> a qualidade da base: para cima se ela é boa, para baixo se ela é ruim.</div>
+      </div>
+    </div>
+
+    <div class="eli5-box">
+      <div class="eli5-title">🧒 Explica pra criança</div>
+      <p>É como usar uma <strong>lanterna forte</strong> pra ver dentro de um quarto bagunçado. Com a lanterna você enxerga a bagunça muito melhor e muito mais rápido — mas a lanterna, sozinha, <strong>não arruma o quarto</strong>. Alguém ainda precisa guardar os brinquedos no lugar certo.</p>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A frase que resume a virada</div>
+      <p>"A camada cognitiva não conserta a fundação, ela ilumina o estado dela." A mudança real trazida pelo BI Conversacional não é tecnológica — é de <strong>governança</strong>: pela primeira vez, a IA força a organização a responder, com clareza, o que os dados realmente significam.</p>
+    </div>
+  </section>
+
+  <!-- ============ DATASET REAL: OLIST ============ -->
+  <section class="section" id="s-dataset">
+    <div class="section-eyebrow">Do Exemplo Didático ao Mundo Real</div>
+    <div class="section-title">🗃️ Testando de Verdade: Olist Brazilian E-Commerce</div>
+    <p class="section-desc">
+      O exemplo do CRM/ERP/Suporte foi simplificado de propósito, para ensinar o conceito sem ruído. Agora vamos testar com uma base <strong>real e pública</strong>: o <strong>Olist Brazilian E-Commerce Dataset</strong> — pedidos de um marketplace brasileiro entre 2016 e 2018, disponível gratuitamente no Kaggle. Ele reproduz o mesmo problema dos "cartórios" da vida real: em vez de uma tabela gigante com tudo, os dados vivem espalhados em <strong>9 arquivos CSV</strong> que só fazem sentido juntos.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">As "gavetas" reais do Olist — clique mentalmente em cada uma e imagine sua pergunta cruzando todas</div>
+      <div class="grid-4">
+        <div class="card"><div class="card-title">👤 clientes</div><div class="card-text">customer_id, cidade, estado. <strong>Quem</strong> comprou.</div></div>
+        <div class="card"><div class="card-title">📦 pedidos</div><div class="card-text">order_id, customer_id, status, datas de compra/entrega. <strong>Quando</strong> e o status.</div></div>
+        <div class="card"><div class="card-title">🛒 itens_pedido</div><div class="card-text">order_id, product_id, seller_id, price. <strong>O quê</strong>, de <strong>quem</strong>, por <strong>quanto</strong>.</div></div>
+        <div class="card"><div class="card-title">💳 pagamentos</div><div class="card-text">order_id, tipo, parcelas, valor. <strong>Como</strong> foi pago.</div></div>
+        <div class="card"><div class="card-title">⭐ avaliações</div><div class="card-text">order_id, nota (1–5), comentário. O que o cliente <strong>achou</strong>.</div></div>
+        <div class="card"><div class="card-title">🏷️ produtos</div><div class="card-text">product_id, categoria. A <strong>categoria</strong> de cada item.</div></div>
+        <div class="card"><div class="card-title">🏪 vendedores</div><div class="card-text">seller_id, cidade, estado. Quem <strong>vendeu</strong>, e de onde.</div></div>
+      </div>
+    </div>
+
+    <div class="stat-cards" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card c-blue"><div class="stat-card-label">Pedidos (ordem de grandeza)</div><div class="stat-card-value">~100 mil</div></div>
+      <div class="stat-card c-green"><div class="stat-card-label">Período</div><div class="stat-card-value" style="font-size:16px;">2016–2018</div></div>
+      <div class="stat-card c-purple" style="border-top-color:var(--accent-purple);"><div class="stat-card-label">Arquivos CSV</div><div class="stat-card-value">9</div></div>
+      <div class="stat-card c-yellow"><div class="stat-card-label">Licença</div><div class="stat-card-value" style="font-size:14px;">Pública (Kaggle)</div></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Uma fragmentação diferente — mas igualmente real</div>
+      <p>No exemplo didático, o problema era <em>nomes de chave diferentes</em> (id_cliente vs. cod_cli). No Olist, as chaves já são consistentes (<code>order_id</code>, <code>customer_id</code>...) — mas o problema de fragmentação continua: <strong>nenhuma pergunta de negócio interessante</strong> ("qual categoria tem pior avaliação por estado?") é respondida por uma única tabela. É preciso de 3 a 5 <code>JOIN</code>s toda vez — e é exatamente esse caminho que o mapa semântico precisa descrever para o LLM.</p>
+    </div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">Como baixar (gratuito, sem cartão)</div>
+    <div class="code-block">
+<span class="code-lang">passo a passo</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># 1. Crie uma conta gratuita em kaggle.com
+# 2. Busque o dataset "Brazilian E-Commerce Public Dataset by Olist"
+# 3. Baixe o .zip e extraia os arquivos na pasta abaixo, ao lado do script</span>
+
+dados_olist/
+├── olist_customers_dataset.csv
+├── olist_orders_dataset.csv
+├── olist_order_items_dataset.csv
+├── olist_order_payments_dataset.csv
+├── olist_order_reviews_dataset.csv
+├── olist_products_dataset.csv
+├── olist_sellers_dataset.csv
+├── olist_geolocation_dataset.csv          <span class="cm"># opcional, não usada no script base</span>
+└── product_category_name_translation.csv  <span class="cm"># opcional, traduz categoria p/ inglês</span></div>
+
+    <div class="eli5-box">
+      <div class="eli5-title">🧒 Explica pra criança</div>
+      <p>Antes era faz-de-conta, com 3 gavetinhas inventadas. Agora são <strong>9 gavetas de verdade</strong>, de uma loja de verdade, com gente de verdade comprando coisas. E a única forma de responder "quais vendedores de São Paulo têm nota baixa?" é abrir a gaveta dos vendedores, a dos pedidos <strong>e</strong> a das avaliações — todas ao mesmo tempo, na ordem certa.</p>
+    </div>
+  </section>
+
+  <!-- ============ CÓDIGO ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Colocando a Mão na Massa — de Verdade</div>
+    <div class="section-title">🐍 Rodando Seu Próprio Agente de BI Conversacional</div>
+    <p class="section-desc">Cinco passos entre não ter nada instalado e fazer sua primeira pergunta em português para os dados reais do Olist, combinando <strong>Ollama</strong> (LLM local, sem enviar dados para a nuvem) com <strong>DuckDB</strong> (federação e execução SQL).</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Passo 1 — Instalar o Ollama e baixar um modelo</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># instalar (macOS/Linux — para Windows, baixe em ollama.com)</span>
+curl -fsSL https://ollama.com/install.sh | sh
+
+<span class="cm"># baixar um modelo leve e rápido</span>
+ollama pull llama3.1</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Passo 2 — Preparar o ambiente Python</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>python3 -m venv .venv
+source .venv/bin/activate
+
+pip install duckdb ollama pandas</div>
+      </div>
+    </div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">Passo 3 — Traduzir o schema real em contexto semântico</div>
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>CONTEXTO_SEMANTICO = <span class="st">"""
+Você é um gerador de SQL para DuckDB. Use APENAS estas views e colunas:
+
+- clientes(customer_id, customer_unique_id, customer_city, customer_state)
+- pedidos(order_id, customer_id, order_status, order_purchase_timestamp,
+          order_delivered_customer_date, order_estimated_delivery_date)
+- itens_pedido(order_id, order_item_id, product_id, seller_id, price, freight_value)
+- pagamentos(order_id, payment_type, payment_installments, payment_value)
+- avaliacoes(order_id, review_score, review_comment_message)
+- produtos(product_id, product_category_name)
+- vendedores(seller_id, seller_city, seller_state)
+
+Regras de junção:
+- pedidos.customer_id = clientes.customer_id
+- itens_pedido.order_id = pedidos.order_id
+- itens_pedido.product_id = produtos.product_id
+- itens_pedido.seller_id = vendedores.seller_id
+- pagamentos.order_id = pedidos.order_id
+- avaliacoes.order_id = pedidos.order_id
+
+Dicas de agregação:
+- "Faturamento" ou "total vendido" = SUM(itens_pedido.price) — não payment_value,
+  que inclui frete e pode estar parcelado.
+- Um pedido pode ter várias linhas em itens_pedido (vários produtos) — some, não conte linhas.
+- "Quantidade de pedidos" = COUNT(DISTINCT order_id), nunca COUNT(*) em itens_pedido.
+- Tempo de entrega = order_delivered_customer_date - order_purchase_timestamp.
+
+Regras de segurança:
+- Gere APENAS comandos SELECT ou WITH. Nunca INSERT, UPDATE, DELETE, DROP ou ALTER.
+- Responda SOMENTE com o SQL, sem explicações, sem markdown.
+"""</span></div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Antes de rodar: veja o SQL que o LLM deve gerar para cada pergunta</div>
+      <div class="btn-toggle-row" id="nlqOlistButtons" style="margin-bottom:16px;"></div>
+      <div class="code-block" id="nlqOlistCode"></div>
+      <div class="section-desc" style="font-size:12.5px;margin-top:10px;" id="nlqOlistDesc"></div>
+    </div>
+
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Função</th><th>Responsabilidade</th></tr></thead>
+        <tbody>
+          <tr><td><code>montar_conexao()</code></td><td>Cria views do DuckDB apontando direto para os 7 CSVs do Olist — sem importar nada</td></tr>
+          <tr><td><code>limpar_sql()</code></td><td>Remove cercas de markdown (```sql) que o modelo às vezes insere na resposta</td></tr>
+          <tr><td><code>validar_sql()</code></td><td>Rejeita qualquer comando que não comece com SELECT/WITH ou contenha palavra-chave de escrita</td></tr>
+          <tr><td><code>pergunta_para_sql()</code></td><td>Chama o Ollama com o CONTEXTO_SEMANTICO + a pergunta do usuário</td></tr>
+          <tr class="row-scan"><td><code>agente_bi()</code></td><td>Orquestra o fluxo completo: pergunta → SQL → validação → execução no DuckDB</td></tr>
+          <tr><td><code>main()</code></td><td>CLI: usa uma pergunta padrão ou a que vier em <code>sys.argv[1]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">Passo 4 — O script completo: agente_bi_olist.py</div>
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">import</span> sys
+<span class="kw">import</span> re
+<span class="kw">import</span> duckdb
+<span class="kw">import</span> ollama
+
+CAMINHO_DADOS = <span class="st">"./dados_olist"</span>
+
+<span class="kw">def</span> <span class="fn">montar_conexao</span>():
+    <span class="cm"># DuckDB lê os CSVs direto do disco — sem CREATE TABLE, sem import prévio</span>
+    con = duckdb.<span class="fn">connect</span>(database=<span class="st">":memory:"</span>)
+    con.<span class="fn">execute</span>(<span class="fn">f"""</span>
+<span class="st">        CREATE VIEW clientes AS SELECT * FROM read_csv_auto('{CAMINHO_DADOS}/olist_customers_dataset.csv');
+        CREATE VIEW pedidos AS SELECT * FROM read_csv_auto('{CAMINHO_DADOS}/olist_orders_dataset.csv');
+        CREATE VIEW itens_pedido AS SELECT * FROM read_csv_auto('{CAMINHO_DADOS}/olist_order_items_dataset.csv');
+        CREATE VIEW pagamentos AS SELECT * FROM read_csv_auto('{CAMINHO_DADOS}/olist_order_payments_dataset.csv');
+        CREATE VIEW avaliacoes AS SELECT * FROM read_csv_auto('{CAMINHO_DADOS}/olist_order_reviews_dataset.csv');
+        CREATE VIEW produtos AS SELECT * FROM read_csv_auto('{CAMINHO_DADOS}/olist_products_dataset.csv');
+        CREATE VIEW vendedores AS SELECT * FROM read_csv_auto('{CAMINHO_DADOS}/olist_sellers_dataset.csv');
+    </span><span class="fn">"""</span>)
+    <span class="kw">return</span> con
+
+<span class="kw">def</span> <span class="fn">limpar_sql</span>(texto):
+    <span class="kw">return</span> re.<span class="fn">sub</span>(<span class="st">r"```sql|```"</span>, <span class="st">""</span>, texto).<span class="fn">strip</span>()
+
+<span class="kw">def</span> <span class="fn">validar_sql</span>(sql):
+    sql_upper = sql.<span class="fn">upper</span>()
+    <span class="kw">if</span> <span class="kw">not</span> (sql_upper.<span class="fn">startswith</span>(<span class="st">"SELECT"</span>) <span class="kw">or</span> sql_upper.<span class="fn">startswith</span>(<span class="st">"WITH"</span>)):
+        <span class="kw">return</span> <span class="kw">False</span>
+    proibidos = [<span class="st">"INSERT"</span>, <span class="st">"UPDATE"</span>, <span class="st">"DELETE"</span>, <span class="st">"DROP"</span>, <span class="st">"ALTER"</span>, <span class="st">"ATTACH"</span>]
+    <span class="kw">return</span> <span class="kw">not</span> <span class="fn">any</span>(p <span class="kw">in</span> sql_upper <span class="kw">for</span> p <span class="kw">in</span> proibidos)
+
+<span class="kw">def</span> <span class="fn">pergunta_para_sql</span>(pergunta, modelo=<span class="st">"llama3.1"</span>):
+    prompt = <span class="fn">f"{CONTEXTO_SEMANTICO}\n\nPergunta: {pergunta}\nSQL:"</span>
+    resposta = ollama.<span class="fn">chat</span>(
+        model=modelo,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: prompt}],
+        options={<span class="st">"temperature"</span>: <span class="num">0</span>},  <span class="cm"># determinístico, sem "criatividade"</span>
+    )
+    sql = <span class="fn">limpar_sql</span>(resposta[<span class="st">"message"</span>][<span class="st">"content"</span>])
+    <span class="kw">if</span> <span class="kw">not</span> <span class="fn">validar_sql</span>(sql):
+        <span class="kw">raise</span> <span class="fn">ValueError</span>(<span class="fn">f"SQL bloqueado por segurança:\n{sql}"</span>)
+    <span class="kw">return</span> sql
+
+<span class="kw">def</span> <span class="fn">agente_bi</span>(pergunta, modelo=<span class="st">"llama3.1"</span>):
+    con = <span class="fn">montar_conexao</span>()
+    sql = <span class="fn">pergunta_para_sql</span>(pergunta, modelo)
+    <span class="fn">print</span>(<span class="fn">f"\n🧠 SQL gerado:\n{sql}\n"</span>)
+    <span class="kw">return</span> con.<span class="fn">execute</span>(sql).<span class="fn">df</span>()
+
+<span class="kw">def</span> <span class="fn">main</span>():
+    pergunta = sys.argv[<span class="num">1</span>] <span class="kw">if</span> <span class="fn">len</span>(sys.argv) > <span class="num">1</span> <span class="kw">else</span> \
+        <span class="st">"Quais os 5 estados com maior valor total de frete pago pelos clientes?"</span>
+    resultado = <span class="fn">agente_bi</span>(pergunta)
+    <span class="fn">print</span>(resultado.<span class="fn">to_string</span>(index=<span class="kw">False</span>))
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">main</span>()</div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">Passo 5 — Perguntas para testar de verdade</div>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>python agente_bi_olist.py <span class="st">"Quais os 5 estados com maior valor total de frete pago pelos clientes?"</span>
+
+python agente_bi_olist.py <span class="st">"Qual a categoria de produto com pior nota média de avaliação?"</span>
+
+python agente_bi_olist.py <span class="st">"Quantos pedidos foram pagos em mais de 6 parcelas, por estado do cliente?"</span>
+
+python agente_bi_olist.py <span class="st">"Qual o tempo médio de entrega, em dias, por estado do vendedor?"</span></div>
+
+    <div class="info-box">
+      <p>💡 Note a <code>temperature=0</code>: para geração de SQL, criatividade é <strong>indesejável</strong> — queremos a tradução mais determinística e previsível possível, não variações "criativas" da mesma pergunta.</p>
+    </div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">Deu errado? Problemas comuns</div>
+    <div class="grid-4">
+      <div class="card"><div class="card-title">🔌 Connection refused</div><div class="card-text">O Ollama não está rodando. Deixe <code>ollama serve</code> ativo num terminal (ou confirme que já roda em segundo plano) antes de chamar o script.</div></div>
+      <div class="card"><div class="card-title">📁 CSV não encontrado</div><div class="card-text">Confirme que <code>CAMINHO_DADOS</code> aponta exatamente para a pasta onde os arquivos do Olist foram extraídos.</div></div>
+      <div class="card"><div class="card-title">🧩 Coluna inexistente no SQL</div><div class="card-text">O mapa semântico está incompleto — adicione a coluna faltante à descrição da view correspondente em <code>CONTEXTO_SEMANTICO</code>.</div></div>
+      <div class="card"><div class="card-title">🐢 Resposta muito lenta</div><div class="card-text">Troque para um modelo menor (<code>ollama pull qwen2.5:3b</code>) ou verifique se há aceleração de GPU disponível.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Do Protótipo à Produção</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🔒 Conexão somente leitura</div><div class="card-text">Não confie só na validação de texto — conecte o agente ao banco com credenciais que fisicamente não conseguem escrever nada.</div></div>
+      <div class="card"><div class="card-title">📋 Allowlist de tabelas</div><div class="card-text">Restrinja explicitamente quais tabelas/views o agente pode enxergar — nunca exponha o banco inteiro por padrão.</div></div>
+      <div class="card"><div class="card-title">🧪 Validar o plano de execução</div><div class="card-text">Além de checar o texto do SQL, valide o plano (EXPLAIN) antes de rodar — pega comandos disfarçados que a regex simples deixaria passar.</div></div>
+      <div class="card"><div class="card-title">📖 Versionar o mapa semântico</div><div class="card-text">Trate o contexto semântico como código: revisão, versionamento e testes — é a peça que mais decide a qualidade das respostas.</div></div>
+      <div class="card"><div class="card-title">👀 Auditar amostras de SQL</div><div class="card-text">Revise periodicamente uma amostra de perguntas e SQLs gerados — é como você percebe cedo um join errado ou uma dica de agregação faltando.</div></div>
+      <div class="card"><div class="card-title">💰 Monitorar custo e latência</div><div class="card-text">Cada pergunta dispara uma chamada de LLM + uma consulta federada — acompanhe tempo de resposta e custo por pergunta, especialmente com fontes remotas.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — BI Conversacional</span>
+    <span>
+      Referência: <a href="https://medium.com/@habbema/bi-conversacional-dc32c45f53bc" target="_blank" rel="noopener">BI Conversacional — Hugo Habbema (Medium)</a> ·
+      <a href="https://duckdb.org/docs/" target="_blank" rel="noopener">DuckDB Docs</a> ·
+      <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🤔', label:'O que é'},
+  {id:'s-evolucao', icon:'🏛️', label:'Evolução do BI'},
+  {id:'s-cartorios', icon:'📇', label:'Os 3 Cartórios'},
+  {id:'s-arquitetura', icon:'🧩', label:'Como Funciona'},
+  {id:'s-mapa', icon:'🗺️', label:'Mapa Semântico'},
+  {id:'s-nl2sql', icon:'💬', label:'NL2SQL'},
+  {id:'s-seguranca', icon:'🛡️', label:'Segurança'},
+  {id:'s-federacao', icon:'🦆', label:'Federação'},
+  {id:'s-armadilhas', icon:'⚠️', label:'Armadilhas'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-limitacoes', icon:'💡', label:'Limitações'},
+  {id:'s-dataset', icon:'🗃️', label:'Base Real: Olist'},
+  {id:'s-codigo', icon:'🐍', label:'Na Prática'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== EVOLUÇÃO DO BI (stairs) ===================== */
+const generations = [
+  {id:'gen1', icon:'🗄️', label:'Registrar', period:'anos 1970+', h:70,
+   t:'1ª Geração — Registrar (sistemas transacionais)',
+   d:'ERPs e CRMs guardam o que aconteceu: um pedido, um pagamento, um cadastro. Cada sistema entende apenas o próprio mundinho — como um caderninho que cada loja mantém sobre si mesma, sem falar com o caderninho da loja vizinha.'},
+  {id:'gen2', icon:'🔗', label:'Integrar', period:'anos 1990+', h:105,
+   t:'2ª Geração — Integrar (Data Warehouses e ETL)',
+   d:'Pipelines de ETL juntam os caderninhos numa estante só, copiando e padronizando os dados num lugar central. Resolve a fragmentação — mas isso é feito manualmente, com meses de trabalho de engenharia, e só cobre o que foi planejado com antecedência.'},
+  {id:'gen3', icon:'📊', label:'Visualizar', period:'anos 2010+', h:140,
+   t:'3ª Geração — Visualizar (dashboards e self-service)',
+   d:'Ferramentas como Power BI e Tableau transformam a estante organizada em gráficos bonitos e interativos. Mas só respondem às perguntas que alguém já pensou em desenhar antes — uma pergunta nova ainda exige esperar um dashboard novo ser construído.'},
+  {id:'gen4', icon:'💬', label:'Interpretar', period:'anos 2020+', h:175,
+   t:'4ª Geração — Interpretar (BI Conversacional)',
+   d:'Uma camada cognitiva interpreta a intenção da sua pergunta em linguagem natural, atravessa os silos fragmentados e traduz tudo em SQL executável na hora — sem esperar um dashboard pronto.'},
+];
+function buildStairs(){
+  document.getElementById('stairRow').innerHTML = generations.map((g,i) => `
+    <div class="stair-block" id="stair-${g.id}" style="min-height:${g.h}px;" onclick="pickGen('${g.id}')">
+      <div class="stair-icon">${g.icon}</div>
+      <div class="stair-label">${i+1}. ${g.label}</div>
+      <div class="stair-period">${g.period}</div>
+    </div>
+  `).join('');
+}
+function pickGen(id){
+  generations.forEach(g => document.getElementById('stair-'+g.id).classList.toggle('active', g.id===id));
+  const g = generations.find(x => x.id===id);
+  document.getElementById('genDetail').innerHTML = `<div class="ad-title">${g.t}</div><div class="ad-text">${g.d}</div>`;
+}
+buildStairs();
+
+/* ===================== PIPELINE (arquitetura) ===================== */
+const pipelineInfo = [
+  {id:'p-ask', icon:'💬', label:'Pergunta', t:'1. Pergunta em linguagem natural', d:'Você escreve a pergunta com suas próprias palavras — "quais clientes de Varejo compraram e depois abriram chamados?" — sem precisar saber SQL nem nomes técnicos de tabelas.'},
+  {id:'p-llm', icon:'🧠', label:'LLM + Mapa', t:'2. LLM + Contexto Semântico (Ollama)', d:'Um modelo de linguagem local (via Ollama, sem enviar dados à nuvem) recebe a pergunta junto com o mapa semântico — schema, regras de junção, dicas de agregação — e traduz tudo em SQL.'},
+  {id:'p-sql', icon:'📝', label:'SQL Gerado', t:'3. SQL determinístico', d:'O resultado é uma consulta SQL de verdade, como um analista escreveria: SELECT ... JOIN ... GROUP BY ... — não uma resposta "chutada" em texto livre.'},
+  {id:'p-val', icon:'🛡️', label:'Validação', t:'4. Validação somente leitura', d:'Antes de rodar, o SQL passa por uma checagem: começa com SELECT ou WITH? Contém DROP, DELETE, INSERT, UPDATE ou ALTER em qualquer lugar? Se sim, é bloqueado imediatamente.'},
+  {id:'p-duck', icon:'🦆', label:'DuckDB Executa', t:'5. DuckDB federa e executa', d:'O DuckDB conecta-se às três fontes (CRM, ERP, Suporte) e roda o SQL cruzando-as diretamente, sem precisar copiar os dados para um lugar central antes.'},
+  {id:'p-resp', icon:'📋', label:'Resposta', t:'6. Resultado em tabela/DataFrame', d:'A resposta final chega como uma tabela (ou DataFrame do Pandas) com os números reais — calculados pelo motor de banco, não inventados pelo modelo de linguagem.'},
+];
+function buildPipeline(){
+  document.getElementById('pipelineRow').innerHTML = pipelineInfo.map((p,i) => `
+    ${i>0 ? '<span class="pipeline-arrow">→</span>' : ''}
+    <div class="pq-clickable pipeline-step" data-id="${p.id}" onclick="pickPipe('${p.id}')">${p.icon}<br>${p.label}</div>
+  `).join('');
+}
+function pickPipe(id){
+  document.querySelectorAll('#pipelineRow .pq-clickable').forEach(el => el.classList.toggle('active', el.dataset.id===id));
+  const p = pipelineInfo.find(x => x.id===id);
+  document.getElementById('pipeDetail').innerHTML = `<div class="ad-title">${p.t}</div><div class="ad-text">${p.d}</div>`;
+}
+buildPipeline();
+
+/* ===================== NL2SQL DEMO ===================== */
+const nlQuestions = {
+  cruzada: {label:'Compraram e reclamaram?', q:'Quais clientes de Varejo compraram e depois abriram chamados? Mostre total gasto e qtd. de chamados.',
+    code:`<span class="kw">SELECT</span> c.nome_cliente, <span class="fn">SUM</span>(e.valor) <span class="kw">AS</span> total_gasto, <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> s.assunto) <span class="kw">AS</span> qtd_chamados\n<span class="kw">FROM</span> crm_clientes c\n<span class="kw">JOIN</span> erp_vendas e <span class="kw">ON</span> c.id_cliente = e.cod_cli\n<span class="kw">JOIN</span> suporte_chamados s <span class="kw">ON</span> c.id_cliente = s.cliente_ref\n<span class="kw">WHERE</span> c.segmento = <span class="st">'Varejo'</span>\n<span class="kw">GROUP BY</span> c.nome_cliente;`,
+    desc:'Precisa das três fontes ao mesmo tempo: "Varejo" só existe no CRM, "valor gasto" só existe no ERP, "chamado" só existe no Suporte. Resultado real: apenas "Padaria Aurora" (R$ 3.080, 2 chamados) satisfaz as três condições.'},
+  total_segmento: {label:'Total vendido por segmento', q:'Qual o total vendido por segmento de cliente?',
+    code:`<span class="kw">SELECT</span> c.segmento, <span class="fn">SUM</span>(e.valor) <span class="kw">AS</span> total_vendido\n<span class="kw">FROM</span> crm_clientes c\n<span class="kw">JOIN</span> erp_vendas e <span class="kw">ON</span> c.id_cliente = e.cod_cli\n<span class="kw">GROUP BY</span> c.segmento\n<span class="kw">ORDER BY</span> total_vendido <span class="kw">DESC</span>;`,
+    desc:'Só precisa cruzar CRM (segmento) com ERP (valor) — o Suporte nem entra na consulta, porque a pergunta não menciona chamados.'},
+  ranking_chamados: {label:'Ranking de chamados por cliente', q:'Quantos chamados cada cliente abriu, do maior para o menor?',
+    code:`<span class="kw">SELECT</span> c.nome_cliente, <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> s.assunto) <span class="kw">AS</span> qtd_chamados\n<span class="kw">FROM</span> crm_clientes c\n<span class="kw">JOIN</span> suporte_chamados s <span class="kw">ON</span> c.id_cliente = s.cliente_ref\n<span class="kw">GROUP BY</span> c.nome_cliente\n<span class="kw">ORDER BY</span> qtd_chamados <span class="kw">DESC</span>;`,
+    desc:'Cruza apenas CRM com Suporte. Repare no COUNT(DISTINCT s.assunto) — contando ocorrências de chamado, não clientes únicos (veja a seção "Armadilhas" para entender por que isso importa).'},
+  sem_chamado: {label:'Comprou mas nunca reclamou', q:'Quem comprou mas nunca abriu chamado?',
+    code:`<span class="kw">SELECT</span> c.nome_cliente, <span class="fn">SUM</span>(e.valor) <span class="kw">AS</span> total_gasto\n<span class="kw">FROM</span> crm_clientes c\n<span class="kw">JOIN</span> erp_vendas e <span class="kw">ON</span> c.id_cliente = e.cod_cli\n<span class="kw">LEFT JOIN</span> suporte_chamados s <span class="kw">ON</span> c.id_cliente = s.cliente_ref\n<span class="kw">WHERE</span> s.cliente_ref <span class="kw">IS NULL</span>\n<span class="kw">GROUP BY</span> c.nome_cliente;`,
+    desc:'Usa LEFT JOIN + IS NULL para achar quem existe no CRM/ERP mas não tem nenhuma linha correspondente no Suporte — o padrão clássico de "existe de um lado, não existe do outro".'},
+};
+let nlqKey = 'cruzada';
+function buildNlqButtons(){
+  document.getElementById('nlqButtons').innerHTML = Object.keys(nlQuestions).map(k =>
+    `<button class="btn-toggle ${k===nlqKey?'active':''}" onclick="selectNlq('${k}')">${nlQuestions[k].label}</button>`
+  ).join('');
+}
+function selectNlq(key){
+  nlqKey = key;
+  buildNlqButtons();
+  const item = nlQuestions[key];
+  document.getElementById('nlqCode').innerHTML = `<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- Pergunta: "${item.q}"</span>\n` + item.code;
+  document.getElementById('nlqDesc').textContent = item.desc;
+}
+buildNlqButtons();
+selectNlq('cruzada');
+
+/* ===================== NL2SQL DEMO — OLIST (dataset real) ===================== */
+const nlQuestionsOlist = {
+  frete: {label:'Frete por estado', q:'Quais os 5 estados com maior valor total de frete pago pelos clientes?',
+    code:`<span class="kw">SELECT</span> c.customer_state, <span class="fn">SUM</span>(i.freight_value) <span class="kw">AS</span> total_frete\n<span class="kw">FROM</span> pedidos p\n<span class="kw">JOIN</span> clientes c <span class="kw">ON</span> p.customer_id = c.customer_id\n<span class="kw">JOIN</span> itens_pedido i <span class="kw">ON</span> i.order_id = p.order_id\n<span class="kw">GROUP BY</span> c.customer_state\n<span class="kw">ORDER BY</span> total_frete <span class="kw">DESC</span>\n<span class="kw">LIMIT</span> <span class="num">5</span>;`,
+    desc:'Cruza pedidos → clientes (para saber o estado) → itens_pedido (para somar o frete de cada item). Repare que o frete está em itens_pedido, não em pedidos.'},
+  categoria_pior: {label:'Pior categoria avaliada', q:'Qual a categoria de produto com pior nota média de avaliação?',
+    code:`<span class="kw">SELECT</span> pr.product_category_name, <span class="fn">AVG</span>(a.review_score) <span class="kw">AS</span> nota_media\n<span class="kw">FROM</span> avaliacoes a\n<span class="kw">JOIN</span> pedidos p <span class="kw">ON</span> a.order_id = p.order_id\n<span class="kw">JOIN</span> itens_pedido i <span class="kw">ON</span> i.order_id = p.order_id\n<span class="kw">JOIN</span> produtos pr <span class="kw">ON</span> i.product_id = pr.product_id\n<span class="kw">GROUP BY</span> pr.product_category_name\n<span class="kw">ORDER BY</span> nota_media <span class="kw">ASC</span>\n<span class="kw">LIMIT</span> <span class="num">1</span>;`,
+    desc:'Precisa de 4 tabelas: avaliação → pedido → item do pedido → produto (só o item sabe qual produto foi comprado naquele pedido).'},
+  parcelamento: {label:'Parcelamento por estado', q:'Quantos pedidos foram pagos em mais de 6 parcelas, por estado do cliente?',
+    code:`<span class="kw">SELECT</span> c.customer_state, <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> pg.order_id) <span class="kw">AS</span> qtd_pedidos\n<span class="kw">FROM</span> pagamentos pg\n<span class="kw">JOIN</span> pedidos p <span class="kw">ON</span> pg.order_id = p.order_id\n<span class="kw">JOIN</span> clientes c <span class="kw">ON</span> p.customer_id = c.customer_id\n<span class="kw">WHERE</span> pg.payment_installments > <span class="num">6</span>\n<span class="kw">GROUP BY</span> c.customer_state\n<span class="kw">ORDER BY</span> qtd_pedidos <span class="kw">DESC</span>;`,
+    desc:'COUNT(DISTINCT pg.order_id) evita contar duas vezes um pedido que tenha mais de uma linha de pagamento (ex: parte no cartão, parte em voucher).'},
+  entrega: {label:'Tempo de entrega por estado', q:'Qual o tempo médio de entrega, em dias, por estado do vendedor?',
+    code:`<span class="kw">SELECT</span> v.seller_state,\n       <span class="fn">AVG</span>(<span class="fn">DATE_DIFF</span>(<span class="st">'day'</span>, p.order_purchase_timestamp, p.order_delivered_customer_date)) <span class="kw">AS</span> dias_medios\n<span class="kw">FROM</span> pedidos p\n<span class="kw">JOIN</span> itens_pedido i <span class="kw">ON</span> i.order_id = p.order_id\n<span class="kw">JOIN</span> vendedores v <span class="kw">ON</span> i.seller_id = v.seller_id\n<span class="kw">WHERE</span> p.order_delivered_customer_date <span class="kw">IS NOT NULL</span>\n<span class="kw">GROUP BY</span> v.seller_state\n<span class="kw">ORDER BY</span> dias_medios <span class="kw">ASC</span>;`,
+    desc:'DATE_DIFF calcula a diferença entre a data de compra e a de entrega. O WHERE remove pedidos ainda não entregues (data nula), que quebrariam a média.'},
+};
+let nlqOlistKey = 'frete';
+function buildNlqOlistButtons(){
+  document.getElementById('nlqOlistButtons').innerHTML = Object.keys(nlQuestionsOlist).map(k =>
+    `<button class="btn-toggle ${k===nlqOlistKey?'active':''}" onclick="selectNlqOlist('${k}')">${nlQuestionsOlist[k].label}</button>`
+  ).join('');
+}
+function selectNlqOlist(key){
+  nlqOlistKey = key;
+  buildNlqOlistButtons();
+  const item = nlQuestionsOlist[key];
+  document.getElementById('nlqOlistCode').innerHTML = `<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm">-- Pergunta: "${item.q}"</span>\n` + item.code;
+  document.getElementById('nlqOlistDesc').textContent = item.desc;
+}
+buildNlqOlistButtons();
+selectNlqOlist('frete');
+
+/* ===================== VALIDAÇÃO SELECT-ONLY ===================== */
+const validations = {
+  v1: {label:'SELECT simples', code:`SELECT nome_cliente FROM crm_clientes;`, ok:true, why:'Começa com SELECT e não contém nenhuma palavra-chave de escrita. Permitido.'},
+  v2: {label:'DROP TABLE', code:`DROP TABLE crm_clientes;`, ok:false, why:'Contém DROP — comando destrutivo. Bloqueado antes de qualquer tentativa de execução.'},
+  v3: {label:'INSERT INTO', code:`INSERT INTO crm_clientes VALUES (999, 'Fake', 'Varejo');`, ok:false, why:'Contém INSERT — tentativa de escrita. Bloqueado, mesmo sintaticamente válido.'},
+  v4: {label:'WITH (CTE)', code:`WITH vip AS (\n  SELECT * FROM crm_clientes WHERE segmento='Varejo'\n)\nSELECT * FROM vip;`, ok:true, why:'Começa com WITH (Common Table Expression) e só faz leitura dentro do CTE. Permitido.'},
+  v5: {label:'Comando composto', code:`SELECT * FROM crm_clientes; DELETE FROM crm_clientes;`, ok:false, why:'Mesmo começando com SELECT, o comando contém um segundo statement com DELETE. Bloqueado — validação varre o texto inteiro, não só o início.'},
+  v6: {label:'UPDATE disfarçado', code:`UPDATE crm_clientes SET segmento='Varejo' WHERE id_cliente=482;`, ok:false, why:'Contém UPDATE — tentativa de alterar dado existente. Bloqueado.'},
+};
+let valKey = 'v1';
+function buildValButtons(){
+  document.getElementById('valButtons').innerHTML = Object.keys(validations).map(k =>
+    `<button class="btn-toggle ${k===valKey?'active':''}" onclick="selectVal('${k}')">${validations[k].label}</button>`
+  ).join('');
+}
+function selectVal(key){
+  valKey = key;
+  buildValButtons();
+  const v = validations[key];
+  document.getElementById('valCode').innerHTML = `<span class="code-lang">sql</span>` + v.code
+    .replace(/\b(SELECT|FROM|WHERE|WITH|DROP TABLE|INSERT INTO|VALUES|DELETE FROM|UPDATE|SET)\b/g, '<span class="kw">$1</span>');
+  const panel = document.getElementById('valResult');
+  panel.className = 'validate-panel ' + (v.ok ? 'ok' : 'blocked');
+  panel.innerHTML = `<span class="validate-tag ${v.ok?'ok':'blocked'}">${v.ok ? '✅ PERMITIDO — executa no DuckDB' : '⛔ BLOQUEADO — nunca chega ao banco'}</span><p style="font-size:12.5px;color:var(--text-secondary);line-height:1.6;">${v.why}</p>`;
+}
+buildValButtons();
+selectVal('v1');
+
+/* ===================== FEDERAÇÃO (anatomy pick) ===================== */
+const fedInfo = {
+  'etl-extract': {t:'1. Extrair dados de cada fonte', d:'Um processo de ETL se conecta a cada sistema (CRM, ERP, Suporte) e extrai cópias dos dados — geralmente em lote, uma vez por dia ou por hora.'},
+  'etl-transform': {t:'2. Transformar e padronizar', d:'Os dados extraídos passam por limpeza e padronização — por exemplo, unificar id_cliente, cod_cli e cliente_ref numa única chave. Trabalho manual de engenharia, planejado com antecedência.'},
+  'etl-load': {t:'3. Carregar num Data Warehouse central', d:'A versão transformada é gravada num Data Warehouse (ex: BigQuery, Snowflake, Redshift) — agora existe uma cópia central e consistente dos dados.'},
+  'etl-query': {t:'4. Consultar a cópia (não a fonte original)', d:'Dashboards e análises consultam essa cópia central, não os sistemas originais. Rápido para o que já foi planejado — mas uma pergunta nova, fora do que foi modelado, exige repetir esse processo inteiro.'},
+  'fed-ask': {t:'1. Pergunta chega em linguagem natural', d:'Não existe uma etapa prévia de "modelar isso primeiro" — a pergunta chega e o processo começa imediatamente a partir dela.'},
+  'fed-connect': {t:'2. DuckDB se conecta a cada fonte, na hora', d:'O DuckDB abre conexões diretas com CRM, ERP e Suporte (ou seus arquivos/tabelas) no momento da consulta — sem um passo de cópia prévia.'},
+  'fed-join': {t:'3. Executa o SQL cruzando as fontes sem copiar', d:'O SQL gerado pelo LLM roda cruzando as três fontes diretamente — o DuckDB coordena a leitura e o join, mas não duplica os dados num armazenamento central.'},
+  'fed-return': {t:'4. Resultado combinado retorna na mesma consulta', d:'A resposta final já sai pronta, combinando as três fontes — tudo dentro do tempo de uma única consulta, tipicamente segundos.'},
+};
+function pickFed(id){
+  document.querySelectorAll('#s-federacao .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = fedInfo[id];
+  if(!info) return;
+  document.querySelector(`#s-federacao [data-id="${id}"]`).classList.add('active');
+  document.getElementById('fedDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== ARMADILHA DE AGREGAÇÃO ===================== */
+const aggModes = {
+  wrong: {
+    code:`<span class="code-lang">sql</span><span class="kw">SELECT</span> c.segmento, <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> s.cliente_ref) <span class="kw">AS</span> qtd_chamados\n<span class="kw">FROM</span> crm_clientes c\n<span class="kw">JOIN</span> suporte_chamados s <span class="kw">ON</span> c.id_cliente = s.cliente_ref\n<span class="kw">WHERE</span> c.segmento = <span class="st">'Varejo'</span>\n<span class="kw">GROUP BY</span> c.segmento;`,
+    val:'1', label:'clientes distintos (errado!)',
+    desc:'❌ COUNT(DISTINCT s.cliente_ref) conta quantos CLIENTES diferentes abriram chamado — não quantos CHAMADOS foram abertos. Se um único cliente abriu 5 chamados, isso conta como 1.'
+  },
+  right: {
+    code:`<span class="code-lang">sql</span><span class="kw">SELECT</span> c.segmento, <span class="fn">COUNT</span>(<span class="kw">DISTINCT</span> s.assunto) <span class="kw">AS</span> qtd_chamados\n<span class="kw">FROM</span> crm_clientes c\n<span class="kw">JOIN</span> suporte_chamados s <span class="kw">ON</span> c.id_cliente = s.cliente_ref\n<span class="kw">WHERE</span> c.segmento = <span class="st">'Varejo'</span>\n<span class="kw">GROUP BY</span> c.segmento;`,
+    val:'2', label:'chamados de fato (correto)',
+    desc:'✅ COUNT(DISTINCT s.assunto) conta ocorrências de chamado (cada assunto é um chamado distinto) — respondendo de fato "quantos chamados foram abertos", que era a pergunta original.'
+  }
+};
+function setAggMode(mode){
+  document.getElementById('btnAggWrong').classList.toggle('active', mode==='wrong');
+  document.getElementById('btnAggRight').classList.toggle('active', mode==='right');
+  const m = aggModes[mode];
+  document.getElementById('aggCode').innerHTML = m.code;
+  document.getElementById('aggResult').innerHTML = `<div><span class="rl">qtd_chamados retornado</span><span class="rv" style="color:${mode==='wrong'?'var(--accent-red)':'var(--accent-green)'};">${m.val}</span></div><div style="font-size:11.5px;color:var(--text-disabled);">${m.label}</div>`;
+  document.getElementById('aggDesc').innerHTML = m.desc;
+}
+setAggMode('wrong');
+
+/* ===================== COMPARISON CANVAS (tempo de resposta) ===================== */
+function formatMin(min){
+  if(min < 1) return Math.round(min*60) + ' seg';
+  if(min < 60) return min.toFixed(0) + ' min';
+  if(min < 1440) return (min/60).toFixed(1) + ' h';
+  return (min/1440).toFixed(1) + ' dias';
+}
+function drawCompareCanvas(){
+  const cv = document.getElementById('compareCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'BI Conversacional (perguntar direto)', min: 8/60, color:'#06b6d4'},
+    {name:'BI Tradicional (dashboard já existe)', min: 2, color:'#7dded8'},
+    {name:'BI Tradicional (pedir dashboard novo)', min: 3*1440, color:'#f86b63'},
+  ];
+  const padL = 230, padR = 90, padTop = 14, barH = 30, gap = 16;
+  const minLog = Math.log10(Math.min(...data.map(d=>d.min*60)));
+  const maxLog = Math.log10(Math.max(...data.map(d=>d.min*60)));
+  data.forEach((d,i) => {
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle='#98a2b3';
+    ctx.fillText(d.name, 0, y+barH*0.65);
+    const trackW = w - padL - padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const frac = (Math.log10(d.min*60) - minLog) / (maxLog - minLog);
+    const barW = Math.max(4, trackW * frac);
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle = grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#dfe5ef'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(formatMin(d.min), padL+barW+8, y+barH*0.65);
+  });
+}
+drawCompareCanvas();
+window.addEventListener('resize', drawCompareCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'BI Conversacional é a 4ª geração de arquitetura de dados, depois de Registrar, Integrar e Visualizar.', a:true, e:'Verdadeiro. As gerações anteriores continuam existindo — a camada conversacional se apoia em cima delas, interpretando perguntas em linguagem natural.'},
+  {q:'No BI Conversacional, o LLM calcula o número final da resposta sozinho, sem tocar em nenhum banco de dados.', a:false, e:'Falso. O LLM traduz a pergunta em SQL — quem calcula o número de verdade é o motor de banco de dados (ex: DuckDB), não o modelo de linguagem.'},
+  {q:'O mapa (contexto) semântico é opcional — um LLM moderno consegue adivinhar sozinho como as tabelas se relacionam.', a:false, e:'Falso. Sem um mapa explicando schema, joins e dicas de agregação, o LLM tende a "chutar" relações erradas — a frase do artigo é "o LLM é tão bom quanto o mapa que você entrega".'},
+  {q:'"Federar" significa copiar todos os dados de várias fontes para um único banco central antes de consultar.', a:false, e:'Falso. Federar é o oposto: consultar várias fontes como se fossem uma só, sem copiar os dados para um lugar central.'},
+  {q:'A validação de segurança típica bloqueia qualquer SQL gerado que não comece com SELECT ou WITH, ou que contenha comandos como DROP, DELETE, INSERT ou UPDATE.', a:true, e:'Verdadeiro. Essa é a defesa mínima contra SQL gerado por IA — garantir que o agente é estritamente somente leitura.'},
+  {q:'COUNT(DISTINCT cliente_ref) e COUNT(DISTINCT assunto) sempre retornam o mesmo número numa consulta de chamados de suporte.', a:false, e:'Falso. O primeiro conta clientes distintos que abriram chamado; o segundo conta chamados distintos — números diferentes se algum cliente abriu mais de um chamado.'},
+  {q:'Segundo o artigo de referência, a camada cognitiva do BI Conversacional "conserta" automaticamente problemas de qualidade nos dados de origem.', a:false, e:'Falso. A frase é "a camada cognitiva não conserta a fundação, ela ilumina o estado dela" — problemas como chaves inconsistentes continuam existindo por baixo.'},
+  {q:'BI Conversacional torna o BI Tradicional (dashboards) completamente obsoleto.', a:false, e:'Falso. Dashboards continuam ótimos para perguntas recorrentes e já conhecidas — o BI Conversacional resolve o caso de perguntas novas e ad hoc, sem substituir o que já funciona bem.'},
+  {q:'No dataset Olist, o valor do frete de um pedido está numa coluna da tabela de pagamentos.', a:false, e:'Falso. O frete (freight_value) está na tabela itens_pedido, por item comprado — a tabela de pagamentos guarda o valor total pago, tipo e parcelas, não o frete por item.'},
+  {q:'No Olist, "quantidade de pedidos" deve ser calculada com COUNT(*) sobre a tabela itens_pedido.', a:false, e:'Falso. Um pedido pode ter várias linhas em itens_pedido (um por produto comprado) — a forma correta é COUNT(DISTINCT order_id), senão pedidos com vários itens são contados múltiplas vezes.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Agosto / 2026';
+</script>
+</body>
+</html>

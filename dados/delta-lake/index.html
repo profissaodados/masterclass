@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Delta Lake por dentro. Transações ACID, log de transações, time travel, MERGE, VACUUM e mais, explicado com muitos exemplos visuais e demos interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Delta Lake por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- KID BOX (explicação bem simples) ---- */
+.kid-box{background:rgba(196,154,255,.07);border:2px dashed var(--accent-purple);border-radius:10px;padding:16px 18px;}
+.kid-box-title{color:var(--accent-purple);font-weight:800;margin-bottom:6px;font-size:13px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:.4px;}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.75;}
+.kid-box p strong{color:var(--text-primary);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn.danger{border-color:var(--accent-red);color:var(--accent-red);}
+.player-btn.danger:hover{background:rgba(248,107,99,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-skip td{opacity:.35;text-decoration:line-through;}
+.data-table tr.row-insert td{background:rgba(125,222,216,.16);color:var(--text-primary);}
+.data-table tr.row-update td{background:rgba(54,162,239,.16);color:var(--text-primary);}
+.data-table tr.row-delete td{background:rgba(248,107,99,.12);opacity:.7;text-decoration:line-through;}
+.data-table tr.row-unchanged td{opacity:.5;}
+.data-table td.cell-hit{background:rgba(6,182,212,.22);color:var(--accent);font-weight:700;border-radius:4px;}
+
+/* ---- KV LIST ---- */
+.kv-list{display:flex;flex-direction:column;gap:8px;}
+.kv-pair{display:flex;align-items:center;gap:12px;transition:.2s;}
+.kv-key{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--accent-blue);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-weight:700;font-size:12.5px;min-width:120px;text-align:center;flex-shrink:0;}
+.kv-arrow{color:var(--text-disabled);font-size:16px;flex-shrink:0;}
+.kv-value{background:var(--bg-elevated);border:1.5px solid var(--border-color);color:var(--text-primary);padding:8px 14px;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:12.5px;flex:1;transition:.2s;}
+.kv-pair.highlight .kv-key{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.kv-pair.highlight .kv-value{border-color:var(--accent);background:rgba(6,182,212,.10);color:var(--accent);}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- ANATOMY DIAGRAM (reaproveitado para pasta da tabela + _delta_log) ---- */
+.anatomy-wrap{position:relative;}
+#anatomySvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;position:relative;z-index:1;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-magic{text-align:center;background:rgba(6,182,212,.14);color:var(--accent);font-family:'Roboto Mono',monospace;font-weight:700;font-size:11px;padding:8px;border-radius:5px;margin-bottom:10px;letter-spacing:.5px;cursor:pointer;border:1.5px solid transparent;transition:.15s;}
+.pq-magic:hover{border-color:var(--accent-blue);}
+.pq-magic.active{border-color:var(--accent);background:rgba(6,182,212,.24);box-shadow:0 0 0 1px rgba(6,182,212,.25);}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.pq-nested{margin-left:14px;border-left:2px solid var(--border-color);padding-left:12px;margin-top:7px;margin-bottom:7px;}
+.pq-page{font-size:10.5px;padding:6px 10px;}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- FILE BOXES (arquivos físicos no disco) ---- */
+.file-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;}
+.file-box{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--bg-elevated);border:1.5px solid var(--border-color);border-radius:7px;padding:10px 12px;font-family:'Roboto Mono',monospace;font-size:10px;color:var(--text-secondary);transition:.25s;min-width:78px;text-align:center;}
+.file-box .fb-icon{font-size:18px;}
+.file-box.removed{opacity:.35;text-decoration:line-through;border-style:dashed;border-color:var(--accent-red);color:var(--accent-red);}
+.file-box.added{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.12);}
+.file-box.pending{border-color:var(--accent-blue);color:var(--accent-blue);}
+.file-box.committed{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.file-box.ghost{opacity:.4;border-style:dashed;border-color:var(--accent-red);color:var(--accent-red);}
+.file-box.kept{border-color:var(--accent-green);}
+.file-box.deleted{opacity:.3;text-decoration:line-through;border-style:dashed;}
+
+/* ---- SWIMLANES (concorrência) ---- */
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.lane{border:1.5px solid var(--border-color);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.lane-title{font-weight:700;font-size:12.5px;color:var(--text-primary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:6px;}
+.lane-steps{display:flex;flex-direction:column;gap:7px;}
+.lane-step{font-family:'Roboto Mono',monospace;font-size:11px;padding:7px 10px;border-radius:5px;background:var(--bg-panel);border:1px solid var(--border-color);color:var(--text-disabled);opacity:.4;transition:.25s;}
+.lane-step.done{opacity:1;border-color:var(--accent-blue);color:var(--text-primary);}
+.lane-step.conflict{opacity:1;border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.1);}
+.lane-step.success{opacity:1;border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.1);}
+
+/* ---- TREE (particionamento / diretórios) ---- */
+.tree{font-family:'Roboto Mono',monospace;font-size:12.5px;line-height:2;color:var(--text-secondary);}
+.tree .t0{color:var(--text-primary);font-weight:700;}
+.tree .t1{padding-left:22px;color:var(--accent-blue);}
+.tree .t2{padding-left:44px;color:var(--accent-purple);}
+.tree .t3{padding-left:66px;color:var(--text-secondary);}
+.tree .t3 .fname{color:var(--accent-green);}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.grid-5,.lanes{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+  #anatomySvg{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Delta Lake</h1><span>A pasta de arquivos Parquet que virou uma tabela de verdade</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2019</div><div class="hstat-label">Origem</div></div>
+      <div class="hstat"><div class="hstat-num">18</div><div class="hstat-label">Demos</div></div>
+      <div class="hstat"><div class="hstat-num">JSON</div><div class="hstat-label">Log de transações</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do problema à tabela lakehouse completa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>A pasta de Parquet que ganhou <em>memória e regras</em></h2>
+      <p>Delta Lake é uma camada de <strong>formato de tabela</strong> (table format), open-source, criada em 2019 pela Databricks, que fica <em>por cima</em> de arquivos Parquet comuns. Sozinho, um monte de arquivos Parquet numa pasta não sabe se uma escrita terminou, não impede duas pessoas de se atrapalharem escrevendo ao mesmo tempo, e não lembra como os dados eram ontem. O Delta Lake resolve tudo isso com uma ideia simples e poderosa: <strong>um diário de bordo</strong> que registra, em ordem, cada mudança feita na tabela. Nesta aula vamos abrir esse diário por dentro — com muitos desenhos, comparações e demos que você pode clicar.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Transações ACID</span>
+        <span class="badge badge-green">Time Travel</span>
+        <span class="badge badge-blue">Schema Enforcement</span>
+        <span class="badge badge-purple">MERGE / Upsert</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">📁 tabela_vendas/</div>
+        <div class="fc-body">
+          <div class="fc-row">part-00000-....parquet<br><span style="font-size:9.5px;opacity:.7;">part-00001-....parquet</span></div>
+          <div class="fc-row">_delta_log/<br><span style="font-size:9.5px;opacity:.7;">00000...0.json · 00000...1.json</span></div>
+        </div>
+        <div class="fc-foot">O log é o "cérebro" — os Parquet são só os músculos</div>
+      </div>
+      <div class="file-chip-caption">Estrutura simplificada de uma tabela Delta</div>
+    </div>
+  </section>
+
+  <!-- ============ O PROBLEMA ============ -->
+  <section class="section" id="s-problema">
+    <div class="section-eyebrow">Motivação</div>
+    <div class="section-title">😵 O problema: um data lake sem Delta</div>
+    <p class="section-desc">
+      Um "data lake" cru é, na prática, <strong>uma pasta cheia de arquivos Parquet</strong> num sistema de arquivos (HDFS, S3, ADLS...). Isso funciona bem para leitura simples, mas quebra assim que você precisa de algo que qualquer banco de dados trivial já resolve há décadas.
+    </p>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Imagine uma <strong>caixa de brinquedos compartilhada</strong> na escola. Não tem caderno de regras, não tem nome escrito em nada, e várias crianças mexem nela ao mesmo tempo. Se alguém for guardar 5 brinquedos e for chamado no meio do caminho, a caixa fica <strong>pela metade</strong> — e a próxima criança que olhar não sabe se aquilo é "normal" ou se a arrumação foi interrompida. O Delta Lake é como colocar um <strong>caderno de registro</strong> do lado da caixa: toda vez que alguém mexe nela, escreve exatamente o que fez, numerado em ordem — e só depois de escrever no caderno a mudança "conta" de verdade.</p>
+    </div>
+
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-title">🧨 Sem atomicidade</div>
+        <div class="card-text">Um job que escreve 1000 arquivos pode falhar no arquivo 600. Um leitor concorrente pode enxergar uma tabela <strong>parcialmente escrita</strong> — dados incompletos, sem aviso nenhum.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">👻 Sem isolamento</div>
+        <div class="card-text">Enquanto um job reescreve arquivos, outra query pode ler uma mistura de arquivos <strong>antigos e novos</strong> ao mesmo tempo — um estado que nunca existiu de verdade.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🚫 Sem UPDATE/DELETE fácil</div>
+        <div class="card-text">Arquivos Parquet são imutáveis. Mudar uma linha significaria reescrever o arquivo inteiro manualmente, coordenando com todo mundo que possa estar lendo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Sem controle de schema</div>
+        <div class="card-text">Nada impede alguém de jogar um arquivo com colunas diferentes na mesma pasta. O erro só aparece muito depois, na query que quebra.</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A sacada do Delta Lake</div>
+      <p>Adicionar, ao lado dos arquivos Parquet, uma pasta especial chamada <code style="color:var(--accent);">_delta_log/</code> que guarda um <strong>log de transações ordenado</strong>. Nenhum leitor ou escritor confia "no que está na pasta" — todo mundo confia <em>no que o log diz que está válido</em>. É essa indireção que traz ACID, time travel e todo o resto. Vamos ver como, passo a passo.</p>
+    </div>
+  </section>
+
+  <!-- ============ A GRANDE SACADA ============ -->
+  <section class="section" id="s-ideia">
+    <div class="section-eyebrow">Fundamento</div>
+    <div class="section-title">💡 A grande sacada: Parquet + Log de Transações</div>
+    <p class="section-desc">
+      Delta Lake <strong>não substitui</strong> o Parquet — ele o abraça. Os dados continuam sendo arquivos <code>.parquet</code> normais, lidos por qualquer engine (Spark, DuckDB, Trino...). A novidade é a pasta <code>_delta_log/</code>: uma sequência de arquivos JSON numerados, cada um representando <strong>uma transação (um commit)</strong> — o único lugar onde a "verdade" sobre o que existe na tabela é definida.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🗂️ Arquivos de dados (imutáveis)</div>
+        <div class="card-text">
+          <div class="file-row">
+            <div class="file-box"><span class="fb-icon">📄</span>part-00000<br>.parquet</div>
+            <div class="file-box"><span class="fb-icon">📄</span>part-00001<br>.parquet</div>
+            <div class="file-box"><span class="fb-icon">📄</span>part-00002<br>.parquet</div>
+          </div>
+          <p style="margin-top:12px;">Cada arquivo é escrito <strong>uma única vez</strong> e nunca é editado. "Atualizar" uma linha significa: escrever um arquivo novo e marcar o antigo como obsoleto no log — nunca sobrescrever bytes existentes.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📜 _delta_log/ (a fonte da verdade)</div>
+        <div class="card-text">
+          <div class="file-row">
+            <div class="file-box committed"><span class="fb-icon">📝</span>0000...0000<br>.json</div>
+            <div class="file-box committed"><span class="fb-icon">📝</span>0000...0001<br>.json</div>
+            <div class="file-box"><span class="fb-icon">📸</span>0000...0010<br>.checkpoint.parquet</div>
+          </div>
+          <p style="margin-top:12px;">Cada <code>.json</code> é um <strong>commit imutável e numerado sequencialmente</strong>. Ele lista quais arquivos foram adicionados (<code>add</code>) e quais deixaram de valer (<code>remove</code>) naquela transação. É só isso — e é o suficiente para reconstruir qualquer versão da tabela.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>Pense no <code>_delta_log</code> como o <strong>diário de bordo de um navio</strong>. O capitão nunca apaga uma página antiga — se algo mudou, ele escreve uma <strong>página nova</strong> contando o que mudou, com data e número. Para saber como o navio está <em>hoje</em>, você lê o diário do começo ao fim (ou pega um resumo recente). Para saber como ele estava <em>há 3 semanas</em>, você simplesmente para de ler no ponto certo do diário. Os "arquivos Parquet" são a carga do navio — o diário é o que diz oficialmente o que está a bordo.</p>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMIA ============ -->
+  <section class="section" id="s-anatomia">
+    <div class="section-eyebrow">Estrutura Física</div>
+    <div class="section-title">🗂️ Anatomia de uma tabela Delta</div>
+    <p class="section-desc">Clique nas caixas abaixo para explorar como uma pasta de tabela Delta é organizada de verdade em disco, e como cada arquivo de dado se conecta a um commit do log.</p>
+
+    <div class="interactive-panel anatomy-wrap" id="anatomyWrap">
+      <svg id="anatomySvg"></svg>
+      <div class="anatomy-grid">
+        <!-- PASTA DA TABELA -->
+        <div class="pq-box" id="box-table">
+          <div class="pq-box-label">📁 tabela_vendas/ (pasta raiz)</div>
+          <div class="pq-clickable" data-id="part0" onclick="pickAnatomy('part0')">part-00000-a1b2.snappy.parquet</div>
+          <div class="pq-clickable" data-id="part1" onclick="pickAnatomy('part1')">part-00001-c3d4.snappy.parquet</div>
+          <div class="pq-clickable" data-id="part2" onclick="pickAnatomy('part2')" style="opacity:.8;">part-00002-e5f6.snappy.parquet</div>
+          <div class="pq-magic" data-id="deltalogtag" onclick="pickAnatomy('deltalogtag')">_delta_log/ → detalhado ao lado</div>
+        </div>
+
+        <!-- _delta_log -->
+        <div class="pq-box" id="box-log">
+          <div class="pq-box-label">📜 _delta_log/</div>
+          <div class="pq-clickable" data-id="json0" onclick="pickAnatomy('json0')">00000000000000000000.json</div>
+          <div class="pq-clickable" data-id="json1" onclick="pickAnatomy('json1')">00000000000000000001.json</div>
+          <div class="pq-clickable" data-id="jsondots" onclick="pickAnatomy('jsondots')" style="opacity:.6;">… mais 9 commits …</div>
+          <div class="pq-clickable" data-id="checkpoint" onclick="pickAnatomy('checkpoint')">00000000000000000010.checkpoint.parquet</div>
+          <div class="pq-magic" data-id="lastcheckpoint" onclick="pickAnatomy('lastcheckpoint')">_last_checkpoint (aponta pro checkpoint mais recente)</div>
+        </div>
+      </div>
+
+      <div class="anatomy-detail" id="anatomyDetail">
+        <div class="ad-title">👆 Clique em qualquer arquivo</div>
+        <div class="ad-text">Cada arquivo de dado só "existe" oficialmente se algum commit do log o referencia com uma ação <code>add</code>. É assim que um leitor sabe, sem adivinhar nada, exatamente quais arquivos formam a versão atual da tabela.</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Repare que os arquivos de dados <strong>não têm nome sequencial nem legível</strong> — só o log sabe o que cada um significa. Isso é proposital: o log é a única fonte da verdade. Um arquivo Parquet "solto" na pasta que nenhum commit referencia (por exemplo, sobrado de uma escrita que falhou) é simplesmente <strong>invisível</strong> para qualquer leitor Delta, mesmo estando fisicamente ali no disco.</p>
+    </div>
+  </section>
+
+  <!-- ============ DENTRO DO LOG ============ -->
+  <section class="section" id="s-log">
+    <div class="section-eyebrow">O Cérebro da Tabela</div>
+    <div class="section-title">📜 Dentro de um commit do log</div>
+    <p class="section-desc">Cada arquivo <code>.json</code> do <code>_delta_log</code> é uma lista de <strong>ações</strong>, uma por linha (formato NDJSON). Veja um commit de exemplo que cria a tabela e insere as duas primeiras linhas de vendas:</p>
+
+    <div class="code-block">
+<span class="code-lang">00000000000000000000.json</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>{"commitInfo":{"timestamp":<span class="num">1717000000</span>,"operation":"<span class="st">CREATE TABLE</span>","isBlindAppend":<span class="kw">true</span>}}
+{"protocol":{"minReaderVersion":<span class="num">1</span>,"minWriterVersion":<span class="num">2</span>}}
+{"metaData":{"id":"<span class="st">9f1c...</span>","format":{"provider":"<span class="st">parquet</span>"},"schemaString":"<span class="st">{produto,pais,valor,...}</span>","partitionColumns":[]}}
+{"add":{"path":"<span class="st">part-00000-a1b2.snappy.parquet</span>","size":<span class="num">2048</span>,"modificationTime":<span class="num">1717000</span>,"dataChange":<span class="kw">true</span>}}
+{"add":{"path":"<span class="st">part-00001-c3d4.snappy.parquet</span>","size":<span class="num">1984</span>,"modificationTime":<span class="num">1717000</span>,"dataChange":<span class="kw">true</span>}}</div>
+
+    <div class="grid-5">
+      <div class="card"><div class="card-title">⚙️ protocol</div><div class="card-text">Versões mínimas de leitor/escritor exigidas para entender este commit — é como o Delta adiciona funcionalidades novas sem quebrar leitores antigos.</div></div>
+      <div class="card"><div class="card-title">📋 metaData</div><div class="card-text">O schema da tabela, colunas de particionamento e configurações. Reescrito sempre que o schema muda (evolução de schema).</div></div>
+      <div class="card"><div class="card-title">➕ add</div><div class="card-text">"Este arquivo Parquet agora faz parte da tabela." Pode incluir estatísticas min/max por coluna, usadas depois para pular arquivos em filtros.</div></div>
+      <div class="card"><div class="card-title">➖ remove</div><div class="card-text">"Este arquivo não faz mais parte da tabela." O arquivo <strong>continua no disco</strong> (tombstone) até o VACUUM apagar de verdade.</div></div>
+      <div class="card"><div class="card-title">🧾 commitInfo</div><div class="card-text">Metadados de auditoria: quem fez, quando, qual operação (INSERT, MERGE, DELETE...) — é o que alimenta <code>DESCRIBE HISTORY</code>.</div></div>
+    </div>
+
+    <div class="ok-box"><p>✅ Repare que o log nunca guarda "linhas" de dado — só nomes de arquivos e metadados. Isso mantém os arquivos JSON pequenos mesmo em tabelas gigantescas, porque quem guarda os valores de fato continua sendo o Parquet.</p></div>
+  </section>
+
+  <!-- ============ ACID ============ -->
+  <section class="section" id="s-acid">
+    <div class="section-eyebrow">A Garantia Central</div>
+    <div class="section-title">🔒 Transações ACID: tudo ou nada</div>
+    <p class="section-desc">Um commit do Delta só é válido se o arquivo <code>.json</code> correspondente for escrito <strong>por completo, de uma vez</strong> (usando operações atômicas do sistema de armazenamento, como "criar se não existir"). Isso garante as quatro letras de ACID:</p>
+
+    <div class="grid-4">
+      <div class="card"><div class="card-title">⚛️ Atomicidade</div><div class="card-text">A transação inteira acontece ou <strong>nada</strong> acontece. Nunca existe um estado "meio commitado".</div></div>
+      <div class="card"><div class="card-title">✅ Consistência</div><div class="card-text">Toda escrita passa pelas regras de schema antes de virar um commit válido.</div></div>
+      <div class="card"><div class="card-title">🕶️ Isolamento</div><div class="card-text">Leitores sempre veem um <strong>snapshot</strong> completo e consistente — nunca uma mistura de estados.</div></div>
+      <div class="card"><div class="card-title">💾 Durabilidade</div><div class="card-text">Uma vez que o <code>.json</code> foi escrito, o commit existe para sempre no log — mesmo que o processo caia logo em seguida.</div></div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: uma escrita normal vs. uma queda de energia no meio do caminho</div>
+      <div class="section-desc" style="font-size:12.5px;margin-bottom:6px;">Cenário: um job precisa escrever 3 arquivos novos e depois registrar o commit no log. Avance passo a passo.</div>
+      <div class="file-row" id="acidFiles" style="margin-bottom:14px;"></div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="player-btn primary" onclick="acidStep()">▶ Avançar um passo</button>
+        <button class="player-btn danger" onclick="acidCrash()">💥 Simular queda de energia agora</button>
+        <button class="player-btn" onclick="acidReset()">⏹ Reiniciar</button>
+      </div>
+      <div class="result-display" id="acidReaderView">
+        <div><span class="rl">O que um leitor vê agora</span><span class="rv" id="acidReaderText">Versão 0 (tabela vazia)</span></div>
+      </div>
+      <div class="anatomy-detail" style="margin-top:14px;" id="acidDetail">
+        <div class="ad-title">Passo 0 de 4</div>
+        <div class="ad-text">Clique em "Avançar um passo" para começar a escrita.</div>
+      </div>
+    </div>
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>É como <strong>apostar numa moeda</strong>: ou dá cara, ou dá coroa — nunca "meio cara, meio coroa". Escrever os 3 arquivos de dados é só <strong>preparação</strong>, como separar os brinquedos antes de guardar. A caixa (a tabela) só muda de verdade no instante exato em que a última página do caderno (o <code>.json</code>) é escrita. Se a luz acabar antes disso, os brinquedos preparados ficam largados no chão — mas o caderno continua dizendo a mesma coisa de antes, então ninguém percebe nada de errado.</p>
+    </div>
+  </section>
+
+  <!-- ============ CHECKPOINTS ============ -->
+  <section class="section" id="s-checkpoint">
+    <div class="section-eyebrow">Performance do Log</div>
+    <div class="section-title">📸 Checkpoints: um resumo para não reler tudo</div>
+    <p class="section-desc">Depois de milhares de commits, reconstruir o estado da tabela lendo <strong>todos os JSONs desde o início</strong> ficaria cada vez mais lento. Por padrão, a cada <strong>10 commits</strong>, o Delta escreve um <code>checkpoint.parquet</code>: uma foto consolidada de "quais arquivos valem agora", num formato Parquet rápido de ler. Um leitor novo só precisa: achar o checkpoint mais recente + reler os poucos commits JSON depois dele.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Calculadora: quantos JSONs um leitor precisa reler?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Total de commits já feitos</span><span class="ctrl-v" id="ckTotalVal">37</span></div>
+          <input type="range" id="ckTotal" min="1" max="200" step="1" value="37" oninput="updateCheckpoint()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Intervalo de checkpoint</span><span class="ctrl-v" id="ckIntervalVal">10 commits</span></div>
+          <input type="range" id="ckInterval" min="2" max="50" step="1" value="10" oninput="updateCheckpoint()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="ckCanvas" height="70"></canvas></div>
+      <div class="section-desc" style="font-size:12px;text-align:center;margin-top:4px;">Cada quadrado é um commit; quadrados roxos maiores são checkpoints. (Visual limitado a 60 marcas; os números reais estão nos cartões abaixo.)</div>
+      <div class="stat-cards" style="grid-template-columns:repeat(3,1fr);" id="ckStats"></div>
+    </div>
+  </section>
+
+  <!-- ============ TIME TRAVEL ============ -->
+  <section class="section" id="s-timetravel">
+    <div class="section-eyebrow">A Máquina do Tempo</div>
+    <div class="section-title">⏳ Time Travel: viajando entre versões</div>
+    <p class="section-desc">Como cada commit é preservado, você pode consultar a tabela <strong>exatamente como ela estava</strong> em qualquer versão anterior — desde que os arquivos daquela versão ainda não tenham sido removidos pelo VACUUM (próximas seções). Arraste o controle e veja a mesma tabela de vendas evoluir commit a commit.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: arraste entre as versões da tabela</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Versão da tabela</span><span class="ctrl-v" id="ttVersionVal">0</span></div>
+          <input type="range" id="ttVersion" min="0" max="4" step="1" value="0" oninput="renderTimeTravel()">
+        </div>
+      </div>
+      <div class="chip" id="ttQuery" style="font-size:12px;margin-bottom:14px;"></div>
+      <table class="data-table">
+        <thead><tr><th>id</th><th>produto</th><th>país</th><th>valor</th></tr></thead>
+        <tbody id="ttBody"></tbody>
+      </table>
+      <div class="anatomy-detail" style="margin-top:14px;" id="ttDetail"></div>
+    </div>
+    <div class="info-box"><p>💡 Na prática: <code style="color:var(--accent);">SELECT * FROM vendas VERSION AS OF 2</code> ou <code style="color:var(--accent);">SELECT * FROM vendas TIMESTAMP AS OF '2026-01-10'</code>. Ótimo para auditoria, reproduzir um relatório antigo, ou desfazer um <code>DELETE</code> feito por engano com <code>RESTORE TABLE ... TO VERSION AS OF n</code>.</p></div>
+  </section>
+
+  <!-- ============ SCHEMA ============ -->
+  <section class="section" id="s-schema">
+    <div class="section-eyebrow">Qualidade de Dados</div>
+    <div class="section-title">🛡️ Schema Enforcement &amp; Evolution</div>
+    <p class="section-desc">Por padrão, o Delta <strong>rejeita</strong> qualquer escrita cujo schema não bate com o da tabela (coluna a mais, faltando, ou de tipo diferente). É o oposto do "aceita qualquer coisa" dos data lakes crus. Quando a mudança é intencional, você opta explicitamente por evoluir o schema.</p>
+
+    <div class="kid-box">
+      <div class="kid-box-title">🧒 Explicando para uma criança</div>
+      <p>É como um <strong>formulário de matrícula da escola</strong>: se falta o campo "nome" ou alguém escreve a idade no campo do telefone, a secretária <strong>devolve o formulário</strong> na hora, antes de arquivar. Só se você marcar a caixinha "quero adicionar um campo novo pra todo mundo" (<code>mergeSchema</code>) é que a escola aceita um formulário com uma pergunta extra — e completa com "não informado" nas matrículas antigas.</p>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: escrever um lote com uma coluna nova ("desconto")</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btnSchemaOff" onclick="setMergeSchema(false)">mergeSchema = false (padrão)</button>
+        <button class="btn-toggle" id="btnSchemaOn" onclick="setMergeSchema(true)">mergeSchema = true</button>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">📋 Schema atual da tabela</div>
+          <table class="data-table"><thead><tr><th>produto</th><th>país</th><th>valor</th></tr></thead>
+          <tbody><tr><td>Camiseta</td><td>Brasil</td><td>200</td></tr></tbody></table>
+        </div>
+        <div class="card">
+          <div class="card-title">📥 Lote novo chegando</div>
+          <table class="data-table"><thead><tr><th>produto</th><th>país</th><th>valor</th><th style="color:var(--accent-purple);">desconto</th></tr></thead>
+          <tbody><tr><td>Meia</td><td>Portugal</td><td>300</td><td style="color:var(--accent-purple);">10%</td></tr></tbody></table>
+        </div>
+      </div>
+      <div class="anatomy-detail" style="margin-top:14px;" id="schemaResult"></div>
+    </div>
+  </section>
+
+  <!-- ============ MERGE ============ -->
+  <section class="section" id="s-merge">
+    <div class="section-eyebrow">Upsert</div>
+    <div class="section-title">🔀 MERGE INTO: update e insert em um só comando</div>
+    <p class="section-desc"><code>MERGE INTO</code> compara uma tabela <strong>alvo</strong> com uma fonte de mudanças (novo lote, CDC, etc.) usando uma chave, e decide linha a linha: se a chave já existe, <strong>atualiza (UPDATE)</strong>; se não existe, <strong>insere (INSERT)</strong>. É o coração de pipelines incrementais e upserts.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: MERGE de um lote de pedidos no cliente_id</div>
+      <div class="grid-2">
+        <div>
+          <div class="ctrl-l" style="margin-bottom:6px;">🎯 Tabela alvo (antes)</div>
+          <table class="data-table"><thead><tr><th>cliente_id</th><th>cidade</th><th>total_compras</th></tr></thead>
+          <tbody>
+            <tr><td>C001</td><td>São Paulo</td><td>500</td></tr>
+            <tr><td>C002</td><td>Lisboa</td><td>300</td></tr>
+            <tr><td>C003</td><td>Porto</td><td>150</td></tr>
+          </tbody></table>
+        </div>
+        <div>
+          <div class="ctrl-l" style="margin-bottom:6px;">📥 Fonte (novo lote)</div>
+          <table class="data-table"><thead><tr><th>cliente_id</th><th>cidade</th><th>total_compras</th></tr></thead>
+          <tbody>
+            <tr><td>C001</td><td>São Paulo</td><td>650</td></tr>
+            <tr><td>C004</td><td>Recife</td><td>90</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="margin:14px 0;">
+        <button class="player-btn primary" onclick="runMerge()">▶ Executar MERGE INTO</button>
+        <button class="player-btn" onclick="resetMerge()">⏹ Resetar</button>
+      </div>
+      <div class="ctrl-l" style="margin-bottom:6px;">📊 Tabela alvo (depois)</div>
+      <table class="data-table"><thead><tr><th>cliente_id</th><th>cidade</th><th>total_compras</th><th>resultado</th></tr></thead>
+      <tbody id="mergeBody"></tbody></table>
+      <div class="stat-cards" id="mergeStats"></div>
+    </div>
+
+    <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">MERGE INTO</span> clientes <span class="kw">AS</span> alvo
+<span class="kw">USING</span> novos_pedidos <span class="kw">AS</span> fonte
+<span class="kw">ON</span> alvo.cliente_id = fonte.cliente_id
+<span class="kw">WHEN MATCHED THEN UPDATE SET</span> alvo.total_compras = fonte.total_compras
+<span class="kw">WHEN NOT MATCHED THEN INSERT</span> *;</div>
+  </section>
+
+  <!-- ============ UPDATE/DELETE ============ -->
+  <section class="section" id="s-updatedelete">
+    <div class="section-eyebrow">Copy-on-Write</div>
+    <div class="section-title">✏️ UPDATE &amp; DELETE: como mudar um arquivo imutável</div>
+    <p class="section-desc">Parquet não permite editar bytes existentes. Por padrão, o Delta resolve isso com <strong>copy-on-write</strong>: para um <code>DELETE</code> ou <code>UPDATE</code>, ele localiza os arquivos Parquet que contêm linhas afetadas, reescreve <strong>um arquivo novo</strong> já sem/com a mudança, marca o arquivo antigo como <code>remove</code> no log e adiciona o novo como <code>add</code> — tudo em um único commit atômico.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: <code style="color:var(--accent);">DELETE FROM vendas WHERE pais = 'Portugal'</code></div>
+      <div class="ctrl-l" style="margin-bottom:8px;">Antes — 3 arquivos, 6 linhas no total</div>
+      <div class="file-row" id="udBefore" style="margin-bottom:16px;"></div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="player-btn primary" onclick="runDelete()">▶ Executar DELETE</button>
+        <button class="player-btn" onclick="resetDelete()">⏹ Resetar</button>
+      </div>
+      <div class="ctrl-l" style="margin-bottom:8px;">Depois do commit</div>
+      <div class="file-row" id="udAfter" style="margin-bottom:14px;"></div>
+      <div class="anatomy-detail" id="udDetail">
+        <div class="ad-title">Ainda não executado</div>
+        <div class="ad-text">Arquivos com linhas de Portugal serão reescritos sem elas; arquivos sem nenhuma linha de Portugal nem são tocados.</div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Uma otimização mais recente, <strong>Deletion Vectors</strong>, evita reescrever o arquivo inteiro: em vez disso, grava um pequeno "mapa de bits" marcando quais linhas ignorar na leitura (merge-on-read). Mais rápido para deletes/updates pequenos e frequentes, ao custo de os leitores precisarem entender esse mapa.</p></div>
+  </section>
+
+  <!-- ============ CONCORRÊNCIA ============ -->
+  <section class="section" id="s-concorrencia">
+    <div class="section-eyebrow">Múltiplos Escritores</div>
+    <div class="section-title">⚔️ Controle de concorrência otimista</div>
+    <p class="section-desc">E se dois processos tentam escrever ao mesmo tempo? O Delta usa <strong>controle de concorrência otimista</strong>: cada escritor lê a versão atual, prepara sua transação, e tenta "reivindicar" o próximo número de versão com uma operação atômica do armazenamento (ex: "criar arquivo só se ele não existir"). Se alguém já reivindicou esse número, há <strong>conflito</strong> — e o escritor perdedor decide se pode tentar de novo com base no que mudou.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: dois escritores, mesma tabela, ao mesmo tempo</div>
+      <div class="section-desc" style="font-size:12.5px;margin-bottom:10px;">Ambos partem da versão 5. Escritor A quer inserir pedidos novos; Escritor B quer atualizar preços — mudanças em arquivos diferentes.</div>
+      <div class="lanes">
+        <div class="lane">
+          <div class="lane-title">🅰️ Escritor A — INSERT pedidos novos</div>
+          <div class="lane-steps" id="laneA"></div>
+        </div>
+        <div class="lane">
+          <div class="lane-title">🅱️ Escritor B — UPDATE preços</div>
+          <div class="lane-steps" id="laneB"></div>
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="margin-top:16px;">
+        <button class="player-btn primary" onclick="concStep('A')">▶ Escritor A: avançar</button>
+        <button class="player-btn primary" onclick="concStep('B')">▶ Escritor B: avançar</button>
+        <button class="player-btn" onclick="concReset()">⏹ Reiniciar</button>
+      </div>
+      <div class="anatomy-detail" style="margin-top:14px;" id="concDetail">
+        <div class="ad-title">Nenhum passo executado ainda</div>
+        <div class="ad-text">Avance os dois escritores em qualquer ordem e veja o que acontece quando ambos tentam virar "versão 6".</div>
+      </div>
+    </div>
+    <div class="ok-box"><p>✅ Como A mexeu em arquivos de pedidos e B mexeu em arquivos de preço, não há sobreposição real — o Delta permite que B <strong>tente novamente automaticamente</strong> como versão 7, sem precisar refazer todo o trabalho. Se os dois tivessem tocado nos mesmos arquivos, o segundo commit falharia de vez.</p></div>
+  </section>
+
+  <!-- ============ OPTIMIZE / Z-ORDER ============ -->
+  <section class="section" id="s-optimize">
+    <div class="section-eyebrow">Manutenção</div>
+    <div class="section-title">🧹 OPTIMIZE &amp; Z-ORDER</div>
+    <p class="section-desc">Escritas frequentes (streaming, micro-batches) tendem a criar <strong>muitos arquivos pequenos</strong> — ótimo para escrever rápido, péssimo para ler depois (overhead de abrir milhares de arquivos). <code>OPTIMIZE</code> reescreve arquivos pequenos em arquivos maiores e bem compactados, usando o mesmo mecanismo de <code>add</code>/<code>remove</code> que já vimos.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: compactar arquivos pequenos</div>
+      <div class="ctrl-l" style="margin-bottom:8px;">Antes — muitos arquivos pequenos (streaming gerou um a cada minuto)</div>
+      <div class="file-row" id="optBefore" style="margin-bottom:16px;"></div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="player-btn primary" onclick="runOptimize()">▶ Rodar OPTIMIZE</button>
+        <button class="player-btn" onclick="resetOptimize()">⏹ Resetar</button>
+      </div>
+      <div class="ctrl-l" style="margin-bottom:8px;">Depois</div>
+      <div class="file-row" id="optAfter" style="margin-bottom:14px;"></div>
+      <div class="stat-cards" id="optStats"></div>
+    </div>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Z-ORDER: agrupando valores parecidos fisicamente</div>
+      <p class="section-desc" style="margin-bottom:10px;">Sem ordenação, valores de <code>região</code> e <code>categoria</code> ficam espalhados aleatoriamente entre arquivos — um filtro por região precisa abrir quase todos. <code>Z-ORDER BY (regiao, categoria)</code> agrupa combinações parecidas nos mesmos arquivos, potencializando o pruning por min/max (o mesmo princípio dos row groups do Parquet).</p>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnZOff" onclick="setZOrder(false)">Sem Z-ORDER</button>
+        <button class="btn-toggle" id="btnZOn" onclick="setZOrder(true)">Com Z-ORDER BY (regiao, categoria)</button>
+      </div>
+      <div class="grid-4" id="zorderGrid"></div>
+      <div class="section-desc" style="font-size:12px;text-align:center;margin-top:8px;">Cada bloco é um arquivo; a cor representa a região predominante dentro dele. Repare como o Z-ORDER concentra cores iguais no mesmo arquivo.</div>
+    </div>
+  </section>
+
+  <!-- ============ VACUUM ============ -->
+  <section class="section" id="s-vacuum">
+    <div class="section-eyebrow">Limpeza Física</div>
+    <div class="section-title">🗑️ VACUUM: apagando de verdade</div>
+    <p class="section-desc">Arquivos marcados como <code>remove</code> continuam ocupando espaço em disco — eles só deixam de contar para a versão atual da tabela, mas ainda existem para permitir <em>time travel</em>. <code>VACUUM</code> apaga fisicamente arquivos órfãos <strong>mais antigos que um período de retenção</strong> (padrão: 7 dias / 168 horas).</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: ajuste a retenção e veja quais arquivos seriam apagados</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Retenção (dias)</span><span class="ctrl-v" id="vacRetVal">7 dias</span></div>
+          <input type="range" id="vacRet" min="0" max="14" step="1" value="7" oninput="renderVacuum()">
+        </div>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>Arquivo</th><th>Status no log</th><th>Idade desde o "remove"</th><th>Resultado do VACUUM</th></tr></thead>
+        <tbody id="vacBody"></tbody>
+      </table>
+      <div class="stat-cards" id="vacStats"></div>
+      <div class="warn-box" style="margin-top:14px;" id="vacWarn"></div>
+    </div>
+  </section>
+
+  <!-- ============ CDF ============ -->
+  <section class="section" id="s-cdf">
+    <div class="section-eyebrow">Recurso Avançado</div>
+    <div class="section-title">🔄 Change Data Feed (CDF)</div>
+    <p class="section-desc">Com <code>delta.enableChangeDataFeed = true</code>, cada <code>UPDATE</code>/<code>DELETE</code>/<code>MERGE</code> passa a gerar também um registro <strong>linha a linha</strong> do que mudou, consultável via <code>table_changes()</code> — perfeito para alimentar pipelines incrementais (CDC) sem reprocessar a tabela inteira.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Experimente: simular um UPDATE e ver o feed de mudanças gerado</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="player-btn primary" onclick="runCdf()">▶ UPDATE valor de C002: 300 → 450</button>
+        <button class="player-btn" onclick="resetCdf()">⏹ Resetar</button>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>cliente_id</th><th>total_compras</th><th>_change_type</th><th>_commit_version</th></tr></thead>
+        <tbody id="cdfBody"></tbody>
+      </table>
+    </div>
+    <div class="info-box"><p>💡 Repare nas duas linhas geradas por um único <code>UPDATE</code>: <code>update_preimage</code> (o valor antigo) e <code>update_postimage</code> (o valor novo) — é isso que permite a um consumidor downstream saber exatamente <em>o que</em> mudou, não só o estado final.</p></div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">⚖️ Delta Lake vs. Iceberg vs. Hudi vs. Parquet puro</div>
+    <p class="section-desc">Os três formatos de tabela resolvem o mesmo problema central (ACID + versionamento por cima de arquivos colunares), com filosofias diferentes de log e ecossistema.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Formato</th><th>Criador / Ano</th><th>Log de transações</th><th>ACID</th><th>Time Travel</th><th>Upsert (MERGE)</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Parquet puro</strong></td><td>Twitter/Cloudera, 2013</td><td>Nenhum</td><td>❌ Não</td><td>❌ Não</td><td>❌ Não</td><td>Arquivo colunar isolado, sem necessidade de tabela</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Delta Lake</strong></td><td>Databricks, 2019</td><td>JSON + checkpoint Parquet</td><td>✅ Sim</td><td>✅ Sim</td><td>✅ Sim</td><td>Ecossistema Spark/Databricks, simplicidade</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">Apache Iceberg</strong></td><td>Netflix, 2018</td><td>Metadados Avro/JSON em árvore (manifests)</td><td>✅ Sim</td><td>✅ Sim</td><td>✅ Sim</td><td>Multi-engine (Spark, Trino, Flink, Snowflake...)</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Apache Hudi</strong></td><td>Uber, 2016</td><td>Timeline própria (commits/actions)</td><td>✅ Sim</td><td>✅ Sim</td><td>✅ Sim, otimizado</td><td>Ingestão incremental intensiva, upserts em streaming</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="highlight-box"><div class="highlight-title">O conceito guarda-chuva: Lakehouse</div><p>Todos os três formatos existem para viabilizar o <strong>Lakehouse</strong>: um data lake barato baseado em arquivos colunares, com as garantias transacionais que antes só bancos e data warehouses ofereciam. A escolha entre eles hoje é mais sobre <em>ecossistema e engines usadas</em> do que sobre capacidade técnica — os três convergiram para conjuntos de features muito parecidos.</p></div>
+  </section>
+
+  <!-- ============ CÓDIGO ============ -->
+  <section class="section" id="s-codigo">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🐍 Delta Lake na prática</div>
+    <p class="section-desc">Do dia a dia com PySpark até inspecionar o histórico de commits, sem precisar de cluster nenhum com <code>delta-rs</code> e DuckDB.</p>
+
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">PySpark — escrever, ler e fazer time travel</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>df.write.format(<span class="st">"delta"</span>).mode(<span class="st">"overwrite"</span>).save(<span class="st">"/lake/vendas"</span>)
+
+<span class="cm"># leitura normal (última versão)</span>
+spark.read.format(<span class="st">"delta"</span>).load(<span class="st">"/lake/vendas"</span>)
+
+<span class="cm"># time travel por versão ou timestamp</span>
+spark.read.format(<span class="st">"delta"</span>).option(<span class="st">"versionAsOf"</span>, <span class="num">3</span>).load(<span class="st">"/lake/vendas"</span>)</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">SQL — MERGE, histórico e manutenção</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">DESCRIBE HISTORY</span> vendas;
+
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> vendas <span class="kw">VERSION AS OF</span> <span class="num">2</span>;
+
+<span class="kw">OPTIMIZE</span> vendas <span class="kw">ZORDER BY</span> (regiao, categoria);
+
+<span class="kw">VACUUM</span> vendas <span class="kw">RETAIN</span> <span class="num">168</span> <span class="kw">HOURS</span>;</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Python (delta-rs) — sem precisar de Spark</div>
+        <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">from</span> deltalake <span class="kw">import</span> DeltaTable, write_deltalake
+
+write_deltalake(<span class="st">"/lake/vendas"</span>, df)
+
+dt = DeltaTable(<span class="st">"/lake/vendas"</span>)
+<span class="fn">print</span>(dt.version())
+<span class="fn">print</span>(dt.history())
+dt.vacuum(retention_hours=<span class="num">168</span>, dry_run=<span class="kw">True</span>)</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">DuckDB — SQL direto numa tabela Delta</div>
+        <div class="code-block">
+<span class="code-lang">sql</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">INSTALL</span> delta; <span class="kw">LOAD</span> delta;
+
+<span class="kw">SELECT</span> pais, <span class="fn">SUM</span>(valor)
+<span class="kw">FROM</span> delta_scan(<span class="st">'/lake/vendas'</span>)
+<span class="kw">GROUP BY</span> pais;</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas práticas</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🧹 Rode OPTIMIZE com regularidade</div>
+        <div class="card-text">Especialmente em tabelas alimentadas por streaming ou micro-batches — arquivos pequenos se acumulam rápido e degradam leitura. Agende <code>OPTIMIZE</code> periódico, não só quando notar lentidão.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Combine particionamento com Z-ORDER</div>
+        <div class="card-text">Particione por colunas de baixa cardinalidade e padrão de filtro estável (ex: data), e use <code>ZORDER BY</code> para as colunas de filtro adicionais de alta seletividade.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🗑️ Nunca zere a retenção do VACUUM sem necessidade</div>
+        <div class="card-text"><code>VACUUM ... RETAIN 0 HOURS</code> pode quebrar leituras concorrentes em andamento e destrói o time travel além do ponto de corte. Mantenha ao menos os 7 dias padrão.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔄 Use Change Data Feed para pipelines incrementais</div>
+        <div class="card-text">Antes de reprocessar tabelas inteiras a cada execução, avalie se <code>enableChangeDataFeed</code> + <code>table_changes()</code> resolve o caso de forma muito mais barata.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Delta Lake por Dentro</span>
+    <span>
+      Fontes: <a href="https://docs.delta.io/latest/index.html" target="_blank" rel="noopener">Delta Lake Docs</a> ·
+      <a href="https://delta.io/blog/" target="_blank" rel="noopener">Delta.io Blog</a> ·
+      <a href="https://www.databricks.com/product/delta-lake-on-databricks" target="_blank" rel="noopener">Databricks</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-problema', icon:'😵', label:'O Problema'},
+  {id:'s-ideia', icon:'💡', label:'A Sacada'},
+  {id:'s-anatomia', icon:'🗂️', label:'Anatomia'},
+  {id:'s-log', icon:'📜', label:'O Log'},
+  {id:'s-acid', icon:'🔒', label:'ACID'},
+  {id:'s-checkpoint', icon:'📸', label:'Checkpoints'},
+  {id:'s-timetravel', icon:'⏳', label:'Time Travel'},
+  {id:'s-schema', icon:'🛡️', label:'Schema'},
+  {id:'s-merge', icon:'🔀', label:'MERGE'},
+  {id:'s-updatedelete', icon:'✏️', label:'Update/Delete'},
+  {id:'s-concorrencia', icon:'⚔️', label:'Concorrência'},
+  {id:'s-optimize', icon:'🧹', label:'Optimize'},
+  {id:'s-vacuum', icon:'🗑️', label:'Vacuum'},
+  {id:'s-cdf', icon:'🔄', label:'CDF'},
+  {id:'s-comparacao', icon:'⚖️', label:'Comparação'},
+  {id:'s-codigo', icon:'🐍', label:'Na Prática'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== ANATOMY DIAGRAM ===================== */
+const anatomyInfo = {
+  part0: {t:'part-00000-a1b2.snappy.parquet', d:'Um arquivo Parquet comum, com as linhas escritas no commit inicial. Sozinho ele não sabe se "vale" ou não — quem decide isso é o log.', link:'json0'},
+  part1: {t:'part-00001-c3d4.snappy.parquet', d:'Outro arquivo de dados do mesmo commit inicial — cada job de escrita pode gerar vários arquivos em paralelo.', link:'json0'},
+  part2: {t:'part-00002-e5f6.snappy.parquet', d:'Um arquivo adicionado num commit posterior (por exemplo, um INSERT incremental do dia seguinte).', link:'json1'},
+  deltalogtag: {t:'_delta_log/', d:'A pasta que guarda a verdade sobre a tabela: um arquivo .json por commit, mais checkpoints periódicos. Nenhum leitor Delta confia em "o que está na pasta de dados" sem passar por aqui primeiro.'},
+  json0: {t:'00000000000000000000.json — commit 0', d:'O primeiro commit: cria a tabela (metaData + protocol) e adiciona os dois primeiros arquivos de dados via ações add.', link:'part0'},
+  json1: {t:'00000000000000000001.json — commit 1', d:'Um commit posterior, por exemplo um INSERT que adiciona um novo arquivo de dados.', link:'part2'},
+  jsondots: {t:'… mais 9 commits …', d:'Cada operação (INSERT, UPDATE, DELETE, MERGE, OPTIMIZE...) gera pelo menos um novo commit numerado sequencialmente — sem exceção.'},
+  checkpoint: {t:'00000000000000000010.checkpoint.parquet', d:'A cada 10 commits (padrão), o Delta consolida todas as ações válidas até aquele ponto num único arquivo Parquet — rápido de ler mesmo com milhares de commits acumulados.'},
+  lastcheckpoint: {t:'_last_checkpoint', d:'Um JSON minúsculo que aponta diretamente para o checkpoint mais recente, para que um leitor não precise nem listar a pasta toda para achá-lo.', link:'checkpoint'},
+};
+function pickAnatomy(id){
+  document.querySelectorAll('.pq-clickable, .pq-magic').forEach(el => el.classList.remove('active'));
+  const info = anatomyInfo[id];
+  if(!info) return;
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(el => el.classList.add('active'));
+  if(info.link) document.querySelectorAll(`[data-id="${info.link}"]`).forEach(el => el.classList.add('active'));
+  document.getElementById('anatomyDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+  drawConnectors(id, info.link);
+}
+function rectRel(el, wrap){
+  const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+  return {x: r.left - w.left, y: r.top - w.top, w: r.width, h: r.height};
+}
+function drawConnectors(id, linkId){
+  const svg = document.getElementById('anatomySvg');
+  const wrap = document.getElementById('anatomyWrap');
+  svg.innerHTML = '';
+  if(window.innerWidth <= 960 || !linkId) return;
+  const a = document.querySelector(`[data-id="${id}"]`);
+  const b = document.querySelector(`[data-id="${linkId}"]`);
+  if(!a || !b) return;
+  const ra = rectRel(a, wrap), rb = rectRel(b, wrap);
+  const isFileSide = ra.x < rb.x;
+  const x1 = isFileSide ? ra.x + ra.w : ra.x;
+  const y1 = ra.y + ra.h/2;
+  const x2 = isFileSide ? rb.x : rb.x + rb.w;
+  const y2 = rb.y + rb.h/2;
+  const mx = (x1+x2)/2;
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d', `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`);
+  path.setAttribute('stroke', '#06b6d4');
+  path.setAttribute('stroke-width', '2');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('opacity', '0.85');
+  svg.appendChild(path);
+  [ [x1,y1], [x2,y2] ].forEach(([cx,cy]) => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', 3.5);
+    c.setAttribute('fill', '#06b6d4');
+    svg.appendChild(c);
+  });
+}
+window.addEventListener('resize', () => { const active = document.querySelector('.pq-clickable.active, .pq-magic.active'); if(active) drawConnectors(active.dataset.id, anatomyInfo[active.dataset.id]?.link); });
+
+/* ===================== ACID DEMO ===================== */
+const acidSteps = [
+  {label:'Passo 0', text:'Estado inicial: a tabela está na versão 0, vazia. Nenhum arquivo novo foi escrito ainda.'},
+  {label:'Passo 1 de 4 — escrevendo dado 1/3', text:'O job escreve part-00010.parquet no disco. Isso é apenas preparação — ainda não afeta a tabela, porque nenhum commit referenciou este arquivo.'},
+  {label:'Passo 2 de 4 — escrevendo dado 2/3', text:'part-00011.parquet também é escrito. Continua sendo só um arquivo solto no disco, invisível para qualquer leitor Delta.'},
+  {label:'Passo 3 de 4 — escrevendo dado 3/3', text:'part-00012.parquet é escrito. Os 3 arquivos de dados estão prontos, mas a tabela ainda está na versão 0 para qualquer leitor.'},
+  {label:'Passo 4 de 4 — commit!', text:'O arquivo 00000000000000000001.json é escrito de uma vez, listando os 3 arquivos como add. Só agora, atomicamente, a tabela vira versão 1 para todo mundo.'},
+];
+let acidStepIdx = 0;
+let acidCrashed = false;
+function renderAcid(){
+  const filesDiv = document.getElementById('acidFiles');
+  const boxes = [0,1,2].map(i => {
+    const written = acidStepIdx > i;
+    const committed = acidStepIdx >= 4 && !acidCrashed;
+    let cls = 'file-box';
+    if(written && committed) cls += ' committed';
+    else if(written && acidCrashed) cls += ' ghost';
+    else if(written) cls += ' pending';
+    return `<div class="${cls}"><span class="fb-icon">📄</span>part-0001${i}<br>.parquet${written && acidCrashed ? '<br>(órfão)' : written && !committed ? '<br>(preparando)' : written ? '<br>(commitado)' : ''}</div>`;
+  }).join('');
+  const jsonWritten = acidStepIdx >= 4 && !acidCrashed;
+  const jsonCls = jsonWritten ? 'file-box committed' : 'file-box';
+  filesDiv.innerHTML = boxes + `<div class="${jsonCls}"><span class="fb-icon">📝</span>0000...0001<br>.json${jsonWritten ? '<br>(escrito!)' : ''}</div>`;
+
+  const step = acidCrashed ? {label:'💥 Queda de energia!', text:'O processo morreu antes de escrever o .json do commit. Os 3 arquivos ficaram no disco, mas nenhum commit os referencia — para qualquer leitor Delta, eles simplesmente não existem. A tabela continua, com segurança, na versão 0.'} : acidSteps[acidStepIdx];
+  document.getElementById('acidDetail').innerHTML = `<div class="ad-title">${step.label}</div><div class="ad-text">${step.text}</div>`;
+  document.getElementById('acidReaderText').textContent = jsonWritten ? 'Versão 1 — 3 novas linhas visíveis' : 'Versão 0 (tabela vazia)';
+}
+function acidStep(){
+  if(acidCrashed) return;
+  if(acidStepIdx < 4) acidStepIdx++;
+  renderAcid();
+}
+function acidCrash(){
+  if(acidStepIdx >= 4) return;
+  acidCrashed = true;
+  renderAcid();
+}
+function acidReset(){
+  acidStepIdx = 0; acidCrashed = false;
+  renderAcid();
+}
+renderAcid();
+
+/* ===================== CHECKPOINT CALC ===================== */
+function updateCheckpoint(){
+  const total = +document.getElementById('ckTotal').value;
+  const interval = +document.getElementById('ckInterval').value;
+  document.getElementById('ckTotalVal').textContent = total;
+  document.getElementById('ckIntervalVal').textContent = interval + ' commits';
+
+  const lastCheckpoint = Math.floor(total / interval) * interval;
+  const jsonsToReplay = total - lastCheckpoint;
+  const numCheckpoints = Math.floor(total / interval);
+
+  document.getElementById('ckStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Checkpoints escritos</div><div class="stat-card-value">${numCheckpoints}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">Último checkpoint</div><div class="stat-card-value">v${lastCheckpoint}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">JSONs a reler agora</div><div class="stat-card-value">${jsonsToReplay}</div></div>
+  `;
+  drawCheckpointCanvas(total, interval);
+}
+function drawCheckpointCanvas(total, interval){
+  const cv = document.getElementById('ckCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 70;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const shown = Math.min(total, 60);
+  const gap = 4;
+  const cellW = Math.max(6, (w - gap*(shown-1)) / shown - 0.01);
+  for(let i=0;i<shown;i++){
+    const commitNum = total - shown + i + 1;
+    const isCheckpoint = commitNum % interval === 0;
+    const x = i*(cellW+gap);
+    const size = isCheckpoint ? 26 : 18;
+    const y = (h-size)/2;
+    ctx.fillStyle = isCheckpoint ? '#c49aff' : (commitNum > total - (total % interval || interval) ? '#06b6d4' : 'rgba(255,255,255,.10)');
+    roundRect(ctx, x, y, cellW, size, 3); ctx.fill();
+  }
+}
+updateCheckpoint();
+window.addEventListener('resize', () => updateCheckpoint());
+
+/* ===================== TIME TRAVEL DEMO ===================== */
+const ttVersions = [
+  {op:'CREATE TABLE + INSERT inicial', query:"SELECT * FROM vendas VERSION AS OF 0", rows:[
+    {id:1,produto:'Bola',pais:'Brasil',valor:100},
+    {id:2,produto:'Camiseta',pais:'Brasil',valor:200},
+  ]},
+  {op:'INSERT novo lote', query:"SELECT * FROM vendas VERSION AS OF 1", rows:[
+    {id:1,produto:'Bola',pais:'Brasil',valor:100},
+    {id:2,produto:'Camiseta',pais:'Brasil',valor:200},
+    {id:3,produto:'Meia',pais:'Portugal',valor:300,tag:'insert'},
+  ]},
+  {op:'UPDATE valor da linha 2', query:"SELECT * FROM vendas VERSION AS OF 2", rows:[
+    {id:1,produto:'Bola',pais:'Brasil',valor:100},
+    {id:2,produto:'Camiseta',pais:'Brasil',valor:250,tag:'update'},
+    {id:3,produto:'Meia',pais:'Portugal',valor:300},
+  ]},
+  {op:"DELETE WHERE pais='Portugal'", query:"SELECT * FROM vendas VERSION AS OF 3", rows:[
+    {id:1,produto:'Bola',pais:'Brasil',valor:100},
+    {id:2,produto:'Camiseta',pais:'Brasil',valor:250},
+  ]},
+  {op:'MERGE (upsert) novo pedido', query:"SELECT * FROM vendas VERSION AS OF 4", rows:[
+    {id:1,produto:'Bola',pais:'Brasil',valor:100},
+    {id:2,produto:'Camiseta',pais:'Brasil',valor:250},
+    {id:4,produto:'Tênis',pais:'Brasil',valor:500,tag:'insert'},
+  ]},
+];
+function renderTimeTravel(){
+  const v = +document.getElementById('ttVersion').value;
+  document.getElementById('ttVersionVal').textContent = v;
+  const data = ttVersions[v];
+  document.getElementById('ttQuery').textContent = data.query;
+  document.getElementById('ttBody').innerHTML = data.rows.map(r => `
+    <tr class="${r.tag === 'insert' ? 'row-insert' : r.tag === 'update' ? 'row-update' : ''}">
+      <td>${r.id}</td><td>${r.produto}</td><td>${r.pais}</td><td>R$ ${r.valor}</td>
+    </tr>`).join('');
+  document.getElementById('ttDetail').innerHTML = `<div class="ad-title">Commit ${v}: ${data.op}</div><div class="ad-text">Esta é exatamente a tabela reconstruída lendo o log até o commit ${v} (mais o checkpoint anterior, se houver um). Nada precisa ser "desfeito" — é só uma questão de até onde ler.</div>`;
+}
+renderTimeTravel();
+
+/* ===================== SCHEMA ENFORCEMENT DEMO ===================== */
+let mergeSchemaOn = false;
+function setMergeSchema(v){
+  mergeSchemaOn = v;
+  document.getElementById('btnSchemaOff').classList.toggle('active', !v);
+  document.getElementById('btnSchemaOn').classList.toggle('active', v);
+  renderSchemaResult();
+}
+function renderSchemaResult(){
+  const box = document.getElementById('schemaResult');
+  if(!mergeSchemaOn){
+    box.style.borderColor = 'var(--accent-red)';
+    box.innerHTML = `<div class="ad-title" style="color:var(--accent-red);">❌ Escrita rejeitada</div><div class="ad-text">AnalysisException: a coluna "desconto" não existe no schema atual da tabela. Por padrão, o Delta protege a tabela de mudanças de schema não intencionais — a escrita para antes de tocar em qualquer arquivo.</div>`;
+  } else {
+    box.style.borderColor = 'var(--accent-green)';
+    box.innerHTML = `<div class="ad-title" style="color:var(--accent-green);">✅ Escrita aceita — schema evoluído</div><div class="ad-text">A tabela ganha a coluna "desconto" permanentemente (um novo commit atualiza o metaData). Linhas antigas passam a ter "desconto = null" quando lidas — nada foi reescrito, só o schema declarado mudou.</div>`;
+  }
+}
+setMergeSchema(false);
+
+/* ===================== MERGE DEMO ===================== */
+const mergeTarget = [
+  {id:'C001', cidade:'São Paulo', total:500},
+  {id:'C002', cidade:'Lisboa', total:300},
+  {id:'C003', cidade:'Porto', total:150},
+];
+const mergeSource = {C001:{cidade:'São Paulo', total:650}, C004:{cidade:'Recife', total:90}};
+function runMerge(){
+  const rows = [...mergeTarget.map(r => ({...r}))];
+  let updated = 0, inserted = 0;
+  rows.forEach(r => { if(mergeSource[r.id]){ r.total = mergeSource[r.id].total; r.tag='update'; updated++; } });
+  Object.keys(mergeSource).forEach(id => { if(!rows.find(r=>r.id===id)){ rows.push({id, cidade:mergeSource[id].cidade, total:mergeSource[id].total, tag:'insert'}); inserted++; } });
+  document.getElementById('mergeBody').innerHTML = rows.map(r => `
+    <tr class="${r.tag==='update'?'row-update':r.tag==='insert'?'row-insert':''}">
+      <td>${r.id}</td><td>${r.cidade}</td><td>${r.total}</td>
+      <td>${r.tag==='update'?'🔵 WHEN MATCHED → UPDATE':r.tag==='insert'?'🟢 WHEN NOT MATCHED → INSERT':'— sem mudança'}</td>
+    </tr>`).join('');
+  document.getElementById('mergeStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Linhas atualizadas</div><div class="stat-card-value">${updated}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Linhas inseridas</div><div class="stat-card-value">${inserted}</div></div>
+    <div class="stat-card"><div class="stat-card-label">Total na tabela</div><div class="stat-card-value">${rows.length}</div></div>
+  `;
+}
+function resetMerge(){
+  document.getElementById('mergeBody').innerHTML = mergeTarget.map(r => `<tr><td>${r.id}</td><td>${r.cidade}</td><td>${r.total}</td><td>—</td></tr>`).join('');
+  document.getElementById('mergeStats').innerHTML = '';
+}
+resetMerge();
+
+/* ===================== UPDATE/DELETE (copy-on-write) DEMO ===================== */
+const udFiles = [
+  {name:'part-00000', rows:['Bola/Brasil','Camiseta/Brasil'], hasPortugal:false},
+  {name:'part-00001', rows:['Meia/Portugal','Tênis/Portugal'], hasPortugal:true},
+  {name:'part-00002', rows:['Boné/Brasil','Meia/Portugal'], hasPortugal:true},
+];
+function renderUdBefore(){
+  document.getElementById('udBefore').innerHTML = udFiles.map(f => `<div class="file-box"><span class="fb-icon">📄</span>${f.name}<br>.parquet<br>(${f.rows.length} linhas)</div>`).join('');
+}
+function runDelete(){
+  let rewritten = 0, untouched = 0, rowsRemoved = 0;
+  const html = udFiles.map(f => {
+    if(f.hasPortugal){
+      rewritten++;
+      const keep = f.rows.filter(r => !r.includes('Portugal'));
+      rowsRemoved += f.rows.length - keep.length;
+      return `<div class="file-box removed"><span class="fb-icon">📄</span>${f.name}<br>.parquet<br>(remove)</div>
+              <div class="file-box added"><span class="fb-icon">📄</span>${f.name}-v2<br>.parquet<br>(add, ${keep.length} linhas)</div>`;
+    } else {
+      untouched++;
+      return `<div class="file-box"><span class="fb-icon">📄</span>${f.name}<br>.parquet<br>(intocado)</div>`;
+    }
+  }).join('');
+  document.getElementById('udAfter').innerHTML = html;
+  document.getElementById('udDetail').innerHTML = `<div class="ad-title">Commit gerado</div><div class="ad-text">${rewritten} arquivo(s) reescrito(s) (remove + add), ${untouched} arquivo(s) intocado(s) porque não continham nenhuma linha de Portugal, ${rowsRemoved} linha(s) removida(s) no total. Tudo em um único commit atômico no log.</div>`;
+}
+function resetDelete(){
+  document.getElementById('udAfter').innerHTML = '';
+  document.getElementById('udDetail').innerHTML = `<div class="ad-title">Ainda não executado</div><div class="ad-text">Arquivos com linhas de Portugal serão reescritos sem elas; arquivos sem nenhuma linha de Portugal nem são tocados.</div>`;
+}
+renderUdBefore();
+
+/* ===================== CONCORRÊNCIA DEMO ===================== */
+const laneStepsA = [
+  'Lê versão atual: v5',
+  'Prepara arquivo novo: part-pedidos-01.parquet',
+  'Tenta commitar como v6 (put-if-absent)',
+  '✅ Sucesso! Agora é v6',
+];
+const laneStepsB = [
+  'Lê versão atual: v5',
+  'Prepara arquivo novo: part-precos-01.parquet',
+  'Tenta commitar como v6 (put-if-absent)',
+];
+let concA = 0, concB = 0, concBConflicted = false, concBRetried = false;
+function renderConc(){
+  document.getElementById('laneA').innerHTML = laneStepsA.map((s,i) => `<div class="lane-step ${i<concA?'success':i===concA?'done':''}">${i+1}. ${s}</div>`).join('');
+  const bSteps = [...laneStepsB];
+  if(concBConflicted) bSteps.push('❌ Conflito! v6 já existe (escrita por A)');
+  if(concBRetried) bSteps.push('🔁 Relê v6, confirma que não há sobreposição de arquivos, tenta v7');
+  if(concBRetried) bSteps.push('✅ Sucesso! Agora é v7');
+  document.getElementById('laneB').innerHTML = bSteps.map((s,i) => {
+    let cls = i<concB ? 'success' : i===concB ? 'done' : '';
+    if(s.includes('Conflito')) cls = 'conflict';
+    if(s.includes('v7')) cls = 'success';
+    return `<div class="lane-step ${cls}">${i+1}. ${s}</div>`;
+  }).join('');
+}
+function concStep(who){
+  if(who === 'A'){
+    if(concA < laneStepsA.length) concA++;
+  } else {
+    if(concB < 3){
+      concB++;
+      if(concB === 3){
+        if(concA >= 4){ concBConflicted = true; }
+      }
+    } else if(concBConflicted && !concBRetried){
+      concBRetried = true;
+      concB += 2;
+    }
+  }
+  renderConc();
+  const detail = document.getElementById('concDetail');
+  if(concBConflicted && !concBRetried){
+    detail.innerHTML = `<div class="ad-title" style="color:var(--accent-red);">⚔️ Conflito detectado</div><div class="ad-text">Escritor B tentou criar 00000000000000000006.json, mas esse arquivo já existe (escrito por A). O storage rejeita a operação (put-if-absent falhou). B agora precisa checar: os arquivos que ele mudou (preços) se sobrepõem aos que A mudou (pedidos)? Não — então pode tentar de novo. Avance o Escritor B mais uma vez.</div>`;
+  } else if(concBRetried){
+    detail.innerHTML = `<div class="ad-title" style="color:var(--accent-green);">✅ Resolvido sem perder trabalho</div><div class="ad-text">B não precisou refazer a lógica de negócio, só tentar o próximo número de versão livre (v7). Se A e B tivessem editado os mesmos arquivos, esse retry falharia e B teria que abortar ou recomeçar de verdade.</div>`;
+  } else if(concA >= 4 && concB < 3){
+    detail.innerHTML = `<div class="ad-title">Escritor A já commitou v6</div><div class="ad-text">Agora avance o Escritor B para ver o que acontece quando ele tenta reivindicar o mesmo número de versão.</div>`;
+  }
+}
+function concReset(){
+  concA = 0; concB = 0; concBConflicted = false; concBRetried = false;
+  renderConc();
+  document.getElementById('concDetail').innerHTML = `<div class="ad-title">Nenhum passo executado ainda</div><div class="ad-text">Avance os dois escritores em qualquer ordem e veja o que acontece quando ambos tentam virar "versão 6".</div>`;
+}
+renderConc();
+
+/* ===================== OPTIMIZE DEMO ===================== */
+const optSmallFiles = Array.from({length:10}, (_,i) => ({name:`part-${String(i).padStart(5,'0')}`, sizeKB: 8 + (i%3)*4}));
+function renderOptBefore(){
+  document.getElementById('optBefore').innerHTML = optSmallFiles.map(f => `<div class="file-box"><span class="fb-icon">📄</span>${f.name}<br>${f.sizeKB} KB</div>`).join('');
+  document.getElementById('optAfter').innerHTML = '';
+  document.getElementById('optStats').innerHTML = '';
+}
+function runOptimize(){
+  const totalKB = optSmallFiles.reduce((s,f)=>s+f.sizeKB,0);
+  const bigFiles = [
+    {name:'part-00000-opt', sizeKB: Math.round(totalKB*0.55)},
+    {name:'part-00001-opt', sizeKB: Math.round(totalKB*0.45)},
+  ];
+  document.getElementById('optAfter').innerHTML = bigFiles.map(f => `<div class="file-box added"><span class="fb-icon">📦</span>${f.name}<br>${f.sizeKB} KB</div>`).join('');
+  document.getElementById('optStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Arquivos antes</div><div class="stat-card-value">${optSmallFiles.length}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Arquivos depois</div><div class="stat-card-value">${bigFiles.length}</div></div>
+    <div class="stat-card c-blue"><div class="stat-card-label">Tamanho total (igual)</div><div class="stat-card-value">${totalKB} KB</div></div>
+  `;
+}
+function resetOptimize(){ renderOptBefore(); }
+renderOptBefore();
+
+/* ===================== Z-ORDER DEMO ===================== */
+const zOrderRegions = ['Sul','Norte','Leste','Oeste'];
+const zColors = {Sul:'#06b6d4', Norte:'#7dded8', Leste:'#36a2ef', Oeste:'#c49aff'};
+function buildZOrderData(sorted){
+  const cells = [];
+  for(let i=0;i<16;i++) cells.push(zOrderRegions[i%4]);
+  if(!sorted){
+    // embaralha de forma determinística
+    const shuffled = [2,14,5,9,0,11,7,3,13,1,15,6,10,4,8,12].map(i => cells[i]);
+    return shuffled;
+  }
+  return cells.sort();
+}
+let zOrderOn = false;
+function setZOrder(v){
+  zOrderOn = v;
+  document.getElementById('btnZOff').classList.toggle('active', !v);
+  document.getElementById('btnZOn').classList.toggle('active', v);
+  renderZOrder();
+}
+function renderZOrder(){
+  const data = buildZOrderData(zOrderOn);
+  const grid = document.getElementById('zorderGrid');
+  grid.innerHTML = '';
+  for(let f=0; f<4; f++){
+    const chunk = data.slice(f*4, f*4+4);
+    const cellsHtml = chunk.map(r => `<div style="background:${zColors[r]}22;border:1.5px solid ${zColors[r]};border-radius:4px;padding:6px;text-align:center;font-size:10px;color:${zColors[r]};font-weight:700;">${r}</div>`).join('');
+    grid.innerHTML += `<div class="card" style="padding:12px;"><div class="card-title" style="font-size:11.5px;">Arquivo ${f}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">${cellsHtml}</div></div>`;
+  }
+}
+renderZOrder();
+
+/* ===================== VACUUM DEMO ===================== */
+const vacFiles = [
+  {name:'part-00000 (antigo)', status:'remove', ageDays:12},
+  {name:'part-00001 (antigo)', status:'remove', ageDays:3},
+  {name:'part-00002 (antigo)', status:'remove', ageDays:9},
+  {name:'part-00003 (atual)', status:'add', ageDays:0},
+  {name:'part-00004 (atual)', status:'add', ageDays:0},
+];
+function renderVacuum(){
+  const retention = +document.getElementById('vacRet').value;
+  document.getElementById('vacRetVal').textContent = retention + ' dia' + (retention===1?'':'s');
+  let deleted = 0, kept = 0;
+  const rows = vacFiles.map(f => {
+    if(f.status === 'add'){ kept++; return `<tr class="row-unchanged"><td>${f.name}</td><td>✅ Ativo (add)</td><td>—</td><td>Nunca é candidato ao VACUUM</td></tr>`; }
+    const willDelete = f.ageDays > retention;
+    if(willDelete) deleted++; else kept++;
+    return `<tr class="${willDelete ? 'row-delete' : ''}"><td>${f.name}</td><td>🗑️ Removido do log (remove)</td><td>${f.ageDays} dia(s)</td><td>${willDelete ? '❌ Apagado do disco agora' : '⏳ Mantido (ainda dentro da retenção)'}</td></tr>`;
+  }).join('');
+  document.getElementById('vacBody').innerHTML = rows;
+  document.getElementById('vacStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Arquivos apagados</div><div class="stat-card-value">${deleted}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Arquivos mantidos</div><div class="stat-card-value">${kept}</div></div>
+    <div class="stat-card c-blue"><div class="stat-card-label">Retenção</div><div class="stat-card-value">${retention}d</div></div>
+  `;
+  const warnBox = document.getElementById('vacWarn');
+  if(retention < 7){
+    warnBox.innerHTML = `<p>⚠️ Retenção abaixo de 7 dias (o padrão): você ganha espaço em disco mais rápido, mas <strong>reduz a janela de time travel</strong> e corre risco de apagar arquivos que uma query longa concorrente ainda esteja lendo.</p>`;
+  } else {
+    warnBox.innerHTML = `<p>✅ Retenção dentro (ou acima) do padrão recomendado de 7 dias — equilíbrio seguro entre espaço em disco e proteção contra leituras concorrentes/time travel.</p>`;
+  }
+}
+renderVacuum();
+
+/* ===================== CDF DEMO ===================== */
+const cdfBase = [
+  {id:'C001', total:500, type:'insert', v:0},
+  {id:'C002', total:300, type:'insert', v:0},
+];
+function renderCdfBase(){
+  document.getElementById('cdfBody').innerHTML = cdfBase.map(r => `<tr><td>${r.id}</td><td>${r.total}</td><td>${r.type}</td><td>${r.v}</td></tr>`).join('');
+}
+function runCdf(){
+  const rows = [...cdfBase,
+    {id:'C002', total:300, type:'update_preimage', v:1},
+    {id:'C002', total:450, type:'update_postimage', v:1},
+  ];
+  document.getElementById('cdfBody').innerHTML = rows.map(r => `
+    <tr class="${r.type==='update_postimage'?'row-insert':r.type==='update_preimage'?'row-delete':''}">
+      <td>${r.id}</td><td>${r.total}</td><td>${r.type}</td><td>${r.v}</td>
+    </tr>`).join('');
+}
+function resetCdf(){ renderCdfBase(); }
+renderCdfBase();
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O Delta Lake substitui o Parquet por um formato de arquivo binário próprio.', a:false, e:'Falso. Os dados continuam sendo arquivos .parquet comuns — o Delta apenas adiciona um log de transações (_delta_log) por cima deles.'},
+  {q:'Um arquivo Parquet só "existe" oficialmente para a tabela se algum commit do log o referenciar com uma ação add.', a:true, e:'Verdadeiro. Arquivos órfãos (de escritas incompletas, por exemplo) ficam fisicamente no disco, mas são invisíveis para qualquer leitor Delta.'},
+  {q:'DELETE e UPDATE em uma tabela Delta editam os bytes do arquivo Parquet existente diretamente.', a:false, e:'Falso. Por padrão o Delta usa copy-on-write: reescreve um arquivo novo com a mudança aplicada e marca o antigo como remove — Parquet continua imutável.'},
+  {q:'Checkpoints existem para que um leitor não precise reler todos os JSONs do log desde o commit 0.', a:true, e:'Verdadeiro. A cada 10 commits (padrão), o Delta grava uma foto consolidada em Parquet, e o leitor só relê os commits mais recentes que ainda não entraram em nenhum checkpoint.'},
+  {q:'VACUUM com retenção de 0 horas é sempre uma boa prática para economizar espaço rapidamente.', a:false, e:'Falso. Isso pode apagar arquivos que leituras concorrentes ou consultas de time travel ainda precisam, além de eliminar a possibilidade de voltar a versões recentes.'},
+  {q:'O controle de concorrência otimista do Delta sempre falha quando dois escritores tentam commitar ao mesmo tempo.', a:false, e:'Falso. Se as mudanças não se sobrepõem (arquivos diferentes), o segundo escritor pode tentar novamente automaticamente com o próximo número de versão livre.'},
+  {q:'MERGE INTO permite fazer UPDATE e INSERT em um único comando, com base em uma condição de correspondência.', a:true, e:'Verdadeiro. É a base de upserts: linhas que já existem são atualizadas (WHEN MATCHED) e linhas novas são inseridas (WHEN NOT MATCHED).'},
+  {q:'Apache Iceberg e Apache Hudi resolvem exatamente o mesmo problema central que o Delta Lake: ACID por cima de arquivos colunares.', a:true, e:'Verdadeiro. Os três convergiram para conjuntos de recursos parecidos (ACID, time travel, upsert); a escolha hoje depende mais do ecossistema de engines usado do que de capacidade técnica.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Julho / 2026';
+</script>
+</body>
+</html>

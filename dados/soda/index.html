@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Soda por dentro. Qualidade de dados contínua explicada com analogias visuais para todas as idades, demos interativas, SodaCL, Scans, Soda Cloud, Data Contracts e o caso real da Americanas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Soda por Dentro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:230px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-row .ok{color:var(--accent-green);font-weight:700;}
+.file-chip .fc-row .bad{color:var(--accent-red);font-weight:700;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+
+/* ---- ARCHITECTURE / CONCEPT CLICKABLE DIAGRAM ---- */
+.anatomy-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;}
+.pq-box{border:1.5px solid var(--border-strong);border-radius:8px;padding:14px;background:var(--bg-elevated);}
+.pq-box-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.pq-clickable{cursor:pointer;border:1.5px solid var(--border-color);border-radius:6px;background:var(--bg-panel);padding:9px 12px;font-size:11.5px;color:var(--text-secondary);margin-bottom:7px;transition:.15s;font-weight:600;}
+.pq-clickable:hover{border-color:var(--accent-blue);}
+.pq-clickable.active{border-color:var(--accent);background:rgba(6,182,212,.14);color:var(--accent);}
+.pq-clickable.bad-hover:hover{border-color:var(--accent-red);}
+.pq-clickable.bad.active{border-color:var(--accent-red);background:rgba(248,107,99,.14);color:var(--accent-red);}
+.anatomy-detail{background:var(--bg-panel);border:1px solid var(--accent);border-radius:8px;padding:16px 18px;margin-top:16px;min-height:64px;}
+.anatomy-detail .ad-title{color:var(--accent);font-weight:700;font-size:13px;margin-bottom:6px;}
+.anatomy-detail .ad-text{color:var(--text-secondary);font-size:12.5px;line-height:1.7;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+.cal-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-secondary);align-items:center;margin-top:10px;}
+.cal-legend .sq{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:middle;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- CHIP / ROLE CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+.role-chip{display:flex;flex-direction:column;gap:4px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:12px 14px;flex:1;min-width:150px;}
+.role-chip b{color:var(--accent);font-size:12.5px;}
+.role-chip span{font-size:11.5px;color:var(--text-secondary);line-height:1.5;}
+
+/* ---- SCRIPT STEPS ---- */
+.script-step{display:flex;align-items:center;gap:10px;margin:22px 0 6px;}
+.script-step-num{width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--bg-main);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Roboto Mono',monospace;}
+.script-step-label{font-size:13px;font-weight:700;color:var(--text-primary);}
+.script-step-sub{font-size:12px;color:var(--text-secondary);margin:2px 0 8px 36px;line-height:1.6;}
+.file-tag{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--accent-green);padding:4px 12px;border-radius:6px;font-size:11.5px;font-family:'Roboto Mono',monospace;font-weight:700;}
+
+/* ---- CHECK DEMO TABLE ---- */
+.et-wrap{overflow-x:auto;}
+.et-table{width:100%;border-collapse:collapse;font-size:12.5px;font-family:'Roboto Mono',monospace;}
+.et-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:8px 10px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);font-family:'Inter',sans-serif;font-weight:700;}
+.et-table td{padding:9px 10px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);text-align:center;transition:.2s;}
+.et-table td.pass{background:rgba(125,222,216,.14);color:var(--accent-green);font-weight:700;}
+.et-table td.fail{background:rgba(248,107,99,.16);color:var(--accent-red);font-weight:700;}
+.et-table td.status-pass{font-size:16px;}
+.et-table td.status-fail{font-size:16px;}
+.et-table tr:hover td{filter:brightness(1.08);}
+
+/* ---- SODA CLOUD MOCKUP ---- */
+.cm-mockup{background:#fff;color:#1a1c23;border-radius:8px;overflow:hidden;border:1px solid var(--border-color);}
+.cm-topbar{background:#0f4c81;color:#fff;padding:10px 18px;font-size:12px;font-weight:700;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center;font-family:'Inter',sans-serif;}
+.cm-body{padding:20px 22px;display:flex;flex-direction:column;gap:14px;}
+.cm-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;border-bottom:1px solid #e2e4ea;padding-bottom:12px;}
+.cm-header h4{font-size:16px;font-family:'Inter',sans-serif;}
+.cm-badge{font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;font-family:'Inter',sans-serif;}
+.cm-badge.ok{background:#d7f7ef;color:#0f9d78;}
+.cm-badge.warn{background:#fff3d6;color:#b07d05;}
+.cm-badge.fail{background:#ffe1de;color:#d13c30;}
+.cm-stats{display:flex;gap:22px;flex-wrap:wrap;font-family:'Inter',sans-serif;}
+.cm-stat b{display:block;font-size:19px;}
+.cm-stat span{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#6b7280;}
+.cm-list{display:flex;flex-direction:column;gap:0;border:1px solid #e2e4ea;border-radius:6px;overflow:hidden;}
+.cm-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #eef0f4;font-size:12px;font-family:'Inter',sans-serif;}
+.cm-row:last-child{border-bottom:none;}
+.cm-row.ok{background:#f5fdfb;}
+.cm-row.warn{background:#fffaf0;}
+.cm-row.fail{background:#fff7f6;}
+.cm-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+.cm-row code{background:#eef0f4;padding:1px 6px;border-radius:4px;font-size:11px;color:#0f4c81;}
+.cm-row .cm-meta{margin-left:auto;color:#8b90a0;font-size:10.5px;white-space:nowrap;}
+.cm-alert{background:#fff3d6;border:1px solid #f0c869;border-radius:6px;padding:10px 14px;font-size:12px;color:#7a5b00;font-family:'Inter',sans-serif;display:flex;gap:8px;align-items:center;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .anatomy-grid{grid-template-columns:1fr;gap:20px;}
+  .cm-stats{gap:14px;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Soda</h1><span>O detector de fumaça dos seus dados — vigiando qualidade 24 horas por dia</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">2020</div><div class="hstat-label">Origem (Soda SQL)</div></div>
+      <div class="hstat"><div class="hstat-num">SodaCL</div><div class="hstat-label">Linguagem em YAML</div></div>
+      <div class="hstat"><div class="hstat-num">Cloud</div><div class="hstat-label">Histórico + Alertas</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Antes que um dado ruim vire uma decisão ruim, <em>alguém precisa apitar</em></h2>
+      <p><strong>Soda</strong> é uma plataforma de qualidade de dados que fica de olho nas suas tabelas o tempo todo — não só uma vez. Você escreve regras simples, em YAML (a linguagem <strong>SodaCL</strong>), sobre como os dados deveriam se comportar — "essa coluna não pode ter nulo", "esse país tem que estar numa lista", "essa tabela não pode ficar mais de 24h sem atualizar" — e o Soda roda essas regras em <em>scans</em> repetidos, sobe o resultado para o <strong>Soda Cloud</strong>, monta histórico e dispara alerta assim que algo foge do combinado. Não é um inspetor que passa uma vez; é um alarme que fica ligado.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Data Quality</span>
+        <span class="badge badge-green">SodaCL (YAML)</span>
+        <span class="badge badge-blue">Scans Agendados</span>
+        <span class="badge badge-purple">Soda Cloud + Alertas</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">🥤 SODA SCAN — pedidos</div>
+        <div class="fc-body">
+          <div class="fc-row">row_count &gt; 0 <span class="ok">✅ passou</span></div>
+          <div class="fc-row">missing_count(email) = 0 <span class="bad">❌ falhou</span></div>
+          <div class="fc-row">freshness(data_pedido) &lt; 24h <span class="ok">✅ passou</span></div>
+        </div>
+        <div class="fc-foot">Resultado sobe pro Soda Cloud</div>
+      </div>
+      <div class="file-chip-caption">Um alarme automático que não dorme, checando os dados de novo e de novo</div>
+    </div>
+  </section>
+
+  <!-- ============ POR QUE IMPORTA ============ -->
+  <section class="section" id="s-porque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧸 Por que qualidade de dados importa (explicado como para uma criança)</div>
+    <p class="section-desc">
+      Pense numa fábrica de refrigerantes de verdade — sim, daquele tipo de "soda" mesmo. Antes de uma garrafa sair pra loja, alguém garante que o gás está certo, o rótulo não está torto, a validade não venceu. E essa checagem não acontece <em>uma vez só</em> quando a fábrica abre: ela roda em <strong>toda garrafa, todo santo dia</strong>, porque uma máquina pode desregular do nada na terça-feira, mesmo tendo passado perfeita na segunda. A ferramenta <strong>Soda</strong> brinca exatamente com essa ideia — só que em vez de garrafas, ela fiscaliza linhas de uma tabela, sem parar, dia após dia.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🕵️ Checagem pontual</div>
+        <div class="card-text">Alguém roda uma consulta manual "de vez em quando" pra conferir se está tudo bem. Funciona até o dia em que ninguém lembra de rodar de novo.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🐌 Piora aos poucos</div>
+        <div class="card-text">Nem todo problema de dado é um erro gritante — às vezes é uma taxa de nulos subindo <strong>1% por semana</strong>, silenciosa demais pra alguém perceber olhando só uma vez.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔥 Descoberto tarde demais</div>
+        <div class="card-text">Sem monitoramento contínuo, o problema só aparece quando um número no painel do diretor já parece estranho — dias ou semanas depois de ter começado.</div>
+      </div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-emoji">🚨</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Imagine o <strong>detector de fumaça</strong> lá em casa. Ele não é um bombeiro que visita sua casa uma vez por ano pra cheirar o ar — ele fica <em>ligado o tempo todo</em>, e apita <strong>na hora</strong> que sente cheiro de queimado, mesmo que ninguém esteja olhando. O Soda quer ser esse detector de fumaça para os seus dados: sempre ligado, sempre checando, avisando o time assim que algo sai do esperado — não um mês depois.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É SODA ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🔍 O que é o Soda?</div>
+    <p class="section-desc">
+      Soda nasceu como um projeto open source — o <strong>Soda SQL</strong>, lançado em 2020 — que evoluiu para o <strong>Soda Core</strong> e a linguagem declarativa <strong>SodaCL</strong> (Soda Checks Language), além de uma camada paga de visualização e colaboração, o <strong>Soda Cloud</strong>. Nos últimos anos a plataforma vem se consolidando em torno dos <strong>Data Contracts</strong>: um único arquivo que combina o schema esperado de uma tabela com as regras de qualidade que ela precisa cumprir, tratado como um acordo formal entre quem produz e quem consome o dado. Em qualquer uma dessas versões, a ideia central não muda: você <strong>declara</strong> o que espera dos dados, e o Soda cuida de checar isso de verdade, repetidamente.
+    </p>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📜 Declarativo (YAML)</div>
+        <div class="card-text">Você escreve <em>o que</em> espera — <code>missing_count(email) = 0</code> — não um script inteiro de validação linha a linha. O Soda cuida do "como".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔌 Motor plugável</div>
+        <div class="card-text">O mesmo check roda sobre Postgres, Snowflake, BigQuery, Databricks, Spark ou dezenas de outras fontes — você troca o banco sem reescrever as regras.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">☁️ Cloud opcional</div>
+        <div class="card-text">O CLI (Soda Core) roda 100% sozinho, sem depender de nada além do terminal. O Soda Cloud entra por cima quando você quer histórico, gráfico e alerta automático.</div>
+      </div>
+    </div>
+    <div class="kid-box">
+      <div class="kid-emoji">🛒</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Um arquivo de checks do Soda é que nem uma <strong>lista de compras</strong> que você entrega pra alguém no mercado: "compra 6 ovos, sem casca rachada; leite dentro da validade; pão fresquinho, feito hoje". A pessoa não precisa que você explique <em>como</em> checar cada item — a lista já diz exatamente o que precisa ser verdade. O Soda faz esse papel dentro do banco de dados.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONCEITOS FUNDAMENTAIS ============ -->
+  <section class="section" id="s-conceitos">
+    <div class="section-eyebrow">O Vocabulário do Soda</div>
+    <div class="section-title">🧩 Os conceitos fundamentais (clique para explorar cada peça)</div>
+    <p class="section-desc">O Soda também tem um vocabulário próprio, mas as peças se encaixam numa ordem lógica: primeiro você diz <em>de onde</em> vêm os dados, depois <em>o que</em> espera deles, depois manda <em>rodar</em> a checagem — de novo e de novo — e por fim o resultado vira <em>histórico e alerta</em>. Clique em cada bloco abaixo, na ordem que aparecem no fluxo.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">O fluxo, peça por peça</div>
+      <div class="btn-toggle-row" id="conceptButtons" style="margin-bottom:16px;"></div>
+      <div class="anatomy-detail" id="conceptDetail">
+        <div class="ad-title">👆 Clique em um bloco</div>
+        <div class="ad-text">Comece pelo primeiro: Data Source.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ANATOMIA DE UM CHECK ============ -->
+  <section class="section" id="s-anatomia">
+    <div class="section-eyebrow">A Menor Peça</div>
+    <div class="section-title">🔬 Anatomia de um Check (SodaCL)</div>
+    <p class="section-desc">Um <strong>Check</strong> é a unidade mais básica do Soda: uma única linha, em YAML, que descreve uma expectativa sobre uma métrica de uma tabela. A sintaxe segue o padrão <code>&lt;métrica&gt;(&lt;coluna&gt;) &lt;operador&gt; &lt;valor&gt;</code> — dá quase pra "ler" a regra em voz alta, mesmo sem nunca ter visto Soda antes.</p>
+
+    <div class="code-block">
+<span class="code-lang">yaml — checks.yml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="fn">checks for</span> <span class="st">pedidos</span>:
+  - <span class="fn">row_count</span> &gt; <span class="num">0</span>
+  - <span class="fn">missing_count</span>(email) = <span class="num">0</span>
+  - <span class="fn">duplicate_count</span>(id) = <span class="num">0</span>
+  - <span class="fn">invalid_count</span>(pais) = <span class="num">0</span>:
+      <span class="kw">valid values</span>: [<span class="st">BR</span>, <span class="st">US</span>, <span class="st">PT</span>, <span class="st">AR</span>]
+  - <span class="fn">freshness</span>(data_pedido) &lt; <span class="num">24h</span></div>
+
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📏 Métrica</div><div class="card-text"><code>row_count</code>, <code>missing_count</code>, <code>duplicate_count</code>, <code>freshness</code> — <em>o que</em> está sendo medido na tabela ou coluna.</div></div>
+      <div class="card"><div class="card-title">⚖️ Operador</div><div class="card-text"><code>&gt;</code>, <code>=</code>, <code>&lt;</code>, <code>between</code> — o limite que a métrica precisa respeitar para o check passar.</div></div>
+      <div class="card"><div class="card-title">🎯 Configuração extra</div><div class="card-text"><code>valid values</code>, <code>valid min</code>, <code>valid max</code> — parâmetros opcionais que refinam <em>o que</em> conta como um valor válido.</div></div>
+    </div>
+
+    <div class="kid-box">
+      <div class="kid-emoji">⚽</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Um check é igualzinho a uma <strong>regra de um jogo</strong>: "a bola não pode sair da linha". O juiz (o Soda) não fica inventando novas regras no meio do jogo — ele só apita quando a regra <em>escrita</em> é quebrada, nem mais nem menos. Se ninguém escreveu a regra "a bola não pode ser azul", uma bola azul passa reto, mesmo estranha.</p>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 Cada check é ao mesmo tempo <strong>um teste</strong> (roda e retorna passou/falhou) e <strong>uma documentação</strong> (o YAML já explica a regra em texto quase legível). Não é preciso escrever SQL manualmente — embora dê, para regras que nenhuma métrica pronta cobre (veja a seção de Tipos de Checks).</p></div>
+  </section>
+
+  <!-- ============ TIPOS DE CHECKS ============ -->
+  <section class="section" id="s-tipos">
+    <div class="section-eyebrow">O Catálogo</div>
+    <div class="section-title">📋 Tipos de Checks</div>
+    <p class="section-desc">As métricas prontas do SodaCL cobrem as perguntas mais comuns sobre qualidade de dados. A maioria dos checks.yml reais combina só um punhado delas, aplicadas às colunas certas.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Categoria</th><th>Exemplo de Check</th><th>Pergunta que ele responde</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--accent);">📏 Volume</strong></td><td><code>row_count &gt; 0</code></td><td>A tabela não ficou vazia ou não "sumiu" de repente?</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">🕳️ Nulidade</strong></td><td><code>missing_count(email) = 0</code></td><td>Tem campo vazio onde não deveria?</td></tr>
+          <tr><td><strong style="color:var(--accent);">🔑 Unicidade</strong></td><td><code>duplicate_count(id) = 0</code></td><td>Tem chave/ID repetido que não deveria existir?</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">🎯 Validade (domínio)</strong></td><td><code>invalid_count(pais) = 0</code> <code>valid values</code></td><td>O valor está numa lista ou faixa permitida?</td></tr>
+          <tr><td><strong style="color:var(--accent-green);">⏰ Frescor (freshness)</strong></td><td><code>freshness(data_pedido) &lt; 24h</code></td><td>O dado está atualizado, ou ficou "parado" no tempo?</td></tr>
+          <tr><td><strong style="color:var(--text-primary);">🧬 Schema</strong></td><td><code>schema: fail when required column missing</code></td><td>As colunas certas existem, com o tipo certo?</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">🔗 Referência (integridade)</strong></td><td><code>values in (id_cliente) must exist in dim_cliente (id)</code></td><td>Toda chave estrangeira aponta pra um registro que existe de verdade?</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">🧠 Anomalia (Soda AI)</strong></td><td><code>anomaly score for row_count &lt; default</code></td><td>O valor de hoje foge do padrão histórico, mesmo sem um limite fixo escrito à mão?</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">🧾 SQL customizado</strong></td><td><code>failed rows: fail query: SELECT ...</code></td><td>Uma regra de negócio bem específica que nenhuma métrica pronta cobre?</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ DEMO INTERATIVA ============ -->
+  <section class="section" id="s-demo">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">🎮 Demo interativa: monte seu checks.yml</div>
+    <p class="section-desc">
+      Abaixo está a <strong>mesma tabela de pedidos</strong> usada na aula de Great Expectations — 8 linhas, algumas boas, algumas com problema escondido — só que agora checada com a sintaxe do Soda. Ligue e desligue os checks abaixo e observe: cada coluna só fica colorida (verde = passou, vermelho = falhou) enquanto o check correspondente está <strong>ativo</strong>. A lição é a mesma nas duas ferramentas: <em>o Soda só pega o que você escreveu no checks.yml</em> — uma coluna sem check nenhum passa despercebida, mesmo cheia de erro.
+    </p>
+    <div class="interactive-panel">
+      <div class="panel-label">Checks disponíveis — clique para ligar/desligar</div>
+      <div class="btn-toggle-row" id="checkButtons" style="margin-bottom:18px;"></div>
+      <div class="et-wrap">
+        <table class="et-table" id="checkTable"></table>
+      </div>
+      <div class="stat-cards" id="checkStats"></div>
+    </div>
+    <div class="grid-2">
+      <div class="canvas-wrap"><canvas id="checkDonut" height="170"></canvas></div>
+      <div class="highlight-box">
+        <div class="highlight-title">O que essa demo ensina</div>
+        <p>Com <strong>todos os 4 checks ligados</strong>, só 2 das 8 linhas passam de verdade — mesmo que a tabela "pareça" normal à primeira vista. Desligue um check e repare como algumas linhas "voltam a passar" — não porque o dado melhorou, mas porque <strong>ninguém mais está checando aquele problema</strong>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ O SCAN ============ -->
+  <section class="section" id="s-scan">
+    <div class="section-eyebrow">Onde a Checagem Roda de Verdade</div>
+    <div class="section-title">🔎 O Scan: não uma vez, sempre de novo</div>
+    <p class="section-desc">
+      Um checks.yml sozinho é só uma lista de regras — ele não faz nada até um <strong>scan</strong> rodar. O scan é a execução de fato: o Soda conecta na fonte de dados, calcula cada métrica, compara com o limite definido e decide, check por check, se passou ou falhou. A diferença que mais importa na prática: o scan normalmente é <strong>agendado</strong> — via cron, Airflow, dbt Cloud, GitHub Actions — rodando de hora em hora ou uma vez por dia, e não só quando alguém lembra de rodar manualmente.
+    </p>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># roda todos os checks de checks.yml contra a fonte "pedidos_datasource"</span>
+soda scan -d pedidos_datasource -c configuration.yml checks.yml
+
+<span class="cm"># o scan termina com exit code != 0 se algum check falhar —</span>
+<span class="cm"># o suficiente pra travar um pipeline de propósito</span>
+echo <span class="kw">$?</span></div>
+    <div class="kid-box">
+      <div class="kid-emoji">🪥</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Um scan agendado é que nem <strong>escovar os dentes todo dia</strong>, não só quando começa a doer. Checar os dados de vez em quando resolve o problema de hoje; checar <em>toda vez</em> evita que o problema apareça no meio da noite, sem ninguém olhando.</p>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">⏱️ Scan agendado</div><div class="card-text">Roda sozinho, em intervalo fixo (ex: a cada hora), sem depender de alguém lembrar.</div></div>
+      <div class="card"><div class="card-title">🔗 Scan no pipeline</div><div class="card-text">Chamado como mais um passo de um DAG do Airflow ou de um job dbt — se falhar, o pipeline para antes de propagar dado ruim.</div></div>
+      <div class="card"><div class="card-title">🖱️ Scan sob demanda</div><div class="card-text">Rodado manualmente no terminal, útil para testar um checks.yml novo antes de agendá-lo de verdade.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ SODA CLOUD ============ -->
+  <section class="section" id="s-cloud">
+    <div class="section-eyebrow">O Mural de Recados dos Seus Dados</div>
+    <div class="section-title">☁️ Soda Cloud: histórico, alertas e detecção de anomalia</div>
+    <p class="section-desc">
+      Cada scan sozinho é uma foto de um instante. O <strong>Soda Cloud</strong> junta essas fotos ao longo do tempo e vira um filme: dashboards com o resultado de cada check, gráfico de tendência por métrica, alerta automático (Slack, Teams, e-mail) quando algo falha, e — usando os algoritmos da <strong>Soda AI</strong> — detecção de <em>anomalia</em> mesmo em métricas sem um limite fixo escrito manualmente, comparando o valor de hoje com o padrão histórico daquela tabela.
+    </p>
+    <div class="cm-mockup">
+      <div class="cm-topbar"><span>☁️ Soda Cloud — dataset pedidos</span><span>atualizado após o scan das 06:00</span></div>
+      <div class="cm-body">
+        <div class="cm-header">
+          <h4>Dataset: <code style="background:#eef0f4;padding:2px 8px;border-radius:4px;">pedidos</code></h4>
+          <span class="cm-badge fail">❌ 2 de 4 checks falharam</span>
+        </div>
+        <div class="cm-stats">
+          <div class="cm-stat"><b>8</b><span>Linhas no último scan</span></div>
+          <div class="cm-stat"><b>4</b><span>Checks ativos</span></div>
+          <div class="cm-stat" style="color:#0f9d78;"><b>2</b><span>Passaram</span></div>
+          <div class="cm-stat" style="color:#d13c30;"><b>2</b><span>Falharam</span></div>
+          <div class="cm-stat"><b>1</b><span>Anomalia detectada (IA)</span></div>
+        </div>
+        <div class="cm-list">
+          <div class="cm-row ok"><span class="cm-icon">✅</span><span><code>missing_count(email) = 0</code></span><span class="cm-meta">1 / 8 nulos — falhou há 2 scans, ok agora</span></div>
+          <div class="cm-row fail"><span class="cm-icon">❌</span><span><code>invalid_count(idade) = 0</code></span><span class="cm-meta">2 valores fora de [0, 120]</span></div>
+          <div class="cm-row fail"><span class="cm-icon">❌</span><span><code>invalid_count(pais) = 0</code></span><span class="cm-meta">1 valor fora da lista ("XX")</span></div>
+          <div class="cm-row warn"><span class="cm-icon">🧠</span><span><code>anomaly score for row_count</code></span><span class="cm-meta">volume 40% abaixo do padrão dos últimos 14 dias</span></div>
+        </div>
+        <div class="cm-alert">🔔 Alerta enviado para <strong>#time-dados</strong> no Slack — 2 checks falharam no scan das 06:00</div>
+      </div>
+    </div>
+
+    <p class="section-desc" style="font-size:12.5px;">O gráfico abaixo simula um histórico de 30 scans diários do mesmo dataset — repare como a maioria dos dias fica verde, mas alguns dias falham (vermelho) ou disparam um alerta de anomalia (amarelo), sem quebrar nenhum limite fixo:</p>
+    <div class="canvas-wrap"><canvas id="calCanvas" height="130"></canvas></div>
+    <div class="cal-legend">
+      <span><span class="sq" style="background:#7dded8;"></span>passou</span>
+      <span><span class="sq" style="background:#f86b63;"></span>falhou</span>
+      <span><span class="sq" style="background:#e8c468;"></span>anomalia (IA)</span>
+      <span><span class="sq" style="background:#343741;"></span>sem scan</span>
+    </div>
+
+    <p class="section-desc" style="font-size:12.5px;margin-top:10px;">E este outro mostra <code>row_count</code> ao longo de 14 dias: a faixa sombreada é o "normal esperado" — o ponto vermelho é o dia em que o volume despencou, sinalizado pela Soda AI mesmo sem ninguém ter escrito um <code>row_count &gt; X</code> fixo:</p>
+    <div class="canvas-wrap"><canvas id="anomalyCanvas" height="170"></canvas></div>
+
+    <div class="kid-box">
+      <div class="kid-emoji">🧊</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Soda Cloud é que nem o <strong>mural de recados da geladeira</strong> lá em casa: todo mundo que passa pela cozinha vê o aviso "acabou o leite", não só quem descobriu que acabou. Sem o mural, cada pessoa da casa só descobre o problema quando abre a geladeira sozinha — tarde demais pra planejar a ida ao mercado.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DATA CONTRACTS ============ -->
+  <section class="section" id="s-contracts">
+    <div class="section-eyebrow">A Nova Geração</div>
+    <div class="section-title">📜 Data Contracts: schema + qualidade, num acordo só</div>
+    <p class="section-desc">
+      A plataforma Soda vem migrando o centro de gravidade: em vez de só um checks.yml solto num repositório, a peça central passa a ser um <strong>Data Contract</strong> — um arquivo versionado no Git que combina, num só lugar, o <em>schema</em> esperado de uma tabela e as <em>regras de qualidade</em> que ela precisa cumprir. A ideia é que esse arquivo funcione como uma promessa formal entre quem produz o dado (engenharia) e quem consome (BI, outro time de dados, o negócio) — engenheiros trabalham direto no Git, enquanto usuários de negócio conseguem revisar e ajustar o mesmo contrato pela interface visual, sem escrever YAML.
+    </p>
+    <div class="code-block">
+<span class="code-lang">yaml — contrato ilustrativo</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">dataset</span>: pedidos
+<span class="kw">schema</span>:
+  - <span class="kw">column</span>: id
+    <span class="kw">type</span>: integer
+  - <span class="kw">column</span>: email
+    <span class="kw">type</span>: varchar
+  - <span class="kw">column</span>: valor_pedido
+    <span class="kw">type</span>: double
+<span class="kw">checks</span>:
+  - <span class="fn">missing_count</span>(email) = <span class="num">0</span>
+  - <span class="fn">duplicate_count</span>(id) = <span class="num">0</span>
+  - <span class="fn">invalid_count</span>(valor_pedido) = <span class="num">0</span>:
+      <span class="kw">valid min</span>: <span class="num">0.01</span></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🧑‍💻 Engenharia no Git</div><div class="card-text">O contrato é código: versionado, revisado em Pull Request, com histórico de quem mudou o quê e por quê — igual qualquer outro arquivo do repositório.</div></div>
+      <div class="card"><div class="card-title">🧑‍💼 Negócio na interface</div><div class="card-text">O mesmo contrato pode ser lido e ajustado por quem não programa, direto na UI do Soda Cloud — sem depender de abrir um Pull Request para uma mudança simples.</div></div>
+    </div>
+    <div class="kid-box">
+      <div class="kid-emoji">🤝</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>Um contrato de dados é igual a uma <strong>promessa escrita entre dois amigos</strong>: "eu te entrego a boneca do jeitinho combinado, sem faltar peça". Se um dos dois quebra a promessa, não precisa ninguém desconfiar ou brigar — está escrito, e todo mundo fica sabendo na hora que algo saiu do combinado.</p>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 A sintaxe exata evolui conforme a plataforma é atualizada — o conceito que fica é o que importa: <strong>schema e regras de qualidade vivendo juntos, num único contrato versionado</strong>, em vez de testes soltos e desconectados da definição da tabela.</p></div>
+  </section>
+
+  <!-- ============ CASO REAL: AMERICANAS ============ -->
+  <section class="section" id="s-caso-americanas">
+    <div class="section-eyebrow">Da Teoria à Produção</div>
+    <div class="section-title">🛒 Caso real: Data Quality na Americanas com Soda</div>
+    <p class="section-desc">
+      Um exemplo documentado publicamente: o time de dados da <strong>Americanas</strong> usou o Soda para tornar os dados "mais confiáveis, coerentes e precisos" na plataforma, endereçando lacunas de teste, monitoramento, profiling e observabilidade. A arquitetura combinou <strong>Soda SQL</strong> (a geração anterior ao SodaCL) rodando dentro do <strong>Airflow</strong>, com resultados publicados no <strong>Soda Cloud</strong> para visualização, alertas e detecção de anomalia. Compare o cenário sem esse tipo de monitoramento com o pipeline real que foi implementado — clique nos blocos.
+    </p>
+    <div class="interactive-panel">
+      <div class="anatomy-grid">
+        <div class="pq-box">
+          <div class="pq-box-label">⚠️ Cenário sem monitoramento contínuo</div>
+          <div class="pq-clickable bad bad-hover" data-id="bad-1" onclick="pickPipeline('bad-1')">Dado chega e é gravado no BigQuery</div>
+          <div class="pq-clickable bad bad-hover" data-id="bad-2" onclick="pickPipeline('bad-2')">Alguém roda uma query manual "de vez em quando"</div>
+          <div class="pq-clickable bad bad-hover" data-id="bad-3" onclick="pickPipeline('bad-3')">Problema só aparece quando um número parece estranho</div>
+          <div class="pq-clickable bad bad-hover" data-id="bad-4" onclick="pickPipeline('bad-4')">Investigação reativa, sem histórico de quando começou</div>
+        </div>
+        <div class="pq-box">
+          <div class="pq-box-label">✅ Pipeline real com Soda</div>
+          <div class="pq-clickable" data-id="ok-1" onclick="pickPipeline('ok-1')">Dado chega e é gravado no BigQuery</div>
+          <div class="pq-clickable" data-id="ok-2" onclick="pickPipeline('ok-2')">YAML de checks define as métricas esperadas</div>
+          <div class="pq-clickable" data-id="ok-3" onclick="pickPipeline('ok-3')">Airflow (operador no GKE) roda o scan do Soda SQL</div>
+          <div class="pq-clickable" data-id="ok-4" onclick="pickPipeline('ok-4')">Resultado sobe pro Soda Cloud: anomalias, alertas, histórico</div>
+        </div>
+      </div>
+      <div class="anatomy-detail" id="pipelineDetail">
+        <div class="ad-title">👆 Clique em qualquer bloco</div>
+        <div class="ad-text">Compare o caminho do dado nos dois cenários, do BigQuery até a descoberta de um problema.</div>
+      </div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">yaml — breakdown.yaml (Soda SQL)</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">table_name</span>: tabela_exemplo
+<span class="kw">metrics</span>:
+  - row_count
+<span class="kw">tests</span>:
+  row_count &gt; <span class="num">200</span></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🔌 Conector BigQuery</div><div class="card-text">Instalado via <code>pip install soda-sql-bigquery</code> — o Soda SQL se conecta direto na fonte de dados do time.</div></div>
+      <div class="card"><div class="card-title">🧭 Orquestração no GKE</div><div class="card-text">Um operador do Airflow rodando no Google Kubernetes Engine dispara o scan do Soda SQL de forma agendada, alimentando o Soda Cloud com o resultado.</div></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">O Soda Cloud também define <strong>papéis de acesso</strong> por dataset — permitindo que times diferentes colaborem sem que todo mundo tenha o mesmo nível de permissão:</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div class="role-chip"><b>👀 Viewer</b><span>Só visualiza os resultados de scans e dashboards já publicados.</span></div>
+      <div class="role-chip"><b>✏️ Editor</b><span>Cria e ajusta checks, mas não gerencia acesso de outras pessoas.</span></div>
+      <div class="role-chip"><b>🛡️ Admin</b><span>Controla permissões, integrações e configuração do dataset.</span></div>
+    </div>
+    <div class="ok-box"><p>✅ Resultado reportado: mais qualidade, consistência e integridade nos datasets monitorados — com anomalias detectadas automaticamente e alertas chegando ao time antes que o problema virasse um número errado em produção.</p></div>
+  </section>
+
+  <!-- ============ PRIMEIROS PASSOS ============ -->
+  <section class="section" id="s-instalacao">
+    <div class="section-eyebrow">Mão na Massa</div>
+    <div class="section-title">📦 Primeiros Passos</div>
+    <p class="section-desc">Instale, aponte para uma fonte de dados, declare os checks e rode — o ciclo básico do Soda cabe em poucos arquivos.</p>
+    <div class="grid-2">
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Instalação</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># o pacote muda conforme o banco de dados</span>
+pip install soda-core-postgres
+
+<span class="cm"># outros dialetos: soda-core-bigquery, soda-core-snowflake,</span>
+<span class="cm"># soda-core-spark, soda-core-duckdb...</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Configurar a fonte de dados</div>
+        <div class="code-block">
+<span class="code-lang">yaml — configuration.yml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">data_source</span> pedidos_datasource:
+  <span class="kw">type</span>: postgres
+  <span class="kw">host</span>: localhost
+  <span class="kw">username</span>: <span class="st">${POSTGRES_USER}</span>
+  <span class="kw">password</span>: <span class="st">${POSTGRES_PASSWORD}</span>
+  <span class="kw">database</span>: loja
+  <span class="kw">schema</span>: public</div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Declarar os checks</div>
+        <div class="code-block">
+<span class="code-lang">yaml — checks.yml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="fn">checks for</span> pedidos:
+  - <span class="fn">row_count</span> &gt; <span class="num">0</span>
+  - <span class="fn">missing_count</span>(email) = <span class="num">0</span>
+  - <span class="fn">duplicate_count</span>(id) = <span class="num">0</span></div>
+      </div>
+      <div>
+        <div class="ctrl-l" style="margin-bottom:6px;">Rodar o scan</div>
+        <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>soda scan -d pedidos_datasource \
+  -c configuration.yml \
+  checks.yml</div>
+      </div>
+    </div>
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:4px;">Conectar ao Soda Cloud (opcional — histórico e alertas)</div>
+    <div class="code-block">
+<span class="code-lang">yaml — configuration.yml (trecho adicional)</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">soda_cloud</span>:
+  <span class="kw">host</span>: cloud.soda.io
+  <span class="kw">api_key_id</span>: <span class="st">${SODA_CLOUD_API_KEY_ID}</span>
+  <span class="kw">api_key_secret</span>: <span class="st">${SODA_CLOUD_API_KEY_SECRET}</span></div>
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:4px;">Integração com Airflow — como um passo do DAG</div>
+    <div class="code-block">
+<span class="code-lang">python — dag do airflow</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">from</span> soda.scan <span class="kw">import</span> Scan
+
+<span class="kw">def</span> <span class="fn">validar_pedidos</span>():
+    scan = Scan()
+    scan.<span class="fn">set_data_source_name</span>(<span class="st">"pedidos_datasource"</span>)
+    scan.<span class="fn">add_configuration_yaml_file</span>(<span class="st">"configuration.yml"</span>)
+    scan.<span class="fn">add_sodacl_yaml_file</span>(<span class="st">"checks.yml"</span>)
+    resultado = scan.<span class="fn">execute</span>()
+    <span class="kw">if</span> resultado != <span class="num">0</span>:
+        <span class="kw">raise</span> Exception(<span class="st">"Checks falharam — pipeline interrompido"</span>)</div>
+  </section>
+
+  <!-- ============ NA PRÁTICA: SODA + DUCKDB ============ -->
+  <section class="section" id="s-pratica">
+    <div class="section-eyebrow">Mão na Massa de Verdade</div>
+    <div class="section-title">🧪 Na prática: Soda + DuckDB</div>
+    <p class="section-desc">
+      Chega de simulação na tela — este é um projeto Python <strong>real, testado, rodando</strong>, que junta tudo que a aula ensinou: o <strong>DuckDB</strong> cria uma tabela de pedidos com sujeira de propósito, e o <strong>Soda Core</strong> (com SodaCL) roda um scan de verdade contra ela, igualzinho ao comando <code>soda scan</code> que você usaria em produção. Baixe os arquivos abaixo, rode localmente e comece a quebrar/consertar os checks com as próprias mãos.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <span class="file-tag">🐍 pratica_soda_duckdb.py</span>
+      <span class="file-tag">⚙️ configuration.yml</span>
+      <span class="file-tag">✅ checks.yml</span>
+      <span class="file-tag">📄 requirements.txt</span>
+    </div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:14px;">Configuração do ambiente (uma vez só)</div>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># dentro da pasta soda/</span>
+python3 -m venv .venv
+<span class="kw">source</span> .venv/bin/activate        <span class="cm"># Windows: .venv\Scripts\activate</span>
+pip install -r requirements.txt
+python3 pratica_soda_duckdb.py</div>
+
+    <div class="script-step"><span class="script-step-num">1</span><span class="script-step-label">DuckDB cria a tabela "pedidos" — 12 linhas, sujeira misturada de propósito</span></div>
+    <div class="script-step-sub">Email vazio, idade negativa/absurda, país fora da lista, valor ≤ 0 e um <code>id</code> duplicado — os mesmos tipos de erro da demo interativa lá em cima, só que agora dentro de um banco DuckDB de verdade.</div>
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>con = duckdb.<span class="fn">connect</span>(<span class="st">"pedidos.duckdb"</span>)
+con.<span class="fn">execute</span>(<span class="st">"""
+    CREATE TABLE pedidos (
+        id INTEGER, cliente VARCHAR, email VARCHAR,
+        idade INTEGER, pais VARCHAR, valor_pedido DOUBLE, data_pedido DATE
+    )
+"""</span>)
+
+pedidos = [
+    (<span class="num">3</span>, <span class="st">"Carla Dias"</span>, <span class="st">""</span>,             <span class="num">34</span>,  <span class="st">"US"</span>, <span class="num">89.90</span>,  <span class="st">"2026-08-06"</span>),  <span class="cm"># email vazio</span>
+    (<span class="num">4</span>, <span class="st">"Duda Alves"</span>, <span class="st">"duda@mail.com"</span>, <span class="num">-5</span>,  <span class="st">"BR"</span>, <span class="num">45.00</span>,  <span class="st">"2026-08-07"</span>),  <span class="cm"># idade negativa</span>
+    (<span class="num">1</span>, <span class="st">"Ana Souza"</span>,  <span class="st">"ana@mail.com"</span>,  <span class="num">29</span>,  <span class="st">"BR"</span>, <span class="num">150.00</span>, <span class="st">"2026-08-05"</span>), <span class="cm"># id duplicado (repete o id=1)</span>
+    <span class="cm"># ... mais 9 linhas, cada uma com (ou sem) um problema diferente</span>
+]
+con.<span class="fn">executemany</span>(<span class="st">"INSERT INTO pedidos VALUES (?,?,?,?,?,?,?)"</span>, pedidos)</div>
+
+    <div class="script-step"><span class="script-step-num">2</span><span class="script-step-label">configuration.yml aponta o Soda direto para o arquivo .duckdb</span></div>
+    <div class="script-step-sub">O conector <code>soda-core-duckdb</code> conversa direto com o arquivo local — sem precisar de servidor, usuário ou senha.</div>
+    <div class="code-block">
+<span class="code-lang">yaml — configuration.yml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="kw">data_source</span> pedidos_datasource:
+  <span class="kw">type</span>: duckdb
+  <span class="kw">path</span>: pedidos.duckdb</div>
+
+    <div class="script-step"><span class="script-step-num">3</span><span class="script-step-label">checks.yml declara 6 checks, os mesmos tipos vistos na seção "Tipos de Checks"</span></div>
+    <div class="script-step-sub">Volume, nulidade, unicidade, validade (duas colunas) e um intervalo mínimo — o catálogo inteiro, aplicado num dataset real.</div>
+    <div class="code-block">
+<span class="code-lang">yaml — checks.yml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="fn">checks for</span> pedidos:
+  - <span class="fn">row_count</span> &gt; <span class="num">0</span>
+  - <span class="fn">missing_count</span>(email) = <span class="num">0</span>:
+      <span class="kw">missing values</span>: [<span class="st">''</span>]
+  - <span class="fn">duplicate_count</span>(id) = <span class="num">0</span>
+  - <span class="fn">invalid_count</span>(idade) = <span class="num">0</span>:
+      <span class="kw">valid min</span>: <span class="num">0</span>
+      <span class="kw">valid max</span>: <span class="num">120</span>
+  - <span class="fn">invalid_count</span>(pais) = <span class="num">0</span>:
+      <span class="kw">valid values</span>: [<span class="st">BR</span>, <span class="st">US</span>, <span class="st">PT</span>, <span class="st">AR</span>]
+  - <span class="fn">invalid_count</span>(valor_pedido) = <span class="num">0</span>:
+      <span class="kw">valid min</span>: <span class="num">0.01</span></div>
+
+    <div class="script-step"><span class="script-step-num">4</span><span class="script-step-label">O script chama o "soda scan" de verdade, como subprocesso</span></div>
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>resultado = subprocess.<span class="fn">run</span>(
+    [<span class="st">"soda"</span>, <span class="st">"scan"</span>, <span class="st">"-d"</span>, <span class="st">"pedidos_datasource"</span>,
+     <span class="st">"-c"</span>, <span class="st">"configuration.yml"</span>, <span class="st">"checks.yml"</span>],
+    capture_output=<span class="kw">True</span>, text=<span class="kw">True</span>,
+)</div>
+
+    <div class="script-step"><span class="script-step-num">5</span><span class="script-step-label">O DuckDB entra de novo — para mostrar exatamente as linhas culpadas</span></div>
+    <div class="script-step-sub">Para cada check que falhou, o script monta e roda a consulta SQL correspondente, direto no mesmo arquivo <code>.duckdb</code> — a dupla "Soda aponta a regra quebrada, DuckDB mostra a prova".</div>
+    <div class="code-block">
+<span class="code-lang">python</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="cm"># exemplo: o check de "idade entre 0 e 120" falhou</span>
+con.<span class="fn">sql</span>(<span class="st">"SELECT id, cliente, idade FROM pedidos WHERE idade &lt; 0 OR idade &gt; 120"</span>).<span class="fn">show</span>()</div>
+
+    <div class="ctrl-l" style="margin-bottom:6px;margin-top:14px;">Saída real no terminal (rodando de verdade)</div>
+    <div class="code-block">
+<span class="code-lang">terminal</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>✅ Tabela 'pedidos' criada em pedidos.duckdb com 12 linhas (sujeira incluída de propósito)
+
+🔎 Rodando: soda scan -d pedidos_datasource -c configuration.yml checks.yml
+
+Scan summary:
+1/6 checks PASSED:
+    pedidos in pedidos_datasource
+      row_count &gt; 0 [PASSED]
+5/6 checks FAILED:
+    pedidos in pedidos_datasource
+      missing_count(email) = 0 [FAILED]
+        check_value: 2
+      duplicate_count(id) = 0 [FAILED]
+        check_value: 1
+      invalid_count(idade) = 0 [FAILED]
+        check_value: 2
+      invalid_count(pais) = 0 [FAILED]
+        check_value: 1
+      invalid_count(valor_pedido) = 0 [FAILED]
+        check_value: 2
+Oops! 5 failures. 0 warnings. 0 errors. 1 pass.
+
+↩️  soda scan terminou com exit code 2 (!= 0 significa: algum check falhou)</div>
+
+    <div class="grid-2" style="margin-top:4px;">
+      <div class="ok-box">
+        <div class="highlight-title">🔧 Experimente</div>
+        <p>Corrija uma linha suja em <code>criar_dataset_sujo()</code> e rode de novo — veja um <code>[FAILED]</code> virar <code>[PASSED]</code> no terminal. Ou adicione um 7º check novo em <code>checks.yml</code>, como um <code>freshness</code> sobre <code>data_pedido</code>.</p>
+      </div>
+      <div class="info-box">
+        <div class="highlight-title">💡 Duas lições do caminho</div>
+        <p><strong>1)</strong> Python 3.12 removeu o módulo <code>distutils</code>, mas o Soda Core 3.5.x ainda importa <code>distutils.util</code> por baixo dos panos — o projeto inclui um shim mínimo em <code>_compat/</code> pra contornar isso, sem mexer no venv. <strong>2)</strong> <code>missing_count</code> por padrão só conta valores <code>NULL</code>, não string vazia <code>''</code> — foi preciso declarar <code>missing values: ['']</code> explicitamente para o check de e-mail pegar as duas linhas vazias de propósito.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SIMULADOR DE FRESHNESS ============ -->
+  <section class="section" id="s-simulador">
+    <div class="section-eyebrow">Sinta na Pele</div>
+    <div class="section-title">🎛️ Simulador: seu dado ainda está "fresquinho"?</div>
+    <p class="section-desc">
+      O check de <code>freshness</code> mede <strong>quanto tempo se passou</strong> desde a última atualização de uma coluna de data/hora e compara com um limite máximo tolerado. Ajuste as horas desde a última atualização e o limite configurado no check — e veja se o scan de hoje deixaria esse dataset passar.
+    </p>
+    <div class="interactive-panel">
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Horas desde a última atualização</span><span class="ctrl-v" id="ageVal">10h</span></div>
+          <input type="range" id="ageSlider" min="0" max="72" step="1" value="10" oninput="updateFreshSim()">
+        </div>
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Limite do check: freshness &lt; X horas</span><span class="ctrl-v" id="limitVal">24h</span></div>
+          <input type="range" id="limitSlider" min="1" max="48" step="1" value="24" oninput="updateFreshSim()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="freshCanvas" height="110"></canvas></div>
+      <div class="highlight-box" id="freshMsg" style="margin-top:14px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 Soda vs. Great Expectations vs. dbt tests vs. checagem manual</div>
+    <p class="section-desc">Todos resolvem "será que meu dado está certo?" — a diferença está em onde vivem, o quão ricas são as regras "de fábrica", e o quanto cada um entrega pronto em monitoramento contínuo e alerta.</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Ferramenta</th><th>Onde roda</th><th>Tipo de regra</th><th>Relatório visual</th><th>Melhor para</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--text-primary);">Checagem manual (SQL/Python solto)</strong></td><td>Onde você escrever</td><td>Livre, mas não reutilizável</td><td>Não</td><td>Verificações pontuais, uma vez só</td></tr>
+          <tr><td><strong style="color:var(--accent-blue);">dbt tests</strong></td><td>Dentro do projeto dbt</td><td>Testes SQL simples (unique, not_null, relationships)</td><td>Parcial (via dbt docs)</td><td>Quem já vive dentro do dbt, testes leves</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent);">Soda</strong></td><td>Standalone / CLI / Cloud</td><td>SodaCL declarativo + Data Contracts</td><td>Sim (Soda Cloud + anomalia)</td><td>Monitoramento contínuo com alertas e histórico prontos</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Great Expectations</strong></td><td>Python, dentro de qualquer pipeline</td><td>300+ Expectations + customizadas</td><td>Sim (Data Docs)</td><td>Pipelines Python/Spark com regras ricas e auditáveis</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="canvas-wrap"><canvas id="compareCanvas" height="150"></canvas></div>
+    <div class="section-desc" style="font-size:12px;text-align:center;">Comparação <strong>ilustrativa</strong> de riqueza de regras disponíveis "de fábrica" — não um benchmark de performance.</div>
+    <div class="highlight-box">
+      <div class="highlight-title">🏆 Onde o Soda se destaca de verdade</div>
+      <p>A tabela de regras prontas não conta a história toda: o forte do Soda não é ter a maior lista de métricas, é o pacote de <strong>scans agendados + Soda Cloud + detecção de anomalia sem threshold manual</strong> vir junto, pronto pra usar — os dois gráficos da seção anterior (calendário de 30 scans e detecção de anomalia) mostram exatamente esse diferencial na prática.</p>
+    </div>
+  </section>
+
+  <!-- ============ CASOS DE USO ============ -->
+  <section class="section" id="s-casos-uso">
+    <div class="section-eyebrow">Onde ele Brilha</div>
+    <div class="section-title">🎯 Casos de Uso</div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">📡 Monitoramento contínuo</div><div class="card-text">Tabelas críticas (financeiro, pedidos, cadastro) checadas em scans agendados, com alerta automático assim que algo sai do padrão.</div></div>
+      <div class="card"><div class="card-title">🤝 Contrato entre times</div><div class="card-text">Um time publica um Data Contract como acordo formal — o time consumidor sabe exatamente o que pode esperar daquela tabela, sem depender de conversa informal.</div></div>
+      <div class="card"><div class="card-title">🧠 Detecção de anomalia sem regra fixa</div><div class="card-text">A Soda AI aprende o padrão histórico de uma métrica e avisa quando o valor de hoje foge do esperado, mesmo sem ninguém escrever um limite manual.</div></div>
+      <div class="card"><div class="card-title">🕸️ Data Mesh</div><div class="card-text">Cada domínio de dados é dono da própria qualidade — publica seus checks/contratos sem depender de um time central de dados.</div></div>
+      <div class="card"><div class="card-title">☁️ Migração para nuvem</div><div class="card-text">Compara a qualidade dos dados antes e depois de uma migração de banco, garantindo que nada se perdeu ou corrompeu no caminho.</div></div>
+      <div class="card"><div class="card-title">📜 Compliance e auditoria</div><div class="card-text">Histórico de scans funciona como evidência de que os dados foram checados continuamente — útil em setores regulados.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🎯 Comece pelos checks que mais doem</div><div class="card-text">Não tente cobrir 100% das colunas no primeiro dia. Comece pelas 3-4 regras que, se quebrarem, causam o maior estrago — nulidade de chaves, unicidade e freshness das tabelas críticas.</div></div>
+      <div class="card"><div class="card-title">🎚️ Use <code>valid values</code>/<code>min</code>/<code>max</code> com intenção</div><div class="card-text">Dados reais raramente são 100% perfeitos. Definir limites conscientemente é melhor do que uma regra rígida demais que quebra o pipeline toda semana à toa.</div></div>
+      <div class="card"><div class="card-title">🔔 Conecte a um canal de alerta de verdade</div><div class="card-text">Um check que falha silenciosamente, sem notificar ninguém, tem o mesmo efeito de não ter check nenhum.</div></div>
+      <div class="card"><div class="card-title">📜 Trate o checks.yml/contrato como código</div><div class="card-text">Versionado no Git, revisado em Pull Request — mudanças em regras de qualidade merecem o mesmo cuidado que mudanças no pipeline.</div></div>
+    </div>
+    <div class="warn-box"><p>⚠️ Soda valida a <strong>forma</strong> dos dados (volume, nulos, unicidade, faixas, frescor) e ajuda a flagar <strong>desvios estatísticos</strong> — ele não substitui a validação de <strong>regra de negócio profunda</strong>, que geralmente exige contexto humano. Use-o como a primeira linha de defesa, não como a única.</p></div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Soda</span>
+    <span>
+      Fontes: <a href="https://soda.io/" target="_blank" rel="noopener">soda.io</a> ·
+      <a href="https://lopesdiego12.medium.com/data-quality-na-americanas-com-soda-io-7153e5ce2035" target="_blank" rel="noopener">Data Quality na Americanas com Soda.io</a> ·
+      <a href="https://github.com/sodadata/soda-core" target="_blank" rel="noopener">GitHub</a>
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-porque', icon:'🧸', label:'Por que importa'},
+  {id:'s-oque', icon:'🔍', label:'O que é Soda'},
+  {id:'s-conceitos', icon:'🧩', label:'Conceitos'},
+  {id:'s-anatomia', icon:'🔬', label:'Anatomia de um Check'},
+  {id:'s-tipos', icon:'📋', label:'Tipos de Checks'},
+  {id:'s-demo', icon:'🎮', label:'Demo: checks.yml'},
+  {id:'s-scan', icon:'🔎', label:'O Scan'},
+  {id:'s-cloud', icon:'☁️', label:'Soda Cloud'},
+  {id:'s-contracts', icon:'📜', label:'Data Contracts'},
+  {id:'s-caso-americanas', icon:'🛒', label:'Caso: Americanas'},
+  {id:'s-instalacao', icon:'📦', label:'Primeiros Passos'},
+  {id:'s-pratica', icon:'🧪', label:'Na Prática: Soda + DuckDB'},
+  {id:'s-simulador', icon:'🎛️', label:'Simulador'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-casos-uso', icon:'🎯', label:'Casos de Uso'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== CONCEPT FLOW ===================== */
+const conceptOrder = ['source','check','file','scan','result','cloud','alert'];
+const conceptsInfo = {
+  source: {icon:'🔌', t:'Data Source', d:'De onde os dados vêm: Postgres, Snowflake, BigQuery, Databricks, Spark... declarado em <code>configuration.yml</code>, com host, credenciais e schema.'},
+  check: {icon:'✅', t:'Check', d:'Uma regra de qualidade individual, escrita em SodaCL — ex: <code>missing_count(email) = 0</code>. É a menor peça do sistema, testável sozinha.'},
+  file: {icon:'📄', t:'Checks File', d:'<code>checks.yml</code> reúne vários checks, organizados por tabela — <code>checks for pedidos:</code> seguido da lista de regras daquele dataset.'},
+  scan: {icon:'🔎', t:'Scan', d:'A execução de verdade: o Soda conecta na fonte, roda cada check, calcula as métricas e decide passou/falhou. Roda via CLI, Airflow, cron, dbt Cloud...'},
+  result: {icon:'📊', t:'Scan Result', d:'O veredito de cada check — inclui o valor medido, não só passou/falhou. Fica salvo localmente ou é enviado para o Soda Cloud.'},
+  cloud: {icon:'☁️', t:'Soda Cloud', d:'Onde os resultados de vários scans, ao longo do tempo, viram histórico, gráfico de tendência e detecção de anomalia — sem precisar abrir um arquivo de log.'},
+  alert: {icon:'🚨', t:'Alert / Incident', d:'Notificação automática (Slack, Teams, e-mail) quando um check falha ou uma anomalia é detectada — vira um incidente rastreável, não um aviso perdido.'},
+};
+function buildConceptButtons(){
+  document.getElementById('conceptButtons').innerHTML = conceptOrder.map((k,i) =>
+    `<button class="btn-toggle" data-c="${k}" onclick="pickConcept('${k}')">${i+1}. ${conceptsInfo[k].icon} ${conceptsInfo[k].t}</button>`
+  ).join('');
+}
+function pickConcept(key){
+  document.querySelectorAll('#conceptButtons .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.c === key));
+  const info = conceptsInfo[key];
+  document.getElementById('conceptDetail').innerHTML = `<div class="ad-title">${info.icon} ${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+buildConceptButtons();
+
+/* ===================== CHECKS DEMO ===================== */
+const demoRows = [
+  {id:1, email:'ana@mail.com',    idade:29,  pais:'BR', valor:150.00},
+  {id:2, email:'',                idade:34,  pais:'US', valor:89.90},
+  {id:3, email:'carlos@mail.com', idade:-5,  pais:'BR', valor:45.00},
+  {id:4, email:'duda@mail.com',   idade:41,  pais:'XX', valor:210.00},
+  {id:5, email:'erick@mail.com',  idade:200, pais:'AR', valor:99.00},
+  {id:6, email:'flor@mail.com',   idade:25,  pais:'PT', valor:-30.00},
+  {id:7, email:'gui@mail.com',    idade:31,  pais:'BR', valor:320.00},
+  {id:8, email:'',                idade:45,  pais:'US', valor:0.00},
+];
+const paisesValidos = ['BR','US','PT','AR'];
+const checkDefs = {
+  chk_email: {label:'missing_count(email) = 0',                     col:'email', test: r => !!r.email && r.email.trim() !== ''},
+  chk_idade: {label:'invalid_count(idade) = 0 · valid min/max',      col:'idade', test: r => r.idade >= 0 && r.idade <= 120},
+  chk_pais:  {label:'invalid_count(pais) = 0 · valid values',        col:'pais',  test: r => paisesValidos.includes(r.pais)},
+  chk_valor: {label:'invalid_count(valor) = 0 · valid min 0.01',     col:'valor', test: r => r.valor > 0},
+};
+let activeChecks = new Set(Object.keys(checkDefs));
+
+function toggleCheck(key){
+  if(activeChecks.has(key)) activeChecks.delete(key); else activeChecks.add(key);
+  renderCheckDemo();
+}
+function buildCheckButtons(){
+  document.getElementById('checkButtons').innerHTML = Object.keys(checkDefs).map(k =>
+    `<button class="btn-toggle ${activeChecks.has(k)?'active':''}" id="checkbtn-${k}" onclick="toggleCheck('${k}')">${checkDefs[k].label}</button>`
+  ).join('');
+}
+function renderCheckDemo(){
+  buildCheckButtons();
+  const cols = ['id','email','idade','pais','valor'];
+  let thead = '<thead><tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '<th>status</th></tr></thead>';
+  let bodyRows = demoRows.map(row => {
+    let anyActiveFail = false;
+    let anyActive = false;
+    const cells = cols.map(c => {
+      const val = c==='valor' ? row.valor.toFixed(2) : row[c] === '' ? '(vazio)' : row[c];
+      const matchingCheck = Object.entries(checkDefs).find(([k,def]) => def.col === c && activeChecks.has(k));
+      if(!matchingCheck) return `<td>${val}</td>`;
+      anyActive = true;
+      const pass = matchingCheck[1].test(row);
+      if(!pass) anyActiveFail = true;
+      return `<td class="${pass?'pass':'fail'}">${val}</td>`;
+    }).join('');
+    const statusCell = !anyActive ? `<td>—</td>` : anyActiveFail ? `<td class="status-fail">❌</td>` : `<td class="status-pass">✅</td>`;
+    return `<tr>${cells}${statusCell}</tr>`;
+  }).join('');
+  document.getElementById('checkTable').innerHTML = thead + '<tbody>' + bodyRows + '</tbody>';
+
+  const totalActive = activeChecks.size;
+  let passCount = 0;
+  demoRows.forEach(row => {
+    const activeList = Object.entries(checkDefs).filter(([k]) => activeChecks.has(k));
+    const allPass = activeList.every(([k,def]) => def.test(row));
+    if(activeList.length === 0 || allPass) passCount++;
+  });
+  const rate = Math.round((passCount/demoRows.length)*100);
+  document.getElementById('checkStats').innerHTML = `
+    <div class="stat-card c-blue"><div class="stat-card-label">Linhas totais</div><div class="stat-card-value">${demoRows.length}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">Checks ativos</div><div class="stat-card-value">${totalActive}</div></div>
+    <div class="stat-card ${rate===100?'c-green':rate===0?'c-red':''}"><div class="stat-card-label">Linhas aprovadas</div><div class="stat-card-value">${passCount} / ${demoRows.length}</div></div>
+  `;
+  drawCheckDonut(rate);
+}
+function drawCheckDonut(passRate){
+  const cv = document.getElementById('checkDonut');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 170;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const cx = w/2, cy = h/2, rOuter = 62, rInner = 40;
+  const startAngle = -Math.PI/2;
+  const passAngle = (passRate/100) * Math.PI*2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, rOuter, startAngle, startAngle + passAngle);
+  ctx.arc(cx, cy, rInner, startAngle + passAngle, startAngle, true);
+  ctx.closePath();
+  ctx.fillStyle = '#7dded8';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, rOuter, startAngle + passAngle, startAngle + Math.PI*2);
+  ctx.arc(cx, cy, rInner, startAngle + Math.PI*2, startAngle + passAngle, true);
+  ctx.closePath();
+  ctx.fillStyle = '#f86b63';
+  ctx.fill();
+  ctx.fillStyle = '#dfe5ef';
+  ctx.font = '700 22px Roboto Mono, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(passRate + '%', cx, cy + 8);
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillStyle = '#98a2b3';
+  ctx.fillText('linhas aprovadas', cx, cy + 26);
+  ctx.textAlign = 'left';
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillStyle = '#7dded8'; ctx.fillText('■ passou', cx - 58, h - 6);
+  ctx.fillStyle = '#f86b63'; ctx.fillText('■ falhou', cx + 6, h - 6);
+}
+renderCheckDemo();
+window.addEventListener('resize', () => {
+  let passCount = 0;
+  demoRows.forEach(row => {
+    const activeList = Object.entries(checkDefs).filter(([k]) => activeChecks.has(k));
+    const allPass = activeList.every(([k,def]) => def.test(row));
+    if(activeList.length === 0 || allPass) passCount++;
+  });
+  drawCheckDonut(Math.round((passCount/demoRows.length)*100));
+});
+
+/* ===================== CALENDAR HEATMAP (Soda Cloud history) ===================== */
+const calStatus = ['ok','ok','ok','ok','fail','ok','ok','ok','ok','ok',
+                    'warn','ok','ok','fail','ok','ok','ok','ok','ok','ok',
+                    'ok','ok','warn','ok','ok','ok','ok','fail','ok','ok'];
+const calColors = {ok:'#7dded8', fail:'#f86b63', warn:'#e8c468', none:'#343741'};
+function drawCalendar(){
+  const cv = document.getElementById('calCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 130;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const cols = 10, rows = 3, gap = 8;
+  const cellW = (w - gap*(cols+1)) / cols;
+  const cellH = (h - gap*(rows+1) - 18) / rows;
+  calStatus.forEach((st,i) => {
+    const cxi = i % cols, cyi = Math.floor(i / cols);
+    const x = gap + cxi*(cellW+gap);
+    const y = 18 + gap + cyi*(cellH+gap);
+    ctx.fillStyle = calColors[st] || calColors.none;
+    roundRect(ctx, x, y, cellW, cellH, 4); ctx.fill();
+  });
+  ctx.fillStyle = '#98a2b3'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign='left';
+  ctx.fillText('últimos 30 scans (1 quadrado = 1 dia)', gap, 12);
+}
+drawCalendar();
+window.addEventListener('resize', drawCalendar);
+
+/* ===================== ANOMALY LINE CHART ===================== */
+const rowCounts = [1020,1050,980,1010,1040,1005,995,1030,1060,410,1015,1000,1045,1025];
+function drawAnomalyChart(){
+  const cv = document.getElementById('anomalyCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 170;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 40, padR = 16, padT = 16, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const maxVal = 1200, minVal = 0;
+  const n = rowCounts.length;
+  const xAt = i => padL + (plotW * i/(n-1));
+  const yAt = v => padT + plotH * (1 - (v-minVal)/(maxVal-minVal));
+
+  const avg = rowCounts.filter((v,i)=>i!==9).reduce((a,b)=>a+b,0) / (n-1);
+  const bandLow = avg*0.85, bandHigh = avg*1.10;
+  ctx.fillStyle = 'rgba(6,182,212,.10)';
+  ctx.fillRect(padL, yAt(bandHigh), plotW, yAt(bandLow)-yAt(bandHigh));
+
+  ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1;
+  [0,300,600,900,1200].forEach(v => {
+    ctx.beginPath(); ctx.moveTo(padL, yAt(v)); ctx.lineTo(w-padR, yAt(v)); ctx.stroke();
+    ctx.fillStyle = '#98a2b3'; ctx.font = '9.5px Roboto Mono, monospace'; ctx.textAlign='right';
+    ctx.fillText(v, padL-6, yAt(v)+3);
+  });
+
+  ctx.beginPath();
+  rowCounts.forEach((v,i) => { const x=xAt(i), y=yAt(v); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.strokeStyle = '#36a2ef'; ctx.lineWidth = 2; ctx.stroke();
+
+  rowCounts.forEach((v,i) => {
+    const x = xAt(i), y = yAt(v);
+    const isAnomaly = i === 9;
+    ctx.beginPath(); ctx.arc(x, y, isAnomaly?6:3, 0, Math.PI*2);
+    ctx.fillStyle = isAnomaly ? '#f86b63' : '#36a2ef';
+    ctx.fill();
+    if(isAnomaly){
+      ctx.fillStyle = '#f86b63'; ctx.font='700 10.5px Inter, sans-serif'; ctx.textAlign='center';
+      ctx.fillText('anomalia', x, y-12);
+    }
+  });
+  ctx.fillStyle = '#98a2b3'; ctx.font = '9.5px Inter, sans-serif'; ctx.textAlign='center';
+  ctx.fillText('dia 1', xAt(0), h-8);
+  ctx.fillText('dia ' + n, xAt(n-1), h-8);
+  ctx.fillText('faixa esperada (± sobre a média)', xAt(3), padT+12);
+}
+drawAnomalyChart();
+window.addEventListener('resize', drawAnomalyChart);
+
+/* ===================== PIPELINE COMPARISON (caso Americanas) ===================== */
+const pipelineInfo = {
+  'bad-1': {t:'Dado chega e é gravado no BigQuery', d:'O dado entra normalmente — até aqui, igual ao cenário com Soda. O problema é o que (não) acontece depois.'},
+  'bad-2': {t:'Alguém roda uma query manual "de vez em quando"', d:'Sem agendamento, a checagem depende de alguém lembrar — e lembrar de novo, e de novo, todo dia. Cedo ou tarde, alguém esquece.'},
+  'bad-3': {t:'Problema só aparece quando um número parece estranho', d:'Um analista de BI desconfia de um total que não bate. Só aí a investigação começa — dias depois do dado ruim já ter entrado.'},
+  'bad-4': {t:'Investigação reativa, sem histórico de quando começou', d:'Sem scans regulares registrados, é difícil saber exatamente quando a qualidade começou a cair — só que ela está ruim agora.'},
+  'ok-1': {t:'Dado chega e é gravado no BigQuery', d:'Mesmo início do pipeline — o dado é ingerido e gravado normalmente na plataforma.'},
+  'ok-2': {t:'YAML de checks define as métricas esperadas', d:'Um arquivo como o breakdown.yaml declara o que precisa ser verdade — ex: row_count acima de um mínimo — para aquela tabela.'},
+  'ok-3': {t:'Airflow (operador no GKE) roda o scan do Soda SQL', d:'De forma agendada, um operador do Airflow rodando no Google Kubernetes Engine dispara o Soda SQL contra o BigQuery.'},
+  'ok-4': {t:'Resultado sobe pro Soda Cloud: anomalias, alertas, histórico', d:'O time vê o resultado num dashboard, recebe alerta automático se algo falhar, e tem histórico pra saber exatamente quando um problema começou.'},
+};
+function pickPipeline(id){
+  document.querySelectorAll('#s-caso-americanas .pq-clickable').forEach(el => el.classList.remove('active'));
+  const info = pipelineInfo[id];
+  if(!info) return;
+  document.querySelectorAll(`#s-caso-americanas [data-id="${id}"]`).forEach(el => el.classList.add('active'));
+  document.getElementById('pipelineDetail').innerHTML = `<div class="ad-title">${info.t}</div><div class="ad-text">${info.d}</div>`;
+}
+
+/* ===================== SIMULADOR de freshness ===================== */
+function updateFreshSim(){
+  const age = +document.getElementById('ageSlider').value;
+  const limit = +document.getElementById('limitSlider').value;
+  document.getElementById('ageVal').textContent = age + 'h';
+  document.getElementById('limitVal').textContent = limit + 'h';
+  drawFreshCanvas(age, limit);
+  const msg = document.getElementById('freshMsg');
+  if(age <= limit){
+    msg.className = 'highlight-box';
+    msg.innerHTML = `<div class="highlight-title">✅ Check de freshness passaria</div><p>O dado foi atualizado há ${age}h, dentro do limite de <code>freshness &lt; ${limit}h</code>. O scan de hoje segue normal.</p>`;
+  } else {
+    msg.className = 'warn-box';
+    msg.innerHTML = `<div class="highlight-title">❌ Check de freshness falharia</div><p>O dado está parado há ${age}h, acima do limite de <code>freshness &lt; ${limit}h</code>. O Soda marca esse check como falho e dispara o alerta configurado.</p>`;
+  }
+}
+function drawFreshCanvas(age, limit){
+  const cv = document.getElementById('freshCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 110;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const padL = 10, padR = 10, barH = 30, y = 30, maxScale = 72;
+  const trackW = w - padL - padR;
+  ctx.fillStyle = 'rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+  const barW = Math.max(4, trackW * Math.min(age,maxScale)/maxScale);
+  const barColor = age <= limit ? '#7dded8' : '#f86b63';
+  ctx.fillStyle = barColor; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+  ctx.fillStyle = '#111216'; ctx.font='11px Roboto Mono, monospace';
+  ctx.fillText(age + 'h desde a última atualização', padL+10, y+barH*0.65);
+  const threshX = padL + trackW*Math.min(limit,maxScale)/maxScale;
+  ctx.strokeStyle = '#dfe5ef'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(threshX, y-8); ctx.lineTo(threshX, y+barH+8); ctx.stroke();
+  ctx.fillStyle = '#dfe5ef'; ctx.font='10px Inter, sans-serif'; ctx.textAlign='center';
+  ctx.fillText('limite = ' + limit + 'h', threshX, y-14);
+  ctx.textAlign='left';
+}
+updateFreshSim();
+window.addEventListener('resize', updateFreshSim);
+
+/* ===================== COMPARISON CANVAS ===================== */
+function drawCompareCanvas(){
+  const cv = document.getElementById('compareCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Checagem manual', val:1, color:'#98a2b3'},
+    {name:'dbt tests', val:3, color:'#36a2ef'},
+    {name:'Soda', val:6, color:'#06b6d4'},
+    {name:'Great Expectations', val:10, color:'#c49aff'},
+  ];
+  const padB = 26, padTop=14, barGap=18;
+  const barW = (w - (data.length+1)*barGap)/data.length;
+  const maxVal = 11;
+  data.forEach((d,i) => {
+    const x = barGap + i*(barW+barGap);
+    const barH = (h-padB-padTop) * (d.val/maxVal);
+    const y = h - padB - barH;
+    ctx.fillStyle = d.color;
+    roundRect(ctx, x, y, barW, barH, 5); ctx.fill();
+    ctx.fillStyle = '#dfe5ef'; ctx.font='11px Roboto Mono, monospace'; ctx.textAlign='center';
+    ctx.fillText(d.val + 'x', x+barW/2, y-6);
+    ctx.fillStyle = '#98a2b3'; ctx.font='9.5px Inter, sans-serif';
+    const words = d.name.split(' ');
+    ctx.fillText(words.slice(0, Math.ceil(words.length/2)).join(' '), x+barW/2, h-18);
+    ctx.fillText(words.slice(Math.ceil(words.length/2)).join(' '), x+barW/2, h-8);
+    ctx.textAlign='left';
+  });
+}
+drawCompareCanvas();
+window.addEventListener('resize', drawCompareCanvas);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'SodaCL é a linguagem declarativa em YAML usada para escrever checks no Soda.', a:true, e:'Verdadeiro. SodaCL (Soda Checks Language) permite descrever regras como missing_count(coluna) = 0 sem escrever SQL manualmente para cada uma.'},
+  {q:'Um scan do Soda só pode rodar uma única vez, no momento da instalação.', a:false, e:'Falso. Scans são tipicamente agendados — via cron, Airflow, dbt Cloud — rodando repetidamente (a cada hora, todo dia) para formar um histórico contínuo.'},
+  {q:'O parâmetro "valid values" permite restringir os valores aceitos numa coluna, dentro de um check de invalid_count/invalid_percent.', a:true, e:'Verdadeiro. Ex: valid values: [BR, US, PT, AR] define exatamente quais valores contam como válidos para aquele check.'},
+  {q:'Soda Cloud é obrigatório para rodar qualquer check do Soda Core.', a:false, e:'Falso. O Soda Core/CLI roda de forma totalmente standalone, sem depender do Cloud. O Soda Cloud entra por cima quando se quer histórico, dashboard e alertas automáticos.'},
+  {q:'Um check de freshness serve para garantir que uma tabela não está com dado "parado" (desatualizado) há mais tempo do que o permitido.', a:true, e:'Verdadeiro. Ex: freshness(data_pedido) < 24h falha se a coluna de data mais recente estiver há mais de 24 horas sem atualizar.'},
+  {q:'No caso da Americanas, o Soda foi integrado ao Airflow via operador rodando no Google Kubernetes Engine, validando dados no BigQuery.', a:true, e:'Verdadeiro. A arquitetura documentada usou Soda SQL com conector BigQuery, orquestrado por um operador do Airflow no GKE, com resultados publicados no Soda Cloud.'},
+  {q:'Data Contracts na Soda combinam apenas regras de qualidade, sem nenhuma definição de schema.', a:false, e:'Falso. Um Data Contract combina schema esperado (colunas e tipos) E as regras de qualidade num único arquivo versionado — as duas coisas juntas, não separadas.'},
+  {q:'Um check de duplicate_count(id) = 0 falha se existir qualquer valor de id repetido na coluna.', a:true, e:'Verdadeiro. duplicate_count conta quantas linhas têm um valor duplicado naquela coluna — qualquer contagem acima de zero quebra esse check.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Agosto / 2026';
+</script>
+</body>
+</html>

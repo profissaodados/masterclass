@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: dbt Semantic Layer. O que é, como o MetricFlow funciona, semantic models, entities, dimensions, measures e metrics explicados com analogias simples, diagramas visuais e simulador interativo.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — dbt Semantic Layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC (sticky, estilo pipeline) ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;text-wrap:balance;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-file-icon{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.file-chip{width:240px;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);overflow:hidden;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.file-chip .fc-magic{background:rgba(6,182,212,.16);color:var(--accent);text-align:center;font-family:'Roboto Mono',monospace;font-size:11px;font-weight:700;padding:6px;letter-spacing:1px;}
+.file-chip .fc-body{padding:14px;display:flex;flex-direction:column;gap:8px;}
+.file-chip .fc-row{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:7px 10px;font-size:11px;color:var(--text-secondary);text-align:center;}
+.file-chip .fc-row.new{border-color:var(--accent-green);color:var(--accent-green);font-weight:700;}
+.file-chip .fc-foot{background:rgba(196,154,255,.10);color:var(--accent-purple);text-align:center;font-family:'Roboto Mono',monospace;font-size:10px;font-weight:700;padding:7px;border-top:1px solid var(--border-color);}
+.file-chip-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- ARQUITETURA — fluxo em pipeline ---- */
+.arch-flow{display:flex;align-items:stretch;gap:0;overflow-x:auto;padding:10px 4px;}
+.arch-stage{flex:0 0 172px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px 14px;text-align:center;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:flex-start;}
+.arch-stage.hl{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.arch-icon{font-size:28px;}
+.arch-title{font-size:12px;font-weight:800;color:var(--text-primary);}
+.arch-sub{font-size:10.5px;color:var(--text-secondary);line-height:1.5;}
+.arch-arrow{display:flex;align-items:center;justify-content:center;flex:0 0 30px;font-size:18px;color:var(--border-strong);}
+.arch-consumers{display:flex;flex-direction:column;gap:6px;align-items:flex-start;margin-top:2px;}
+.arch-consumer-chip{font-size:10px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:12px;padding:3px 9px;color:var(--text-secondary);white-space:nowrap;}
+@media (max-width:960px){.arch-flow{flex-direction:column;align-items:stretch;} .arch-stage{flex:none;} .arch-arrow{transform:rotate(90deg);flex:none;padding:6px 0;}}
+
+/* ---- SEMANTIC MODEL / JOIN DIAGRAM ---- */
+.join-diagram{display:flex;align-items:center;gap:6px;overflow-x:auto;padding:10px 2px;}
+.semmodel-card{flex:0 0 250px;background:var(--bg-panel);border:2px solid var(--accent-blue);border-radius:12px;padding:16px 16px 12px;position:relative;}
+.semmodel-tag{position:absolute;top:-11px;left:14px;background:var(--accent-blue);color:var(--bg-main);font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.semmodel-block{margin-top:14px;}
+.semmodel-block-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-disabled);font-weight:700;margin-bottom:5px;}
+.semmodel-item{font-size:11px;background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:5px;padding:5px 9px;margin-bottom:4px;color:var(--text-secondary);display:flex;justify-content:space-between;gap:8px;}
+.semmodel-item strong{color:var(--text-primary);font-family:'Roboto Mono',monospace;font-weight:700;}
+.semmodel-item.entity{border-color:var(--accent);color:var(--accent);}
+.join-connector{flex:0 0 96px;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:36px;}
+.join-connector-line{width:100%;height:2px;background:var(--accent);position:relative;}
+.join-connector-line::after{content:'▸';position:absolute;right:-6px;top:-9px;color:var(--accent);font-size:16px;}
+.join-connector-label{font-size:9.5px;color:var(--accent);font-family:'Roboto Mono',monospace;text-align:center;background:rgba(6,182,212,.1);border:1px solid var(--accent);border-radius:10px;padding:2px 8px;white-space:nowrap;}
+@media (max-width:960px){.join-diagram{flex-direction:column;} .semmodel-card{flex:none;width:100%;} .join-connector{flex-direction:row;width:100%;padding:6px 0;} .join-connector-line{height:22px;width:2px;} .join-connector-line::after{content:'▾';right:-8px;top:auto;bottom:-10px;}}
+
+/* ---- INGREDIENTE → RECEITA (measures vs metrics) ---- */
+.recipe-flow{display:flex;align-items:center;gap:16px;overflow-x:auto;padding:8px 2px;flex-wrap:wrap;}
+.ingredient-chip{background:var(--bg-elevated);border:1px dashed var(--border-strong);border-radius:20px;padding:8px 16px;font-size:12px;color:var(--text-secondary);font-family:'Roboto Mono',monospace;white-space:nowrap;}
+.recipe-arrow{font-size:20px;color:var(--accent);}
+.dish-card{background:var(--bg-panel);border:2px solid var(--accent-green);border-radius:10px;padding:12px 18px;text-align:center;}
+.dish-card .dish-name{font-weight:800;color:var(--accent-green);font-size:13px;}
+.dish-card .dish-sub{font-size:10.5px;color:var(--text-disabled);margin-top:2px;}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.btn-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- DATA TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.data-table th{background:var(--bg-elevated);color:var(--text-secondary);padding:9px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);white-space:nowrap;}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr.row-scan td{background:rgba(6,182,212,.14);color:var(--text-primary);}
+.data-table tr.row-fade td{opacity:.55;}
+.cell-old{color:var(--accent-red);}
+.cell-new{color:var(--accent-green);font-weight:700;}
+.badge-current{background:rgba(125,222,216,.16);color:var(--accent-green);border:1px solid var(--accent-green);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:800;letter-spacing:.5px;white-space:nowrap;}
+.badge-expired{background:rgba(152,162,179,.10);color:var(--text-disabled);border:1px solid var(--border-color);border-radius:10px;padding:2px 9px;font-size:9.5px;font-weight:700;letter-spacing:.5px;white-space:nowrap;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+
+/* ---- COLORED STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);font-variant-numeric:tabular-nums;}
+
+/* ---- CHIP ---- */
+.chip{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:5px 12px;border-radius:20px;font-size:11.5px;font-family:'Roboto Mono',monospace;display:inline-flex;align-items:center;gap:6px;}
+
+/* ---- DECISION CARDS ---- */
+.decision-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.decision-q{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.decision-arrow{font-size:11px;color:var(--text-disabled);text-align:center;}
+.decision-a{font-size:14px;font-weight:800;text-align:center;padding:8px;border-radius:6px;border:1px solid;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.grid-5,.sim-grid{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *{transition-duration:.01ms !important; animation-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>dbt Semantic Layer</h1><span>Uma métrica, uma definição, o mesmo número em todo lugar</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">5</div><div class="hstat-label">Tipos de métrica</div></div>
+      <div class="hstat"><div class="hstat-num">MetricFlow</div><div class="hstat-label">Motor por trás</div></div>
+      <div class="hstat"><div class="hstat-num">1</div><div class="hstat-label">Fonte da verdade</div></div>
+      <div class="hstat"><div class="hstat-num">~50min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do conceito à mão na massa</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Toda ferramenta pergunta a <em>mesma</em> coisa. Toda ferramenta deveria ouvir a <em>mesma</em> resposta.</h2>
+      <p>O <strong>dbt Semantic Layer</strong> é uma camada que fica entre os seus modelos dbt (já prontos, testados, no warehouse) e todas as ferramentas que consomem números — Tableau, Power BI, Hex, Google Sheets, Slack, Python. Em vez de cada ferramenta reescrever sua própria fórmula de "receita" ou "ticket médio", você define essas <em>métricas</em> uma única vez, em YAML, e todo mundo que perguntar "qual foi a receita?" recebe exatamente a mesma resposta — calculada na hora, sempre a partir da fonte. O motor por trás disso se chama <strong>MetricFlow</strong>, e é ele quem traduz a pergunta de negócio em SQL para o seu warehouse.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Semantic Models</span>
+        <span class="badge badge-blue">Entities</span>
+        <span class="badge badge-green">Dimensions</span>
+        <span class="badge badge-purple">Measures</span>
+        <span class="badge badge-yellow">Metrics</span>
+        <span class="badge badge-red">MetricFlow</span>
+      </div>
+    </div>
+    <div class="hero-file-icon">
+      <div class="file-chip">
+        <div class="fc-magic">📐 metrics.yml — revenue</div>
+        <div class="fc-body">
+          <div class="fc-row">type: simple</div>
+          <div class="fc-row">measure: order_total</div>
+          <div class="fc-row new">agg: sum</div>
+        </div>
+        <div class="fc-foot">→ mesmo número em Tableau, Sheets, Slack, Python</div>
+      </div>
+      <div class="file-chip-caption">Definido uma vez. Consultado de qualquer lugar. Sempre igual.</div>
+    </div>
+  </section>
+
+  <!-- ============ O PROBLEMA ============ -->
+  <section class="section" id="s-problema">
+    <div class="section-eyebrow">O Gatilho de Tudo</div>
+    <div class="section-title">❓ O problema: cada ferramenta "sabe" calcular receita à sua maneira</div>
+    <p class="section-desc">
+      Imagine uma loja com dados de pedidos no warehouse. O time de BI monta um dashboard no <strong>Tableau</strong> e escreve <code>SUM(order_total)</code>. O time de Growth monta uma planilha no <strong>Excel</strong> e copia os valores manualmente, sem excluir reembolsos. O time de Produto usa o <strong>Power BI</strong> e escreve a fórmula excluindo pedidos cancelados. Três pessoas, três ferramentas, três números diferentes — todos chamados de "receita". Ninguém está mentindo de propósito: cada um só reimplementou a regra de negócio <em>do seu próprio jeito</em>, porque não existia um lugar único onde essa regra estivesse escrita.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🗣️</div>
+      <div>
+        <div class="highlight-title">Pensando como criança</div>
+        <p>É como perguntar "quantos doces você tem?" para três amigos que contam de jeitos diferentes: um conta só os doces inteiros, outro conta os pedaços separados, outro nem sabia que tinha uns doces guardados na gaveta. As três respostas estão "certas" do jeito de cada um — mas só uma delas é a resposta combinada, a que <em>todo mundo concordou</em> em usar.</p>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Clique nas ferramentas abaixo e veja como a mesma pergunta — "qual foi a receita?" — gera respostas diferentes, até a última opção, onde todas passam a usar a métrica definida no Semantic Layer:</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Quem está perguntando "qual foi a receita?"</div>
+      <div class="btn-toggle-row" id="toolButtons"></div>
+      <div class="result-display" id="toolResult"></div>
+    </div>
+    <div class="warn-box"><p>⚠️ O Semantic Layer não inventa uma métrica nova — ele obriga todo mundo a <strong>concordar</strong> com uma única definição, escrita em código, versionada e testada como qualquer outra parte do pipeline dbt.</p></div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-fundamentos">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🧠 Então, o que é exatamente o Semantic Layer?</div>
+    <p class="section-desc">
+      Ele é uma <strong>tradução</strong>. De um lado, você tem tabelas no warehouse — <code>fct_orders</code>, <code>dim_customers</code> — cheias de linhas e colunas cruas. Do outro lado, você tem perguntas de negócio: "qual foi a receita em março, por região?". O Semantic Layer é o dicionário que conecta as duas pontas: ele sabe que "receita" significa <code>sum(order_total)</code>, que "região" vem da tabela de clientes, e que para juntar as duas coisas é preciso usar o <code>customer_id</code>. Toda vez que alguém pergunta, o MetricFlow lê esse dicionário e escreve o SQL certo, na hora, para o seu warehouse.
+    </p>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📖 Sem Semantic Layer</div>
+        <div class="card-text">A "tradução" mora na cabeça de cada analista, espalhada em dashboards, planilhas e queries soltas. Muda a pessoa, muda a fórmula.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Com Semantic Layer</div>
+        <div class="card-text">A tradução mora em <strong>YAML versionado</strong>, ao lado dos seus modelos dbt. Muda a pessoa, a fórmula continua a mesma.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">⚙️ MetricFlow</div>
+        <div class="card-text">O "tradutor" de verdade: lê o YAML e compila SQL válido para Snowflake, BigQuery, Databricks, Postgres, DuckDB e outros.</div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 O Semantic Layer não substitui seus modelos dbt — ele é construído <strong>em cima</strong> deles. Um <code>semantic_model</code> sempre aponta para um <code>ref()</code> de um modelo que já existe e já passou pelos seus testes normais.</p></div>
+  </section>
+
+  <!-- ============ SEMANTIC MODELS ============ -->
+  <section class="section" id="s-semanticmodel">
+    <div class="section-eyebrow">A peça central</div>
+    <div class="section-title">🧩 Semantic Models — a ficha técnica de um modelo dbt</div>
+    <p class="section-desc">
+      Um <strong>semantic model</strong> é um arquivo YAML que descreve um modelo dbt em termos que o MetricFlow entende: quais colunas servem para <em>identificar e juntar</em> registros (entities), quais colunas servem para <em>agrupar e filtrar</em> (dimensions), e quais colunas servem para <em>agregar em números</em> (measures). Cada semantic model aponta para exatamente um modelo dbt via <code>ref()</code> — normalmente uma tabela fato ou dimensão que já vive nos seus <em>marts</em>.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧾</div>
+      <div>
+        <div class="highlight-title">Analogia</div>
+        <p>É como a <strong>ficha técnica de um brinquedo de montar</strong>: ela não é o brinquedo em si (isso já é o modelo dbt), mas diz onde estão os encaixes (entities), quais peças têm cores/categorias (dimensions) e quantas peças de cada tipo vêm na caixa (measures). Sem a ficha técnica, você até tem as peças — mas não sabe como elas se conectam.</p>
+      </div>
+    </div>
+    <div class="code-block">
+<span class="code-lang">yaml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="fn">semantic_models</span>:
+  - <span class="fn">name</span>: <span class="st">orders</span>
+    <span class="fn">description</span>: <span class="st">"Um pedido feito na loja."</span>
+    <span class="fn">model</span>: <span class="kw">ref</span>(<span class="st">'fct_orders'</span>)
+    <span class="fn">defaults</span>:
+      <span class="fn">agg_time_dimension</span>: <span class="st">ordered_at</span>
+    <span class="fn">entities</span>: <span class="cm"># quem se conecta com quem</span>
+      - <span class="fn">name</span>: <span class="st">order_id</span>
+        <span class="fn">type</span>: <span class="st">primary</span>
+      - <span class="fn">name</span>: <span class="st">customer_id</span>
+        <span class="fn">type</span>: <span class="st">foreign</span>
+    <span class="fn">dimensions</span>: <span class="cm"># o que descreve/agrupa</span>
+      - <span class="fn">name</span>: <span class="st">ordered_at</span>
+        <span class="fn">type</span>: <span class="st">time</span>
+        <span class="fn">type_params</span>:
+          <span class="fn">time_granularity</span>: <span class="st">day</span>
+      - <span class="fn">name</span>: <span class="st">order_status</span>
+        <span class="fn">type</span>: <span class="st">categorical</span>
+    <span class="fn">measures</span>: <span class="cm"># o que se agrega em número</span>
+      - <span class="fn">name</span>: <span class="st">order_total</span>
+        <span class="fn">agg</span>: <span class="st">sum</span>
+        <span class="fn">expr</span>: <span class="st">order_total</span>
+      - <span class="fn">name</span>: <span class="st">orders</span>
+        <span class="fn">agg</span>: <span class="st">count</span>
+        <span class="fn">expr</span>: <span class="st">order_id</span></div>
+    <div class="ok-box"><p>✅ Repare que este YAML não recalcula nada sozinho — ele só <strong>rotula</strong> colunas que já existem em <code>fct_orders</code>. O trabalho pesado de transformação continua sendo feito pelo modelo dbt de sempre.</p></div>
+  </section>
+
+  <!-- ============ ENTITIES ============ -->
+  <section class="section" id="s-entities">
+    <div class="section-eyebrow">Peça 1 de 3</div>
+    <div class="section-title">🔗 Entities — os encaixes que permitem juntar tabelas sozinhas</div>
+    <p class="section-desc">
+      Uma <strong>entity</strong> é uma chave: uma coluna que identifica um registro (<code>primary</code>), referencia outro registro (<code>foreign</code>) ou identifica um registro de forma não-exclusiva num certo grão (<code>unique</code>). É a partir das entities que o MetricFlow descobre, sozinho, como fazer o <code>JOIN</code> entre dois semantic models — você nunca escreve esse join manualmente numa consulta de métrica.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🧲</div>
+      <div>
+        <div class="highlight-title">Analogia</div>
+        <p>Entities são como os <strong>plugues de encaixe do Lego</strong>: cada peça tem um tipo de encaixe, e duas peças com encaixes compatíveis se juntam sem que você precise explicar como. O semantic model "pedidos" tem um encaixe <code>customer_id</code> (foreign); o semantic model "clientes" tem o mesmo encaixe como <code>customer_id</code> (primary). Quando você pede uma métrica de pedidos agrupada por região do cliente, o MetricFlow simplesmente encaixa as duas peças.</p>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Veja o join acontecendo: ao pedir a métrica <code>revenue</code> agrupada por <code>customer_id__region</code>, o MetricFlow segue o encaixe <code>customer_id</code> automaticamente entre os dois semantic models:</p>
+    <div class="join-diagram">
+      <div class="semmodel-card">
+        <span class="semmodel-tag">🧩 orders</span>
+        <div class="semmodel-block">
+          <div class="semmodel-block-label">🔑 entities</div>
+          <div class="semmodel-item entity"><span>order_id</span><strong>primary</strong></div>
+          <div class="semmodel-item entity"><span>customer_id</span><strong>foreign</strong></div>
+        </div>
+        <div class="semmodel-block">
+          <div class="semmodel-block-label">🧮 measures</div>
+          <div class="semmodel-item"><span>order_total</span><strong>sum</strong></div>
+        </div>
+      </div>
+      <div class="join-connector">
+        <span class="join-connector-line"></span>
+        <span class="join-connector-label">encaixe: customer_id</span>
+      </div>
+      <div class="semmodel-card">
+        <span class="semmodel-tag">🧩 customers</span>
+        <div class="semmodel-block">
+          <div class="semmodel-block-label">🔑 entities</div>
+          <div class="semmodel-item entity"><span>customer_id</span><strong>primary</strong></div>
+        </div>
+        <div class="semmodel-block">
+          <div class="semmodel-block-label">📅 dimensions</div>
+          <div class="semmodel-item"><span>region</span><strong>categorical</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="card"><div class="card-title">🟦 primary</div><div class="card-text">Identifica <strong>1 registro</strong> por linha no modelo — a chave "dona" do semantic model. Ex: <code>customer_id</code> em <code>customers</code>.</div></div>
+      <div class="card"><div class="card-title">🟨 foreign</div><div class="card-text">Referencia a chave primária de <strong>outro</strong> semantic model. Ex: <code>customer_id</code> em <code>orders</code>, apontando de volta para <code>customers</code>.</div></div>
+      <div class="card"><div class="card-title">🟩 unique</div><div class="card-text">Identifica um registro de forma única, mas não é a chave "dona" do modelo — útil quando existe mais de um identificador válido.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ DIMENSIONS ============ -->
+  <section class="section" id="s-dimensions">
+    <div class="section-eyebrow">Peça 2 de 3</div>
+    <div class="section-title">📅 Dimensions — os adjetivos que agrupam e filtram</div>
+    <p class="section-desc">
+      Uma <strong>dimension</strong> é qualquer coluna usada para <em>agrupar, filtrar ou fatiar</em> um número — nunca para somar. Existem dois tipos: <code>categorical</code> (texto/categoria, como status do pedido ou região do cliente) e <code>time</code> (uma data ou timestamp, com uma granularidade declarada — dia, semana, mês, trimestre, ano).
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🏷️</div>
+      <div>
+        <div>
+          <div class="highlight-title">Analogia</div>
+          <p>Dimensions são as <strong>etiquetas coloridas</strong> numa caixa de brinquedos: "vermelho", "grande", "comprado em março". Elas não dizem <em>quantos</em> brinquedos existem — só ajudam a separar o monte em grupos menores antes de contar.</p>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🏷️ Categorical</div>
+        <div class="card-text">Uma categoria fixa: <code>order_status</code>, <code>region</code>, <code>customer_type</code>. Serve para <code>GROUP BY</code> e para filtros do tipo "só os pedidos 'completed'".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🕰️ Time</div>
+        <div class="card-text">Uma data com granularidade declarada: <code>ordered_at</code> em <code>day</code>. É a partir dela que o MetricFlow sabe truncar para <code>month</code>, <code>quarter</code> ou <code>year</code> quando pedido.</div>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Uma mesma dimensão de tempo pode ser consultada em granularidades diferentes, sem reescrever nada — o MetricFlow faz o <code>DATE_TRUNC</code> por você:</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Granularidade pedida</th><th>ordered_at original</th><th>Como aparece agrupado</th></tr></thead>
+        <tbody>
+          <tr><td><code>day</code></td><td>2026-03-14</td><td>2026-03-14</td></tr>
+          <tr><td><code>week</code></td><td>2026-03-14</td><td>2026-03-09 (semana que contém o dia)</td></tr>
+          <tr class="row-scan"><td><code>month</code></td><td>2026-03-14</td><td>2026-03-01</td></tr>
+          <tr><td><code>quarter</code></td><td>2026-03-14</td><td>2026-01-01 (Q1)</td></tr>
+          <tr><td><code>year</code></td><td>2026-03-14</td><td>2026-01-01</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box"><p>💡 Para referenciar uma dimensão que vive num semantic model <em>diferente</em> daquele da sua métrica, usa-se a sintaxe <code>entidade__dimensão</code> — por exemplo, <code>customer_id__region</code> ao consultar a métrica <code>revenue</code>, que mora em <code>orders</code>. É a mesma "trilha" de join explicada na seção de Entities.</p></div>
+  </section>
+
+  <!-- ============ MEASURES ============ -->
+  <section class="section" id="s-measures">
+    <div class="section-eyebrow">Peça 3 de 3</div>
+    <div class="section-title">🧮 Measures — o ingrediente cru, antes de virar receita</div>
+    <p class="section-desc">
+      Uma <strong>measure</strong> é uma agregação simples sobre uma coluna: soma, contagem, contagem distinta, mínimo, máximo, média. Ela ainda <em>não</em> é uma métrica de negócio — é só o número cru, pronto para ser usado como ingrediente. A métrica é quem decide <em>como</em> esse ingrediente vira um prato (uma métrica simples usa 1 measure; uma métrica ratio combina 2).
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🥣</div>
+      <div>
+        <div class="highlight-title">Analogia</div>
+        <p>Measures são os <strong>ingredientes na despensa</strong>: "2 xícaras de açúcar", "3 ovos". Uma metric é a <strong>receita pronta</strong>: "bolo de chocolate" usa açúcar, ovos e chocolate numa proporção específica. Ninguém serve "açúcar" como prato — mas todo prato começa com ingredientes medidos.</p>
+        </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Os tipos de agregação (<code>agg</code>) mais usados numa measure:</p>
+    <div class="grid-5">
+      <div class="card"><div class="card-title">Σ sum</div><div class="card-text">Soma os valores. Ex: <code>order_total</code>.</div></div>
+      <div class="card"><div class="card-title"># count</div><div class="card-text">Conta linhas. Ex: número de pedidos.</div></div>
+      <div class="card"><div class="card-title">#! count_distinct</div><div class="card-text">Conta valores únicos. Ex: clientes distintos.</div></div>
+      <div class="card"><div class="card-title">x̄ average</div><div class="card-text">Média simples dos valores.</div></div>
+      <div class="card"><div class="card-title">↕ min / max</div><div class="card-text">Menor ou maior valor da coluna.</div></div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">O caminho completo, do ingrediente cru até o prato servido — <code>order_total</code> (coluna) vira a measure <code>order_total</code> (soma), que vira a metric <code>revenue</code> (a receita de negócio que qualquer ferramenta consulta):</p>
+    <div class="recipe-flow">
+      <span class="ingredient-chip">🧱 coluna: order_total</span>
+      <span class="recipe-arrow">→</span>
+      <span class="ingredient-chip">🧮 measure: order_total (agg: sum)</span>
+      <span class="recipe-arrow">→</span>
+      <div class="dish-card"><div class="dish-name">📐 metric: revenue</div><div class="dish-sub">type: simple</div></div>
+    </div>
+  </section>
+
+  <!-- ============ METRICS ============ -->
+  <section class="section" id="s-metrics">
+    <div class="section-eyebrow">O produto final</div>
+    <div class="section-title">📐 Metrics — a receita que vira número de negócio</div>
+    <p class="section-desc">
+      Uma <strong>metric</strong> é a definição oficial de negócio, construída a partir de uma ou mais measures (ou até de outras metrics). Existem 5 tipos, cada um resolvendo um jeito diferente de combinar ingredientes:
+    </p>
+    <div class="code-block">
+<span class="code-lang">yaml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span><span class="fn">metrics</span>:
+  - <span class="fn">name</span>: <span class="st">revenue</span>
+    <span class="fn">label</span>: <span class="st">"Receita"</span>
+    <span class="fn">type</span>: <span class="st">simple</span>
+    <span class="fn">type_params</span>:
+      <span class="fn">measure</span>: <span class="st">order_total</span>
+
+  - <span class="fn">name</span>: <span class="st">orders</span>
+    <span class="fn">label</span>: <span class="st">"Pedidos"</span>
+    <span class="fn">type</span>: <span class="st">simple</span>
+    <span class="fn">type_params</span>:
+      <span class="fn">measure</span>: <span class="st">orders</span>
+
+  - <span class="fn">name</span>: <span class="st">average_order_value</span>
+    <span class="fn">label</span>: <span class="st">"Ticket médio"</span>
+    <span class="fn">type</span>: <span class="st">ratio</span>
+    <span class="fn">type_params</span>: <span class="cm"># ratio combina 2 metrics já definidas, não measures cruas</span>
+      <span class="fn">numerator</span>: <span class="st">revenue</span>
+      <span class="fn">denominator</span>: <span class="st">orders</span></div>
+    <p class="section-desc" style="font-size:12.5px;">Escolha um tipo abaixo para ver a definição YAML, um exemplo e quando usar:</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Tipos de métrica no MetricFlow</div>
+      <div class="btn-toggle-row" id="metricTypeButtons"></div>
+      <div id="metricTypeDetail" style="margin-top:16px;"></div>
+    </div>
+  </section>
+
+  <!-- ============ ARQUITETURA ============ -->
+  <section class="section" id="s-arquitetura">
+    <div class="section-eyebrow">Como tudo se conecta</div>
+    <div class="section-title">🏗️ Arquitetura: do warehouse até a pergunta na tela</div>
+    <p class="section-desc">
+      Uma consulta de métrica atravessa 5 estações antes de virar um número numa tela. Nenhuma ferramenta de BI fala diretamente com o warehouse "pedindo receita" — ela fala com a API do Semantic Layer, que traduz o pedido em SQL e devolve o resultado, sempre usando a mesma definição.
+    </p>
+    <div class="arch-flow">
+      <div class="arch-stage"><span class="arch-icon">🏬</span><span class="arch-title">Warehouse</span><span class="arch-sub">tabelas cruas: pedidos, clientes...</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage"><span class="arch-icon">🛠️</span><span class="arch-title">Modelos dbt</span><span class="arch-sub">fct_orders, dim_customers — já testados</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage hl"><span class="arch-icon">🧩</span><span class="arch-title">Semantic Layer</span><span class="arch-sub">semantic_models + metrics em YAML</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage"><span class="arch-icon">⚙️</span><span class="arch-title">MetricFlow</span><span class="arch-sub">compila a pergunta em SQL</span></div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-stage">
+        <span class="arch-icon">🌐</span><span class="arch-title">Consumidores</span>
+        <div class="arch-consumers">
+          <span class="arch-consumer-chip">📊 Tableau</span>
+          <span class="arch-consumer-chip">📈 Hex / Mode / Sigma</span>
+          <span class="arch-consumer-chip">🔢 Google Sheets / Excel</span>
+          <span class="arch-consumer-chip">💬 Slack</span>
+          <span class="arch-consumer-chip">🐍 Python / Notebooks</span>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🧑‍💻 dbt Core + MetricFlow</div>
+        <div class="card-text">Você define e valida semantic models e metrics localmente, e consulta pela CLI (<code>mf query</code> / <code>dbt sl query</code>) direto do seu terminal — ótimo para desenvolver e testar as definições.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">☁️ dbt Cloud — API hospedada</div>
+        <div class="card-text">Expõe a mesma definição via API (GraphQL e JDBC/ODBC) para qualquer ferramenta externa se conectar — é essa API que Tableau, Hex ou uma planilha realmente consultam em produção.</div>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Uma consulta real de métrica, pedindo receita e pedidos agrupados por mês e por região do cliente:</p>
+    <div class="code-block">
+<span class="code-lang">bash</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>dbt sl query <span class="kw">--metrics</span> revenue,orders <span class="kw">--group-by</span> metric_time__month,customer_id__region
+
+<span class="cm"># o MetricFlow traduz isso, sozinho, em algo como:</span>
+<span class="kw">SELECT</span>
+  <span class="fn">DATE_TRUNC</span>(<span class="st">'month'</span>, o.ordered_at) <span class="kw">AS</span> metric_time__month,
+  c.region <span class="kw">AS</span> customer_id__region,
+  <span class="fn">SUM</span>(o.order_total) <span class="kw">AS</span> revenue,
+  <span class="fn">COUNT</span>(o.order_id) <span class="kw">AS</span> orders
+<span class="kw">FROM</span> fct_orders o
+<span class="kw">JOIN</span> dim_customers c <span class="kw">ON</span> o.customer_id <span class="kw">=</span> c.customer_id
+<span class="kw">GROUP BY</span> <span class="num">1</span>, <span class="num">2</span>;</div>
+    <div class="ok-box"><p>✅ Ninguém escreveu esse <code>JOIN</code> à mão — o MetricFlow o inferiu a partir das entities <code>customer_id</code> declaradas nos dois semantic models, exatamente como visto na seção de Entities.</p></div>
+  </section>
+
+  <!-- ============ MATURIDADE DO ECOSSISTEMA ============ -->
+  <section class="section" id="s-maturidade">
+    <div class="section-eyebrow">Uma pausa honesta</div>
+    <div class="section-title">🌱 "Então o mercado ainda não está pronto pra isso?"</div>
+    <p class="section-desc">
+      Não exatamente — é mais preciso dizer que a <strong>dor</strong> que a Semantic Layer resolve é real e validada (todo mundo já viveu o problema de "receita" divergente entre ferramentas, visto lá na seção "O Problema"), mas a <strong>distribuição</strong> específica do dbt Labs ainda é nova. O MetricFlow só virou parte do dbt Core em meados de 2023 — pouco mais de 2 anos de vida. Integrações nativas de BI historicamente levam anos para se espalhar pelo ecossistema inteiro, ferramenta por ferramenta.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">🗺️</div>
+      <div>
+        <div class="highlight-title">Analogia</div>
+        <p>É como um <strong>idioma novo, recém-inventado</strong>: por mais útil que seja, cada país (cada ferramenta de BI) precisa decidir aprender esse idioma, treinar tradutores (construir um conector) e assinar acordos antes de conseguir conversar nele. Enquanto isso, um idioma que <em>todo mundo já fala</em> — como o "SQL de um banco Postgres" — dispensa esse processo inteiro. Ninguém precisa aprender nada novo pra usar um idioma que já sabia.</p>
+      </div>
+    </div>
+    <p class="section-desc" style="font-size:12.5px;">Um detalhe técnico explica boa parte do "gap": o dbt Labs escolheu expor a Semantic Layer via uma <strong>API nova</strong> (GraphQL + um driver JDBC próprio, Arrow Flight SQL) em vez de imitar um protocolo que as ferramentas já falam. Isso significa que cada fornecedor de BI precisa construir um conector dedicado, um acordo de cada vez:</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Ferramenta</th><th>Conector nativo?</th><th>Como funciona hoje</th></tr></thead>
+        <tbody>
+          <tr><td>Tableau</td><td><span class="badge-current">nativo</span></td><td>Conector dbt Semantic Layer embutido no próprio app</td></tr>
+          <tr><td>Google Sheets / Excel</td><td><span class="badge-current">nativo</span></td><td>Extensão oficial publicada pela dbt Labs</td></tr>
+          <tr><td>Hex / Mode / Sigma</td><td><span class="badge-current">nativo</span></td><td>Parceiros certificados, conector dedicado</td></tr>
+          <tr class="row-scan"><td>Power BI</td><td><span class="badge-expired" style="color:var(--accent-yellow);border-color:var(--accent-yellow);">contorno</span></td><td>Fonte de dados "Script Python" + SDK <code>dbtsl</code> — importação/refresh, não é consulta ao vivo</td></tr>
+          <tr><td>Metabase</td><td><span class="badge-expired">ainda não</span></td><td>Exigiria um driver JDBC customizado que ninguém mantém pronto</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-box"><p>💡 Um concorrente direto, o <strong>Cube.dev</strong>, tomou a decisão oposta: expõe as métricas como se fosse um banco Postgres comum, então qualquer ferramenta com driver Postgres — incluindo Power BI e Metabase — já conecta sem esperar integração nenhuma. É o mesmo problema de distribuição, resolvido com uma escolha de protocolo diferente.</p></div>
+    <div class="highlight-box"><p>🌎 Então o mercado não rejeitou o conceito de metrics layer — ele só ainda não decidiu <strong>qual protocolo</strong> vai virar padrão. Enquanto isso não se resolve, a lista de ferramentas com suporte nativo só tende a crescer.</p></div>
+  </section>
+
+  <!-- ============ TIME SPINE ============ -->
+  <section class="section" id="s-timespine">
+    <div class="section-eyebrow">A peça invisível</div>
+    <div class="section-title">🕰️ Time Spine — o calendário que nunca falta um dia</div>
+    <p class="section-desc">
+      Métricas <code>cumulative</code> e comparações período a período (como "crescimento mês a mês") precisam de uma tabela auxiliar com <strong>uma linha para cada dia do calendário</strong> — mesmo os dias sem nenhum pedido. Essa tabela se chama <strong>time spine</strong> (geralmente <code>metricflow_time_spine</code>), e é o que garante que um mês sem vendas apareça como "R$ 0", em vez de simplesmente sumir do gráfico.
+    </p>
+    <div class="kid-box">
+      <div class="kid-emoji">📆</div>
+      <div>
+        <div class="highlight-title">Analogia</div>
+        <p>É como um <strong>diário com uma página para cada dia do ano</strong>, mesmo os dias em que nada de especial aconteceu. Se seu diário só tivesse páginas para os dias em que você escreveu algo, ficaria impossível saber quantos dias realmente se passaram entre duas anotações — o time spine é esse diário completo, sem nenhuma página faltando.</p>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">❌ Sem time spine</div><div class="card-text">Uma métrica cumulativa de "receita nos últimos 30 dias" pode pular dias sem pedido, distorcendo médias e fazendo o gráfico "andar mais rápido" do que devia.</div></div>
+      <div class="card"><div class="card-title">✅ Com time spine</div><div class="card-text">Todo dia do período aparece, com ou sem pedido — a janela de 30 dias é sempre 30 linhas de calendário, nunca 30 linhas de "dias com venda".</div></div>
+    </div>
+  </section>
+
+  <!-- ============ SIMULADOR ============ -->
+  <section class="section" id="s-simulador">
+    <div class="section-eyebrow">Mão na Massa — Interativo</div>
+    <div class="section-title">🎮 Simulador: quantas vezes "receita" precisa ser reescrita?</div>
+    <p class="section-desc">Arraste o número de ferramentas que consultam a mesma métrica de receita, e veja a diferença entre definir a fórmula <strong>uma vez</strong> (Semantic Layer) e defini-la <strong>separadamente</strong> em cada ferramenta (o jeito antigo).</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Quantas ferramentas de BI/planilha consomem a métrica "receita"?</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Número de ferramentas consumindo a métrica</span><span class="ctrl-v" id="growVal">4</span></div>
+          <input type="range" id="growSlider" min="1" max="15" step="1" value="4" oninput="updateGrowth()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="growCanvas" height="130"></canvas></div>
+      <div class="stat-cards" id="growStats"></div>
+    </div>
+  </section>
+
+  <!-- ============ COMPARAÇÃO ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">📊 Comparando os 5 tipos de métrica</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Tipo</th><th>O que faz</th><th>Usa outras métricas?</th><th>Exemplo</th><th>Quando usar</th></tr></thead>
+        <tbody>
+          <tr><td><strong style="color:var(--accent);">Simple</strong></td><td>Agrega 1 measure direto</td><td>Não</td><td>revenue = sum(order_total)</td><td>Métrica "crua", ponto de partida de quase tudo</td></tr>
+          <tr class="row-scan"><td><strong style="color:var(--accent-blue);">Ratio</strong></td><td>Divide 2 métricas já definidas</td><td>Sim (numerador e denominador)</td><td>ticket médio = receita / pedidos</td><td>Proporções, médias, taxas</td></tr>
+          <tr><td><strong style="color:var(--accent-purple);">Derived</strong></td><td>Combina métricas já existentes numa fórmula</td><td>Sim</td><td>lucro = receita − custo</td><td>Métricas compostas, comparação período a período</td></tr>
+          <tr><td><strong style="color:var(--accent-green);">Cumulative</strong></td><td>Soma uma measure numa janela de tempo</td><td>Não</td><td>receita acumulada em 30 dias</td><td>Totais correntes, "mês até agora", trailing N dias</td></tr>
+          <tr><td><strong style="color:var(--accent-yellow);">Conversion</strong></td><td>Mede taxa de conversão entre 2 eventos</td><td>Não (usa 2 measures/eventos)</td><td>cadastro → 1ª compra</td><td>Funis, conversão entre etapas</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ QUAL ESCOLHER ============ -->
+  <section class="section" id="s-escolha">
+    <div class="section-eyebrow">Guia de Decisão</div>
+    <div class="section-title">🧭 Qual tipo de métrica escolher?</div>
+    <p class="section-desc">Use as perguntas abaixo para decidir o tipo certo, métrica por métrica — na prática, um projeto real mistura vários tipos, cada um resolvendo uma pergunta de negócio diferente.</p>
+    <div class="grid-3">
+      <div class="decision-card">
+        <div class="decision-q">"Só preciso somar ou contar uma coluna, sem comparar com mais nada?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">Simple</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso de uma proporção entre duas quantidades — ticket médio, margem, taxa?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">Ratio</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso combinar métricas que já existem numa fórmula — crescimento, lucro?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-purple);color:var(--accent-purple);">Derived</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso de um total corrente — saldo acumulado, 'mês até agora', 7 dias?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-green);color:var(--accent-green);">Cumulative</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso medir se um evento leva a outro dentro de uma janela de tempo?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-yellow);color:var(--accent-yellow);">Conversion</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">"Preciso agrupar por uma coluna de outro semantic model, tipo região do cliente?"</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-red);color:var(--accent-red);">Não é métrica — é join via entity</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-boaspraticas">
+    <div class="section-eyebrow">Checklist</div>
+    <div class="section-title">✅ Boas Práticas</div>
+    <div class="grid-2">
+      <div class="card"><div class="card-title">🗣️ Nomeie do jeito que o negócio fala</div><div class="card-text">Prefira <code>revenue</code> a <code>sum_order_total_usd_v2</code> — o nome da métrica é o contrato com quem vai usá-la, não um detalhe de implementação.</div></div>
+      <div class="card"><div class="card-title">🧱 Measures simples, metrics compostas</div><div class="card-text">Evite duplicar measures para cada métrica; prefira poucas measures bem definidas e componha ratio/derived em cima delas.</div></div>
+      <div class="card"><div class="card-title">🕰️ Sempre declare agg_time_dimension</div><div class="card-text">Todo semantic model baseado em fatos precisa de uma dimensão de tempo padrão — é ela que alimenta o <code>metric_time</code> universal usado nas consultas.</div></div>
+      <div class="card"><div class="card-title">🔗 Modele joins com entities, não com SQL manual</div><div class="card-text">Se você está escrevendo um <code>JOIN</code> à mão numa consulta de métrica, provavelmente falta uma entity — deixe o MetricFlow inferir o caminho.</div></div>
+      <div class="card"><div class="card-title">📆 Mantenha um time spine sempre atualizado</div><div class="card-text">Sem ele, métricas cumulativas e comparações período a período podem pular dias silenciosamente.</div></div>
+      <div class="card"><div class="card-title">👀 Trate metrics.yml como código crítico</div><div class="card-text">Uma mudança nessa definição muda o número que <strong>todo mundo</strong> vê — exija revisão de PR como em qualquer mudança de schema de produção.</div></div>
+      <div class="card"><div class="card-title">🌱 Comece pequeno</div><div class="card-text">2 ou 3 semantic models e 4 ou 5 métricas essenciais já resolvem o maior problema (números divergentes) — cresça aos poucos a partir daí.</div></div>
+      <div class="card"><div class="card-title">🧪 Teste métricas como testa modelos</div><div class="card-text">Compare o resultado de uma métrica nova com uma query manual conhecida antes de publicá-la para os consumidores.</div></div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — dbt Semantic Layer</span>
+    <span>
+      Fontes: <a href="https://docs.getdbt.com/docs/build/build-metrics-intro" target="_blank" rel="noopener">dbt Labs — Semantic Layer Docs</a> ·
+      MetricFlow (dbt Labs)
+    </span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-problema', icon:'❓', label:'O Problema'},
+  {id:'s-fundamentos', icon:'🧠', label:'O que é'},
+  {id:'s-semanticmodel', icon:'🧩', label:'Semantic Models'},
+  {id:'s-entities', icon:'🔗', label:'Entities'},
+  {id:'s-dimensions', icon:'📅', label:'Dimensions'},
+  {id:'s-measures', icon:'🧮', label:'Measures'},
+  {id:'s-metrics', icon:'📐', label:'Metrics'},
+  {id:'s-arquitetura', icon:'🏗️', label:'Arquitetura'},
+  {id:'s-maturidade', icon:'🌱', label:'Ecossistema'},
+  {id:'s-timespine', icon:'🕰️', label:'Time Spine'},
+  {id:'s-simulador', icon:'🎮', label:'Simulador'},
+  {id:'s-comparacao', icon:'📊', label:'Comparação'},
+  {id:'s-escolha', icon:'🧭', label:'Qual Escolher'},
+  {id:'s-boaspraticas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== O PROBLEMA — qual ferramenta pergunta ===================== */
+const toolViews = {
+  tableau:  {label:'📊 Tableau',   logic:'SUM(order_total) — inclui pedidos cancelados por engano', value:'R$ 182.430', color:'#f86b63'},
+  powerbi:  {label:'📈 Power BI',  logic:'SUM(order_total) WHERE status <> "cancelled" — regra diferente do Tableau', value:'R$ 164.120', color:'#e8c468'},
+  planilha: {label:'🔢 Planilha',  logic:'Cópia manual do sistema de origem, sem excluir reembolsos', value:'R$ 190.870', color:'#c49aff'},
+  unified:  {label:'✅ Com Semantic Layer', logic:'metric revenue: sum(order_total) WHERE status NOT IN (cancelled, refunded) — definida 1x', value:'R$ 158.940', color:'#7dded8'},
+};
+let toolKey = 'tableau';
+function buildToolButtons(){
+  document.getElementById('toolButtons').innerHTML = Object.entries(toolViews).map(([k,v]) =>
+    `<button class="btn-toggle ${k===toolKey?'active':''}" onclick="selectTool('${k}')">${v.label}</button>`
+  ).join('');
+}
+function selectTool(k){
+  toolKey = k;
+  buildToolButtons();
+  renderToolResult();
+}
+function renderToolResult(){
+  const v = toolViews[toolKey];
+  document.getElementById('toolResult').innerHTML = `
+    <div style="text-align:left;flex:1;min-width:220px;">
+      <div style="font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;">Regra usada</div>
+      <div style="font-size:12px;color:var(--text-secondary);font-family:'Inter',sans-serif;">${v.logic}</div>
+    </div>
+    <div style="font-size:26px;font-weight:800;color:${v.color};">${v.value}</div>
+  `;
+}
+buildToolButtons();
+renderToolResult();
+
+/* ===================== METRICS — explorador de tipos ===================== */
+const metricTypes = {
+  simple: {
+    label: 'Simple', color:'#06b6d4',
+    desc: 'Agrega diretamente uma measure — a métrica mais básica, quase sempre o primeiro passo.',
+    yaml: `- name: revenue
+  type: simple
+  type_params:
+    measure: order_total`,
+    example: 'revenue = sum(order_total)',
+  },
+  ratio: {
+    label: 'Ratio', color:'#36a2ef',
+    desc: 'Divide duas métricas já definidas — numerador sobre denominador. Ótimo para médias e proporções.',
+    yaml: `- name: average_order_value
+  type: ratio
+  type_params:
+    numerator: revenue
+    denominator: orders`,
+    example: 'ticket médio = receita ÷ pedidos',
+  },
+  derived: {
+    label: 'Derived', color:'#c49aff',
+    desc: 'Combina métricas já existentes numa expressão — inclusive comparando o mesmo período deslocado no tempo.',
+    yaml: `- name: revenue_growth_mom
+  type: derived
+  type_params:
+    expr: (revenue - revenue_prev_month) / revenue_prev_month
+    metrics:
+      - name: revenue
+      - name: revenue
+        offset_window: 1 month
+        alias: revenue_prev_month`,
+    example: 'crescimento mês a mês da receita',
+  },
+  cumulative: {
+    label: 'Cumulative', color:'#7dded8',
+    desc: 'Soma uma measure dentro de uma janela de tempo corrente — precisa de um time spine.',
+    yaml: `- name: cumulative_revenue_30d
+  type: cumulative
+  type_params:
+    measure: order_total
+    cumulative_type_params:
+      window: 30 days`,
+    example: 'receita acumulada nos últimos 30 dias',
+  },
+  conversion: {
+    label: 'Conversion', color:'#e8c468',
+    desc: 'Mede a taxa de conversão entre um evento-base e um evento de conversão, dentro de uma janela de tempo.',
+    yaml: `- name: signup_to_first_order
+  type: conversion
+  type_params:
+    conversion_type_params:
+      base_measure: signups
+      conversion_measure: orders
+      entity: customer_id
+      window: 7 days`,
+    example: 'de quantos cadastros viram 1ª compra em 7 dias',
+  },
+};
+let metricTypeKey = 'simple';
+function buildMetricTypeButtons(){
+  document.getElementById('metricTypeButtons').innerHTML = Object.entries(metricTypes).map(([k,v]) =>
+    `<button class="btn-toggle ${k===metricTypeKey?'active':''}" onclick="selectMetricType('${k}')">${v.label}</button>`
+  ).join('');
+}
+function selectMetricType(k){
+  metricTypeKey = k;
+  buildMetricTypeButtons();
+  renderMetricTypeDetail();
+}
+function highlightYaml(src){
+  return src.split('\n').map(line => {
+    const m = line.match(/^(\s*(?:- )?)([a-zA-Z_]+)(:\s*)(.*)$/);
+    if(!m) return line;
+    const [, indent, key, colon, rest] = m;
+    let restHtml = rest;
+    if(rest !== ''){
+      restHtml = /^-?\d+(\.\d+)?$/.test(rest) ? `<span class="num">${rest}</span>` : `<span class="st">${rest}</span>`;
+    }
+    return `${indent}<span class="fn">${key}</span>${colon}${restHtml}`;
+  }).join('\n');
+}
+function renderMetricTypeDetail(){
+  const v = metricTypes[metricTypeKey];
+  document.getElementById('metricTypeDetail').innerHTML = `
+    <p class="card-text" style="margin-bottom:12px;font-size:13px;">${v.desc}</p>
+    <div class="code-block">
+      <span class="code-lang">yaml</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>${highlightYaml(v.yaml)}</div>
+    <div class="result-display" style="margin-top:12px;">
+      <span style="font-size:12px;color:var(--text-secondary);">Em palavras:</span>
+      <span style="font-size:15px;font-weight:800;color:${v.color};">${v.example}</span>
+    </div>
+  `;
+}
+buildMetricTypeButtons();
+renderMetricTypeDetail();
+
+/* ===================== SIMULADOR — quantas vezes reescrever "receita" ===================== */
+function updateGrowth(){
+  const n = +document.getElementById('growSlider').value;
+  document.getElementById('growVal').textContent = n;
+  const withoutSL = n;
+  const withSL = 1;
+  document.getElementById('growStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">Definições sem Semantic Layer</div><div class="stat-card-value">${withoutSL}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">Definições com Semantic Layer</div><div class="stat-card-value">${withSL}</div></div>
+    <div class="stat-card c-purple"><div class="stat-card-label">Risco de números divergentes</div><div class="stat-card-value" style="font-size:15px;">${withoutSL > 1 ? 'Alto' : 'Nenhum'}</div></div>
+  `;
+  drawGrowCanvas(withoutSL, withSL);
+}
+function drawGrowCanvas(withoutSL, withSL){
+  const cv = document.getElementById('growCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 130;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Sem Semantic Layer (1 fórmula por ferramenta)', val:withoutSL, color:'#f86b63'},
+    {name:'Com Semantic Layer (1 fórmula, sempre)', val:withSL, color:'#7dded8'},
+  ];
+  const padL=280, padR=30, padTop=14, barH=34, gap=22;
+  const maxVal = Math.max(1, withoutSL);
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='11px Roboto Mono, monospace';
+    ctx.fillText(d.val + ' definição(ões)', padL+10, y+barH*0.65);
+  });
+}
+updateGrowth();
+window.addEventListener('resize', updateGrowth);
+
+/* ===================== QUIZ ===================== */
+const quiz = [
+  {q:'O dbt Semantic Layer permite definir uma métrica uma única vez e reutilizá-la em várias ferramentas de BI, evitando definições divergentes.', a:true, e:'Verdadeiro. Esse é o problema central que ele resolve: uma única fonte da verdade para métricas de negócio, consultada por qualquer ferramenta.'},
+  {q:'Um semantic model substitui o modelo dbt — depois de criá-lo, o modelo original em SQL pode ser apagado.', a:false, e:'Falso. Um semantic model é construído em cima de um modelo dbt já existente, referenciado via ref() — ele não substitui nem duplica a transformação.'},
+  {q:'Entities servem para nomear categorias coloridas num dashboard.', a:false, e:'Falso. Entities modelam chaves (primary, foreign, unique) e são o que permite ao MetricFlow inferir joins automaticamente entre semantic models.'},
+  {q:'Uma métrica do tipo "ratio" sempre combina duas measures: numerador e denominador.', a:true, e:'Verdadeiro. É exatamente essa divisão que define uma métrica ratio, como o ticket médio (receita ÷ pedidos).'},
+  {q:'O MetricFlow exige que o usuário escreva manualmente o JOIN em cada consulta de métrica.', a:false, e:'Falso. O MetricFlow infere os joins automaticamente a partir das entities declaradas nos semantic models envolvidos.'},
+  {q:'Uma métrica "derived" pode ser construída a partir de outras métricas já definidas, não apenas de measures.', a:true, e:'Verdadeiro. É esse tipo que permite fórmulas como "lucro = receita − custo" ou comparações período a período.'},
+  {q:'O "time spine" é uma tabela com uma linha por dia (ou outra granularidade), usada em métricas cumulativas e comparações de período.', a:true, e:'Verdadeiro. Sem ele, dias sem eventos podem simplesmente desaparecer de métricas cumulativas, distorcendo o resultado.'},
+  {q:'Measures e Metrics são a mesma coisa, apenas dois nomes diferentes para o mesmo conceito.', a:false, e:'Falso. Measure é a agregação crua sobre uma coluna (o "ingrediente"); metric é a definição de negócio construída a partir de uma ou mais measures (a "receita").'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quiz.map((item,i) => `
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Ver resposta ▾</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a ? 'true':'false'}">${item.a ? 'VERDADEIRO':'FALSO'}</span> &nbsp; ${item.e}</div>
+    </div>
+  `).join('');
+}
+buildQuiz();
+
+document.getElementById('footerYear').textContent = 'Agosto / 2026';
+</script>
+</body>
+</html>

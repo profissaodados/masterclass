@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Aula: Regressão Ridge explicada do zero, com overfitting, a penalidade λ, o traço dos coeficientes, viés x variância, a visão geométrica círculo x losango e muitas demos visuais interativas.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Regressão Ridge do Jeito Fácil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8b339;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:36px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-chart-box{width:100%;border:2px solid var(--accent);border-radius:10px;background:var(--bg-panel);padding:14px;box-shadow:0 8px 30px rgba(6,182,212,.15);}
+.hero-visual-caption{font-size:11px;color:var(--text-disabled);text-align:center;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GENERIC CARDS / GRIDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+.card-formula{font-family:'Roboto Mono',monospace;font-size:14px;color:var(--accent);background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;text-align:center;margin:8px 0;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box .highlight-title{color:var(--accent-red);}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+
+/* ---- INTERACTIVE PANEL (shared) ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+input[type=text]{background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-primary);border-radius:6px;padding:9px 12px;font-family:'Roboto Mono',monospace;font-size:12.5px;width:100%;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.player-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Inter',sans-serif;}
+.player-btn:hover{border-color:var(--accent);color:var(--accent);}
+.player-btn.primary{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.result-display{display:flex;align-items:center;justify-content:center;gap:14px;background:var(--bg-elevated);border:1px dashed var(--border-color);border-radius:8px;padding:16px;margin-top:10px;font-family:'Roboto Mono',monospace;flex-wrap:wrap;text-align:center;}
+.result-display .rv{font-size:22px;font-weight:800;color:var(--accent);}
+.result-display .rl{font-size:10px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:2px;}
+
+/* ---- CANVAS ---- */
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+.canvas-wrap.drag canvas{cursor:grab;}
+.canvas-wrap.drag canvas:active{cursor:grabbing;}
+
+/* ---- LEGEND ---- */
+.legend-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-secondary);}
+.legend-swatch{width:14px;height:4px;border-radius:2px;flex-shrink:0;}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.drag-hint{font-size:11.5px;color:var(--text-disabled);text-align:center;margin-top:6px;}
+
+/* ---- STAT CARDS ---- */
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;transition:.2s;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card.c-yellow{border-top-color:var(--accent-yellow);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- COEFFICIENT BARS ---- */
+.coef-bars{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+.coef-bar-row{display:flex;align-items:center;gap:10px;}
+.coef-bar-label{width:64px;flex-shrink:0;font-family:'Roboto Mono',monospace;font-size:11.5px;color:var(--text-secondary);}
+.coef-bar-track{flex:1;height:16px;background:var(--bg-elevated);border-radius:4px;position:relative;border:1px solid var(--border-color);}
+.coef-bar-mid{position:absolute;top:-3px;bottom:-3px;left:50%;width:1px;background:var(--border-strong);}
+.coef-bar-fill{position:absolute;top:1px;bottom:1px;border-radius:3px;transition:left .12s,width .12s,background .12s;}
+.coef-bar-val{width:60px;flex-shrink:0;text-align:right;font-family:'Roboto Mono',monospace;font-size:11.5px;color:var(--text-primary);font-weight:700;}
+
+/* ---- MULTIPLE REGRESSION / FLOW DIAGRAM ---- */
+.mreg-diagram{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;padding:10px 0;}
+.mreg-inputs{display:flex;flex-direction:column;gap:10px;}
+.mreg-chip{background:var(--bg-elevated);border:1.5px solid var(--accent-blue);color:var(--text-primary);padding:10px 16px;border-radius:8px;font-size:12.5px;font-weight:600;min-width:170px;text-align:center;}
+.mreg-arrow{font-size:22px;color:var(--border-strong);padding:0 18px;}
+.mreg-output{background:rgba(6,182,212,.10);border:2px solid var(--accent);color:var(--accent);padding:16px 22px;border-radius:8px;font-size:14px;font-weight:800;text-align:center;min-width:170px;}
+
+/* ---- QUIZ / PROBLEM CARDS ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+.quiz-tag{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:800;letter-spacing:.5px;margin-right:6px;}
+.quiz-tag.true{background:rgba(125,222,216,.14);color:var(--accent-green);}
+.quiz-tag.false{background:rgba(248,107,99,.14);color:var(--accent-red);}
+
+/* ---- BADGE PILL (sparsity marker etc) ---- */
+.pill{display:inline-block;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;background:rgba(196,154,255,.14);color:var(--accent-purple);border:1px solid rgba(196,154,255,.4);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .stat-cards{grid-template-columns:1fr;}
+  .mreg-diagram{flex-direction:column;}
+  .mreg-arrow{padding:8px 0;transform:rotate(90deg);}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Regressão Ridge</h1><span>Ensinando o modelo a não decorar demais os dados</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">+λΣβ²</div><div class="hstat-label">A peça nova</div></div>
+      <div class="hstat"><div class="hstat-num">6</div><div class="hstat-label">Demos interativas</div></div>
+      <div class="hstat"><div class="hstat-num">λ</div><div class="hstat-label">O "freio" do modelo</div></div>
+      <div class="hstat"><div class="hstat-num">~55min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do problema do overfitting até escolher o λ certo</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>A arte de segurar o modelo com <em>uma coleira</em>, antes que ele exagere</h2>
+      <p>Regressão Ridge responde a um problema bem comum: <strong>"meu modelo foi bem demais nos dados de treino... e mal nos dados novos."</strong> Isso costuma acontecer quando o modelo tem coeficientes gigantes, "decorando" cada solavanco e ruído dos dados de treino em vez de aprender o padrão de verdade. A Ridge resolve isso adicionando uma <em>penalidade</em> que puxa os coeficientes de volta para perto de zero — como um elástico. Nesta aula vamos construir essa ideia do zero, com gráficos que você mesmo vai controlar.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">Overfitting</span>
+        <span class="badge badge-green">Regularização L2</span>
+        <span class="badge badge-blue">Viés × Variância</span>
+        <span class="badge badge-purple">Base do Machine Learning</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-chart-box">
+        <div class="canvas-wrap" style="background:transparent;border:none;padding:0;"><canvas id="heroCanvas" height="220"></canvas></div>
+      </div>
+      <div class="hero-visual-caption">A linha <span style="color:#f86b63;">vermelha</span> decorou até o barulho dos dados; a linha <span style="color:#06b6d4;">ciano</span> (Ridge) ficou comportada. Role a página e mexa você mesmo!</div>
+    </div>
+  </section>
+
+  <!-- ============ O QUE É ============ -->
+  <section class="section" id="s-oque">
+    <div class="section-eyebrow">Fundamentos</div>
+    <div class="section-title">🎯 O que é Regressão Ridge?</div>
+    <p class="section-desc">
+      Imagine um aluno se preparando para uma prova. Um jeito de estudar é <strong>entender o assunto</strong>. Outro jeito, mais preguiçoso, é <strong>decorar exatamente as perguntas e respostas</strong> de uma prova antiga. O aluno que decorou vai muito bem se a prova nova for idêntica — mas vai mal em qualquer pergunta diferente. Em Machine Learning, isso se chama <strong>overfitting</strong>: o modelo "decora" até o barulho (ruído) dos dados de treino, ao invés de aprender o padrão real.
+    </p>
+    <p class="section-desc">
+      A <strong>Regressão Ridge</strong> é a regressão linear de sempre, só que com uma regra extra: <em>"os coeficientes não podem crescer livremente — quanto maiores eles ficarem, mais eu vou te penalizar."</em> É como colocar uma coleira ou um elástico puxando o modelo de volta para perto de zero, impedindo que ele fique selvagem demais tentando acertar cada pontinho de treino.
+    </p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🧠 Decorar (overfitting)</div>
+        <div class="card-text">O modelo cria uma curva bem "torta" que passa exatamente em cima de cada ponto de treino — inclusive o ruído. Funciona lindamente nos dados que já viu, mas erra feio em dados novos.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🪢 A coleira (Ridge)</div>
+        <div class="card-text">A Ridge adiciona uma penalidade aos coeficientes grandes, forçando o modelo a ficar mais "comportado" e suave — mesmo que erre um pouquinho mais no treino.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 O resultado</div>
+        <div class="card-text">Um modelo levemente pior no treino, mas <strong>mais confiável</strong> em dados que ele nunca viu — que é, no fim, o que realmente importa.</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A ideia central</div>
+      <p>Ridge não muda o que você está tentando prever, nem troca a fórmula <code style="color:var(--accent);">y = β₀ + β₁x₁ + β₂x₂ + ...</code>. Ela só muda <strong>como escolhemos os coeficientes β</strong>: em vez de escolher os que minimizam só o erro no treino, escolhemos os que minimizam o erro <em>mais uma multa</em> por serem grandes demais. Essa é praticamente toda a aula de hoje.</p>
+    </div>
+  </section>
+
+  <!-- ============ OVERFITTING ============ -->
+  <section class="section" id="s-overfitting">
+    <div class="section-eyebrow">O Problema Que a Ridge Resolve</div>
+    <div class="section-title">🌊 Overfitting: quando o modelo aprende demais</div>
+    <p class="section-desc">
+      Quanto mais "grau de liberdade" um modelo tem (por exemplo, uma curva de grau bem alto, com muitos coeficientes), mais fácil fica para ele se contorcer e passar bem perto de cada ponto de treino — inclusive dos erros aleatórios de medição. O problema é que essa contorção toda não representa nenhum padrão real, então o modelo vai mal com dados novos (<strong>pontos de teste</strong>, que ele nunca viu). Aumente o grau da curva abaixo e observe.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Aumente o grau da curva e veja o erro de treino cair... enquanto o erro de teste dispara</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Grau do polinômio (quantas "curvas" o modelo pode fazer)</span><span class="ctrl-v" id="ofDegVal">3</span></div>
+          <input type="range" id="ofDeg" min="1" max="8" step="1" value="3" oninput="renderOverfit()">
+        </div>
+      </div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="ofBtn-off" onclick="setOverfitRidge(false)">🌊 Sem freio (λ ≈ 0)</button>
+        <button class="btn-toggle" id="ofBtn-on" onclick="setOverfitRidge(true)">🪢 Com Ridge (λ = 10)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="ofCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#36a2ef;"></span> Pontos de treino (o modelo viu estes)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#e8b339;"></span> Pontos de teste (o modelo NUNCA viu estes)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> Curva ajustada</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#7dded8;border-top:1px dashed #7dded8;background:transparent;height:0;"></span> Função real (a "verdade")</div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Erro no treino (MSE)</div><div class="stat-card-value" id="ofTrainMSE">—</div></div>
+        <div class="stat-card c-red"><div class="stat-card-label">Erro no teste (MSE)</div><div class="stat-card-value" id="ofTestMSE">—</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Diferença (teste − treino)</div><div class="stat-card-value" id="ofGap">—</div></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">O sinal clássico de overfitting</div>
+      <p>Repare: com grau alto e <strong>sem freio</strong>, o erro de treino despenca perto de zero (a curva quase toca cada ponto), mas o erro de teste dispara — a curva vira uma montanha-russa maluca fora dos pontos de treino. Ligue o botão "🪢 Com Ridge" e veja a curva ficar comportada de novo, mesmo com grau alto.</p>
+    </div>
+  </section>
+
+  <!-- ============ A PENALIDADE ============ -->
+  <section class="section" id="s-penalidade">
+    <div class="section-eyebrow">A Ideia Central</div>
+    <div class="section-title">⚖️ A penalidade: por que coeficientes grandes são perigosos</div>
+    <p class="section-desc">
+      Uma curva "maluca" que sobe e desce violentamente entre os pontos de treino só consegue existir se os <strong>coeficientes</strong> da fórmula forem grandes — é a matemática precisando de números extremos para fazer aquelas curvas apertadas. Coeficientes pequenos, por outro lado, só conseguem desenhar curvas suaves e "comportadas". A Ridge usa esse fato a seu favor: <strong>se ela impedir os coeficientes de crescerem demais, a curva automaticamente fica mais suave.</strong>
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🌊 Sem penalidade (regressão comum)</div>
+        <div class="card-text" style="margin-bottom:10px;">Os coeficientes podem crescer o quanto for preciso para encaixar cada ponto de treino — inclusive o ruído.</div>
+        <div class="coef-bars" id="penaltyBarsOff"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">🪢 Com penalidade Ridge (λ alto)</div>
+        <div class="card-text" style="margin-bottom:10px;">Os mesmos coeficientes, agora "encolhidos" para perto de zero pelo elástico da Ridge.</div>
+        <div class="coef-bars" id="penaltyBarsOn"></div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Note que a Ridge encolhe os coeficientes <strong>em direção a zero</strong>, mas quase nunca os deixa exatamente em zero — ela "aperta o elástico", não "corta o fio". Isso é uma diferença importante da Ridge para sua prima, a <strong>Lasso</strong>, que veremos mais adiante.</p>
+    </div>
+  </section>
+
+  <!-- ============ A FÓRMULA ============ -->
+  <section class="section" id="s-formula">
+    <div class="section-eyebrow">A Peça Que Mais Aparece</div>
+    <div class="section-title">🧮 A fórmula da Ridge: SQE + λ·Σβ²</div>
+    <p class="section-desc">
+      A regressão linear comum escolhe os coeficientes β que minimizam apenas a <strong>Soma dos Quadrados dos Erros (SQE)</strong> — o total de "quanto a reta errou" no treino. A Ridge muda a pergunta: minimiza a SQE <strong>mais uma multa</strong> proporcional ao tamanho dos coeficientes ao quadrado. Essa multa se chama <strong>penalidade L2</strong> (ou regularização L2, ou "ridge penalty").
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📏 Regressão linear comum (OLS)</div>
+        <div class="card-formula">minimizar: Σ(yᵢ − ŷᵢ)²</div>
+        <div class="card-text">Só se importa em errar o menos possível no treino — não liga para o tamanho dos coeficientes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🪢 Regressão Ridge</div>
+        <div class="card-formula">minimizar: Σ(yᵢ − ŷᵢ)² + λ·Σβⱼ²</div>
+        <div class="card-text">Erra o mínimo possível no treino <strong>E</strong> paga uma multa proporcional a λ pelo tamanho dos coeficientes.</div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">1️⃣ Σ(yᵢ − ŷᵢ)²</div>
+        <div class="card-text">O erro de sempre: soma dos quadrados das diferenças entre valor real e valor previsto. Quanto menor, melhor o ajuste ao treino.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ λ (lambda)</div>
+        <div class="card-text">O "botão de força" do freio — um número que você escolhe. λ = 0 desliga a penalidade (vira regressão comum). Quanto maior λ, mais forte o elástico puxa os coeficientes para zero.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Σβⱼ²</div>
+        <div class="card-text">A soma dos coeficientes ao quadrado (menos o intercepto β₀, que fica de fora — veremos por quê). Quanto maiores os β's, maior essa soma, e maior a multa.</div>
+      </div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Por que ao quadrado?</div>
+      <p>Assim como no método dos mínimos quadrados, elevar ao quadrado garante que coeficientes positivos e negativos "pesem" igual na multa (não se cancelam), e pune desproporcionalmente mais os coeficientes bem grandes do que os pequenos — exatamente o comportamento que queremos de um freio.</p>
+    </div>
+  </section>
+
+  <!-- ============ O PAPEL DE LAMBDA ============ -->
+  <section class="section" id="s-lambda">
+    <div class="section-eyebrow">O Controle Principal</div>
+    <div class="section-title">🎚️ O papel de λ: o "freio" do modelo</div>
+    <p class="section-desc">
+      Vamos agora ajustar o próprio λ e ver, ao vivo, como ele afeta tanto os coeficientes quanto a curva. Um mesmo conjunto de pontos ruidosos vai ser ajustado com um polinômio de grau 6 — grau alto o suficiente para "decorar" os dados se você deixar λ baixo demais.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste λ e observe a curva se acalmar e as barras encolherem juntas</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>λ (força da penalidade)</span><span class="ctrl-v" id="lamVal">2.0</span></div>
+          <input type="range" id="lamSlider" min="0" max="40" step="0.2" value="2" oninput="renderLambdaDemo()">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="canvas-wrap"><canvas id="lamCanvas" height="260"></canvas></div>
+          <div class="legend-row">
+            <div class="legend-item"><span class="legend-dot" style="background:#36a2ef;"></span> Pontos (dados ruidosos)</div>
+            <div class="legend-item"><span class="legend-swatch" style="background:#06b6d4;"></span> Curva ajustada (grau 6)</div>
+          </div>
+        </div>
+        <div>
+          <div class="panel-label" style="margin-top:0;">Coeficientes β₁ … β₆ (encolhendo com λ)</div>
+          <div class="coef-bars" id="lamBars"></div>
+        </div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Erro no treino (SQE)</div><div class="stat-card-value" id="lamSSE">—</div></div>
+        <div class="stat-card c-red"><div class="stat-card-label">Penalidade (λ·Σβ²)</div><div class="stat-card-value" id="lamPenalty">—</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Custo total (o que a Ridge minimiza)</div><div class="stat-card-value" id="lamTotal">—</div></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🌊 λ = 0</div>
+        <div class="card-text">Vira regressão linear comum. Sem freio nenhum — se o grau for alto, o overfitting volta.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 λ "no ponto certo"</div>
+        <div class="card-text">O freio ideal: a curva captura o padrão real sem perseguir cada ruído. É disso que trata a seção "Escolhendo λ", mais adiante.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧊 λ → ∞ (bem grande)</div>
+        <div class="card-text">O freio fica tão forte que todos os coeficientes viram quase zero — a curva vira quase uma linha reta e horizontal (o modelo "desiste" de usar x).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RIDGE TRACE ============ -->
+  <section class="section" id="s-trace">
+    <div class="section-eyebrow">Visualizando Muitos λ De Uma Vez</div>
+    <div class="section-title">📉 Ridge Trace: o caminho dos coeficientes</div>
+    <p class="section-desc">
+      Em vez de olhar um λ de cada vez, dá pra desenhar o caminho de <strong>todos</strong> os coeficientes conforme λ varia de 0 até um valor bem alto — esse gráfico clássico se chama <strong>Ridge Trace</strong> (foi assim que os criadores da técnica, Hoerl e Kennard, a apresentaram em 1970). Usamos aqui 4 variáveis prevendo o preço de um imóvel — duas delas, <em>área</em> e <em>número de cômodos</em>, são bem correlacionadas entre si (imóveis maiores tendem a ter mais cômodos), o que deixa a regressão comum instável.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste λ e veja a linha vertical passear pelo gráfico</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>λ atual</span><span class="ctrl-v" id="traceLamVal">0.0</span></div>
+          <input type="range" id="traceLam" min="0" max="60" step="0.5" value="0" oninput="renderTrace()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="traceCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:#36a2ef;"></span> β(área)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#f86b63;"></span> β(cômodos) — correlacionada com área</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#7dded8;"></span> β(idade do imóvel)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#e8b339;"></span> β(distância do centro)</div>
+      </div>
+      <div class="drag-hint">👆 Em λ = 0, repare como β(área) e β(cômodos) começam em sinais opostos, "brigando" para explicar o mesmo efeito — sintoma clássico de multicolinearidade. Conforme λ cresce, as duas param de brigar e passam a se mover devagar e de forma bem mais previsível — é essa estabilidade, e não necessariamente "acertar" o valor verdadeiro, que a Ridge entrega.</div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 O Ridge Trace é usado na prática exatamente para <strong>escolher λ visualmente</strong>: procura-se o menor λ a partir do qual os coeficientes "param de tremer" e se estabilizam — sinal de que a instabilidade da multicolinearidade já foi domada, sem exagerar na penalidade.</p>
+    </div>
+  </section>
+
+  <!-- ============ VIÉS X VARIÂNCIA ============ -->
+  <section class="section" id="s-viesvariancia">
+    <div class="section-eyebrow">Por Que "Errar Um Pouco Mais" Pode Ser Bom</div>
+    <div class="section-title">⚖️ Viés × Variância: a troca que a Ridge faz</div>
+    <p class="section-desc">
+      Imagine que, em vez de coletar dados uma única vez, você pudesse coletar <strong>5 amostras diferentes</strong> da mesma realidade (5 turmas diferentes, por exemplo). Se o seu modelo tem <strong>alta variância</strong>, cada amostra vai gerar uma curva bem diferente da outra — o modelo é "nervoso", reage demais a cada conjunto específico de ruído. Se o modelo tem <strong>alto viés</strong>, todas as curvas ficam parecidas entre si, mas sistematicamente longe da verdade — o modelo é "teimoso demais", simples demais para captar o padrão. A Ridge deixa você navegar entre esses dois extremos com o λ.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Compare 5 "turmas" diferentes (mesmos x, ruído novo a cada vez) sob 3 forças de freio</div>
+      <div class="btn-toggle-row" style="justify-content:center;margin-bottom:14px;">
+        <button class="btn-toggle active" id="bvBtn-low" onclick="setBiasVar('low')">🌊 λ baixo (alta variância)</button>
+        <button class="btn-toggle" id="bvBtn-mid" onclick="setBiasVar('mid')">🎯 λ ideal (equilíbrio)</button>
+        <button class="btn-toggle" id="bvBtn-high" onclick="setBiasVar('high')">🧊 λ alto (alto viés)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="bvCanvas" height="260"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:#36a2ef;"></span> Curva ajustada em cada uma das 5 "turmas"</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#e8b339;border-top:2px dashed #e8b339;background:transparent;height:0;"></span> Função real (a verdade que queremos aprender)</div>
+      </div>
+      <div class="section-desc" id="bvExplain" style="text-align:center;font-size:12.5px;margin-top:10px;"></div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🌊 Alta variância</div>
+        <div class="card-text">As 5 curvas ficam bem diferentes entre si — o modelo é instável, sensível a qual amostra específica ele recebeu. É a marca do overfitting.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Equilíbrio</div>
+        <div class="card-text">As curvas ficam parecidas entre si <strong>e</strong> perto da função real. É o ponto ideal — o objetivo de escolher bem o λ.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🧊 Alto viés</div>
+        <div class="card-text">As curvas ficam parecidas entre si, mas sistematicamente longe da função real — o freio apertou demais e o modelo ficou simples demais (underfitting).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PADRONIZAÇÃO ============ -->
+  <section class="section" id="s-padronizacao">
+    <div class="section-eyebrow">Um Detalhe Que Faz Toda Diferença</div>
+    <div class="section-title">📐 Por que padronizar as variáveis antes da Ridge</div>
+    <p class="section-desc">
+      A penalidade λ·Σβⱼ² trata todos os coeficientes com a <strong>mesma régua</strong> — mas isso só faz sentido se as variáveis estiverem na mesma escala. Imagine prever o preço de uma casa usando "área em m²" (varia de 30 a 300) e "número de quartos" (varia de 1 a 6). Como quartos varia numa faixa bem menor, o coeficiente dele naturalmente precisa ser <strong>maior</strong> para ter o mesmo impacto — e a Ridge acabaria penalizando quartos injustamente mais forte, só por causa da escala, não da importância real da variável.
+    </p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">❌ Sem padronizar</div>
+        <div class="card-text" style="margin-bottom:10px;">"Quartos" tem coeficiente grande só porque sua escala é pequena — a Ridge penaliza essa variável de forma desproporcional, sem relação com sua real importância.</div>
+        <div class="coef-bars" id="stdBarsOff"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Com padronização (média 0, desvio 1)</div>
+        <div class="card-text" style="margin-bottom:10px;">Todas as variáveis passam a competir na mesma escala — agora a penalidade reflete a importância real de cada uma, não a unidade em que foi medida.</div>
+        <div class="coef-bars" id="stdBarsOn"></div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Regra de ouro</div>
+      <p>Sempre padronize (ou normalize) as variáveis explicativas <strong>antes</strong> de rodar a Ridge — na prática, bibliotecas como o scikit-learn não fazem isso automaticamente por você. E o <strong>intercepto (β₀)</strong> quase sempre fica de fora da penalidade: ele só representa "onde o modelo começa", não tem relação com overfitting.</p>
+    </div>
+  </section>
+
+  <!-- ============ GEOMETRIA ============ -->
+  <section class="section" id="s-geometria">
+    <div class="section-eyebrow">A Visão Que Explica Tudo Num Só Desenho</div>
+    <div class="section-title">⭕ A visão geométrica: círculo × losango</div>
+    <p class="section-desc">
+      Existe uma forma visual, muito famosa em Machine Learning, de entender a Ridge (e sua prima Lasso). Pense num "mapa" onde cada ponto é uma combinação possível de dois coeficientes (β₁, β₂). As <strong>elipses</strong> ao redor do ponto amarelo mostram o quão bem cada combinação ajusta os dados (o centro é a solução sem penalidade — a OLS). A penalidade da Ridge restringe a busca a ficar <strong>dentro de um círculo</strong> ao redor da origem; a da Lasso, <strong>dentro de um losango</strong>. Quanto maior o λ, menor a forma — empurrando a solução para mais perto do centro (zero).
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Arraste λ e veja a solução deslizar da estimativa OLS em direção à origem</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>λ</span><span class="ctrl-v" id="geoLamVal">0.0</span></div>
+          <input type="range" id="geoLam" min="0" max="30" step="0.2" value="0" oninput="renderGeo()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="geoCanvas" height="320"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-dot" style="background:#e8b339;"></span> Solução OLS (λ = 0, sem penalidade)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#06b6d4;"></span> Solução Ridge (círculo)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#c49aff;"></span> Solução Lasso (losango)</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#535966;"></span> Elipses = níveis de erro (mesmo erro em toda a linha)</div>
+      </div>
+      <div class="stat-cards">
+        <div class="stat-card c-blue"><div class="stat-card-label">Ridge: β₁, β₂</div><div class="stat-card-value" id="geoRidgeVal">—</div></div>
+        <div class="stat-card c-purple"><div class="stat-card-label">Lasso: β₁, β₂</div><div class="stat-card-value" id="geoLassoVal">—</div></div>
+        <div class="stat-card c-green"><div class="stat-card-label">Lasso zerou alguma variável?</div><div class="stat-card-value" id="geoSparse">—</div></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⭕ Por que a Ridge (círculo) não zera</div>
+        <div class="card-text">Um círculo é <strong>redondo por todo lado</strong> — não tem "quinas". A elipse do erro quase sempre encosta no círculo num ponto qualquer da borda, raramente bem em cima de um eixo. Por isso a Ridge encolhe os coeficientes, mas raramente os zera.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💎 Por que a Lasso (losango) zera</div>
+        <div class="card-text">Um losango tem <strong>quinas exatamente em cima dos eixos</strong> (onde β₁ = 0 ou β₂ = 0). É muito comum a elipse do erro encostar justamente numa dessas quinas — e aí aquele coeficiente vira exatamente zero, "eliminando" a variável do modelo.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RIDGE VS LASSO VS OLS ============ -->
+  <section class="section" id="s-comparacao">
+    <div class="section-eyebrow">Colocando Lado a Lado</div>
+    <div class="section-title">🆚 Ridge × Lasso × Regressão comum</div>
+    <p class="section-desc">As três técnicas resolvem o mesmo problema de bases parecidas — a diferença está toda na penalidade que cada uma adiciona à conta.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📏 Regressão comum (OLS)</div>
+        <div class="card-formula">Σ(yᵢ−ŷᵢ)²</div>
+        <div class="card-text">Sem penalidade. Fácil de decorar demais os dados quando há muitas variáveis ou pouca gente na amostra.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🪢 Ridge (penalidade L2)</div>
+        <div class="card-formula">Σ(yᵢ−ŷᵢ)² + λΣβⱼ²</div>
+        <div class="card-text">Encolhe todos os coeficientes suavemente para perto de zero. Ótima quando há multicolinearidade. Não faz seleção de variáveis.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💎 Lasso (penalidade L1)</div>
+        <div class="card-formula">Σ(yᵢ−ŷᵢ)² + λΣ|βⱼ|</div>
+        <div class="card-text">Pode zerar coeficientes por completo — funciona como uma <strong>seleção automática de variáveis</strong>, deixando o modelo mais simples de interpretar.</div>
+      </div>
+    </div>
+
+    <div class="ok-box">
+      <div class="highlight-title">E existe um meio-termo</div>
+      <p>O <strong>Elastic Net</strong> combina as duas penalidades (L1 + L2) numa só fórmula, tentando aproveitar o melhor dos dois mundos: alguma seleção de variáveis da Lasso, com a estabilidade da Ridge diante de variáveis correlacionadas. Não é assunto de hoje, mas vale saber que ele existe.</p>
+    </div>
+  </section>
+
+  <!-- ============ ESCOLHENDO LAMBDA ============ -->
+  <section class="section" id="s-escolhalambda">
+    <div class="section-eyebrow">A Pergunta De Um Milhão de Reais</div>
+    <div class="section-title">🔍 Como escolher o melhor λ</div>
+    <p class="section-desc">
+      λ não é algo que a fórmula da Ridge calcula sozinha — é você (ou um algoritmo de busca) que escolhe. A forma padrão de escolher é separar uma fatia dos dados como <strong>validação</strong> (dados que o modelo não usa para treinar), testar vários valores de λ, e escolher aquele que erra menos nessa fatia separada. Repetir esse processo em várias fatias diferentes se chama <strong>validação cruzada (cross-validation)</strong>.
+    </p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">O clássico "gráfico em U": erro de treino sempre sobe com λ, mas o erro de validação forma um vale</div>
+      <div class="canvas-wrap"><canvas id="cvCanvas" height="280"></canvas></div>
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-swatch" style="background:#36a2ef;border-top:2px dashed #36a2ef;background:transparent;height:0;"></span> Erro no treino</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:#f86b63;"></span> Erro na validação (dados não usados no treino)</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#06b6d4;"></span> λ ótimo (menor erro de validação)</div>
+      </div>
+      <div style="display:flex;justify-content:center;margin-top:12px;">
+        <button class="player-btn" onclick="regenCV()">🎲 Sortear novos dados</button>
+      </div>
+      <div class="drag-hint">Com poucos dados de validação, o vale às vezes fica mais torto de um sorteio para outro — isso também é realista: validação com poucos dados é, ela mesma, uma estimativa ruidosa.</div>
+      <div class="result-display">
+        <div><span class="rl">λ ótimo encontrado</span><span class="rv" id="cvBestLam">—</span></div>
+        <div><span class="rl">Erro de validação nesse λ</span><span class="rv" id="cvBestErr">—</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">⬅️ λ pequeno demais (esquerda do vale)</div>
+        <div class="card-text">O treino tem erro baixo, mas a validação sofre — sinal de que o modelo ainda está decorando o treino (overfitting).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">➡️ λ grande demais (direita do vale)</div>
+        <div class="card-text">Tanto treino quanto validação têm erro alto — o freio apertou demais e o modelo ficou simples demais para captar o padrão (underfitting).</div>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Na prática, ferramentas como <code style="color:var(--accent-green);">RidgeCV</code> (do scikit-learn) automatizam exatamente essa busca: testam uma lista de λ's usando validação cruzada e devolvem o melhor automaticamente.</p>
+    </div>
+  </section>
+
+  <!-- ============ TABELA-RESUMO ============ -->
+  <section class="section" id="s-tabela-formulas">
+    <div class="section-eyebrow">A Chuva de Fórmulas, Organizada</div>
+    <div class="section-title">📋 Tabela-resumo: as fórmulas desta aula</div>
+    <p class="section-desc">Todas as peças reunidas num só lugar.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🧮 Função de custo da Ridge</div>
+        <div class="card-formula">J(β) = Σ(yᵢ−ŷᵢ)² + λΣβⱼ²</div>
+        <div class="card-text">O que a Ridge minimiza: erro de ajuste + penalidade sobre o tamanho dos coeficientes (exceto o intercepto).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📐 Solução em forma matricial</div>
+        <div class="card-formula">β̂ = (XᵀX + λI)⁻¹Xᵀy</div>
+        <div class="card-text">A versão da fórmula normal da OLS, só que somando λ à diagonal antes de inverter — o que também resolve problemas de matriz quase singular (multicolinearidade).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">0️⃣ Caso especial: λ = 0</div>
+        <div class="card-formula">β̂ = (XᵀX)⁻¹Xᵀy</div>
+        <div class="card-text">Sem penalidade, a fórmula da Ridge vira exatamente a fórmula da regressão linear comum (OLS).</div>
+      </div>
+      <div class="card">
+        <div class="card-title">💎 Penalidade da Lasso (L1)</div>
+        <div class="card-formula">λΣ|βⱼ|</div>
+        <div class="card-text">Usa valor absoluto em vez de quadrado — é essa diferença geométrica (losango vs círculo) que permite zerar coeficientes.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Padronização (z-score)</div>
+        <div class="card-formula">z = (x − x̄) / s</div>
+        <div class="card-text">Transforma cada variável para média 0 e desvio-padrão 1 — passo obrigatório antes de aplicar a penalidade Ridge.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔍 Erro de validação</div>
+        <div class="card-formula">MSE = (1/n)Σ(yᵢ−ŷᵢ)²</div>
+        <div class="card-text">O erro quadrático médio calculado em dados de validação (não usados no treino) — a régua usada para escolher o melhor λ.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROBLEMAS DO DIA A DIA ============ -->
+  <section class="section" id="s-problemas">
+    <div class="section-eyebrow">Colocando a Mão na Massa</div>
+    <div class="section-title">🧮 Resolvendo problemas do dia a dia</div>
+    <p class="section-desc">Clique em cada problema para revelar a solução passo a passo.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="problemList"></div>
+  </section>
+
+  <!-- ============ BOAS PRÁTICAS ============ -->
+  <section class="section" id="s-dicas">
+    <div class="section-eyebrow">Antes de Sair Aplicando a Fórmula</div>
+    <div class="section-title">✅ Boas práticas: usando a Ridge com responsabilidade</div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">1️⃣ Sempre padronize antes</div>
+        <div class="card-text">Sem padronização, a penalidade pune as variáveis de forma injusta, baseada na escala e não na real importância de cada uma.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">2️⃣ Escolha λ com validação, não no achismo</div>
+        <div class="card-text">Use validação cruzada (ou <code>RidgeCV</code>) para testar vários λ's e escolher o que generaliza melhor — nunca "no olho".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">3️⃣ Não penalize o intercepto</div>
+        <div class="card-text">β₀ representa só "onde o modelo começa" — não tem relação com overfitting, então deve ficar fora da penalidade.</div>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #1</div>
+      <p>Achar que a Ridge faz seleção de variáveis, como a Lasso faz. A Ridge encolhe todos os coeficientes, mas raramente zera algum — se seu objetivo é simplificar o modelo removendo variáveis, considere a Lasso.</p>
+    </div>
+    <div class="warn-box">
+      <div class="highlight-title">Erro comum #2</div>
+      <p>Aplicar Ridge direto em variáveis com escalas bem diferentes, sem padronizar primeiro. Isso distorce qual variável "sente" mais a penalidade, sem relação com a importância real dela.</p>
+    </div>
+    <div class="ok-box">
+      <div class="highlight-title">Dica de ouro</div>
+      <p>Se seu modelo vai bem demais no treino e mal em dados novos, isso é overfitting — e Ridge (com o λ certo) costuma ser uma das formas mais simples e eficazes de resolver, especialmente quando há muitas variáveis correlacionadas entre si.</p>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Fixação</div>
+    <div class="section-title">🧠 Recapitulando: verdadeiro ou falso?</div>
+    <p class="section-desc">Clique em cada afirmação para revelar a resposta.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="quizList"></div>
+  </section>
+
+  <footer>
+    <span>Profissão Dados — Regressão Ridge</span>
+    <span id="footerYear"></span>
+  </footer>
+</div>
+
+<script>
+/* ===================== helpers gerais ===================== */
+function fmt(n){ return n.toLocaleString('pt-BR'); }
+function fmt2(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmt3(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:3,maximumFractionDigits:3}); }
+function mean(arr){ return arr.reduce((s,v)=>s+v,0)/arr.length; }
+function stdev(arr){ const m=mean(arr); const v=mean(arr.map(x=>(x-m)*(x-m))); return Math.sqrt(v)||1; }
+function clamp(v,lo,hi){ return Math.min(hi,Math.max(lo,v)); }
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ seed>>>15, 1 | seed);
+    t = (t + Math.imul(t ^ t>>>7, 61 | t)) ^ t;
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
+}
+function scaleMaker(xMin,xMax,yMin,yMax,w,h,pad){
+  const ix = pad.l, iw = w-pad.l-pad.r;
+  const iy = pad.t, ih = h-pad.t-pad.b;
+  return {
+    x: v => ix + (v-xMin)/(xMax-xMin) * iw,
+    y: v => iy + ih - (v-yMin)/(yMax-yMin) * ih,
+    xInv: px => xMin + (px-ix)/iw * (xMax-xMin),
+    yInv: py => yMin + (iy+ih-py)/ih * (yMax-yMin),
+    pad, ix, iy, iw, ih
+  };
+}
+function drawGrid(ctx,w,h,sc,xMin,xMax,yMin,yMax,xStep,yStep,xLabel,yLabel){
+  ctx.clearRect(0,0,w,h);
+  ctx.strokeStyle = 'rgba(83,89,102,.25)';
+  ctx.fillStyle = '#98a2b3';
+  ctx.font = '10px Roboto Mono';
+  ctx.lineWidth = 1;
+  for(let v=Math.ceil(xMin/xStep)*xStep; v<=xMax+1e-9; v+=xStep){
+    const px = sc.x(v);
+    ctx.beginPath(); ctx.moveTo(px, sc.iy); ctx.lineTo(px, sc.iy+sc.ih); ctx.stroke();
+    ctx.textAlign='center'; ctx.fillText(fmt2(v).replace(/,00$/,''), px, sc.iy+sc.ih+14);
+  }
+  for(let v=Math.ceil(yMin/yStep)*yStep; v<=yMax+1e-9; v+=yStep){
+    const py = sc.y(v);
+    ctx.beginPath(); ctx.moveTo(sc.ix, py); ctx.lineTo(sc.ix+sc.iw, py); ctx.stroke();
+    ctx.textAlign='right'; ctx.fillText(fmt2(v).replace(/,00$/,''), sc.ix-6, py+3);
+  }
+  ctx.strokeStyle = 'rgba(223,229,239,.4)';
+  ctx.beginPath(); ctx.moveTo(sc.ix, sc.iy); ctx.lineTo(sc.ix, sc.iy+sc.ih); ctx.lineTo(sc.ix+sc.iw, sc.iy+sc.ih); ctx.stroke();
+  if(xLabel){ ctx.textAlign='center'; ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.fillText(xLabel, sc.ix+sc.iw/2, h-2); }
+  if(yLabel){ ctx.save(); ctx.translate(11,sc.iy+sc.ih/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center'; ctx.fillStyle='#dfe5ef'; ctx.font='11px Inter'; ctx.fillText(yLabel,0,0); ctx.restore(); }
+}
+function clipToPlot(ctx,sc){
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(sc.ix, sc.iy, sc.iw, sc.ih);
+  ctx.clip();
+}
+function drawCurve(ctx,sc,predictFn,xMin,xMax,color,dashed,yClampLo,yClampHi){
+  clipToPlot(ctx,sc);
+  if(dashed) ctx.setLineDash([6,5]);
+  ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  const steps = 90;
+  for(let i=0;i<=steps;i++){
+    const x = xMin + (xMax-xMin)*i/steps;
+    let y = predictFn(x);
+    y = clamp(y, yClampLo, yClampHi);
+    const px = sc.x(x), py = sc.y(y);
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+function drawPts(ctx,sc,points,color,r,activeIdx){
+  points.forEach((p,i)=>{
+    ctx.beginPath();
+    ctx.arc(sc.x(p.x), sc.y(p.y), i===activeIdx? r+2 : r, 0, Math.PI*2);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = i===activeIdx? 1 : 0.92;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+}
+window.addEventListener('resize', ()=>{ renderAll(); });
+document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+/* ===================== álgebra linear (para a Ridge de verdade) ===================== */
+function solveLinear(Ain, bIn){
+  const n = Ain.length;
+  const M = Ain.map((row,i)=>[...row, bIn[i]]);
+  for(let col=0; col<n; col++){
+    let piv = col;
+    for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>Math.abs(M[piv][col])) piv=r;
+    const tmp = M[col]; M[col]=M[piv]; M[piv]=tmp;
+    const pv = Math.abs(M[col][col])<1e-12 ? 1e-9 : M[col][col];
+    for(let c=col;c<=n;c++) M[col][c] /= pv;
+    for(let r=0;r<n;r++){
+      if(r===col) continue;
+      const f = M[r][col];
+      if(f===0) continue;
+      for(let c=col;c<=n;c++) M[r][c] -= f*M[col][c];
+    }
+  }
+  return M.map(row=>row[n]);
+}
+function ZtZ(Z){
+  const n=Z.length, p=Z[0].length;
+  const R = Array.from({length:p},()=>Array(p).fill(0));
+  for(let i=0;i<p;i++) for(let j=0;j<p;j++){
+    let s=0; for(let k=0;k<n;k++) s+=Z[k][i]*Z[k][j];
+    R[i][j]=s;
+  }
+  return R;
+}
+function Zty(Z,y){
+  const n=Z.length, p=Z[0].length;
+  const R = Array(p).fill(0);
+  for(let i=0;i<p;i++){ let s=0; for(let k=0;k<n;k++) s+=Z[k][i]*y[k]; R[i]=s; }
+  return R;
+}
+function ridgeSolveZ(Z, yc, lambda){
+  const p = Z[0].length;
+  const A = ZtZ(Z);
+  for(let i=0;i<p;i++) A[i][i]+=lambda;
+  const bvec = Zty(Z,yc);
+  return solveLinear(A, bvec);
+}
+function buildPolyZ(xs, degree, colStats){
+  const raw = xs.map(x=>{
+    const row=[];
+    for(let d=1; d<=degree; d++) row.push(Math.pow(x,d));
+    return row;
+  });
+  let means, stds;
+  if(colStats){ means=colStats.means; stds=colStats.stds; }
+  else {
+    means = Array(degree).fill(0); stds = Array(degree).fill(1);
+    for(let j=0;j<degree;j++){
+      const col = raw.map(r=>r[j]);
+      means[j]=mean(col);
+      stds[j]=stdev(col) || 1;
+    }
+  }
+  const Z = raw.map(row=> row.map((v,j)=> (v-means[j])/stds[j]));
+  return {Z, means, stds};
+}
+function ridgeFitPoly(points, degree, lambda){
+  const xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+  const ybar = mean(ys);
+  const yc = ys.map(v=>v-ybar);
+  const {Z, means, stds} = buildPolyZ(xs, degree);
+  const beta = ridgeSolveZ(Z, yc, Math.max(lambda,1e-4));
+  function predict(x){
+    let yhat = ybar;
+    for(let d=1; d<=degree; d++){
+      const raw = Math.pow(x,d);
+      const z = (raw - means[d-1]) / stds[d-1];
+      yhat += beta[d-1]*z;
+    }
+    return yhat;
+  }
+  return {beta, ybar, means, stds, predict, degree};
+}
+function mseOf(points, predictFn){ return mean(points.map(p=> (p.y-predictFn(p.x))**2)); }
+function sseOf(points, predictFn){ return points.reduce((s,p)=> s+(p.y-predictFn(p.x))**2, 0); }
+function softThresh(z,t){ return Math.sign(z)*Math.max(Math.abs(z)-t,0); }
+
+/* ===================== coef-bars helper ===================== */
+function renderCoefBars(containerId, labels, values, maxScale, color){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = labels.map((lab,i)=>{
+    const v = values[i];
+    const frac = clamp(Math.abs(v)/maxScale, 0, 1) * 50;
+    const left = v>=0 ? 50 : 50-frac;
+    const width = frac;
+    const col = v>=0 ? color : 'var(--accent-red)';
+    return `<div class="coef-bar-row">
+      <div class="coef-bar-label">${lab}</div>
+      <div class="coef-bar-track"><div class="coef-bar-mid"></div><div class="coef-bar-fill" style="left:${left}%;width:${width}%;background:${col};"></div></div>
+      <div class="coef-bar-val">${v>=0?'+':''}${fmt2(v)}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ===================== TOC pipeline (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-oque', icon:'🎯', label:'O que é'},
+  {id:'s-overfitting', icon:'🌊', label:'Overfitting'},
+  {id:'s-penalidade', icon:'⚖️', label:'A Penalidade'},
+  {id:'s-formula', icon:'🧮', label:'A Fórmula'},
+  {id:'s-lambda', icon:'🎚️', label:'O Papel de λ'},
+  {id:'s-trace', icon:'📉', label:'Ridge Trace'},
+  {id:'s-viesvariancia', icon:'⚖️', label:'Viés × Variância'},
+  {id:'s-padronizacao', icon:'📐', label:'Padronização'},
+  {id:'s-geometria', icon:'⭕', label:'Geometria'},
+  {id:'s-comparacao', icon:'🆚', label:'Ridge × Lasso'},
+  {id:'s-escolhalambda', icon:'🔍', label:'Escolhendo λ'},
+  {id:'s-tabela-formulas', icon:'📋', label:'Tabela-resumo'},
+  {id:'s-problemas', icon:'🧮', label:'Problemas'},
+  {id:'s-dicas', icon:'✅', label:'Boas Práticas'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== HERO CANVAS (estático) ===================== */
+const heroRng = mulberry32(5);
+const heroTrue = x => 4 + 1.3*Math.sin(x*0.85);
+const heroPoints = Array.from({length:13},(_,i)=>{
+  const x = i*(10/12);
+  return {x, y: heroTrue(x) + (heroRng()*2-1)*0.55};
+});
+function drawHero(){
+  const cv = document.getElementById('heroCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(-0.3,10.3,0,8,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,0,8,2,2,'x','y');
+  const overfit = ridgeFitPoly(heroPoints, 7, 0.0005);
+  const ridge = ridgeFitPoly(heroPoints, 7, 12);
+  drawCurve(ctx,sc,overfit.predict,-0.3,10.3,'#f86b63',false,-2,10);
+  drawCurve(ctx,sc,ridge.predict,-0.3,10.3,'#06b6d4',false,-2,10);
+  drawPts(ctx,sc,heroPoints,'#36a2ef',5,-1);
+}
+drawHero();
+
+/* ===================== SEÇÃO: OVERFITTING ===================== */
+const ofTrainRng = mulberry32(25);
+const ofTestRng = mulberry32(580);
+const ofTrue = x => 3.2 + 1.1*Math.sin(x*0.8);
+const ofTrainPts = Array.from({length:9},()=>{
+  const x = ofTrainRng()*10;
+  return {x, y: ofTrue(x) + (ofTrainRng()*2-1)*0.6};
+});
+const ofTestPts = Array.from({length:10},()=>{
+  const x = ofTestRng()*10;
+  return {x, y: ofTrue(x) + (ofTestRng()*2-1)*0.6};
+});
+let ofRidgeOn = false;
+function setOverfitRidge(on){
+  ofRidgeOn = on;
+  document.getElementById('ofBtn-off').classList.toggle('active', !on);
+  document.getElementById('ofBtn-on').classList.toggle('active', on);
+  renderOverfit();
+}
+function renderOverfit(){
+  const deg = +document.getElementById('ofDeg').value;
+  document.getElementById('ofDegVal').textContent = deg;
+  const lambda = ofRidgeOn ? 10 : 0.0005;
+  const fit = ridgeFitPoly(ofTrainPts, deg, lambda);
+  const cv = document.getElementById('ofCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(-0.5,10.5,-1,8,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,-1,8,2,2,'x','y');
+  drawCurve(ctx,sc,ofTrue,-0.5,10.5,'#7dded8',true,-3,11);
+  drawCurve(ctx,sc,fit.predict,-0.5,10.5,'#06b6d4',false,-3,11);
+  drawPts(ctx,sc,ofTrainPts,'#36a2ef',5,-1);
+  drawPts(ctx,sc,ofTestPts,'#e8b339',5,-1);
+  const trainMSE = mseOf(ofTrainPts, fit.predict);
+  const testMSE = mseOf(ofTestPts, fit.predict);
+  document.getElementById('ofTrainMSE').textContent = fmt2(trainMSE);
+  document.getElementById('ofTestMSE').textContent = fmt2(Math.min(testMSE,999));
+  document.getElementById('ofGap').textContent = fmt2(Math.min(testMSE,999)-trainMSE);
+}
+
+/* ===================== SEÇÃO: PENALIDADE (bars ilustrativas) ===================== */
+function renderPenaltyBars(){
+  const labels = ['β₁','β₂','β₃','β₄','β₅'];
+  const off = [4.8,-6.2,7.1,-3.4,5.6];
+  const on  = [0.9,-1.3,1.1,-0.5,0.8];
+  renderCoefBars('penaltyBarsOff', labels, off, 8, 'var(--accent-blue)');
+  renderCoefBars('penaltyBarsOn', labels, on, 8, 'var(--accent)');
+}
+
+/* ===================== SEÇÃO: O PAPEL DE λ ===================== */
+const lamRng = mulberry32(21);
+const lamTrue = x => 4 + 1.4*Math.sin(x*0.75) + 0.12*x;
+const lamPoints = Array.from({length:14},(_,i)=>{
+  const x = i*(10/13);
+  return {x, y: lamTrue(x) + (lamRng()*2-1)*0.5};
+});
+function renderLambdaDemo(){
+  const lambda = +document.getElementById('lamSlider').value;
+  document.getElementById('lamVal').textContent = fmt2(lambda);
+  const fit = ridgeFitPoly(lamPoints, 6, lambda);
+  const cv = document.getElementById('lamCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(-0.3,10.3,0,9,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,0,9,2,2,'x','y');
+  drawCurve(ctx,sc,fit.predict,-0.3,10.3,'#06b6d4',false,-2,11);
+  drawPts(ctx,sc,lamPoints,'#36a2ef',5,-1);
+  renderCoefBars('lamBars', ['β₁','β₂','β₃','β₄','β₅','β₆'], fit.beta, 6, 'var(--accent)');
+  const sse = sseOf(lamPoints, fit.predict);
+  const penalty = lambda * fit.beta.reduce((s,b)=>s+b*b,0);
+  document.getElementById('lamSSE').textContent = fmt2(sse);
+  document.getElementById('lamPenalty').textContent = fmt2(penalty);
+  document.getElementById('lamTotal').textContent = fmt2(sse+penalty);
+}
+
+/* ===================== SEÇÃO: RIDGE TRACE ===================== */
+const traceRng = mulberry32(33);
+const traceN = 26;
+const traceX1 = Array.from({length:traceN},()=>traceRng()*2-1);
+const traceX2 = traceX1.map(v=> 0.88*v + 0.25*(traceRng()*2-1));
+const traceX3 = Array.from({length:traceN},()=>traceRng()*2-1);
+const traceX4 = Array.from({length:traceN},()=>traceRng()*2-1);
+const traceY = traceX1.map((v,i)=> 5*v -4.5*traceX2[i] +2*traceX3[i] -1*traceX4[i] + (traceRng()*2-1)*1.1);
+function stdCol(arr){ const m=mean(arr), s=stdev(arr)||1; return arr.map(v=>(v-m)/s); }
+const traceZ = (()=>{
+  const c1=stdCol(traceX1), c2=stdCol(traceX2), c3=stdCol(traceX3), c4=stdCol(traceX4);
+  return c1.map((_,i)=>[c1[i],c2[i],c3[i],c4[i]]);
+})();
+const traceYc = (()=>{ const m=mean(traceY); return traceY.map(v=>v-m); })();
+const traceLambdas = Array.from({length:61},(_,i)=>i);
+const tracePath = traceLambdas.map(l => ridgeSolveZ(traceZ, traceYc, Math.max(l,1e-4)));
+function renderTrace(){
+  const lam = +document.getElementById('traceLam').value;
+  document.getElementById('traceLamVal').textContent = fmt2(lam);
+  const cv = document.getElementById('traceCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(0,60,-2.5,3,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,60,-2.5,3,10,1,'λ','Valor do coeficiente β');
+  const colors = ['#36a2ef','#f86b63','#7dded8','#e8b339'];
+  for(let j=0;j<4;j++){
+    ctx.strokeStyle = colors[j]; ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    tracePath.forEach((betas,i)=>{
+      const px = sc.x(traceLambdas[i]), py = sc.y(betas[j]);
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+  }
+  const currentBetas = ridgeSolveZ(traceZ, traceYc, Math.max(lam,1e-4));
+  ctx.save();
+  ctx.strokeStyle = 'rgba(223,229,239,.55)'; ctx.setLineDash([4,4]); ctx.lineWidth=1.5;
+  const px0 = sc.x(lam);
+  ctx.beginPath(); ctx.moveTo(px0, sc.iy); ctx.lineTo(px0, sc.iy+sc.ih); ctx.stroke();
+  ctx.restore();
+  currentBetas.forEach((b,j)=>{
+    ctx.beginPath(); ctx.arc(sc.x(lam), sc.y(b), 4.5, 0, Math.PI*2);
+    ctx.fillStyle = colors[j]; ctx.fill();
+    ctx.strokeStyle='#111216'; ctx.lineWidth=1.2; ctx.stroke();
+  });
+}
+
+/* ===================== SEÇÃO: VIÉS × VARIÂNCIA ===================== */
+const bvTrue = x => 3.5 + 1.3*Math.sin(x*0.8);
+const bvXRng = mulberry32(2);
+const bvX = Array.from({length:9},()=> bvXRng()*10);
+const bvResamples = Array.from({length:5},(_,k)=>{
+  const rng = mulberry32(300+k*17);
+  return bvX.map(x=>({x, y: bvTrue(x) + (rng()*2-1)*0.5}));
+});
+const bvRegimes = {
+  low:  {lambda:0.001, explain:'λ quase zero: cada uma das 5 curvas se contorce de um jeito diferente, especialmente perto das bordas — perseguindo o ruído específico daquela amostra. Isso é alta variância — o retrato do overfitting.'},
+  mid:  {lambda:5,     explain:'λ equilibrado: as 5 curvas ficam bem parecidas entre si E acompanham razoavelmente o formato da função real (tracejada). Esse é o tipo de ponto que queremos encontrar.'},
+  high: {lambda:60,    explain:'λ bem alto: as 5 curvas ficam praticamente idênticas entre si — baixíssima variância — mas achataram e perderam a curva real, ignorando o pico e o vale da função verdadeira. Isso é alto viés, o retrato do underfitting.'}
+};
+let bvCurrent = 'low';
+function setBiasVar(k){
+  bvCurrent = k;
+  ['low','mid','high'].forEach(key=>document.getElementById('bvBtn-'+key).classList.toggle('active', key===k));
+  renderBiasVar();
+}
+function renderBiasVar(){
+  const regime = bvRegimes[bvCurrent];
+  document.getElementById('bvExplain').textContent = regime.explain;
+  const cv = document.getElementById('bvCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const sc = scaleMaker(-0.3,10.3,0,8,w,h,{l:30,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,10,0,8,2,2,'x','y');
+  drawCurve(ctx,sc,bvTrue,-0.3,10.3,'#e8b339',true,-2,10);
+  bvResamples.forEach(pts=>{
+    const fit = ridgeFitPoly(pts, 9, regime.lambda);
+    ctx.save(); ctx.globalAlpha=0.55;
+    drawCurve(ctx,sc,fit.predict,-0.3,10.3,'#36a2ef',false,-2,10);
+    ctx.restore();
+  });
+}
+
+/* ===================== SEÇÃO: PADRONIZAÇÃO (bars ilustrativas) ===================== */
+function renderStdBars(){
+  const labelsOff = ['β(área)','β(quartos)'];
+  const off = [0.9, 8.4];
+  const labelsOn = ['β(área)','β(quartos)'];
+  const on = [3.1, 2.6];
+  renderCoefBars('stdBarsOff', labelsOff, off, 10, 'var(--accent-red)');
+  renderCoefBars('stdBarsOn', labelsOn, on, 10, 'var(--accent-green)');
+}
+
+/* ===================== SEÇÃO: GEOMETRIA (círculo × losango) ===================== */
+const geoSigma = [[3,2.4],[2.4,3]];
+const geoB0 = [2.6,1.9];
+function eig2(a,b,d){
+  const tr=a+d, det=a*d-b*b;
+  const disc = Math.sqrt(Math.max(0,(a-d)*(a-d)+4*b*b));
+  const l1 = (tr+disc)/2, l2=(tr-disc)/2;
+  const angle = 0.5*Math.atan2(2*b, a-d);
+  return {l1,l2,angle};
+}
+function ridgeSolve2(lambda){
+  const A = [[geoSigma[0][0]+lambda, geoSigma[0][1]],[geoSigma[1][0], geoSigma[1][1]+lambda]];
+  const rhs = [geoSigma[0][0]*geoB0[0]+geoSigma[0][1]*geoB0[1], geoSigma[1][0]*geoB0[0]+geoSigma[1][1]*geoB0[1]];
+  return solveLinear(A, rhs);
+}
+function lassoSolve2(lambda){
+  let b1=geoB0[0], b2=geoB0[1];
+  const s11=geoSigma[0][0], s22=geoSigma[1][1], s12=geoSigma[0][1];
+  for(let it=0; it<80; it++){
+    const r1 = geoB0[0] - (s12/s11)*(b2-geoB0[1]);
+    b1 = softThresh(r1, lambda/(2*s11));
+    const r2 = geoB0[1] - (s12/s22)*(b1-geoB0[0]);
+    b2 = softThresh(r2, lambda/(2*s22));
+  }
+  return [b1,b2];
+}
+function renderGeo(){
+  const lambda = +document.getElementById('geoLam').value;
+  document.getElementById('geoLamVal').textContent = fmt2(lambda);
+  const ridgeB = ridgeSolve2(lambda);
+  const lassoB = lassoSolve2(lambda);
+  const cv = document.getElementById('geoCanvas');
+  const ctx = cv.getContext('2d');
+  const pad = {l:34,r:14,t:14,b:26};
+  const w = cv.width = cv.clientWidth;
+  const iw = w - pad.l - pad.r;
+  cv.height = iw + pad.t + pad.b; // force a SQUARE inner plot so the "circle" actually looks like a circle
+  const h = cv.height;
+  const xMin=-1.5, xMax=5.5, span=xMax-xMin, yMid=1.75;
+  const yMin=yMid-span/2, yMax=yMid+span/2;
+  const sc = scaleMaker(xMin,xMax,yMin,yMax,w,h,pad);
+  drawGrid(ctx,w,h,sc,-1,5,-1,5,1,1,'β₁','β₂');
+  ctx.save(); ctx.beginPath(); ctx.rect(sc.ix,sc.iy,sc.iw,sc.ih); ctx.clip();
+
+  const {l1,l2,angle} = eig2(geoSigma[0][0],geoSigma[0][1],geoSigma[1][1]);
+  const cosA=Math.cos(angle), sinA=Math.sin(angle);
+  ctx.strokeStyle = 'rgba(83,89,102,.55)'; ctx.lineWidth = 1.2;
+  [0.5,1.4,2.8].forEach(c=>{
+    const a1 = Math.sqrt(c/l1), a2 = Math.sqrt(c/l2);
+    ctx.beginPath();
+    for(let t=0;t<=64;t++){
+      const th = t/64*Math.PI*2;
+      const u1 = a1*Math.cos(th), u2=a2*Math.sin(th);
+      const bx = geoB0[0] + u1*cosA - u2*sinA;
+      const by = geoB0[1] + u1*sinA + u2*cosA;
+      const px = sc.x(bx), py = sc.y(by);
+      if(t===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath(); ctx.stroke();
+  });
+
+  const rRidge = Math.hypot(ridgeB[0], ridgeB[1]);
+  ctx.strokeStyle = '#06b6d4'; ctx.setLineDash([5,4]); ctx.lineWidth=1.8;
+  ctx.beginPath();
+  for(let t=0;t<=64;t++){
+    const th = t/64*Math.PI*2;
+    const px = sc.x(rRidge*Math.cos(th)), py = sc.y(rRidge*Math.sin(th));
+    if(t===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath(); ctx.stroke(); ctx.setLineDash([]);
+
+  const rLasso = Math.abs(lassoB[0])+Math.abs(lassoB[1]);
+  ctx.strokeStyle = '#c49aff'; ctx.setLineDash([5,4]); ctx.lineWidth=1.8;
+  ctx.beginPath();
+  ctx.moveTo(sc.x(rLasso), sc.y(0));
+  ctx.lineTo(sc.x(0), sc.y(rLasso));
+  ctx.lineTo(sc.x(-rLasso), sc.y(0));
+  ctx.lineTo(sc.x(0), sc.y(-rLasso));
+  ctx.closePath(); ctx.stroke(); ctx.setLineDash([]);
+
+  const ridgePathLams = Array.from({length:31},(_,i)=>i);
+  ctx.strokeStyle = 'rgba(6,182,212,.8)'; ctx.setLineDash([2,3]); ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ridgePathLams.forEach((l,i)=>{ const b=ridgeSolve2(l); const px=sc.x(b[0]),py=sc.y(b[1]); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); });
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.restore();
+
+  ctx.beginPath(); ctx.arc(sc.x(0), sc.y(0), 3.5, 0, Math.PI*2); ctx.fillStyle='#98a2b3'; ctx.fill();
+  ctx.beginPath(); ctx.arc(sc.x(geoB0[0]), sc.y(geoB0[1]), 6, 0, Math.PI*2); ctx.fillStyle='#e8b339'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(sc.x(ridgeB[0]), sc.y(ridgeB[1]), 6.5, 0, Math.PI*2); ctx.fillStyle='#06b6d4'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(sc.x(lassoB[0]), sc.y(lassoB[1]), 6.5, 0, Math.PI*2); ctx.fillStyle='#c49aff'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+
+  document.getElementById('geoRidgeVal').textContent = `${fmt2(ridgeB[0])}, ${fmt2(ridgeB[1])}`;
+  document.getElementById('geoLassoVal').textContent = `${fmt2(lassoB[0])}, ${fmt2(lassoB[1])}`;
+  const zeroed = Math.abs(lassoB[0])<0.03 || Math.abs(lassoB[1])<0.03;
+  document.getElementById('geoSparse').textContent = zeroed ? 'Sim! 🎯' : 'Ainda não';
+}
+
+/* ===================== SEÇÃO: ESCOLHENDO λ (validação cruzada) ===================== */
+let cvTrainPts=[], cvValPts=[];
+const cvTrue = x => 3.8 + 1.35*Math.sin(x*0.78);
+const CV_DEGREE = 9, CV_NTRAIN = 9, CV_NVAL = 10, CV_NOISE = 1.0;
+function genCVData(seed){
+  const rngT = mulberry32(seed);
+  const rngV = mulberry32(seed+9999);
+  cvTrainPts = Array.from({length:CV_NTRAIN},()=>{ const x=rngT()*10; return {x, y: cvTrue(x)+(rngT()*2-1)*CV_NOISE}; });
+  cvValPts = Array.from({length:CV_NVAL},()=>{ const x=rngV()*10; return {x, y: cvTrue(x)+(rngV()*2-1)*CV_NOISE}; });
+}
+function regenCV(){
+  genCVData(Math.floor(Math.random()*100000));
+  renderCV();
+}
+function renderCV(){
+  const lambdas = [];
+  for(let l=0; l<=50; l+=0.5) lambdas.push(l);
+  const trainErr = [], valErr = [];
+  let bestLam=0, bestErr=Infinity;
+  lambdas.forEach(l=>{
+    const fit = ridgeFitPoly(cvTrainPts, CV_DEGREE, l);
+    const te = mseOf(cvTrainPts, fit.predict);
+    const ve = mseOf(cvValPts, fit.predict);
+    trainErr.push(te); valErr.push(Math.min(ve,20));
+    if(ve<bestErr){ bestErr=ve; bestLam=l; }
+  });
+  const cv = document.getElementById('cvCanvas');
+  const ctx = cv.getContext('2d');
+  const w = cv.width = cv.clientWidth, h = cv.height;
+  const yMax = Math.max(...trainErr, ...valErr, 2)*1.1;
+  const sc = scaleMaker(0,50,0,yMax,w,h,{l:34,r:14,t:14,b:26});
+  drawGrid(ctx,w,h,sc,0,50,0,yMax,10,yMax/4,'λ','Erro (MSE)');
+  ctx.setLineDash([6,5]); ctx.strokeStyle='#36a2ef'; ctx.lineWidth=2;
+  ctx.beginPath();
+  lambdas.forEach((l,i)=>{ const px=sc.x(l), py=sc.y(trainErr[i]); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); });
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle='#f86b63'; ctx.lineWidth=2.4;
+  ctx.beginPath();
+  lambdas.forEach((l,i)=>{ const px=sc.x(l), py=sc.y(valErr[i]); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); });
+  ctx.stroke();
+  const bpx = sc.x(bestLam), bpy = sc.y(Math.min(bestErr,20));
+  ctx.save(); ctx.strokeStyle='rgba(6,182,212,.6)'; ctx.setLineDash([4,4]); ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(bpx, sc.iy); ctx.lineTo(bpx, sc.iy+sc.ih); ctx.stroke(); ctx.restore();
+  ctx.beginPath(); ctx.arc(bpx,bpy,6,0,Math.PI*2); ctx.fillStyle='#06b6d4'; ctx.fill(); ctx.strokeStyle='#111216'; ctx.lineWidth=1.5; ctx.stroke();
+  document.getElementById('cvBestLam').textContent = fmt2(bestLam);
+  document.getElementById('cvBestErr').textContent = fmt2(bestErr);
+}
+
+/* ===================== PROBLEMAS DO DIA A DIA ===================== */
+const problems = [
+  {q:'Um cientista de dados treina uma regressão linear comum com 40 variáveis e apenas 45 observações. O R² no treino ficou em 0.98, mas em dados novos caiu para 0.31. O que provavelmente aconteceu, e o que ele deveria tentar?',
+   a:'Isso é um caso clássico de <strong>overfitting</strong> — poucas observações para tantas variáveis dá espaço de sobra para o modelo "decorar" o treino. Aplicar Ridge (com λ escolhido por validação cruzada) tende a reduzir bastante essa diferença, encolhendo os coeficientes e estabilizando o modelo.'},
+  {q:'Numa Ridge Trace, os coeficientes de "renda" e "escolaridade" começam bem grandes e opostos em λ = 0, mas se estabilizam a partir de λ = 15. O que esse comportamento sugere sobre essas duas variáveis?',
+   a:'Sugere <strong>multicolinearidade</strong> entre renda e escolaridade (elas provavelmente se correlacionam bastante). Em λ = 0, a regressão comum fica instável tentando "dividir o crédito" entre as duas; a Ridge resolve isso ao forçar coeficientes mais moderados e estáveis.'},
+  {q:'Se você aplicar Ridge sem padronizar as variáveis, e uma delas está em uma escala muito menor que as outras (ex.: "número de banheiros" de 0 a 3, vs. "área" de 20 a 500), o que tende a acontecer com o coeficiente dessa variável?',
+   a:'Como a variável de escala pequena precisa de um coeficiente naturalmente <strong>maior</strong> para ter impacto no modelo, a penalidade da Ridge vai puni-la de forma desproporcional — não porque ela seja menos importante, mas só por causa da unidade em que foi medida. Por isso a padronização é obrigatória antes da Ridge.'},
+  {q:'Com λ = 0, qual é a relação entre a fórmula da Ridge (β̂ = (XᵀX + λI)⁻¹Xᵀy) e a fórmula da regressão linear comum?',
+   a:'Elas são <strong>idênticas</strong>. Substituindo λ = 0 na fórmula da Ridge, o termo λI desaparece, sobrando exatamente β̂ = (XᵀX)⁻¹Xᵀy — a fórmula normal da regressão OLS. A Ridge é, literalmente, uma generalização da regressão comum.'},
+  {q:'Um analista quer não só reduzir overfitting, mas também "descobrir" quais de suas 30 variáveis realmente importam, eliminando as inúteis do modelo. Ridge é a ferramenta certa para isso?',
+   a:'Não necessariamente — a Ridge <strong>raramente zera</strong> coeficientes, ela só os encolhe. Se o objetivo é fazer seleção automática de variáveis (zerar as inúteis), a ferramenta certa é a <strong>Lasso</strong> (penalidade L1), que tem exatamente essa propriedade geométrica de "quinas" nos eixos.'},
+];
+function buildProblems(){
+  document.getElementById('problemList').innerHTML = problems.map((p,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${p.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer">${p.a}</div>
+    </div>`).join('');
+}
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Regressão Ridge é uma técnica completamente diferente da regressão linear, com uma fórmula de previsão totalmente nova.', a:false,
+   explain:'A fórmula de previsão continua a mesma (y = β₀ + β₁x₁ + ...). O que muda é apenas COMO os coeficientes β são escolhidos — agora minimizando erro + penalidade, em vez de só o erro.'},
+  {q:'Com λ = 0, a Ridge se torna matematicamente idêntica à regressão linear comum (OLS).', a:true,
+   explain:'Sim — a fórmula β̂ = (XᵀX + λI)⁻¹Xᵀy vira exatamente a fórmula da OLS quando λ = 0, já que o termo λI desaparece.'},
+  {q:'Quanto maior o λ, mais os coeficientes tendem a crescer.', a:false,
+   explain:'É o contrário: quanto maior o λ, mais forte a penalidade, e mais os coeficientes são encolhidos em direção a zero.'},
+  {q:'A Ridge é especialmente útil quando há multicolinearidade (variáveis explicativas muito correlacionadas entre si).', a:true,
+   explain:'Exatamente — a Ridge estabiliza os coeficientes de variáveis correlacionadas, que na regressão comum ficariam instáveis e sensíveis a pequenas mudanças nos dados.'},
+  {q:'A Ridge costuma zerar completamente os coeficientes de variáveis pouco importantes, funcionando como seleção de variáveis.', a:false,
+   explain:'Essa é a Lasso, não a Ridge! A Ridge encolhe todos os coeficientes suavemente, mas raramente os zera por completo — geometricamente, o círculo da penalidade L2 não tem "quinas" nos eixos.'},
+  {q:'É importante padronizar as variáveis antes de aplicar a Ridge.', a:true,
+   explain:'Sim — sem padronização, a penalidade pune as variáveis de forma desigual, baseada na escala em que foram medidas, e não na sua real importância.'},
+  {q:'O melhor jeito de escolher λ é testar um valor "no olho" e seguir com ele.', a:false,
+   explain:'O correto é usar validação cruzada: testar vários valores de λ em dados de validação (não usados no treino) e escolher o que generaliza melhor.'},
+  {q:'Um λ escolhido grande demais pode fazer o modelo ter alto viés (underfitting).', a:true,
+   explain:'Sim — se a penalidade for forte demais, os coeficientes ficam próximos demais de zero e o modelo perde a capacidade de captar o padrão real dos dados.'},
+];
+function buildQuiz(){
+  document.getElementById('quizList').innerHTML = quizItems.map((item,i)=>`
+    <div class="quiz-card" onclick="this.classList.toggle('open')">
+      <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">Clique para ver</span></div>
+      <div class="quiz-answer"><span class="quiz-tag ${item.a?'true':'false'}">${item.a?'VERDADEIRO':'FALSO'}</span>${item.explain}</div>
+    </div>`).join('');
+}
+
+/* ===================== INIT / RENDER ALL ===================== */
+function renderAll(){
+  drawHero();
+  renderOverfit();
+  renderPenaltyBars();
+  renderLambdaDemo();
+  renderTrace();
+  renderBiasVar();
+  renderStdBars();
+  renderGeo();
+  renderCV();
+}
+renderOverfit();
+renderPenaltyBars();
+renderLambdaDemo();
+renderTrace();
+setBiasVar('low');
+renderStdBars();
+renderGeo();
+genCVData(17);
+renderCV();
+buildProblems();
+buildQuiz();
+</script>
+</body>
+</html>
