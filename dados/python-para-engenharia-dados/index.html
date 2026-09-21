@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Profissão Dados — Masterclass de Python para Engenharia de Dados: list comprehension, generators e yield, context managers (with) e decorators, explicados com analogias visuais, diagramas e muitos exemplos.">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profissão Dados — Python para Engenharia de Dados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Profissão Dados — Design System (EUI Dark Theme + Ciano)
+   ============================================================ */
+:root{
+  --bg-main:#111216; --bg-panel:#1d1e24; --bg-elevated:#25262e; --bg-highlight:#343741;
+  --border-color:#343741; --border-strong:#535966;
+  --text-primary:#dfe5ef; --text-secondary:#98a2b3; --text-disabled:#515761;
+  --accent:#06b6d4; --accent-green:#7dded8; --accent-blue:#36a2ef; --accent-purple:#c49aff; --accent-red:#f86b63; --accent-yellow:#e8c468;
+  --syn-code-bg:#16171c; --syn-code-text:#dfe5ef;
+  --syn-keyword:#06b6d4; --syn-string:#7dded8; --syn-comment:#535966; --syn-function:#36a2ef; --syn-number:#c49aff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-main); color:var(--text-primary);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+}
+.page{max-width:1180px;margin:0 auto;padding:30px 40px 60px;display:flex;flex-direction:column;gap:34px;}
+a{color:inherit;}
+code{font-family:'Roboto Mono',Consolas,monospace;}
+
+/* ---- HEADER ---- */
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:20px;flex-wrap:wrap;gap:14px;}
+.brand{display:flex;align-items:center;gap:16px;}
+.logo-pd{display:inline-flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo-pd-word{font-size:14px;font-weight:300;letter-spacing:3px;text-transform:uppercase;white-space:nowrap;line-height:1;color:var(--text-primary);}
+.logo-pd-word.boxed{border:1.5px solid var(--border-strong);color:var(--accent);padding:6px 12px;}
+.brand-slash{display:block;width:1px;height:32px;background:var(--border-strong);flex-shrink:0;}
+.brand-text h1{font-size:14px;letter-spacing:2px;font-weight:800;color:var(--accent);text-transform:uppercase;line-height:1.1;}
+.brand-text span{font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.8px;}
+.header-stats{display:flex;gap:26px;flex-wrap:wrap;}
+.hstat{text-align:center;}
+.hstat-num{font-size:22px;font-weight:800;color:var(--accent);font-family:'Roboto Mono',monospace;}
+.hstat-label{font-size:9.5px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;}
+
+/* ---- TOC ---- */
+.toc-wrap{position:sticky;top:0;z-index:50;background:rgba(17,18,22,.94);backdrop-filter:blur(6px);margin:0 -40px;padding:14px 40px 12px;border-bottom:1px solid var(--border-color);}
+.toc-eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;margin-bottom:10px;}
+.toc-row{display:flex;align-items:center;gap:0;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.toc-row::-webkit-scrollbar{display:none;height:0;}
+.toc-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;}
+.toc-box{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:92px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:9px 10px;text-align:center;text-decoration:none;transition:.15s;}
+.toc-box:hover{border-color:var(--accent-blue);}
+.toc-box-icon{font-size:18px;line-height:1;}
+.toc-box-label{font-size:10.5px;color:var(--text-secondary);font-weight:700;white-space:nowrap;}
+.toc-num{font-size:9px;color:var(--text-disabled);font-family:'Roboto Mono',monospace;letter-spacing:.5px;}
+.toc-step.active .toc-box{border-color:var(--accent);background:rgba(6,182,212,.08);}
+.toc-step.active .toc-box-label{color:var(--accent);}
+.toc-step.active .toc-num{color:var(--accent);}
+.toc-arrow{font-size:16px;color:var(--border-strong);margin:0 6px;flex-shrink:0;padding-bottom:18px;}
+
+/* ---- HERO ---- */
+.hero{background:linear-gradient(135deg,rgba(6,182,212,.10) 0%,rgba(125,222,216,.05) 100%);border:1px solid var(--border-color);border-radius:8px;padding:40px 46px;display:grid;grid-template-columns:1.3fr 1fr;gap:40px;align-items:center;}
+.hero h2{font-size:34px;font-weight:800;line-height:1.15;margin-bottom:16px;}
+.hero h2 em{color:var(--accent);font-style:normal;}
+.hero p{color:var(--text-secondary);font-size:15px;line-height:1.75;}
+.hero-badges{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.badge{font-size:10px;padding:4px 10px;border-radius:20px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;border:1px solid;}
+.badge-cyan{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.badge-green{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.badge-blue{border-color:var(--accent-blue);color:var(--accent-blue);background:rgba(54,162,239,.08);}
+.badge-purple{border-color:var(--accent-purple);color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.badge-yellow{border-color:var(--accent-yellow);color:var(--accent-yellow);background:rgba(232,196,104,.08);}
+.badge-red{border-color:var(--accent-red);color:var(--accent-red);background:rgba(248,107,99,.08);}
+.hero-visual{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.hero-visual .emoji-stack{font-size:44px;display:flex;gap:6px;}
+.hero-visual-cap{font-size:11px;color:var(--text-disabled);text-align:center;line-height:1.5;}
+
+/* ---- SECTIONS ---- */
+.section{scroll-margin-top:70px;display:flex;flex-direction:column;gap:10px;}
+.section-title{font-size:22px;font-weight:800;border-left:3px solid var(--accent);padding-left:14px;letter-spacing:-.2px;display:flex;align-items:center;gap:10px;}
+.section.c-blue .section-title{border-left-color:var(--accent-blue);}
+.section.c-purple .section-title{border-left-color:var(--accent-purple);}
+.section.c-yellow .section-title{border-left-color:var(--accent-yellow);}
+.section-eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--text-disabled);font-weight:700;padding-left:17px;}
+.section-desc{font-size:14px;color:var(--text-secondary);line-height:1.8;max-width:900px;}
+.section-desc strong{color:var(--text-primary);}
+.section-desc em{color:var(--accent);font-style:normal;font-weight:600;}
+
+/* ---- GRIDS / CARDS ---- */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px 20px;}
+.card-title{font-size:13.5px;font-weight:700;color:var(--accent);margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.card-text{font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.card-text code{color:var(--accent-green);font-size:11.5px;}
+
+.highlight-box{background:rgba(6,182,212,.08);border-left:3px solid var(--accent);padding:16px 18px;border-radius:0 8px 8px 0;box-shadow:inset 0 0 0 1px rgba(6,182,212,.12);}
+.highlight-title{color:var(--accent);font-weight:700;margin-bottom:6px;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+.highlight-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.info-box{background:rgba(54,162,239,.05);border-left:4px solid var(--accent-blue);padding:16px 18px;border-radius:6px;}
+.info-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.warn-box{background:rgba(248,107,99,.06);border-left:4px solid var(--accent-red);padding:16px 18px;border-radius:6px;}
+.warn-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box{background:rgba(125,222,216,.06);border-left:4px solid var(--accent-green);padding:16px 18px;border-radius:6px;}
+.ok-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+.ok-box .highlight-title{color:var(--accent-green);}
+.kid-box{background:rgba(232,196,104,.07);border-left:4px solid var(--accent-yellow);padding:16px 18px;border-radius:6px;display:flex;gap:14px;align-items:flex-start;}
+.kid-box .kid-emoji{font-size:26px;line-height:1;flex-shrink:0;}
+.kid-box .highlight-title{color:var(--accent-yellow);}
+.kid-box p{font-size:13px;color:var(--text-secondary);line-height:1.7;}
+
+/* ---- CODE BLOCK ---- */
+.code-block{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:8px;padding:18px 18px 16px;font-family:'Roboto Mono',Consolas,monospace;font-size:12.5px;color:var(--syn-code-text);overflow-x:auto;line-height:1.75;position:relative;white-space:pre;box-shadow:inset 0 0 0 1px hsla(0,0%,100%,.04);}
+.code-lang{position:absolute;top:8px;right:44px;font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1.2px;font-family:'Inter',sans-serif;}
+.kw{color:var(--syn-keyword);} .cm{color:var(--syn-comment);font-style:italic;} .st{color:var(--syn-string);} .fn{color:var(--syn-function);} .num{color:var(--syn-number);}
+.copy-btn{position:absolute;top:8px;right:8px;font-size:10px;padding:3px 10px;border:1px solid var(--border-color);border-radius:4px;background:#25262e;color:var(--text-disabled);cursor:pointer;font-weight:600;letter-spacing:.4px;transition:.15s;z-index:2;white-space:nowrap;}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.08);}
+.copy-btn.copied{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- VS COMPARISON ---- */
+.vs2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.vs2-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:18px;}
+.vs2-card.is-bad{border-color:rgba(248,107,99,.35);background:linear-gradient(160deg,rgba(248,107,99,.08),rgba(248,107,99,.01));}
+.vs2-card.is-good{border-color:rgba(125,222,216,.35);background:linear-gradient(160deg,rgba(125,222,216,.08),rgba(125,222,216,.01));}
+.vs2-title{font-size:13px;font-weight:800;margin-bottom:8px;}
+.vs2-card.is-bad .vs2-title{color:var(--accent-red);}
+.vs2-card.is-good .vs2-title{color:var(--accent-green);}
+.vs2-desc{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+
+.checklist{display:flex;flex-direction:column;gap:8px;}
+.check-item{position:relative;padding:10px 14px 10px 32px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:5px;font-size:13px;color:var(--text-secondary);line-height:1.6;}
+.check-item .ck{position:absolute;left:14px;top:10px;color:var(--accent-green);font-weight:800;}
+
+/* ---- MAPA DA MASTERCLASS ---- */
+.map-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.map-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;}
+.map-card-head{display:flex;align-items:center;gap:10px;}
+.map-card-icon{font-size:22px;}
+.map-card-title{font-size:13.5px;font-weight:800;color:var(--text-primary);}
+.map-list{display:flex;flex-direction:column;gap:6px;}
+.map-item{font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;line-height:1.5;}
+.map-item .dot{width:5px;height:5px;border-radius:50%;background:var(--border-strong);flex-shrink:0;}
+.map-item.focus{color:var(--text-primary);font-weight:600;}
+.map-item.focus .dot{background:var(--accent);}
+.map-tag{font-size:8.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:1px 7px;border-radius:8px;background:rgba(6,182,212,.14);color:var(--accent);margin-left:auto;flex-shrink:0;}
+
+/* ---- FACTORY / CONVEYOR (list comprehension) ---- */
+.factory{display:flex;align-items:center;gap:0;overflow-x:auto;padding:20px 6px;}
+.factory-stage{display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0;min-width:140px;}
+.factory-stage-label{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.8px;font-weight:700;text-align:center;}
+.factory-items{display:flex;flex-direction:column;gap:6px;}
+.factory-chip{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:6px 12px;font-size:12px;font-family:'Roboto Mono',monospace;color:var(--text-secondary);text-align:center;white-space:nowrap;}
+.factory-chip.out{border-color:var(--accent-green);color:var(--accent-green);background:rgba(125,222,216,.08);}
+.factory-chip.rejected{opacity:.35;text-decoration:line-through;border-style:dashed;}
+.factory-machine{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:190px;background:linear-gradient(160deg,rgba(6,182,212,.14),rgba(6,182,212,.03));border:2px solid var(--accent);border-radius:14px;padding:18px 16px;position:relative;flex-shrink:0;}
+.factory-machine-emoji{font-size:30px;}
+.factory-machine-code{font-family:'Roboto Mono',monospace;font-size:11.5px;color:var(--accent);text-align:center;}
+.factory-arrow{font-size:22px;color:var(--border-strong);flex-shrink:0;margin:0 10px;}
+
+/* ---- MAP DIAGRAM (dict comprehension) ---- */
+.map-diagram{display:flex;align-items:center;justify-content:center;gap:36px;padding:16px;flex-wrap:wrap;}
+.map-col{display:flex;flex-direction:column;gap:8px;}
+.map-col-title{font-size:10px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.8px;font-weight:700;text-align:center;margin-bottom:2px;}
+.map-node{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:6px;padding:7px 14px;font-size:12px;font-family:'Roboto Mono',monospace;color:var(--text-secondary);text-align:center;position:relative;}
+.map-col.dest .map-node{border-color:var(--accent-purple);color:var(--accent-purple);}
+
+/* ---- DEDUPE (set comprehension) ---- */
+.dedupe-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;padding:12px;}
+.dedupe-chip{padding:7px 14px;border-radius:20px;font-family:'Roboto Mono',monospace;font-size:12px;background:var(--bg-elevated);border:1px solid var(--border-color);color:var(--text-secondary);}
+.dedupe-chip.dup{border-color:var(--accent-red);color:var(--accent-red);opacity:.6;}
+.dedupe-chip.kept{border-color:var(--accent-green);color:var(--accent-green);}
+
+/* ---- GENERATOR TRACE ---- */
+.gen-trace{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap;padding:18px 20px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;}
+.gen-chip{font-family:'Roboto Mono',monospace;font-size:11px;padding:7px 10px;border-radius:5px;background:var(--bg-main);border:1px solid var(--border-color);color:var(--text-secondary);white-space:nowrap;}
+.gen-chip.is-pause{color:var(--accent-blue);border-color:var(--accent-blue);font-weight:700;background:rgba(54,162,239,.08);white-space:normal;max-width:160px;}
+.gen-chip.is-stop{color:var(--accent-red);border-color:rgba(248,107,99,.4);background:rgba(248,107,99,.06);white-space:normal;max-width:160px;}
+.gen-pause-tag{display:block;font-family:'Roboto Mono',monospace;font-size:9px;font-weight:400;color:var(--text-secondary);margin-top:4px;}
+.gen-arrow-sm{color:var(--border-strong);font-size:12px;flex-shrink:0;margin-top:8px;}
+
+/* ---- INTERACTIVE PANEL ---- */
+.interactive-panel{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:22px 26px;}
+.panel-label{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);font-weight:700;margin-bottom:14px;}
+.ctrl-row{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+.ctrl-g{flex:1;min-width:200px;}
+.ctrl-l{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;}
+.ctrl-v{color:var(--accent);font-weight:700;font-family:'Roboto Mono',monospace;}
+input[type=range]{width:100%;accent-color:var(--accent);height:4px;cursor:pointer;}
+.btn-toggle-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-toggle{background:transparent;border:1px solid var(--border-color);color:var(--text-secondary);padding:8px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;transition:.15s;font-weight:700;font-family:'Roboto Mono',monospace;}
+.btn-toggle:hover{border-color:var(--accent);color:var(--accent);}
+.btn-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(6,182,212,.10);}
+.canvas-wrap{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:14px;}
+canvas{width:100%;display:block;}
+.stat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-card{background:var(--bg-elevated);border:1px solid var(--border-color);border-top:3px solid var(--border-color);border-radius:6px;padding:12px 14px;text-align:center;}
+.stat-card.c-blue{border-top-color:var(--accent-blue);}
+.stat-card.c-red{border-top-color:var(--accent-red);}
+.stat-card.c-green{border-top-color:var(--accent-green);}
+.stat-card.c-purple{border-top-color:var(--accent-purple);}
+.stat-card-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-secondary);font-weight:700;}
+.stat-card-value{font-size:20px;font-weight:800;font-family:'Roboto Mono',monospace;margin-top:5px;color:var(--text-primary);}
+
+/* ---- LIBRARY / CHECKOUT (context manager) ---- */
+.checkout{display:flex;align-items:center;justify-content:center;gap:0;padding:16px;flex-wrap:wrap;}
+.checkout-step{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:130px;}
+.checkout-emoji{font-size:30px;}
+.checkout-label{font-size:11.5px;color:var(--text-secondary);text-align:center;font-weight:600;line-height:1.4;}
+.checkout-code{font-family:'Roboto Mono',monospace;font-size:10.5px;color:var(--accent-purple);text-align:center;}
+.checkout-arrow{font-size:20px;color:var(--border-strong);margin:0 6px;flex-shrink:0;}
+.checkout-guarantee{background:rgba(196,154,255,.08);border:1.5px dashed var(--accent-purple);border-radius:10px;padding:8px 14px;font-size:10.5px;color:var(--accent-purple);text-align:center;margin-top:-4px;}
+
+/* ---- GIFT WRAP (decorator) ---- */
+.giftwrap{display:flex;align-items:center;justify-content:center;gap:26px;padding:20px;flex-wrap:wrap;}
+.gift-plain{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.gift-box{width:120px;height:90px;border:2px solid var(--border-strong);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Roboto Mono',monospace;font-size:12px;color:var(--text-secondary);background:var(--bg-elevated);text-align:center;padding:8px;}
+.gift-wrapped{width:170px;height:130px;border:2px solid var(--accent-yellow);border-radius:12px;background:linear-gradient(160deg,rgba(232,196,104,.14),rgba(232,196,104,.02));display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px;position:relative;}
+.gift-ribbon-top{position:absolute;top:-11px;background:var(--accent-yellow);color:var(--bg-main);font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:3px 10px;border-radius:10px;}
+.gift-inner{font-family:'Roboto Mono',monospace;font-size:11px;color:var(--text-secondary);background:var(--bg-main);border:1px dashed var(--border-color);border-radius:6px;padding:6px 10px;}
+
+/* ---- STACK LAYERS (decorators empilhados) ---- */
+.stack-layers{display:flex;flex-direction:column-reverse;align-items:center;gap:0;padding:10px;}
+.stack-layer{width:100%;max-width:420px;border:2px solid;border-radius:10px;padding:14px 18px;text-align:center;font-family:'Roboto Mono',monospace;font-size:12.5px;margin-top:-14px;position:relative;}
+.stack-layer:first-child{margin-top:0;}
+.stack-layer .stack-order{position:absolute;left:-34px;top:50%;transform:translateY(-50%);font-family:'Inter',sans-serif;font-size:10px;color:var(--text-disabled);font-weight:700;}
+
+/* ---- KITCHEN (threading vs multiprocessing) ---- */
+.kitchen{display:flex;gap:20px;flex-wrap:wrap;}
+.kitchen-card{flex:1;min-width:260px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px 18px;}
+.kitchen-title{font-size:13px;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.kitchen-row{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap;}
+.kitchen-unit{background:var(--bg-elevated);border:1px solid var(--border-color);border-radius:8px;padding:10px;text-align:center;font-size:20px;flex:1;min-width:56px;}
+.kitchen-desc{font-size:11.5px;color:var(--text-secondary);line-height:1.6;}
+
+/* ---- DECISION CARDS ---- */
+.decision-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.decision-q{font-size:12.5px;color:var(--text-secondary);line-height:1.6;}
+.decision-arrow{font-size:11px;color:var(--text-disabled);text-align:center;}
+.decision-a{font-size:14px;font-weight:800;text-align:center;padding:8px;border-radius:6px;border:1px solid;}
+
+/* ---- BONUS CARDS ---- */
+.bonus-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;}
+.bonus-title{font-size:13px;font-weight:800;color:var(--text-primary);display:flex;align-items:center;gap:8px;}
+.bonus-code{background:var(--syn-code-bg);border:1px solid var(--border-color);border-radius:6px;padding:10px 12px;font-family:'Roboto Mono',monospace;font-size:11px;white-space:pre;overflow-x:auto;}
+.bonus-desc{font-size:11.5px;color:var(--text-secondary);line-height:1.6;}
+
+/* ---- QUIZ ---- */
+.quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
+.quiz-card:hover{border-color:var(--border-strong);}
+.quiz-q{font-size:13.5px;font-weight:600;color:var(--text-primary);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.quiz-hint{font-size:10.5px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:.5px;flex-shrink:0;}
+.quiz-answer{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border-color);font-size:12.5px;color:var(--text-secondary);line-height:1.65;}
+.quiz-card.open .quiz-answer{display:block;}
+.quiz-card.open .quiz-hint{color:var(--accent);}
+
+/* ---- DEEP LIST ---- */
+.deep-list{display:flex;flex-direction:column;gap:8px;}
+.deep-item{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:5px;text-decoration:none;color:inherit;transition:.15s;}
+.deep-item:hover{border-color:var(--accent);background:rgba(6,182,212,.04);}
+.deep-src{font-size:11px;font-family:monospace;color:var(--accent);min-width:120px;flex-shrink:0;}
+.deep-desc{font-size:12.5px;color:var(--text-secondary);}
+
+/* ---- FOOTER ---- */
+footer{border-top:1px solid var(--border-color);padding-top:22px;display:flex;justify-content:space-between;font-size:11px;color:var(--text-disabled);text-transform:uppercase;letter-spacing:1px;font-weight:500;flex-wrap:wrap;gap:10px;}
+footer a{color:var(--text-secondary);text-decoration:none;}
+footer a:hover{color:var(--accent);}
+
+/* ---- RESPONSIVE ---- */
+@media (max-width:960px){
+  .page{padding:20px 20px 50px;}
+  .toc-wrap{margin:0 -20px;padding:10px 20px;}
+  .hero{grid-template-columns:1fr;padding:28px 24px;}
+  .grid-2,.grid-3,.grid-4,.map-grid{grid-template-columns:1fr;}
+  .stat-cards{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="brand">
+      <div class="logo-pd"><span class="logo-pd-word">PROFISSÃO</span><span class="logo-pd-word boxed">DADOS</span></div>
+      <span class="brand-slash"></span>
+      <div class="brand-text"><h1>Python para Engenharia de Dados</h1><span>Os recursos da linguagem que sustentam todo pipeline</span></div>
+    </div>
+    <div class="header-stats">
+      <div class="hstat"><div class="hstat-num">4</div><div class="hstat-label">Pilares centrais</div></div>
+      <div class="hstat"><div class="hstat-num">20+</div><div class="hstat-label">Tópicos mapeados</div></div>
+      <div class="hstat"><div class="hstat-num">🏭</div><div class="hstat-label">Tudo com analogia</div></div>
+      <div class="hstat"><div class="hstat-num">~60min</div><div class="hstat-label">Aula</div></div>
+    </div>
+  </header>
+
+  <div class="toc-wrap">
+    <div class="toc-eyebrow">A jornada da aula: do mapa geral aos 4 pilares, e o resto do kit</div>
+    <div class="toc-row" id="tocRow"></div>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="s-hero">
+    <div>
+      <h2>Todo pipeline "mágico" é feito de <em>Python bem comum</em></h2>
+      <p>Ferramentas como <strong>dlt</strong>, <strong>Airflow</strong>, <strong>pandas</strong> e <strong>PySpark</strong> parecem ter truques próprios, mas por baixo delas tem sempre o mesmo punhado de recursos da linguagem Python — usados de um jeito específico. Quando você entende esses recursos de verdade, qualquer biblioteca de dados vira código legível, não decoreba. Esta aula foca em <em>quatro pilares</em> que aparecem o tempo todo em engenharia de dados — <strong>list comprehension</strong>, <strong>generators (yield)</strong>, <strong>context managers (with)</strong> e <strong>decorators</strong> — e depois mapeia tudo mais que vale a pena saber.</p>
+      <div class="hero-badges">
+        <span class="badge badge-cyan">🏭 List Comprehension</span>
+        <span class="badge badge-blue">⏸️ Generators / yield</span>
+        <span class="badge badge-purple">🔐 Context Managers / with</span>
+        <span class="badge badge-yellow">🎁 Decorators</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="emoji-stack">🍎➡️🏭➡️🧃</div>
+      <div class="hero-visual-cap">Cada pilar desta aula é uma "máquina" que transforma dados de um jeito específico — e todo pipeline é uma fila dessas máquinas, uma atrás da outra.</div>
+    </div>
+  </section>
+
+  <!-- ============ MAPA DA MASTERCLASS ============ -->
+  <section class="section" id="s-mapa">
+    <div class="section-eyebrow">Panorama</div>
+    <div class="section-title">🗺️ O Mapa: Tudo que é Relevante em Python para Dados</div>
+    <p class="section-desc">
+      Python tem centenas de recursos, mas só uma fatia deles aparece o tempo todo em pipelines de dados. Este mapa organiza essa fatia em 6 grupos. Os itens marcados com <span class="map-tag">FOCO</span> são o coração desta aula — os outros ganham um resumo visual mais à frente, na seção <a href="#s-bonus" style="color:var(--accent);text-decoration:none;">🎒 Mais Ferramentas Essenciais</a>.
+    </p>
+    <div class="map-grid">
+      <div class="map-card">
+        <div class="map-card-head"><span class="map-card-icon">🧱</span><span class="map-card-title">Estruturas de Dados</span></div>
+        <div class="map-list">
+          <div class="map-item"><span class="dot"></span> list, tuple, dict, set — quando usar cada um</div>
+          <div class="map-item focus"><span class="dot"></span> List / dict / set comprehension <span class="map-tag">FOCO</span></div>
+          <div class="map-item focus"><span class="dot"></span> enumerate, zip, sorted, lambda, map/filter <span class="map-tag">FOCO</span></div>
+          <div class="map-item focus"><span class="dot"></span> Desempacotamento e *args / **kwargs <span class="map-tag">FOCO</span></div>
+        </div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-head"><span class="map-card-icon">🚰</span><span class="map-card-title">Streaming de Dados</span></div>
+        <div class="map-list">
+          <div class="map-item focus"><span class="dot"></span> Iteráveis e iteradores (protocolo por trás do for) <span class="map-tag">FOCO</span></div>
+          <div class="map-item focus"><span class="dot"></span> Generators e yield <span class="map-tag">FOCO</span></div>
+          <div class="map-item"><span class="dot"></span> yield from e itertools (chain, islice, groupby)</div>
+        </div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-head"><span class="map-card-icon">♻️</span><span class="map-card-title">Reuso de Código</span></div>
+        <div class="map-list">
+          <div class="map-item"><span class="dot"></span> Funções como valores (funções de 1ª classe)</div>
+          <div class="map-item focus"><span class="dot"></span> Decorators <span class="map-tag">FOCO</span></div>
+          <div class="map-item"><span class="dot"></span> functools (wraps, lru_cache, partial, reduce)</div>
+        </div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-head"><span class="map-card-icon">🔐</span><span class="map-card-title">Recursos e Confiabilidade</span></div>
+        <div class="map-list">
+          <div class="map-item focus"><span class="dot"></span> Context managers e with <span class="map-tag">FOCO</span></div>
+          <div class="map-item"><span class="dot"></span> try / except / finally e retries</div>
+          <div class="map-item"><span class="dot"></span> logging (em vez de print) e type hints</div>
+        </div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-head"><span class="map-card-icon">🗂️</span><span class="map-card-title">Arquivos, Tempo e Schema</span></div>
+        <div class="map-list">
+          <div class="map-item"><span class="dot"></span> pathlib para arquivos e diretórios</div>
+          <div class="map-item"><span class="dot"></span> datetime, fusos horários</div>
+          <div class="map-item"><span class="dot"></span> dataclasses / Pydantic para representar registros</div>
+        </div>
+      </div>
+      <div class="map-card">
+        <div class="map-card-head"><span class="map-card-icon">⚡</span><span class="map-card-title">Concorrência e Ambiente</span></div>
+        <div class="map-list">
+          <div class="map-item"><span class="dot"></span> threading vs multiprocessing (I/O vs CPU)</div>
+          <div class="map-item"><span class="dot"></span> asyncio para chamadas de API concorrentes</div>
+          <div class="map-item"><span class="dot"></span> venv / uv / poetry — isolar dependências</div>
+        </div>
+      </div>
+    </div>
+    <div class="kid-box">
+      <span class="kid-emoji">🧒</span>
+      <div><div class="highlight-title">Para quem está começando</div><p>Pense nesses 6 grupos como as 6 gavetas de uma caixa de ferramentas. Você não precisa decorar tudo de uma vez — precisa saber que a gaveta existe, o que ela resolve, e abrir ela quando o problema aparecer. Esta aula abre fundo 4 dessas gavetas, e dá uma espiada rápida nas outras.</p></div>
+    </div>
+  </section>
+
+  <!-- ============ 1. LIST COMPREHENSION ============ -->
+  <section class="section" id="s-comprehension">
+    <div class="section-eyebrow">Pilar 1 de 4</div>
+    <div class="section-title">🏭 List Comprehension — a Fábrica de Transformar Listas</div>
+    <p class="section-desc">
+      Imagine uma <strong>fábrica de suco</strong>: maçãs entram de um lado, uma máquina espreme cada uma, e copos de suco saem do outro lado. Uma <strong>list comprehension</strong> é exatamente essa fábrica, só que para listas Python: você diz "para cada item de uma lista, faça essa transformação, e me devolva uma lista nova" — tudo em <em>uma linha só</em>.
+    </p>
+    <div class="factory">
+      <div class="factory-stage">
+        <div class="factory-stage-label">Entrada</div>
+        <div class="factory-items">
+          <div class="factory-chip">2</div>
+          <div class="factory-chip">4</div>
+          <div class="factory-chip">6</div>
+        </div>
+      </div>
+      <div class="factory-arrow">→</div>
+      <div class="factory-machine">
+        <div class="factory-machine-emoji">🏭</div>
+        <div class="factory-machine-code">n * 10</div>
+      </div>
+      <div class="factory-arrow">→</div>
+      <div class="factory-stage">
+        <div class="factory-stage-label">Saída</div>
+        <div class="factory-items">
+          <div class="factory-chip out">20</div>
+          <div class="factory-chip out">40</div>
+          <div class="factory-chip out">60</div>
+        </div>
+      </div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">precos</span> = [<span class="num">2</span>, <span class="num">4</span>, <span class="num">6</span>]
+
+<span class="cm"># jeito tradicional — for + append</span>
+<span class="kw">dobrados</span> = []
+<span class="kw">for</span> n <span class="kw">in</span> precos:
+    dobrados.append(n * <span class="num">10</span>)
+
+<span class="cm"># list comprehension — mesma coisa, uma linha</span>
+<span class="kw">dobrados</span> = [n * <span class="num">10</span> <span class="kw">for</span> n <span class="kw">in</span> precos]
+<span class="cm"># [20, 40, 60]</span></pre>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🧩 A anatomia da fábrica</div>
+        <div class="card-text"><code>[<strong>expressão</strong> for <strong>item</strong> in <strong>lista</strong>]</code> — a <strong>expressão</strong> é a máquina (o que fazer com cada item), o <strong>item</strong> é a peça passando pela esteira, e a <strong>lista</strong> é de onde as peças vêm. O colchete <code>[ ]</code> avisa: "quero uma lista pronta no final".</div>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Quando vale a pena usar</div>
+        <div class="card-text">Quando a transformação cabe numa linha e é fácil de ler. Se a lógica precisa de vários <code>if</code>, várias linhas ou comentários explicando — volte para o <code>for</code> tradicional. Comprehension é sobre <em>clareza</em>, não sobre parecer esperto.</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🧃➕🚫 Com filtro: a peneira da fábrica</div>
+    <p class="section-desc">Adicionar um <code>if</code> no final vira uma <strong>peneira</strong>: só os itens que passam no teste chegam à máquina. Os que não passam são descartados, sem erro, sem drama.</p>
+    <div class="factory">
+      <div class="factory-stage">
+        <div class="factory-stage-label">Entrada</div>
+        <div class="factory-items">
+          <div class="factory-chip">"Ana"</div>
+          <div class="factory-chip">""</div>
+          <div class="factory-chip">"Léo"</div>
+          <div class="factory-chip">""</div>
+        </div>
+      </div>
+      <div class="factory-arrow">→</div>
+      <div class="factory-machine">
+        <div class="factory-machine-emoji">🕳️</div>
+        <div class="factory-machine-code">if nome != ""</div>
+      </div>
+      <div class="factory-arrow">→</div>
+      <div class="factory-stage">
+        <div class="factory-stage-label">Saída</div>
+        <div class="factory-items">
+          <div class="factory-chip out">"Ana"</div>
+          <div class="factory-chip rejected">""</div>
+          <div class="factory-chip out">"Léo"</div>
+          <div class="factory-chip rejected">""</div>
+        </div>
+      </div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">nomes</span> = [<span class="st">"Ana"</span>, <span class="st">""</span>, <span class="st">"Léo"</span>, <span class="st">""</span>]
+
+<span class="kw">validos</span> = [nome <span class="kw">for</span> nome <span class="kw">in</span> nomes <span class="kw">if</span> nome != <span class="st">""</span>]
+<span class="cm"># ['Ana', 'Léo'] — a peneira barrou os vazios</span></pre>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🔑 Dict comprehension — construindo um "índice"</div>
+    <p class="section-desc">A mesma ideia, mas em vez de uma lista você monta um <strong>dicionário</strong> — muito comum para transformar uma lista de registros em um "índice" rápido de busca por chave. Troque os colchetes <code>[ ]</code> por chaves <code>{ }</code> e escreva <code>chave: valor</code>.</p>
+    <div class="map-diagram">
+      <div class="map-col">
+        <div class="map-col-title">Lista de registros</div>
+        <div class="map-node">{"id": 1, "nome": "Ana"}</div>
+        <div class="map-node">{"id": 2, "nome": "Léo"}</div>
+      </div>
+      <div class="factory-arrow">→</div>
+      <div class="map-col dest">
+        <div class="map-col-title">dict {id: nome}</div>
+        <div class="map-node">1 → "Ana"</div>
+        <div class="map-node">2 → "Léo"</div>
+      </div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">clientes</span> = [{<span class="st">"id"</span>: <span class="num">1</span>, <span class="st">"nome"</span>: <span class="st">"Ana"</span>}, {<span class="st">"id"</span>: <span class="num">2</span>, <span class="st">"nome"</span>: <span class="st">"Léo"</span>}]
+
+<span class="kw">por_id</span> = {c[<span class="st">"id"</span>]: c[<span class="st">"nome"</span>] <span class="kw">for</span> c <span class="kw">in</span> clientes}
+<span class="cm"># {1: 'Ana', 2: 'Léo'} — buscar por_id[2] é instantâneo</span></pre>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🎯 Set comprehension — a máquina de tirar duplicatas</div>
+    <p class="section-desc">Troque <code>{ }</code> sem <code>:</code> e você tem um <strong>set</strong> — uma coleção que nunca guarda valores repetidos. É a ferramenta certa para "quais cidades diferentes existem nesses pedidos?".</p>
+    <div class="dedupe-row">
+      <div class="dedupe-chip">SP</div>
+      <div class="dedupe-chip dup">SP</div>
+      <div class="dedupe-chip">RJ</div>
+      <div class="dedupe-chip dup">RJ</div>
+      <div class="dedupe-chip dup">RJ</div>
+      <div class="dedupe-chip">BH</div>
+      <span style="font-size:20px;color:var(--border-strong);">→</span>
+      <div class="dedupe-chip kept">SP</div>
+      <div class="dedupe-chip kept">RJ</div>
+      <div class="dedupe-chip kept">BH</div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">cidades</span> = [<span class="st">"SP"</span>, <span class="st">"SP"</span>, <span class="st">"RJ"</span>, <span class="st">"RJ"</span>, <span class="st">"RJ"</span>, <span class="st">"BH"</span>]
+
+<span class="kw">unicas</span> = {c <span class="kw">for</span> c <span class="kw">in</span> cidades}
+<span class="cm"># {'SP', 'RJ', 'BH'} — ordem não é garantida, duplicata é impossível</span></pre>
+
+    <div class="warn-box">
+      <div class="highlight-title" style="color:var(--accent-red);">⚠️ Onde a fábrica vira bagunça</div>
+      <p>Comprehension aninhada (uma dentro da outra) resolve casos reais — como "achatar" uma lista de lotes em uma lista única — mas depois de 2 níveis vira ilegível. Se você precisar de um terceiro <code>for</code> ou de comentário para explicar, é hora de voltar para um <code>for</code> tradicional com nomes de variável claros.</p>
+    </div>
+    <div class="vs2">
+      <div class="vs2-card is-good">
+        <div class="vs2-title">✓ Achatar uma lista de listas — ok, 1 nível</div>
+        <div class="vs2-desc"><code>[linha for lote in lotes for linha in lote]</code> — lê-se "para cada lote, para cada linha do lote". Comum ao juntar páginas de uma API paginada.</div>
+      </div>
+      <div class="vs2-card is-bad">
+        <div class="vs2-title">✗ 3 níveis com if no meio — pare aqui</div>
+        <div class="vs2-desc"><code>[f(x) for a in A for b in a if g(b) for x in b if h(x)]</code> — tecnicamente válido, impossível de revisar em um PR. Vire um <code>for</code> com nomes de variável decentes.</div>
+      </div>
+    </div>
+    <div class="highlight-box">
+      <div class="highlight-title">A ponte para o próximo pilar</div>
+      <p>Troque os colchetes <code>[ ]</code> por parênteses <code>( )</code> — <code>(n * 10 for n in precos)</code> — e a fábrica para de empacotar tudo numa lista pronta. Isso é uma <strong>generator expression</strong>, o assunto da próxima seção: em vez de uma lista inteira na memória, você ganha uma promessa de valores, um de cada vez.</p>
+    </div>
+  </section>
+
+  <!-- ============ 1.5 UTILITÁRIOS DE ITERAÇÃO ============ -->
+  <section class="section" id="s-utilitarios">
+    <div class="section-eyebrow">Complemento do Pilar 1</div>
+    <div class="section-title">🧰 Os Companheiros de Toda Comprehension</div>
+    <p class="section-desc">
+      Estas cinco ferramentas aparecem tão coladas em comprehensions e loops que merecem seu próprio espaço. Nenhuma delas é exclusiva de engenharia de dados, mas é raríssimo passar um dia sem usar pelo menos duas.
+    </p>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🔢 enumerate — quando você precisa do índice junto com o valor</div>
+    <p class="section-desc">Percorrer uma lista com <code>for item in lista</code> te dá o valor, mas não a posição dele. <code>enumerate()</code> entrega os dois juntos, numerados, sem você precisar controlar um contador à mão.</p>
+    <div class="factory">
+      <div class="factory-stage">
+        <div class="factory-stage-label">enumerate(linhas)</div>
+        <div class="factory-items">
+          <div class="factory-chip out">0 → "Ana,SP"</div>
+          <div class="factory-chip out">1 → "Léo,RJ"</div>
+          <div class="factory-chip out">2 → "Bia,BH"</div>
+        </div>
+      </div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">linhas</span> = [<span class="st">"Ana,SP"</span>, <span class="st">"Léo,RJ"</span>, <span class="st">"Bia,BH"</span>]
+
+<span class="kw">for</span> indice, linha <span class="kw">in</span> <span class="fn">enumerate</span>(linhas):
+    <span class="kw">if</span> indice % <span class="num">100_000</span> == <span class="num">0</span>:
+        <span class="fn">print</span>(<span class="fn">f</span><span class="st">"processadas {indice} linhas..."</span>)  <span class="cm"># log de progresso, sem contador manual</span></pre>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🤐 zip — juntando duas listas par a par</div>
+    <p class="section-desc"><code>zip()</code> anda por duas (ou mais) listas ao mesmo tempo, entregando um par a cada volta — como o fecho de uma jaqueta unindo os dois lados. Combinado com <code>dict()</code>, é o jeito mais direto de virar "nomes de coluna" + "valores" em um registro.</p>
+    <div class="map-diagram">
+      <div class="map-col">
+        <div class="map-col-title">colunas</div>
+        <div class="map-node">"id"</div>
+        <div class="map-node">"nome"</div>
+      </div>
+      <div class="factory-arrow">zip</div>
+      <div class="map-col">
+        <div class="map-col-title">valores</div>
+        <div class="map-node">7</div>
+        <div class="map-node">"Ana"</div>
+      </div>
+      <div class="factory-arrow">→</div>
+      <div class="map-col dest">
+        <div class="map-col-title">pares</div>
+        <div class="map-node">("id", 7)</div>
+        <div class="map-node">("nome", "Ana")</div>
+      </div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">colunas</span> = [<span class="st">"id"</span>, <span class="st">"nome"</span>]
+<span class="kw">valores</span> = [<span class="num">7</span>, <span class="st">"Ana"</span>]
+
+<span class="kw">registro</span> = <span class="fn">dict</span>(<span class="fn">zip</span>(colunas, valores))
+<span class="cm"># {'id': 7, 'nome': 'Ana'} — muito comum ao ler uma linha de CSV sem cabeçalho nomeado</span></pre>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🔀 sorted(key=...) e lambda — ordenando por um critério qualquer</div>
+    <p class="section-desc"><code>sorted()</code> aceita um argumento <code>key</code>: uma função que diz, para cada item, "qual valor usar para comparar na hora de ordenar". Uma <strong>lambda</strong> é só uma função tão curta que nem ganha nome — perfeita para esse tipo de uso único, na hora.</p>
+    <div class="dedupe-row">
+      <div class="dedupe-chip">R$ 40</div>
+      <div class="dedupe-chip">R$ 120</div>
+      <div class="dedupe-chip">R$ 15</div>
+      <span style="font-size:20px;color:var(--border-strong);">→ sorted(key=lambda p: p["valor"], reverse=True) →</span>
+      <div class="dedupe-chip kept">R$ 120</div>
+      <div class="dedupe-chip kept">R$ 40</div>
+      <div class="dedupe-chip kept">R$ 15</div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">pedidos</span> = [{<span class="st">"cliente"</span>: <span class="st">"Ana"</span>, <span class="st">"valor"</span>: <span class="num">40</span>}, {<span class="st">"cliente"</span>: <span class="st">"Léo"</span>, <span class="st">"valor"</span>: <span class="num">120</span>}, {<span class="st">"cliente"</span>: <span class="st">"Bia"</span>, <span class="st">"valor"</span>: <span class="num">15</span>}]
+
+<span class="kw">maiores_primeiro</span> = <span class="fn">sorted</span>(pedidos, key=<span class="kw">lambda</span> p: p[<span class="st">"valor"</span>], reverse=<span class="kw">True</span>)
+<span class="cm"># lambda p: p["valor"]  é um jeito curto de escrever:
+#   def pega_valor(p):
+#       return p["valor"]
+# ambos fazem a mesma coisa — a lambda só evita nomear algo usado uma vez só</span></pre>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🗺️ map / filter — os "avós" da comprehension</div>
+    <p class="section-desc">Antes da comprehension existir, Python já resolvia "transformar cada item" e "manter só alguns itens" com <code>map()</code> e <code>filter()</code>. Eles ainda aparecem em código mais antigo (ou funcional) — vale reconhecer, mesmo preferindo comprehension no dia a dia.</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">map() + filter() — estilo funcional</div>
+        <div class="card-text"><code>list(map(lambda n: n * 10, precos))</code><br>transforma cada item.<br><br><code>list(filter(lambda n: n > 0, precos))</code><br>mantém só quem passa no teste.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Comprehension — o mesmo resultado</div>
+        <div class="card-text"><code>[n * 10 for n in precos]</code><br>mesma transformação.<br><br><code>[n for n in precos if n > 0]</code><br>mesmo filtro, mais fácil de ler com os dois juntos.</div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 A comunidade Python hoje prefere comprehension na maioria dos casos, por ler quase como português. Uma exceção comum: <code>map(str.upper, nomes)</code> — passar uma função <em>já pronta</em> (sem lambda) para <code>map()</code> pode ficar mais limpo que <code>[nome.upper() for nome in nomes]</code>, especialmente em pipelines funcionais encadeados.</p></div>
+  </section>
+
+  <!-- ============ 2. GENERATORS / YIELD ============ -->
+  <section class="section c-blue" id="s-generators">
+    <div class="section-eyebrow">Pilar 2 de 4</div>
+    <div class="section-title">⏸️ Generators e yield — uma Função que Pausa em Vez de Terminar</div>
+    <p class="section-desc">
+      Uma função comum, com <code>return</code>, calcula tudo de uma vez e entrega o resultado pronto — depois disso, ela terminou. Uma função com <code>yield</code> vira um <strong>generator</strong>: a cada <code>yield</code>, ela <em>pausa</em> exatamente ali, entrega um valor, e — na próxima vez que alguém pedir mais — continua exatamente de onde parou, em vez de recomeçar do zero.
+    </p>
+    <div class="kid-box">
+      <span class="kid-emoji">🧃</span>
+      <div><div class="highlight-title">Para uma criança entender</div><p>Uma função com <code>return</code> é como uma jarra de suco: alguém espreme <em>todas</em> as laranjas de uma vez e enche a jarra antes de te entregar qualquer coisa. Uma função com <code>yield</code> é a <strong>máquina de suco automática</strong> de padaria: ela só espreme a <em>próxima</em> laranja quando você aperta o botão de novo — nunca deixa suco pronto esperando, e nunca espreme laranja que ninguém vai beber.</p></div>
+    </div>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🔄 Antes do yield: o que o for faz por baixo dos panos</div>
+    <p class="section-desc">Todo <code>for item in alguma_coisa:</code> esconde duas chamadas: primeiro <code>iter(alguma_coisa)</code> pede um <strong>iterador</strong> — um objeto com um botão "próximo" — e depois o <code>for</code> aperta esse botão chamando <code>next(iterador)</code> repetidamente, até ouvir um "acabou" (<code>StopIteration</code>).</p>
+    <div class="gen-trace">
+      <div class="gen-chip">iter([1, 2, 3])<span class="gen-pause-tag">pede um iterador à lista</span></div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip is-pause">next() → 1</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip is-pause">next() → 2</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip is-pause">next() → 3</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip is-stop">next() → StopIteration<span class="gen-pause-tag">o for entende isso como "pode parar"</span></div>
+    </div>
+    <div class="kid-box">
+      <span class="kid-emoji">🎫</span>
+      <div><div class="highlight-title">Para uma criança entender</div><p>É como pegar senha numa fila: você não recebe todos os atendimentos de uma vez — a cada vez que seu número é chamado (<code>next()</code>), você recebe <em>um</em> atendimento. Quando o painel mostra "fila encerrada" (<code>StopIteration</code>), você sabe que não tem mais ninguém atrás.</p></div>
+    </div>
+    <p class="section-desc">É possível construir esse "botão de próximo" manualmente com uma classe — implementando os métodos especiais <code>__iter__</code> e <code>__next__</code>. Compare com a mesma coisa escrita como generator:</p>
+    <div class="vs2">
+      <div class="vs2-card is-bad">
+        <div class="vs2-title">😓 Iterador escrito à mão — classe inteira</div>
+        <div class="vs2-desc"><code>class ContaAte:<br>&nbsp;&nbsp;def __init__(self, n):<br>&nbsp;&nbsp;&nbsp;&nbsp;self.n, self.atual = n, 1<br>&nbsp;&nbsp;def __iter__(self):<br>&nbsp;&nbsp;&nbsp;&nbsp;return self<br>&nbsp;&nbsp;def __next__(self):<br>&nbsp;&nbsp;&nbsp;&nbsp;if self.atual > self.n:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;raise StopIteration<br>&nbsp;&nbsp;&nbsp;&nbsp;valor = self.atual<br>&nbsp;&nbsp;&nbsp;&nbsp;self.atual += 1<br>&nbsp;&nbsp;&nbsp;&nbsp;return valor</code> — funciona, mas dá trabalho para algo simples.</div>
+      </div>
+      <div class="vs2-card is-good">
+        <div class="vs2-title">✓ Generator — o Python escreve a classe por você</div>
+        <div class="vs2-desc"><code>def conta_ate(n):<br>&nbsp;&nbsp;atual = 1<br>&nbsp;&nbsp;while atual <= n:<br>&nbsp;&nbsp;&nbsp;&nbsp;yield atual<br>&nbsp;&nbsp;&nbsp;&nbsp;atual += 1</code><br><br>Mesmo resultado, 5 linhas. O <code>yield</code> é açúcar sintático: por baixo, o Python monta um objeto com <code>__iter__</code>/<code>__next__</code> automaticamente.</div>
+      </div>
+    </div>
+    <div class="info-box"><p>💡 É por isso que todo generator <em>é</em> um iterador, mas nem todo iterador precisa ser um generator — generator é só o jeito mais curto de criar um. Entender essa base explica também por que dá para chamar <code>next()</code> diretamente num generator, como no exemplo a seguir.</p></div>
+
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">def</span> <span class="fn">conta_ate</span>(n):
+    atual = <span class="num">1</span>
+    <span class="kw">while</span> atual <= n:
+        <span class="kw">yield</span> atual
+        atual += <span class="num">1</span>
+
+contador = conta_ate(<span class="num">3</span>)
+<span class="fn">print</span>(<span class="fn">next</span>(contador))  <span class="cm"># 1 — roda até o primeiro yield e pausa</span>
+<span class="fn">print</span>(<span class="fn">next</span>(contador))  <span class="cm"># 2 — retoma dali, roda até o próximo yield</span>
+<span class="fn">print</span>(<span class="fn">next</span>(contador))  <span class="cm"># 3
+
+# Na prática, quase sempre percorremos com um for — que já chama
+# next() por baixo dos panos até a função acabar:</span>
+<span class="kw">for</span> numero <span class="kw">in</span> conta_ate(<span class="num">3</span>):
+    <span class="fn">print</span>(numero)</pre>
+    <p class="section-desc">O ponto que mais confunde: <code>conta_ate(3)</code> não roda três vezes — ela roda <strong>uma única vez</strong>, do início ao fim, só que <strong>pausada</strong> em cada <code>yield</code>. O trace abaixo é essa única execução completa, com as três pausas marcadas:</p>
+    <div class="gen-trace">
+      <div class="gen-chip">atual = 1</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip">while 1≤3 ✓</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip is-pause">yield 1<span class="gen-pause-tag">① next() nº1 devolve 1 e pausa aqui</span></div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip">atual += 1 → 2</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip">while 2≤3 ✓</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip is-pause">yield 2<span class="gen-pause-tag">② next() nº2 retoma daqui, devolve 2</span></div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip">atual += 1 → 3</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip">while 3≤3 ✓</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip is-pause">yield 3<span class="gen-pause-tag">③ next() nº3 retoma daqui, devolve 3</span></div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip">atual += 1 → 4</div>
+      <span class="gen-arrow-sm">→</span>
+      <div class="gen-chip is-stop">while 4≤3 ✗<span class="gen-pause-tag">next() nº4: StopIteration — o for detecta e para sozinho</span></div>
+    </div>
+    <div class="info-box"><p>💡 É por isso que um generator só pode ser percorrido <strong>uma vez</strong>. Depois do <code>StopIteration</code> não existe "reiniciar" — é a mesma função, pausada e retomada, que já chegou ao fim. Para percorrer de novo, chame <code>conta_ate(3)</code> outra vez: isso cria um generator novo, do zero.</p></div>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">📉 Por que isso importa: memória</div>
+    <p class="section-desc">Arraste o controle para simular a leitura de um arquivo com milhões de linhas. Compare quanta memória uma <strong>lista</strong> (tudo carregado de uma vez) usa contra um <strong>generator</strong> (uma linha por vez):</p>
+    <div class="interactive-panel">
+      <div class="panel-label">Simulador — memória: lista vs. generator</div>
+      <div class="ctrl-row">
+        <div class="ctrl-g">
+          <div class="ctrl-l"><span>Linhas no arquivo</span><span class="ctrl-v" id="memRowsVal">1.000.000</span></div>
+          <input type="range" id="memRows" min="3" max="9" step="0.05" value="6" oninput="updateMem()">
+        </div>
+      </div>
+      <div class="canvas-wrap"><canvas id="memCanvas" height="170"></canvas></div>
+      <div class="stat-cards" id="memStats"></div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="cm"># ✗ return — carrega o arquivo inteiro na RAM antes de processar a 1ª linha</span>
+<span class="kw">def</span> <span class="fn">le_vendas_lista</span>(caminho):
+    <span class="kw">with</span> <span class="fn">open</span>(caminho) <span class="kw">as</span> f:
+        <span class="kw">return</span> [linha <span class="kw">for</span> linha <span class="kw">in</span> f]  <span class="cm"># lista inteira na memória</span>
+
+<span class="cm"># ✓ yield — entrega uma linha por vez, sob demanda</span>
+<span class="kw">def</span> <span class="fn">le_vendas</span>(caminho):
+    <span class="kw">with</span> <span class="fn">open</span>(caminho) <span class="kw">as</span> f:
+        <span class="kw">for</span> linha <span class="kw">in</span> f:
+            <span class="kw">yield</span> linha  <span class="cm"># memória de UMA linha, não do arquivo</span>
+
+<span class="kw">for</span> linha <span class="kw">in</span> le_vendas(<span class="st">"vendas.csv"</span>):
+    processa(linha)  <span class="cm"># processa e descarta, uma de cada vez</span></pre>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🔗 yield from — encadeando generators</div>
+    <p class="section-desc">Um pipeline de dados real é uma fila de etapas: extrair → transformar → carregar. Cada etapa pode ser um generator que consome o generator anterior — os dados fluem linha por linha por <em>toda a fila</em>, sem nunca virar uma lista gigante no meio do caminho.</p>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">def</span> <span class="fn">extrai</span>(caminho):
+    <span class="kw">with</span> <span class="fn">open</span>(caminho) <span class="kw">as</span> f:
+        <span class="kw">yield from</span> f   <span class="cm"># repassa cada linha de f, uma a uma</span>
+
+<span class="kw">def</span> <span class="fn">transforma</span>(linhas):
+    <span class="kw">for</span> linha <span class="kw">in</span> linhas:
+        <span class="kw">yield</span> linha.strip().upper()
+
+<span class="kw">def</span> <span class="fn">carrega</span>(linhas):
+    <span class="kw">for</span> linha <span class="kw">in</span> linhas:
+        <span class="fn">print</span>(<span class="st">"gravando:"</span>, linha)
+
+<span class="cm"># nada roda ainda — só quando carrega() começa a "puxar" é que os dados fluem</span>
+carrega(transforma(extrai(<span class="st">"vendas.csv"</span>)))</pre>
+    <div class="highlight-box">
+      <div class="highlight-title">É por isso que ferramentas de ingestão pedem yield</div>
+      <p>Em bibliotecas como <strong>dlt</strong>, cada <code>yield linha</code> dentro de uma função de extração entrega uma linha (ou um lote) imediatamente para ser processado e enviado ao destino — sem esperar a tabela inteira ser lida. Trocar <code>yield</code> por <code>return</code> ainda funcionaria para tabelas pequenas, mas quebraria a promessa de streaming que faz esse tipo de pipeline escalar para milhões de linhas.</p>
+    </div>
+  </section>
+
+  <!-- ============ 3. CONTEXT MANAGERS / WITH ============ -->
+  <section class="section c-purple" id="s-context">
+    <div class="section-eyebrow">Pilar 3 de 4</div>
+    <div class="section-title">🔐 Context Managers — o with que Garante a Devolução</div>
+    <p class="section-desc">
+      Abrir uma conexão de banco (ou um arquivo) exige fechá-la depois — <em>sempre</em>, mesmo que algo dê errado no meio do caminho. Escrever esse cuidado à mão, toda vez, é repetitivo e fácil de esquecer. Um <strong>context manager</strong> empacota "abrir" + "fechar garantido" atrás da palavra-chave <code>with</code>.
+    </p>
+    <div class="kid-box">
+      <span class="kid-emoji">📚</span>
+      <div><div class="highlight-title">Para uma criança entender</div><p>É como pegar um livro emprestado na biblioteca com um bibliotecário atencioso: ele te entrega o livro (<code>as f</code>), e não importa o que aconteça enquanto você lê — se você adorar, se derrubar café, se a luz apagar — no fim ele <strong>sempre</strong> pega o livro de volta e guarda na prateleira. Você nunca precisa lembrar de devolver: o <code>with</code> devolve por você.</p></div>
+    </div>
+    <div class="checkout">
+      <div class="checkout-step">
+        <div class="checkout-emoji">📖</div>
+        <div class="checkout-label">with abre o recurso</div>
+        <div class="checkout-code">with open(...) as f:</div>
+      </div>
+      <div class="checkout-arrow">→</div>
+      <div class="checkout-step">
+        <div class="checkout-emoji">✍️</div>
+        <div class="checkout-label">bloco usa o recurso</div>
+        <div class="checkout-code">f.read()</div>
+      </div>
+      <div class="checkout-arrow">→</div>
+      <div class="checkout-step">
+        <div class="checkout-emoji">📤</div>
+        <div class="checkout-label">recurso é devolvido</div>
+        <div class="checkout-code">f fecha sozinho</div>
+      </div>
+    </div>
+    <div class="checkout-guarantee" style="margin:0 auto;max-width:520px;">🛡️ Essa devolução acontece mesmo se o bloco lançar um erro no meio</div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="cm"># o with mais comum — você provavelmente já usou sem saber o nome</span>
+<span class="kw">with</span> <span class="fn">open</span>(<span class="st">"vendas.csv"</span>) <span class="kw">as</span> f:
+    conteudo = f.read()
+<span class="cm"># f.close() já rodou aqui — mesmo se f.read() tivesse dado erro</span>
+
+<span class="cm"># o mesmo padrão para conexões de banco</span>
+<span class="kw">with</span> engine.connect() <span class="kw">as</span> conn:
+    resultado = conn.execute(<span class="fn">text</span>(<span class="st">"SELECT * FROM vendas"</span>))
+<span class="cm"># a conexão volta pro pool aqui — inclusive se a query falhar</span></pre>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🛠️ Criando seu próprio context manager</div>
+    <p class="section-desc">Existem dois jeitos de criar um context manager próprio. O primeiro, com uma classe, expõe os dois momentos-chave explicitamente: <code>__enter__</code> (o que roda ao abrir o <code>with</code>) e <code>__exit__</code> (o que roda ao sair — sempre, com ou sem erro).</p>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">import</span> time
+
+<span class="kw">class</span> <span class="fn">Cronometro</span>:
+    <span class="kw">def</span> <span class="fn">__enter__</span>(self):
+        self.inicio = time.time()
+        <span class="kw">return</span> self  <span class="cm"># isso vira o "as x" do with</span>
+
+    <span class="kw">def</span> <span class="fn">__exit__</span>(self, tipo_erro, erro, traceback):
+        duracao = time.time() - self.inicio
+        <span class="fn">print</span>(<span class="fn">f</span><span class="st">"etapa levou {duracao:.2f}s"</span>)
+        <span class="cm"># mesmo se 'erro' não for None (deu exceção), esta linha roda</span>
+
+<span class="kw">with</span> Cronometro():
+    extrai_dados_da_api()   <span class="cm"># mede o tempo dessa etapa do pipeline</span></pre>
+    <p class="section-desc">O segundo jeito, mais curto, usa o decorator <code>@contextmanager</code> — repare que ele mistura os <strong>três</strong> pilares desta aula numa função só: é um decorator, usa <code>yield</code>, e vira um <code>with</code>.</p>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">from</span> contextlib <span class="kw">import</span> contextmanager
+
+<span class="kw">@contextmanager</span>
+<span class="kw">def</span> <span class="fn">conexao</span>(nome):
+    <span class="fn">print</span>(<span class="fn">f</span><span class="st">"abrindo conexão com {nome}"</span>)
+    <span class="kw">try</span>:
+        <span class="kw">yield</span> <span class="fn">f</span><span class="st">"conexao-{nome}"</span>   <span class="cm"># tudo ANTES do yield = __enter__</span>
+    <span class="kw">finally</span>:
+        <span class="fn">print</span>(<span class="fn">f</span><span class="st">"fechando conexão com {nome}"</span>)  <span class="cm"># tudo DEPOIS = __exit__</span>
+
+<span class="kw">with</span> conexao(<span class="st">"postgres"</span>) <span class="kw">as</span> conn:
+    <span class="fn">print</span>(<span class="fn">f</span><span class="st">"usando {conn}"</span>)
+
+<span class="cm"># abrindo conexão com postgres
+# usando conexao-postgres
+# fechando conexão com postgres  <- roda mesmo se der erro no bloco with</span></pre>
+    <div class="info-box"><p>💡 O <code>yield</code> aqui tem um papel diferente do generator da seção anterior: ele marca o único ponto de entrega (o que vira o <code>conn</code> do <code>as conn</code>), dividindo a função em "antes" (abrir) e "depois" (fechar, dentro do <code>finally</code>).</p></div>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🧵 Múltiplos recursos em um único with</div>
+    <p class="section-desc">É possível abrir mais de um recurso na mesma linha, separando por vírgula — útil ao ler de um arquivo e gravar em outro ao mesmo tempo, por exemplo.</p>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">with</span> <span class="fn">open</span>(<span class="st">"entrada.csv"</span>) <span class="kw">as</span> origem, <span class="fn">open</span>(<span class="st">"saida.csv"</span>, <span class="st">"w"</span>) <span class="kw">as</span> destino:
+    <span class="kw">for</span> linha <span class="kw">in</span> origem:
+        destino.write(linha.upper())
+<span class="cm"># os DOIS arquivos fecham sozinhos ao sair do bloco, na ordem inversa</span></pre>
+    <div class="highlight-box">
+      <div class="highlight-title">Onde isso aparece em pipelines de verdade</div>
+      <p>Toda vez que um pipeline abre uma conexão JDBC, um cliente de API, um arquivo temporário, um lock ou uma sessão de banco — a resposta correta é sempre "isso merece um <code>with</code>". É o jeito Python de dizer: "eu prometo devolver isso, e o interpretador garante".</p>
+    </div>
+  </section>
+
+  <!-- ============ 4. DECORATORS ============ -->
+  <section class="section c-yellow" id="s-decorators">
+    <div class="section-eyebrow">Pilar 4 de 4</div>
+    <div class="section-title">🎁 Decorators — uma Função que Embrulha Outra</div>
+    <p class="section-desc">
+      Um <strong>decorator</strong> é uma função que recebe outra função, adiciona algum comportamento antes/depois dela, e devolve essa versão "embrulhada". A sintaxe <code>@nome_do_decorator</code> escrita em cima de uma função é só um atalho para essa troca.
+    </p>
+    <div class="kid-box">
+      <span class="kid-emoji">🎀</span>
+      <div><div class="highlight-title">Para uma criança entender</div><p>É como embrulhar um presente: o presente (a função original) continua exatamente o mesmo por dentro. O papel de embrulho e o laço (o decorator) só adicionam algo <em>por fora</em> — um cronômetro, um log, uma nova tentativa em caso de erro — sem abrir a caixa e mexer no presente.</p></div>
+    </div>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🎒 Antes do wrapper: o que são *args e **kwargs</div>
+    <p class="section-desc">Repare, no exemplo logo abaixo, que a função interna é <code>def wrapper(*args, **kwargs):</code>. Isso é o que permite ao decorator embrulhar <strong>qualquer</strong> função — sem saber de antemão quantos argumentos ela recebe, nem quais nomes.</p>
+    <div class="kid-box">
+      <span class="kid-emoji">🎒</span>
+      <div><div class="highlight-title">Para uma criança entender</div><p>Pense em duas mochilas universais penduradas na entrada de uma função: <code>*args</code> é a mochila onde caem todos os argumentos que chegaram <em>sem nome</em>, na ordem — vira uma tupla. <code>**kwargs</code> é a mochila dos argumentos que chegaram <em>com nome</em> (<code>tabela="vendas"</code>) — vira um dicionário. Não importa quantos itens cheguem: sempre cabem numa das duas mochilas.</p></div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">def</span> <span class="fn">resume_carga</span>(*args, **kwargs):
+    <span class="fn">print</span>(<span class="st">"posicionais:"</span>, args)
+    <span class="fn">print</span>(<span class="st">"nomeados:"</span>, kwargs)
+
+resume_carga(<span class="st">"vendas.csv"</span>, linhas=<span class="num">1000</span>, formato=<span class="st">"csv"</span>)
+<span class="cm"># posicionais: ('vendas.csv',)
+# nomeados: {'linhas': 1000, 'formato': 'csv'}</span></pre>
+    <div class="vs2">
+      <div class="vs2-card is-bad">
+        <div class="vs2-title">✗ wrapper() sem *args/**kwargs — quebra na primeira função diferente</div>
+        <div class="vs2-desc"><code>def wrapper():<br>&nbsp;&nbsp;return func()</code><br>Funciona só para funções sem argumento nenhum. Chamar <code>extrai_orders(fonte="api")</code> através deste wrapper explode com <code>TypeError</code>.</div>
+      </div>
+      <div class="vs2-card is-good">
+        <div class="vs2-title">✓ wrapper(*args, **kwargs) — aceita qualquer assinatura</div>
+        <div class="vs2-desc"><code>def wrapper(*args, **kwargs):<br>&nbsp;&nbsp;return func(*args, **kwargs)</code><br>As duas mochilas chegam cheias (ou vazias) e são repassadas direto para <code>func</code> — o wrapper nunca precisa saber o que tem dentro.</div>
+      </div>
+    </div>
+    <div class="giftwrap">
+      <div class="gift-plain">
+        <div class="gift-box">def extrai_dados():<br>...</div>
+        <div class="checkout-label">função pura</div>
+      </div>
+      <div class="factory-arrow">→ @cronometro →</div>
+      <div class="gift-wrapped">
+        <div class="gift-ribbon-top">@cronometro</div>
+        <div class="gift-inner">def extrai_dados():<br>...</div>
+        <div class="checkout-label" style="color:var(--accent-yellow);">mede o tempo, por fora</div>
+      </div>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">import</span> time
+
+<span class="kw">def</span> <span class="fn">cronometro</span>(func):
+    <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+        inicio = time.time()
+        resultado = func(*args, **kwargs)
+        <span class="fn">print</span>(<span class="fn">f</span><span class="st">"{func.__name__} levou {time.time() - inicio:.4f}s"</span>)
+        <span class="kw">return</span> resultado
+    <span class="kw">return</span> wrapper
+
+<span class="kw">@cronometro</span>
+<span class="kw">def</span> <span class="fn">extrai_dados_lentos</span>():
+    time.sleep(<span class="num">1</span>)
+    <span class="kw">return</span> <span class="st">"dados extraídos"</span>
+
+extrai_dados_lentos()
+<span class="cm"># extrai_dados_lentos levou 1.0002s</span></pre>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">O que o @ realmente faz</div>
+        <div class="card-text"><code>@cronometro</code> em cima de <code>def extrai_dados_lentos()</code> equivale a escrever <code>extrai_dados_lentos = cronometro(extrai_dados_lentos)</code> logo abaixo. O <code>@</code> é só açúcar sintático para essa reatribuição.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Por que "wrapper" existe</div>
+        <div class="card-text">A função interna <code>wrapper</code> é o que roda de fato no lugar da original — ela chama <code>func(*args, **kwargs)</code> no meio, então quem usa <code>extrai_dados_lentos()</code> nem percebe a camada extra por baixo.</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">📚 Empilhando decorators — camadas, de dentro para fora</div>
+    <p class="section-desc">Você pode aplicar mais de um decorator na mesma função — cada um vira uma nova camada de embrulho por cima da anterior. A ordem importa: o decorator <em>mais próximo</em> da função (o de baixo) embrulha primeiro.</p>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">@log_execucao</span>      <span class="cm"># 3ª camada — embrulha o resultado da linha de baixo</span>
+<span class="kw">@cronometro</span>        <span class="cm"># 2ª camada — embrulha extrai_dados</span>
+<span class="kw">@retry</span>(tentativas=<span class="num">3</span>)  <span class="cm"># 1ª camada — a mais próxima da função original</span>
+<span class="kw">def</span> <span class="fn">extrai_dados</span>():
+    ...</pre>
+    <div class="stack-layers">
+      <div class="stack-layer" style="border-color:var(--accent-yellow);color:var(--accent-yellow);"><span class="stack-order">1º</span>def extrai_dados(): ...</div>
+      <div class="stack-layer" style="border-color:var(--accent-blue);color:var(--accent-blue);"><span class="stack-order">2º</span>@retry(tentativas=3) — tenta de novo se falhar</div>
+      <div class="stack-layer" style="border-color:var(--accent-purple);color:var(--accent-purple);"><span class="stack-order">3º</span>@cronometro — mede o tempo (incluindo as tentativas)</div>
+      <div class="stack-layer" style="border-color:var(--accent-green);color:var(--accent-green);"><span class="stack-order">4º</span>@log_execucao — registra que rodou (por cima de tudo)</div>
+    </div>
+    <p class="section-desc" style="text-align:center;font-size:12px;">Leia de baixo para cima na hora de aplicar, e de cima para baixo na hora de executar — como uma boneca russa (matryoshka).</p>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🏷️ Decorators com argumento</div>
+    <p class="section-desc">Reparou no <code>@retry(tentativas=3)</code> acima? Um decorator "configurável" precisa de <strong>uma função a mais</strong> por fora — a que recebe os argumentos e devolve o decorator de verdade.</p>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">def</span> <span class="fn">retry</span>(tentativas=<span class="num">3</span>):
+    <span class="kw">def</span> <span class="fn">decorator</span>(func):
+        <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+            <span class="kw">for</span> tentativa <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, tentativas + <span class="num">1</span>):
+                <span class="kw">try</span>:
+                    <span class="kw">return</span> func(*args, **kwargs)
+                <span class="kw">except</span> Exception <span class="kw">as</span> erro:
+                    <span class="fn">print</span>(<span class="fn">f</span><span class="st">"tentativa {tentativa} falhou: {erro}"</span>)
+            <span class="kw">raise</span> RuntimeError(<span class="st">"todas as tentativas falharam"</span>)
+        <span class="kw">return</span> wrapper
+    <span class="kw">return</span> decorator
+
+<span class="kw">@retry</span>(tentativas=<span class="num">3</span>)
+<span class="kw">def</span> <span class="fn">chama_api_instavel</span>():
+    ...</pre>
+
+    <div class="warn-box">
+      <div class="highlight-title" style="color:var(--accent-red);">⚠️ O gotcha do functools.wraps</div>
+      <p>Sem cuidado extra, a função "embrulhada" perde sua identidade: <code>extrai_dados_lentos.__name__</code> vira <code>"wrapper"</code>, e ferramentas de debug/documentação se confundem. A correção é uma linha: adicione <code>@functools.wraps(func)</code> em cima do <code>def wrapper(...)</code>.</p>
+    </div>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">import</span> functools
+
+<span class="kw">def</span> <span class="fn">cronometro</span>(func):
+    <span class="kw">@functools.wraps</span>(func)  <span class="cm"># preserva __name__, __doc__ da função original</span>
+    <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+        ...
+        <span class="kw">return</span> func(*args, **kwargs)
+    <span class="kw">return</span> wrapper</pre>
+
+    <div class="highlight-box">
+      <div class="highlight-title">Decorators do dia a dia em engenharia de dados</div>
+      <p><code>@functools.lru_cache</code> guarda o resultado de uma função cara e devolve na hora se for chamada de novo com os mesmos argumentos (ótimo para lookups repetidos). <code>@retry(...)</code> reexecuta uma chamada de API instável. <code>@dlt.resource</code> (em bibliotecas de ingestão) embrulha uma função geradora com toda a maquinaria de schema e carga. Todos seguem exatamente o mecanismo desta seção.</p>
+    </div>
+  </section>
+
+  <!-- ============ COMBO — JUNTANDO TUDO ============ -->
+  <section class="section" id="s-combo">
+    <div class="section-eyebrow">Capítulo bônus</div>
+    <div class="section-title">🧩 Juntando os 4 Pilares em uma Função Só</div>
+    <p class="section-desc">Este é o tipo de função que aparece em qualquer pipeline real de ingestão — e agora cada peça dela conta uma história que você já conhece:</p>
+    <pre class="code-block"><span class="code-lang">Python</span><button class="copy-btn" onclick="copyCode(this)">copiar</button><span class="kw">@retry</span>(tentativas=<span class="num">3</span>)                        <span class="cm"># decorator: reexecuta se a extração falhar</span>
+<span class="kw">@dlt.resource</span>(name=<span class="st">"orders"</span>)             <span class="cm"># decorator: embrulha com a maquinaria de ingestão</span>
+<span class="kw">def</span> <span class="fn">extrai_orders</span>():
+    engine = create_engine(dlt.secrets.get(<span class="st">"credentials"</span>))
+    <span class="kw">with</span> engine.connect() <span class="kw">as</span> conn:                 <span class="cm"># context manager: fecha a conexão sempre</span>
+        resultado = conn.execute(<span class="fn">text</span>(<span class="st">"SELECT * FROM orders"</span>))
+        colunas_uteis = [<span class="st">"id"</span>, <span class="st">"cliente"</span>, <span class="st">"valor"</span>]   <span class="cm"># list comprehension mais abaixo</span>
+        <span class="kw">for</span> linha <span class="kw">in</span> resultado:
+            registro = {c: linha._mapping[c] <span class="kw">for</span> c <span class="kw">in</span> colunas_uteis}  <span class="cm"># dict comprehension: filtra colunas</span>
+            <span class="kw">yield</span> registro                        <span class="cm"># generator: entrega 1 linha por vez, sem RAM extra</span></pre>
+    <div class="checklist">
+      <div class="check-item"><span class="ck">✓</span> <code>@retry(...)</code> e <code>@dlt.resource(...)</code> — decorators: cada um adiciona uma camada de comportamento sem tocar na lógica de extração</div>
+      <div class="check-item"><span class="ck">✓</span> <code>with engine.connect() as conn:</code> — context manager: a conexão fecha sozinha, mesmo se a query falhar</div>
+      <div class="check-item"><span class="ck">✓</span> <code>{c: linha._mapping[c] for c in colunas_uteis}</code> — dict comprehension: monta o registro só com as colunas que interessam</div>
+      <div class="check-item"><span class="ck">✓</span> <code>yield registro</code> — generator: entrega linha por linha, permitindo streaming de tabelas gigantes</div>
+    </div>
+  </section>
+
+  <!-- ============ BONUS: MAIS FERRAMENTAS ============ -->
+  <section class="section" id="s-bonus">
+    <div class="section-eyebrow">Panorama, parte 2</div>
+    <div class="section-title">🎒 Mais Ferramentas Essenciais (Resumo Visual)</div>
+    <p class="section-desc">Voltando ao mapa do início: aqui vai um resumo rápido, com exemplo, de cada item que não ganhou uma seção própria. Não são menos importantes — são assunto para outra aula, mas você já sai daqui sabendo que existem e para que servem.</p>
+    <div class="grid-3">
+      <div class="bonus-card">
+        <div class="bonus-title">🔗 itertools</div>
+        <div class="bonus-code"><span class="kw">from</span> itertools <span class="kw">import</span> islice
+
+<span class="fn">list</span>(<span class="fn">islice</span>(gerador, <span class="num">5</span>))
+<span class="cm"># pega só os 5 primeiros</span></div>
+        <div class="bonus-desc">Ferramentas prontas para combinar, fatiar e agrupar iteráveis/generators sem nunca virar lista — <code>chain</code>, <code>islice</code>, <code>groupby</code>, <code>batched</code>.</div>
+      </div>
+      <div class="bonus-card">
+        <div class="bonus-title">🧮 functools</div>
+        <div class="bonus-code"><span class="kw">from</span> functools <span class="kw">import</span> lru_cache
+
+<span class="kw">@lru_cache</span>
+<span class="kw">def</span> <span class="fn">busca_cep</span>(cep): ...</div>
+        <div class="bonus-desc"><code>lru_cache</code> memoriza resultados caros, <code>partial</code> "pré-preenche" argumentos de uma função, <code>reduce</code> agrega uma sequência em um único valor.</div>
+      </div>
+      <div class="bonus-card">
+        <div class="bonus-title">🚨 try / except / finally</div>
+        <div class="bonus-code"><span class="kw">try</span>:
+    linha = <span class="fn">processa</span>(bruta)
+<span class="kw">except</span> ValueError:
+    linha = <span class="kw">None</span>  <span class="cm"># não derruba o pipeline</span></div>
+        <div class="bonus-desc">Uma linha ruim no meio de 10 milhões não deveria derrubar o pipeline inteiro — capture o erro esperado, registre, e siga.</div>
+      </div>
+      <div class="bonus-card">
+        <div class="bonus-title">📝 logging</div>
+        <div class="bonus-code"><span class="kw">import</span> logging
+logging.info(<span class="fn">f</span><span class="st">"{n} linhas carregadas"</span>)
+<span class="cm"># não logging.print()!</span></div>
+        <div class="bonus-desc"><code>print</code> desaparece quando o pipeline roda em produção. <code>logging</code> tem níveis (INFO, WARNING, ERROR) e pode ser mandado para arquivo, console ou um serviço de observabilidade.</div>
+      </div>
+      <div class="bonus-card">
+        <div class="bonus-title">🏷️ Type hints</div>
+        <div class="bonus-code"><span class="kw">def</span> <span class="fn">carrega</span>(linhas: <span class="fn">list</span>[<span class="fn">dict</span>]) -> <span class="fn">int</span>:
+    ...</div>
+        <div class="bonus-desc">Não mudam o comportamento em tempo de execução, mas documentam o contrato da função e permitem que o editor e ferramentas como <code>mypy</code> pesquem erros antes de rodar.</div>
+      </div>
+      <div class="bonus-card">
+        <div class="bonus-title">🗂️ pathlib</div>
+        <div class="bonus-code"><span class="kw">from</span> pathlib <span class="kw">import</span> Path
+
+<span class="kw">for</span> f <span class="kw">in</span> Path(<span class="st">"dados/"</span>).glob(<span class="st">"*.parquet"</span>):
+    ...</div>
+        <div class="bonus-desc">Substitui manipulação de strings de caminho (<code>os.path.join</code>) por objetos que sabem navegar, listar e checar arquivos entre sistemas operacionais.</div>
+      </div>
+      <div class="bonus-card">
+        <div class="bonus-title">📦 dataclasses</div>
+        <div class="bonus-code"><span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="fn">Pedido</span>:
+    id: <span class="fn">int</span>
+    valor: <span class="fn">float</span></div>
+        <div class="bonus-desc">Descreve a "forma" de um registro sem escrever <code>__init__</code> na mão — combina bem com type hints para validar o schema de dados que trafega no pipeline.</div>
+      </div>
+      <div class="bonus-card">
+        <div class="bonus-title">🕒 datetime</div>
+        <div class="bonus-code"><span class="kw">from</span> datetime <span class="kw">import</span> datetime, timezone
+
+datetime.now(timezone.utc)</div>
+        <div class="bonus-desc">Sempre trabalhe com fuso horário explícito (<code>UTC</code>) em pipelines — datas "ingênuas" (sem timezone) são fonte clássica de bug em dados que cruzam regiões.</div>
+      </div>
+      <div class="bonus-card">
+        <div class="bonus-title">🌐 venv / uv / poetry</div>
+        <div class="bonus-code"><span class="cm"># isola as dependências deste projeto</span>
+uv venv && uv pip install dlt</div>
+        <div class="bonus-desc">Nunca instale bibliotecas de projeto direto no Python "do sistema" — um ambiente isolado evita que um projeto quebre o outro por versões conflitantes.</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="font-size:16px;border-left-width:2px;">🍳 Threading vs Multiprocessing — a cozinha certa para cada tarefa</div>
+    <p class="section-desc">Duas formas de "fazer mais de uma coisa ao mesmo tempo" em Python, mas para problemas diferentes. Confundir os dois é uma das causas mais comuns de pipeline lento.</p>
+    <div class="kitchen">
+      <div class="kitchen-card">
+        <div class="kitchen-title" style="color:var(--accent-blue);">🧵 threading — para I/O-bound</div>
+        <div class="kitchen-row">
+          <div class="kitchen-unit">👩‍🍳</div>
+          <div class="kitchen-unit">🔥🍳</div>
+          <div class="kitchen-unit">🔥🍳</div>
+          <div class="kitchen-unit">🔥🍳</div>
+        </div>
+        <div class="kitchen-desc">Uma única cozinheira revezando entre vários fornos — enquanto um assa (rede/API/disco esperando resposta), ela cuida de outro. Ótimo quando o tempo é gasto <strong>esperando</strong> — chamadas de API, leitura de arquivo, query em banco.</div>
+      </div>
+      <div class="kitchen-card">
+        <div class="kitchen-title" style="color:var(--accent-red);">🖥️ multiprocessing — para CPU-bound</div>
+        <div class="kitchen-row">
+          <div class="kitchen-unit">👩‍🍳🔥</div>
+          <div class="kitchen-unit">👨‍🍳🔥</div>
+          <div class="kitchen-unit">🧑‍🍳🔥</div>
+        </div>
+        <div class="kitchen-desc">Três cozinhas completas, cada uma com sua própria cozinheira, picando ingredientes ao mesmo tempo. Necessário quando o tempo é gasto <strong>calculando</strong> — parsing pesado, transformação numérica, compressão. O GIL do Python impede que threads calculem em paralelo de verdade; processos separados, sim.</div>
+      </div>
+    </div>
+    <div class="interactive-panel">
+      <div class="panel-label">Comparador — tempo estimado para 8 tarefas</div>
+      <div class="btn-toggle-row" style="margin-bottom:14px;">
+        <button class="btn-toggle active" id="btnIO" onclick="setTaskType('io')">Tarefa I/O-bound (chamar API)</button>
+        <button class="btn-toggle" id="btnCPU" onclick="setTaskType('cpu')">Tarefa CPU-bound (parsear/calcular)</button>
+      </div>
+      <div class="canvas-wrap"><canvas id="taskCanvas" height="150"></canvas></div>
+    </div>
+  </section>
+
+  <!-- ============ GUIA DE DECISÃO ============ -->
+  <section class="section" id="s-guia">
+    <div class="section-eyebrow">Cola rápida</div>
+    <div class="section-title">🧭 Qual Ferramenta Usar Quando</div>
+    <div class="grid-3">
+      <div class="decision-card">
+        <div class="decision-q">Preciso transformar uma lista pequena e a lógica cabe numa linha?</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent);color:var(--accent);">🏭 List comprehension</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">O dataset pode não caber na memória, ou eu só preciso processar uma vez, item a item?</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">⏸️ Generator / yield</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">Estou abrindo algo que precisa ser fechado depois (arquivo, conexão, lock)?</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-purple);color:var(--accent-purple);">🔐 Context manager / with</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">Quero adicionar um comportamento (log, tempo, retry, cache) a várias funções, sem repetir código?</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-yellow);color:var(--accent-yellow);">🎁 Decorator</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">A tarefa passa a maior parte do tempo esperando rede/disco (chamar 100 APIs)?</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-blue);color:var(--accent-blue);">🧵 threading / asyncio</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-q">A tarefa passa a maior parte do tempo calculando (CPU 100% numa transformação pesada)?</div>
+        <div class="decision-arrow">↓</div>
+        <div class="decision-a" style="border-color:var(--accent-red);color:var(--accent-red);">🖥️ multiprocessing</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="section" id="s-quiz">
+    <div class="section-eyebrow">Recapitulando</div>
+    <div class="section-title">🧠 Testando o Entendimento</div>
+    <p class="section-desc">Clique em cada pergunta para ver a resposta.</p>
+    <div id="quizList" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </section>
+
+  <!-- ============ APROFUNDAMENTO ============ -->
+  <section class="section" id="s-aprofundamento">
+    <div class="section-eyebrow">Próximos passos</div>
+    <div class="section-title">🔎 Aprofundamento</div>
+    <p class="section-desc">Cada pilar desta aula tem espaço de sobra para uma aula própria, mais funda. Este panorama te dá o suficiente para ler qualquer código de pipeline com confiança — e reconhecer na hora quando é a vez de puxar cada ferramenta.</p>
+    <div class="deep-list">
+      <div class="deep-item"><span class="deep-src">comprehension</span><span class="deep-desc">Comprehensions aninhadas, walrus operator (:=) dentro de comprehension, e quando NumPy/pandas vetorizado vence uma comprehension</span></div>
+      <div class="deep-item"><span class="deep-src">utilitários</span><span class="deep-desc">itertools.groupby (agrupar sem pandas), functools.reduce, e comprehensions com múltiplas condições encadeadas</span></div>
+      <div class="deep-item"><span class="deep-src">generators</span><span class="deep-desc">send() e throw() em generators (comunicação nos dois sentidos), classes iteráveis próprias além de __iter__/__next__, e pipelines de generators encadeados</span></div>
+      <div class="deep-item"><span class="deep-src">context managers</span><span class="deep-desc">ExitStack para múltiplos recursos dinâmicos, e context managers assíncronos (async with) para I/O não bloqueante</span></div>
+      <div class="deep-item"><span class="deep-src">decorators</span><span class="deep-desc">Decorators baseados em classe, decorators que preservam assinatura com typing.ParamSpec, e o decorator @property</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Masterclass — Python para Engenharia de Dados</span>
+    <span>List Comprehension · Generators · Context Managers · Decorators</span>
+    <span>Profissão Dados</span>
+  </footer>
+</div>
+
+<script>
+/* ===================== TOC (build + scrollspy) ===================== */
+const tocSteps = [
+  {id:'s-mapa', icon:'🗺️', label:'Mapa Geral'},
+  {id:'s-comprehension', icon:'🏭', label:'Comprehension'},
+  {id:'s-utilitarios', icon:'🧰', label:'Utilitários'},
+  {id:'s-generators', icon:'⏸️', label:'Generators'},
+  {id:'s-context', icon:'🔐', label:'Context Managers'},
+  {id:'s-decorators', icon:'🎁', label:'Decorators'},
+  {id:'s-combo', icon:'🧩', label:'Juntando Tudo'},
+  {id:'s-bonus', icon:'🎒', label:'Mais Ferramentas'},
+  {id:'s-guia', icon:'🧭', label:'Qual Usar'},
+  {id:'s-quiz', icon:'🧠', label:'Recapitulando'},
+];
+const tocRow = document.getElementById('tocRow');
+tocRow.innerHTML = tocSteps.map((s,i) => `
+  ${i>0 ? '<span class="toc-arrow">→</span>' : ''}
+  <div class="toc-step" data-tid="${s.id}">
+    <a class="toc-box" href="#${s.id}">
+      <span class="toc-box-icon">${s.icon}</span>
+      <span class="toc-box-label">${s.label}</span>
+    </a>
+    <span class="toc-num">${String(i+1).padStart(2,'0')}</span>
+  </div>`).join('');
+
+const tocStepEls = [...document.querySelectorAll('.toc-step')];
+const sections = tocStepEls.map(c => document.getElementById(c.dataset.tid)).filter(Boolean);
+function updateToc(){
+  let current = null;
+  for(const s of sections){
+    const r = s.getBoundingClientRect();
+    if(r.top <= 140) current = s.id;
+  }
+  tocStepEls.forEach(c => c.classList.toggle('active', c.dataset.tid === current));
+  const activeEl = tocStepEls.find(c => c.dataset.tid === current);
+  if(activeEl) activeEl.scrollIntoView({block:'nearest', inline:'center', behavior:'smooth'});
+}
+window.addEventListener('scroll', updateToc, {passive:true});
+updateToc();
+
+/* ===================== copy buttons ===================== */
+function copyCode(btn){
+  const block = btn.closest('.code-block');
+  const clone = block.cloneNode(true);
+  clone.querySelectorAll('.copy-btn,.code-lang').forEach(e => e.remove());
+  const text = clone.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copiar'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+/* ===================== canvas helper ===================== */
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+/* ===================== MEMORY SIMULATOR (list vs generator) ===================== */
+const BYTES_PER_ROW = 120; // estimativa ilustrativa por linha de CSV em memória
+function updateMem(){
+  const exp = +document.getElementById('memRows').value;
+  const rows = Math.round(Math.pow(10, exp));
+  document.getElementById('memRowsVal').textContent = rows.toLocaleString('pt-BR');
+  const listBytes = rows * BYTES_PER_ROW;
+  const genBytes = BYTES_PER_ROW; // sempre 1 linha por vez
+  const fmtBytes = (b) => {
+    if(b < 1024) return b + ' B';
+    if(b < 1024**2) return (b/1024).toFixed(1) + ' KB';
+    if(b < 1024**3) return (b/1024**2).toFixed(1) + ' MB';
+    return (b/1024**3).toFixed(2) + ' GB';
+  };
+  const estourou = listBytes > 8*1024**3; // simula limite de RAM de 8GB
+  document.getElementById('memStats').innerHTML = `
+    <div class="stat-card c-red"><div class="stat-card-label">RAM — lista (return)</div><div class="stat-card-value">${fmtBytes(listBytes)}</div></div>
+    <div class="stat-card c-green"><div class="stat-card-label">RAM — generator (yield)</div><div class="stat-card-value">${fmtBytes(genBytes)}</div></div>
+    <div class="stat-card ${estourou?'c-red':'c-purple'}" style="grid-column:1/-1;"><div class="stat-card-label">${estourou?'⚠️ a lista estourou uma máquina de 8GB de RAM':'diferença de memória usada'}</div><div class="stat-card-value">${Math.round(listBytes/genBytes).toLocaleString('pt-BR')}x</div></div>
+  `;
+  drawMemCanvas(listBytes, genBytes, estourou);
+}
+function drawMemCanvas(listBytes, genBytes, estourou){
+  const cv = document.getElementById('memCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 170;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = [
+    {name:'Lista (return) — tudo na RAM', val: Math.log10(listBytes+1), raw:listBytes, color: estourou ? '#f86b63' : '#f86b63'},
+    {name:'Generator (yield) — 1 linha', val: Math.log10(genBytes+1), raw:genBytes, color:'#7dded8'},
+  ];
+  const padL=210, padR=20, padTop=18, barH=36, gap=26;
+  const maxVal = Math.max(data[0].val, 1);
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#111216'; ctx.font='10.5px Roboto Mono, monospace';
+    const fmt = d.raw < 1024**2 ? (d.raw/1024).toFixed(1)+' KB' : d.raw < 1024**3 ? (d.raw/1024**2).toFixed(1)+' MB' : (d.raw/1024**3).toFixed(2)+' GB';
+    ctx.fillText(fmt, padL+10, y+barH*0.65);
+  });
+}
+updateMem();
+window.addEventListener('resize', updateMem);
+
+/* ===================== TASK COMPARATOR (threading vs multiprocessing) ===================== */
+let taskType = 'io';
+function setTaskType(t){
+  taskType = t;
+  document.getElementById('btnIO').classList.toggle('active', t==='io');
+  document.getElementById('btnCPU').classList.toggle('active', t==='cpu');
+  drawTaskCanvas();
+}
+function drawTaskCanvas(){
+  const cv = document.getElementById('taskCanvas');
+  const ctx = cv.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth || cv.parentElement.clientWidth;
+  const h = 150;
+  cv.width = w*dpr; cv.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  // tempo (segundos) estimado para 8 tarefas de ~1s cada, ilustrativo
+  const data = taskType === 'io'
+    ? [
+        {name:'Sequencial (um por vez)', val:8, color:'#f86b63'},
+        {name:'threading (4 threads)', val:2.2, color:'#36a2ef'},
+        {name:'multiprocessing (4 processos)', val:2.6, color:'#c49aff'},
+      ]
+    : [
+        {name:'Sequencial (um por vez)', val:8, color:'#f86b63'},
+        {name:'threading (4 threads)', val:7.6, color:'#36a2ef'},
+        {name:'multiprocessing (4 processos)', val:2.1, color:'#c49aff'},
+      ];
+  const padL=220, padR=50, padTop=14, barH=28, gap=20;
+  const maxVal = 8;
+  data.forEach((d,i)=>{
+    const y = padTop + i*(barH+gap);
+    ctx.font='11.5px Inter, sans-serif'; ctx.fillStyle = d.color;
+    ctx.fillText(d.name, 4, y+barH*0.65);
+    const trackW = w-padL-padR;
+    ctx.fillStyle='rgba(255,255,255,.05)'; roundRect(ctx,padL,y,trackW,barH,6); ctx.fill();
+    const barW = Math.max(4, trackW * (d.val/maxVal));
+    const grad = ctx.createLinearGradient(padL,0,padL+barW,0);
+    grad.addColorStop(0,d.color); grad.addColorStop(1, d.color+'99');
+    ctx.fillStyle=grad; roundRect(ctx,padL,y,barW,barH,6); ctx.fill();
+    ctx.fillStyle='#dfe5ef'; ctx.font='10.5px Roboto Mono, monospace';
+    ctx.fillText('~'+d.val.toFixed(1)+'s', padL+barW+8, y+barH*0.65);
+  });
+  ctx.font='10px Inter, sans-serif'; ctx.fillStyle='#515761';
+  ctx.fillText(taskType==='io' ? 'tarefa: 8 chamadas de API de ~1s cada (tempo gasto esperando rede)' : 'tarefa: 8 blocos de cálculo pesado de ~1s de CPU cada', padL, padTop + data.length*(barH+gap) - gap + 24);
+}
+drawTaskCanvas();
+window.addEventListener('resize', drawTaskCanvas);
+
+/* ===================== QUIZ ===================== */
+const quizItems = [
+  {q:'Por que trocar [ ] por ( ) numa comprehension muda tudo?', a:'Colchetes criam uma lista pronta na memória. Parênteses criam uma generator expression — uma "promessa" de valores entregues um a um, sob demanda, sem ocupar a memória de todos de uma vez.'},
+  {q:'O que exatamente o for chama por baixo dos panos para percorrer uma lista?', a:'Primeiro iter(lista), que devolve um iterador (um objeto com "botão de próximo"). Depois, next(iterador) repetidamente, até receber StopIteration — sinal de que acabou.'},
+  {q:'Um generator pode ser percorrido duas vezes com o mesmo for?', a:'Não. Depois do StopIteration a função já chegou ao fim — não existe "reiniciar" a mesma execução. Para percorrer de novo, é preciso chamar a função geradora outra vez, criando um generator novo.'},
+  {q:'O que acontece com um recurso aberto num with se o bloco lançar uma exceção no meio?', a:'O context manager ainda garante o fechamento/devolução do recurso — é exatamente essa garantia (equivalente a um finally) que faz o with valer a pena, em vez de fechar manualmente no fim do bloco.'},
+  {q:'O que a linha "@cronometro" acima de uma função realmente faz por baixo dos panos?', a:'É açúcar sintático para "extrai_dados = cronometro(extrai_dados)" — reatribui o nome da função para a versão "embrulhada" (wrapper) devolvida pelo decorator.'},
+  {q:'Empilhar @a e @b (com @a em cima) em uma função — qual decorator embrulha primeiro?', a:'@b, o mais próximo da função (embaixo), embrulha primeiro. Depois @a embrulha o resultado de @b. Lê-se de baixo para cima na aplicação.'},
+  {q:'Por que quase todo wrapper de decorator é escrito como def wrapper(*args, **kwargs)?', a:'Para funcionar com QUALQUER função, não importa quantos argumentos ela receba nem se são posicionais ou nomeados. *args junta os posicionais numa tupla, **kwargs junta os nomeados num dicionário — e ambos são repassados para a função original.'},
+  {q:'Uma tarefa que passa 95% do tempo esperando resposta de uma API deveria usar threading ou multiprocessing?', a:'threading (ou asyncio) — o gargalo é espera de rede (I/O-bound), não cálculo de CPU. Multiprocessing brilha quando o gargalo é cálculo pesado (CPU-bound), pois contorna o GIL usando processos separados.'},
+];
+document.getElementById('quizList').innerHTML = quizItems.map((item,i) => `
+  <div class="quiz-card" onclick="this.classList.toggle('open')">
+    <div class="quiz-q"><span>${i+1}. ${item.q}</span><span class="quiz-hint">ver resposta ▾</span></div>
+    <div class="quiz-answer">${item.a}</div>
+  </div>`).join('');
+</script>
+</body>
+</html>

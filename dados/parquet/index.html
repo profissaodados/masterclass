@@ -176,6 +176,18 @@ input[type=text]:focus{outline:none;border-color:var(--accent);}
 .phys-cell{padding:7px 5px;border-radius:4px;font-size:10.5px;text-align:center;font-family:'Roboto Mono',monospace;color:var(--text-primary);}
 .phys-head{background:transparent!important;color:var(--text-disabled);font-size:9px;text-transform:uppercase;letter-spacing:.5px;font-family:'Inter',sans-serif;font-weight:700;}
 
+/* ---- ROW GROUP → COLUMN CHUNK → PAGE DRILL-DOWN EXAMPLE ---- */
+.drill-arrow-down{text-align:center;font-size:11.5px;color:var(--text-disabled);margin:12px 0;font-weight:600;letter-spacing:.2px;}
+.chunk-row{display:flex;gap:10px;flex-wrap:wrap;}
+.chunk-box{flex:1;min-width:100px;background:var(--bg-elevated);border:1.5px solid var(--accent-blue);border-radius:8px;padding:10px;}
+.chunk-box.highlight{border-color:var(--accent);box-shadow:0 0 0 1px rgba(6,182,212,.25);}
+.chunk-box-title{font-size:10px;font-weight:700;color:var(--accent-blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;text-align:center;}
+.chunk-box-title.sel{color:var(--accent);}
+.chunk-value{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:4px;padding:5px 8px;font-size:11px;color:var(--text-secondary);font-family:'Roboto Mono',monospace;margin-bottom:4px;text-align:center;}
+.page-row{display:flex;gap:10px;max-width:340px;}
+.page-box-lg{flex:1;background:var(--bg-panel);border:1.5px solid var(--accent-green);border-radius:8px;padding:10px;}
+.page-box-lg-title{font-size:10px;font-weight:700;color:var(--accent-green);text-transform:uppercase;margin-bottom:8px;text-align:center;letter-spacing:.5px;}
+
 /* ---- ROW GROUP NARRATIVE (skip-overlay demo) ---- */
 .rg-narrative-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
 .rg-block{border:1.5px solid var(--border-color);border-radius:8px;padding:12px;background:var(--bg-elevated);position:relative;overflow:hidden;transition:.3s;}
@@ -244,6 +256,22 @@ canvas{width:100%;display:block;}
 .tree .t2{padding-left:44px;color:var(--accent-purple);}
 .tree .t3{padding-left:66px;color:var(--text-secondary);}
 .tree .t3 .fname{color:var(--accent-green);}
+
+/* ---- FILE MAP (arquivo completo, do início ao fim) ---- */
+.filemap{display:flex;flex-direction:column;gap:0;}
+.filemap-block{display:flex;align-items:stretch;gap:0;border:1px solid var(--border-color);border-radius:8px;margin-bottom:6px;overflow:hidden;background:var(--bg-elevated);text-decoration:none;color:inherit;transition:.15s;}
+.filemap-block:hover{border-color:var(--accent-blue);transform:translateX(2px);}
+.filemap-offset{flex-shrink:0;width:64px;display:flex;align-items:center;justify-content:center;background:var(--bg-panel);color:var(--text-disabled);font-family:'Roboto Mono',monospace;font-size:9.5px;border-right:1px solid var(--border-color);text-align:center;padding:6px;}
+.filemap-body{flex:1;padding:9px 14px;display:flex;flex-direction:column;gap:2px;min-width:0;}
+.filemap-title{font-size:12.5px;font-weight:700;color:var(--text-primary);}
+.filemap-desc{font-size:11px;color:var(--text-secondary);line-height:1.5;}
+.filemap-tag{flex-shrink:0;display:flex;align-items:center;padding:0 12px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--accent);background:rgba(6,182,212,.08);border-left:1px solid var(--border-color);white-space:nowrap;}
+.filemap-group{border:1.5px dashed var(--border-strong);border-radius:8px;padding:10px;margin-bottom:8px;}
+.filemap-group-title{font-size:11px;font-weight:800;color:var(--accent-blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding-left:4px;}
+.filemap-block.filemap-magic{border-color:var(--accent);background:rgba(6,182,212,.10);}
+.filemap-block.filemap-magic .filemap-title{color:var(--accent);}
+.filemap-block.filemap-footer-block{border-color:var(--accent-purple);background:rgba(196,154,255,.08);}
+.filemap-block.filemap-footer-block .filemap-title{color:var(--accent-purple);}
 
 /* ---- QUIZ ---- */
 .quiz-card{background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:16px 20px;cursor:pointer;transition:.15s;}
@@ -507,6 +535,25 @@ file_meta_data <span class="kw">=</span> thrift_decode(read(footer_length))</div
       </div>
     </div>
 
+    <p class="section-desc">Vamos ver isso acontecer com dados de verdade — a mesma tabela de vendas do início da aula, agora dividida em 2 row groups de 3 linhas cada.</p>
+
+    <div class="interactive-panel">
+      <div class="panel-label">Exemplo com dados reais: nossa tabela de vendas, fatiada em row groups</div>
+      <div class="btn-toggle-row" style="margin-bottom:16px;">
+        <button class="btn-toggle active" id="btnRgEx0" onclick="renderRgExample('rg0')">Row Group 0 (linhas 1–3)</button>
+        <button class="btn-toggle" id="btnRgEx1" onclick="renderRgExample('rg1')">Row Group 1 (linhas 4–6)</button>
+      </div>
+
+      <div class="rg-block" id="rgExTable" style="max-width:520px;"></div>
+      <div class="drill-arrow-down">↓ cada coluna vira um Column Chunk contíguo ↓</div>
+      <div class="chunk-row" id="rgExChunks"></div>
+
+      <div class="drill-arrow-down">↓ o Column Chunk destacado ("produto") é fatiado em Pages (aqui, no máximo 2 valores por página) ↓</div>
+      <div class="page-row" id="rgExPages"></div>
+    </div>
+
+    <p class="section-desc">Esses números não são só curiosidade. O tamanho do row group define quantas <strong>tasks paralelas</strong> um motor distribuído (Spark, Trino...) consegue lançar sobre o arquivo, e o tamanho da página define a granularidade do <strong>Column Index</strong> que você vai ver na próxima seção. Ajuste os valores abaixo com números do seu próprio dataset e veja o trade-off aparecer em tempo real.</p>
+
     <div class="interactive-panel">
       <div class="panel-label">Calculadora: dimensione a hierarquia do seu próprio dataset</div>
       <div class="ctrl-row">
@@ -534,6 +581,7 @@ file_meta_data <span class="kw">=</span> thrift_decode(read(footer_length))</div
       <div class="section-desc" style="font-size:12px;text-align:center;margin-top:4px;">Escala ilustrativa (o canvas limita a quantidade de blocos desenhados; os números reais estão nos cartões abaixo).</div>
 
       <div class="stat-cards" style="grid-template-columns:repeat(4,1fr);margin-top:14px;" id="hcStats"></div>
+      <div id="hcInsight" style="margin-top:14px;"></div>
     </div>
 
     <div class="grid-2">
@@ -553,6 +601,45 @@ file_meta_data <span class="kw">=</span> thrift_decode(read(footer_length))</div
     <div class="section-eyebrow">O Cérebro do Arquivo</div>
     <div class="section-title">🗄️ Metadados e o Footer (FileMetaData)</div>
     <p class="section-desc">Todo o "conhecimento" sobre o arquivo — schema, quantas linhas, onde cada coluna começa, estatísticas — vive em uma estrutura Thrift chamada <strong>FileMetaData</strong>, escrita uma única vez no footer. Um leitor sempre lê o footer <em>primeiro</em>, antes de tocar em qualquer dado.</p>
+
+    <div class="ctrl-l" style="margin-bottom:6px;">Exemplo real: o FileMetaData da nossa tabela de vendas (decodificado)</div>
+    <div class="code-block" style="white-space:pre;">
+<span class="code-lang">FileMetaData</span><span class="copy-btn" onclick="copyCode(this)">copiar</span>{
+  <span class="kw">"version"</span>: <span class="num">2</span>,
+  <span class="kw">"num_rows"</span>: <span class="num">6</span>,                        <span class="cm">// nossa tabela inteira: 6 linhas</span>
+  <span class="kw">"created_by"</span>: <span class="st">"parquet-cpp-arrow 16.1.0"</span>,
+  <span class="kw">"schema"</span>: [
+    {<span class="kw">"name"</span>: <span class="st">"produto"</span>, <span class="kw">"type"</span>: <span class="st">"BYTE_ARRAY"</span>},
+    {<span class="kw">"name"</span>: <span class="st">"cliente"</span>, <span class="kw">"type"</span>: <span class="st">"BYTE_ARRAY"</span>},
+    {<span class="kw">"name"</span>: <span class="st">"país"</span>,    <span class="kw">"type"</span>: <span class="st">"BYTE_ARRAY"</span>},
+    {<span class="kw">"name"</span>: <span class="st">"data"</span>,    <span class="kw">"type"</span>: <span class="st">"BYTE_ARRAY"</span>},
+    {<span class="kw">"name"</span>: <span class="st">"vendas"</span>,  <span class="kw">"type"</span>: <span class="st">"INT64"</span>}
+  ],
+  <span class="kw">"row_groups"</span>: [
+    {                                       <span class="cm">// Row Group 0 — linhas 1-3 (Bola/Camiseta/Meia)</span>
+      <span class="kw">"num_rows"</span>: <span class="num">3</span>,
+      <span class="kw">"columns"</span>: [
+        {<span class="kw">"path"</span>: <span class="st">"produto"</span>, <span class="kw">"codec"</span>: <span class="st">"SNAPPY"</span>, <span class="kw">"encodings"</span>: [<span class="st">"RLE_DICTIONARY"</span>],
+         <span class="kw">"data_page_offset"</span>: <span class="num">4</span>, <span class="kw">"statistics"</span>: {<span class="kw">"min"</span>: <span class="st">"Bola"</span>, <span class="kw">"max"</span>: <span class="st">"Meia"</span>, <span class="kw">"null_count"</span>: <span class="num">0</span>}},
+        <span class="cm">// ... cliente, país, data omitidos aqui só para caber na tela ...</span>
+        {<span class="kw">"path"</span>: <span class="st">"vendas"</span>, <span class="kw">"codec"</span>: <span class="st">"SNAPPY"</span>, <span class="kw">"encodings"</span>: [<span class="st">"PLAIN"</span>],
+         <span class="kw">"data_page_offset"</span>: <span class="num">312</span>, <span class="kw">"statistics"</span>: {<span class="kw">"min"</span>: <span class="num">100</span>, <span class="kw">"max"</span>: <span class="num">300</span>, <span class="kw">"null_count"</span>: <span class="num">0</span>}}
+      ]
+    },
+    {                                       <span class="cm">// Row Group 1 — linhas 4-6 (Meia/Camiseta/Meia)</span>
+      <span class="kw">"num_rows"</span>: <span class="num">3</span>,
+      <span class="kw">"columns"</span>: [
+        {<span class="kw">"path"</span>: <span class="st">"produto"</span>, <span class="kw">"statistics"</span>: {<span class="kw">"min"</span>: <span class="st">"Camiseta"</span>, <span class="kw">"max"</span>: <span class="st">"Meia"</span>, <span class="kw">"null_count"</span>: <span class="num">0</span>}},
+        {<span class="kw">"path"</span>: <span class="st">"vendas"</span>, <span class="kw">"statistics"</span>: {<span class="kw">"min"</span>: <span class="num">100</span>, <span class="kw">"max"</span>: <span class="num">500</span>, <span class="kw">"null_count"</span>: <span class="num">0</span>}}
+      ]
+    }
+  ]
+}</div>
+    <div class="highlight-box">
+      <div class="highlight-title">Não é um exemplo inventado</div>
+      <p>Repare no <code style="color:var(--accent);">min</code>/<code style="color:var(--accent);">max</code> de <code style="color:var(--accent);">vendas</code> em cada row group (100–300 no Row Group 0, 100–500 no Row Group 1): é exatamente esse tipo de número, lido do footer, que alimenta a demo de <strong>Predicate Pushdown</strong> mais abaixo na aula — e é o mesmo <code style="color:var(--accent);">pf.metadata.row_group(0).column(0).statistics</code> que você vai ver na seção "Na Prática", com PyArrow.</p>
+    </div>
+
     <div class="grid-2">
       <div class="card">
         <div class="card-title">📋 No nível do arquivo</div>
@@ -593,6 +680,17 @@ file_meta_data <span class="kw">=</span> thrift_decode(read(footer_length))</div
     <div class="section-eyebrow">Compactando Valores</div>
     <div class="section-title">🧬 Encodings: a primeira camada de compactação</div>
     <p class="section-desc">Antes mesmo de aplicar um codec de compressão genérico (Snappy, Gzip...), o Parquet já reescreve os valores de forma mais compacta usando <strong>encodings</strong> especializados por padrão de dados. As duas mais importantes:</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🧬 O que é "encoding", afinal?</div>
+        <div class="card-text">É uma forma <strong>reversível</strong> de reescrever os valores de uma coluna em bytes, explorando um padrão já conhecido dos dados — poucos valores distintos, sequência de números crescentes, valores repetidos em série. Nada se perde: o leitor sempre reconstrói o valor original exato a partir da versão codificada; ela só ocupa menos espaço e costuma ser mais rápida de processar.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">🆚 Encoding vs. Compressão (codec)</div>
+        <div class="card-text">Encoding é <strong>específico ao tipo de dado</strong>: sabe que aquela coluna é texto repetitivo ou um inteiro quase-sequencial, e usa esse conhecimento para reescrevê-la. Compressão genérica (Snappy, Gzip, Zstd — próxima seção) não sabe nada sobre o significado dos bytes, só encontra redundância na sequência. O Parquet aplica os dois <strong>em camadas</strong>: primeiro o encoding reescreve os valores, <em>depois</em> o codec comprime o resultado já codificado.</div>
+      </div>
+    </div>
 
     <div class="interactive-panel">
       <div class="panel-label">Experimente: Dictionary Encoding</div>
@@ -799,6 +897,107 @@ file_meta_data <span class="kw">=</span> thrift_decode(read(footer_length))</div
     <div class="info-box"><p>💡 Você não precisa calcular esses níveis manualmente — bibliotecas como PyArrow, Spark e Pandas fazem isso por você ao gravar <code>struct</code>, <code>list</code> e <code>map</code>. O importante para a aula é entender <strong>por que</strong> tipos aninhados em Parquet não "quebram" a leitura colunar.</p></div>
   </section>
 
+  <!-- ============ ARQUIVO COMPLETO ============ -->
+  <section class="section" id="s-completo">
+    <div class="section-eyebrow">Juntando Tudo</div>
+    <div class="section-title">📦 Um arquivo Parquet completo, do início ao fim</div>
+    <p class="section-desc">Chega de olhar cada peça isolada. Este é o mapa do arquivo <strong>inteiro</strong> que resultaria de gravar a nossa tabela de vendas (6 linhas, 5 colunas, 2 row groups) — na ordem exata em que os bytes aparecem no disco, do primeiro "PAR1" ao último. Cada bloco linka de volta para a seção que o explica em detalhe.</p>
+
+    <div class="filemap">
+      <a class="filemap-block filemap-magic" href="#s-anatomia">
+        <div class="filemap-offset">byte 0</div>
+        <div class="filemap-body"><div class="filemap-title">Magic Number "PAR1"</div><div class="filemap-desc">4 bytes — identifica o arquivo como Parquet antes de qualquer outra leitura</div></div>
+        <div class="filemap-tag">Anatomia ↑</div>
+      </a>
+
+      <div class="filemap-group">
+        <div class="filemap-group-title">🧱 Row Group 0 — linhas 1–3 (Bola / Camiseta / Meia)</div>
+        <a class="filemap-block" href="#s-encodings">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "produto"</div><div class="filemap-desc">Dictionary Page (valores únicos: Bola, Camiseta, Meia) + Data Page de índices — encoding RLE_DICTIONARY, codec Snappy</div></div>
+          <div class="filemap-tag">Encodings ↑</div>
+        </a>
+        <a class="filemap-block" href="#s-encodings">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "cliente"</div><div class="filemap-desc">Data Page — encoding PLAIN, codec Snappy</div></div>
+          <div class="filemap-tag">Encodings ↑</div>
+        </a>
+        <a class="filemap-block" href="#s-encodings">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "país"</div><div class="filemap-desc">Dictionary Page (Brasil, Portugal) + Data Page de índices — encoding RLE_DICTIONARY</div></div>
+          <div class="filemap-tag">Encodings ↑</div>
+        </a>
+        <a class="filemap-block" href="#s-encodings">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "data"</div><div class="filemap-desc">Data Page — encoding PLAIN, codec Snappy</div></div>
+          <div class="filemap-tag">Encodings ↑</div>
+        </a>
+        <a class="filemap-block" href="#s-pruning">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "vendas"</div><div class="filemap-desc">Data Page — encoding PLAIN — estatísticas gravadas: min 100, max 300</div></div>
+          <div class="filemap-tag">Pushdown ↑</div>
+        </a>
+      </div>
+
+      <div class="filemap-group">
+        <div class="filemap-group-title">🧱 Row Group 1 — linhas 4–6 (Meia / Camiseta / Meia)</div>
+        <a class="filemap-block" href="#s-encodings">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "produto"</div><div class="filemap-desc">Dictionary Page (Meia, Camiseta) + Data Page de índices — encoding RLE_DICTIONARY</div></div>
+          <div class="filemap-tag">Encodings ↑</div>
+        </a>
+        <a class="filemap-block" href="#s-encodings">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "cliente"</div><div class="filemap-desc">Data Page — encoding PLAIN</div></div>
+          <div class="filemap-tag">Encodings ↑</div>
+        </a>
+        <a class="filemap-block" href="#s-encodings">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "país"</div><div class="filemap-desc">Dictionary Page (Brasil, Portugal) + Data Page de índices</div></div>
+          <div class="filemap-tag">Encodings ↑</div>
+        </a>
+        <a class="filemap-block" href="#s-encodings">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "data"</div><div class="filemap-desc">Data Page — encoding PLAIN</div></div>
+          <div class="filemap-tag">Encodings ↑</div>
+        </a>
+        <a class="filemap-block" href="#s-pruning">
+          <div class="filemap-offset">···</div>
+          <div class="filemap-body"><div class="filemap-title">Column Chunk "vendas"</div><div class="filemap-desc">Data Page — encoding PLAIN — estatísticas gravadas: min 100, max 500</div></div>
+          <div class="filemap-tag">Pushdown ↑</div>
+        </a>
+      </div>
+
+      <a class="filemap-block filemap-footer-block" href="#s-metadados">
+        <div class="filemap-offset">···</div>
+        <div class="filemap-body"><div class="filemap-title">Footer — FileMetaData (Thrift Compact Protocol)</div><div class="filemap-desc">Schema completo + metadados e estatísticas dos 2 row groups — o JSON decodificado inteiro está na seção Metadados, mais acima</div></div>
+        <div class="filemap-tag">Metadados ↑</div>
+      </a>
+      <a class="filemap-block" href="#s-indexes">
+        <div class="filemap-offset">···</div>
+        <div class="filemap-body"><div class="filemap-title">Column Index + Offset Index (opcional)</div><div class="filemap-desc">Estatísticas e localização por página, para pruning mais fino que o de row group</div></div>
+        <div class="filemap-tag">Índices ↑</div>
+      </a>
+      <a class="filemap-block filemap-magic" href="#s-anatomia">
+        <div class="filemap-offset">fim −8</div>
+        <div class="filemap-body"><div class="filemap-title">footer_length (4 bytes) + Magic Number "PAR1" (4 bytes)</div><div class="filemap-desc">confirma que a escrita do arquivo terminou por completo</div></div>
+        <div class="filemap-tag">Anatomia ↑</div>
+      </a>
+    </div>
+
+    <div class="stat-cards" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card c-blue"><div class="stat-card-label">Row Groups</div><div class="stat-card-value">2</div></div>
+      <div class="stat-card"><div class="stat-card-label">Colunas</div><div class="stat-card-value">5</div></div>
+      <div class="stat-card"><div class="stat-card-label">Column Chunks</div><div class="stat-card-value">10</div></div>
+      <div class="stat-card c-green"><div class="stat-card-label">Linhas totais</div><div class="stat-card-value">6</div></div>
+    </div>
+
+    <div class="highlight-box">
+      <div class="highlight-title">A mesma estrutura, só que em escala</div>
+      <p>Em produção nada muda de forma — a diferença é só quantidade. Em vez de 3 valores por column chunk, cada um carregaria milhões, fatiados em centenas de páginas de ~1&nbsp;MB (lembra da calculadora, lá em cima?). A lógica de leitura é idêntica: footer primeiro, estatísticas decidem o que pular, e só então os bytes de dado são tocados.</p>
+    </div>
+  </section>
+
   <!-- ============ COMPARAÇÃO ============ -->
   <section class="section" id="s-comparacao">
     <div class="section-eyebrow">Panorama</div>
@@ -958,6 +1157,7 @@ const tocSteps = [
   {id:'s-pruning', icon:'🎯', label:'Pushdown'},
   {id:'s-indexes', icon:'🔎', label:'Índices'},
   {id:'s-aninhados', icon:'🪆', label:'Aninhados'},
+  {id:'s-completo', icon:'📦', label:'Arquivo Completo'},
   {id:'s-comparacao', icon:'⚖️', label:'Comparação'},
   {id:'s-codigo', icon:'🐍', label:'Na Prática'},
   {id:'s-particionamento', icon:'🗃️', label:'Partições'},
@@ -1145,6 +1345,56 @@ function updateByteContext(id){
 }
 buildByteViewer('magicstart');
 
+/* ===================== ROW GROUP → COLUMN CHUNK → PAGE EXAMPLE ===================== */
+const rgExampleCols = ['produto','cliente','país','data','vendas'];
+const rgExampleData = {
+  rg0: {
+    label: 'Row Group 0 (linhas 1–3)',
+    rows: [
+      ['Bola','João Silva','Brasil','01/01','100'],
+      ['Camiseta','João Silva','Brasil','02/01','200'],
+      ['Meia','Maria Costa','Portugal','01/01','300'],
+    ],
+  },
+  rg1: {
+    label: 'Row Group 1 (linhas 4–6)',
+    rows: [
+      ['Meia','Antônio Souza','Brasil','03/01','100'],
+      ['Camiseta','Maria Costa','Portugal','02/01','500'],
+      ['Meia','João Silva','Brasil','05/01','200'],
+    ],
+  },
+};
+function renderRgExample(which){
+  document.getElementById('btnRgEx0').classList.toggle('active', which === 'rg0');
+  document.getElementById('btnRgEx1').classList.toggle('active', which === 'rg1');
+  const data = rgExampleData[which];
+
+  document.getElementById('rgExTable').innerHTML = `
+    <div class="rg-block-title">${data.label}</div>
+    <table class="rg-mini-table">
+      <thead><tr>${rgExampleCols.map(c => `<th style="text-transform:uppercase;font-size:9.5px;color:var(--text-disabled);text-align:left;padding:5px 6px;font-weight:700;">${c}</th>`).join('')}</tr></thead>
+      <tbody>${data.rows.map(r => `<tr>${r.map(v => `<td>${v}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table>`;
+
+  document.getElementById('rgExChunks').innerHTML = rgExampleCols.map((c,ci) => `
+    <div class="chunk-box ${c === 'produto' ? 'highlight' : ''}">
+      <div class="chunk-box-title ${c === 'produto' ? 'sel' : ''}">${c}</div>
+      ${data.rows.map(r => `<div class="chunk-value">${r[ci]}</div>`).join('')}
+    </div>`).join('');
+
+  const produtoValues = data.rows.map(r => r[0]);
+  const pageCap = 2;
+  const pages = [];
+  for(let i=0;i<produtoValues.length;i+=pageCap) pages.push(produtoValues.slice(i,i+pageCap));
+  document.getElementById('rgExPages').innerHTML = pages.map((p,i) => `
+    <div class="page-box-lg">
+      <div class="page-box-lg-title">Page ${i}</div>
+      ${p.map(v => `<div class="chunk-value">${v}</div>`).join('')}
+    </div>`).join('');
+}
+renderRgExample('rg0');
+
 /* ===================== HIERARCHY CANVAS + CALCULATOR ===================== */
 let hcLastChunks = 4, hcLastPages = 3, hcLastRgLabel = 'Row Group (ex: 512 MB)';
 function drawHierarchy(chunkCount, pageCount, rgLabel){
@@ -1213,6 +1463,30 @@ function updateHierarchyCalc(){
     <div class="stat-card c-green"><div class="stat-card-label">Páginas totais</div><div class="stat-card-value">${totalPages.toLocaleString('pt-BR')}</div></div>
   `;
   drawHierarchy(cols, pagesPerChunk, `Row Group (${rgMB} MB, ${cols} colunas)`);
+
+  let rgClass, rgMsg;
+  if(numRowGroups < 4){
+    rgClass = 'warn-box';
+    rgMsg = `Só <strong>${numRowGroups} row group${numRowGroups>1?'s':''}</strong> para ${datasetGB} GB: pouquíssimo paralelismo para um engine distribuído — cada task herdaria um pedaço enorme do arquivo, e nem dá para pular row groups inteiros via predicate pushdown. Tente reduzir o tamanho do row group.`;
+  } else if(numRowGroups > 200){
+    rgClass = 'warn-box';
+    rgMsg = `<strong>${numRowGroups.toLocaleString('pt-BR')} row groups</strong> é bastante: o footer cresce (uma entrada de metadados por row group, por coluna) e cada consulta paga mais seeks. Considere aumentar o tamanho do row group — a faixa recomendada é 128 MB–1 GB.`;
+  } else {
+    rgClass = 'ok-box';
+    rgMsg = `<strong>${numRowGroups.toLocaleString('pt-BR')} row groups</strong> é uma faixa saudável: paralelismo suficiente para um engine distribuído sem inflar demais o footer.`;
+  }
+  let pageMsg;
+  if(pagesPerChunk <= 1){
+    pageMsg = `Com esse tamanho de página, cada column chunk cabe em <strong>1 página só</strong> — o Column Index da próxima seção não teria granularidade nenhuma para atuar (ele só pula páginas, e aqui só existe uma). Diminua a página ou aumente o row group para ver o Column Index valer a pena.`;
+  } else if(pagesPerChunk > 500){
+    pageMsg = `${pagesPerChunk.toLocaleString('pt-BR')} páginas por column chunk é muita fragmentação: cada página carrega seu próprio header (Thrift), então o overhead começa a pesar. Considere uma página maior.`;
+  } else {
+    pageMsg = `${pagesPerChunk.toLocaleString('pt-BR')} páginas por column chunk dão ao Column Index granularidade real para pular partes do chunk sem descartar o row group inteiro.`;
+  }
+  document.getElementById('hcInsight').innerHTML = `
+    <div class="${rgClass}"><p>📦 ${rgMsg}</p></div>
+    <div class="info-box" style="margin-top:10px;"><p>📄 ${pageMsg}</p></div>
+  `;
 }
 updateHierarchyCalc();
 window.addEventListener('resize', () => drawHierarchy());
